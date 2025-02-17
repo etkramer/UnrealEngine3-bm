@@ -814,6 +814,20 @@ FTextureResource* UTexture2D::CreateResource()
 		ResidentMips	= RequestedMips;
 	}
 
+#if BATMAN
+	// TEMPORARY HACK
+	// Until we figure out why the engine won't load mips from the .TFC, let's just only use ones that are local
+	for (INT i = 0; i < RequestedMips; i++)
+	{
+		if (Mips(Mips.Num() - 1 - i).Data.IsStoredInSeparateFile())
+		{
+			RequestedMips = i;
+			ResidentMips = RequestedMips;
+			break;
+		}
+	}
+#endif
+
 	// Unlink and relink if streamable.
 	UnlinkStreaming();
 	if( bIsStreamable )
