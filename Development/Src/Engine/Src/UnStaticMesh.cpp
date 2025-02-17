@@ -246,6 +246,15 @@ FArchive& operator<<(FArchive& Ar,FPositionVertexBuffer& VertexBuffer)
 {
 	Ar << VertexBuffer.Stride << VertexBuffer.NumVertices;
 
+#if BATMAN
+	// https://github.com/gildor2/UEViewer/blob/a0bfb468d42be831b126632fd8a0ae6b3614f981/Unreal/UnrealMesh/UnMesh3.cpp#L2677
+	if (Ar.LicenseeVer() >= VER_BATMAN1)
+	{
+		INT Unk18 = 1;
+		Ar << Unk18;
+	}
+#endif // BATMAN
+
 	if(Ar.IsLoading())
 	{
 		// Allocate the vertex data storage type.

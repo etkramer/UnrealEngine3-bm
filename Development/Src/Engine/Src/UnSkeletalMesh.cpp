@@ -803,6 +803,21 @@ UBOOL USkeletalMesh::IsReadyForFinishDestroy()
 	return ReleaseResourcesFence.GetNumPendingFences() == 0;
 }
 
+#if BATMAN
+struct FBoneBounds
+{
+	INT					BoneIndex;
+	// FSimpleBox
+	FVector				Min;
+	FVector				Max;
+
+	friend FArchive& operator<<(FArchive& Ar, FBoneBounds& B)
+	{
+		return Ar << B.BoneIndex << B.Min << B.Max;
+	}
+};
+#endif // BATMAN
+
 /** 
 * Serialize 
 */
@@ -811,6 +826,15 @@ void USkeletalMesh::Serialize( FArchive& Ar )
 	Super::Serialize(Ar);
 
 	Ar << Bounds;
+#if BATMAN
+	// https://github.com/gildor2/UEViewer/blob/a0bfb468d42be831b126632fd8a0ae6b3614f981/Unreal/UnrealMesh/UnMesh3.cpp#L1978
+	if (Ar.LicenseeVer() >= VER_BATMAN1)
+	{
+		float ConservativeBounds;
+		TArray<FBoneBounds> PerBoneBounds;
+		Ar << ConservativeBounds << PerBoneBounds;
+	}
+#endif // BATMAN
 	Ar << Materials;
 	Ar << Origin << RotOrigin;
 	Ar << RefSkeleton;			// Reference skeleton.

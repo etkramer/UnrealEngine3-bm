@@ -8,9 +8,7 @@
 #define PACKAGE_FILE_TAG			0x9E2A83C1
 #define PACKAGE_FILE_TAG_SWAPPED	0xC1832A9E
 
-#if GAMENAME == BMGAME
-#define BATMAN 1
-#endif
+#define BATMAN (GAMENAME == BMGAME)
 
 //
 //	Package file version log:
