@@ -1,0 +1,200 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Game names
+//
+// These are just ids given to the different game names so they can be compared against the external GAMENAME definition.
+// They don't need to match the equivalent game names in LaunchPrivate.h.
+#define EXAMPLEGAME 0
+#define UTGAME 1
+#define GEARGAME 2
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.S.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_YESNO2ALL DIALOGEX 0, 0, 275, 118
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Dialog"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "Yes",IDC_YES,25,97,50,14
+    PUSHBUTTON      "No",IDC_NO_B,141,97,50,14
+    PUSHBUTTON      "Yes to all",IDC_YESTOALL,83,97,50,14
+    PUSHBUTTON      "No to all",IDC_NOTOALL,199,97,50,14
+    LTEXT           "Static",IDC_MESSAGE,17,19,246,66
+END
+
+IDD_YESNO2ALLCANCEL DIALOGEX 0, 0, 297, 126
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Dialog"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    PUSHBUTTON      "Yes",IDC_YES,15,98,50,14
+    PUSHBUTTON      "Yes to all",IDC_YESTOALL,70,98,50,14
+    PUSHBUTTON      "No",IDC_NO_B,124,98,50,14
+    PUSHBUTTON      "No to all",IDC_NOTOALL,177,98,50,14
+    PUSHBUTTON      "Cancel",IDC_CANCEL,232,98,50,14
+    LTEXT           "Static",IDC_MESSAGE,16,14,265,66
+END
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO 
+BEGIN
+    IDD_YESNO2ALL, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 268
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 111
+    END
+
+	IDD_YESNO2ALLCANCEL, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 290
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 119
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Application Manifest
+//
+
+#if _DEBUG
+1						RT_MANIFEST				"Debug-PCLaunch.manifest"
+#else
+1						RT_MANIFEST				"PCLaunch.manifest"
+#endif
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+//IDICON_Game             ICON                    "Unreal.ico"
+
+#if GAMENAME==GEARGAME
+IDICON_GoW              ICON                    "GoW.ico"
+IDICON_Editor           ICON                    "UnrealEd.ico"
+#elif GAMENAME==UTGAME
+IDICON_UTGame           ICON                    "Envy.ico"
+IDICON_UTEditor         ICON                    "EnvyEditor.ico"
+#elif GAMENAME==EXAMPLEGAME
+IDICON_DemoGame         ICON                    "Demogame.ico"
+IDICON_DemoEditor       ICON                    "DemoEditor.ico"
+#else
+	#error Hook up your game name here
+#endif
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Bitmap
+//
+
+//WXBITMAP_STD_COLOURS    BITMAP                  "colours.bmp"
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Cursor
+//
+
+IDCUR_NODROP            CURSOR                  "nodrop.cur"
+IDCUR_MOVE              CURSOR                  "arrow.cur"
+IDCUR_COPY              CURSOR                  "arrowcop.cur"
+WXCURSOR_CROSS          CURSOR                  "crosshai.cur"
+
+#endif    // English (U.S.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/**
+ * Games for Windows Live SPA file inclusion
+ */
+#if WITH_PANORAMA
+	#if GAMENAME==GEARGAME
+		ID_SPAFILE RT_RCDATA "..\\..\\GearGame\\Live\\Gears2.spa"
+	#else
+		#error Hook up your game name here
+	#endif
+#endif
+
+/** 
+* Hash file included as raw resource in exe
+*/
+#if GAMENAME==GEARGAME
+	ID_HASHFILE RCDATA "..\\..\\..\\..\\GearGame\\Build\\Hashes.sha"
+#elif GAMENAME==UTGAME
+	ID_HASHFILE RCDATA "..\\..\\..\\..\\UTGame\\Build\\Hashes.sha"
+#elif GAMENAME==EXAMPLEGAME
+	ID_HASHFILE RCDATA "..\\..\\..\\..\\ExampleGame\\Build\\Hashes.sha"
+#endif 
+
+//#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+//#endif    // not APSTUDIO_INVOKED

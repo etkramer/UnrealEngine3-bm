@@ -1,0 +1,104 @@
+﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.50727</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{8F079097-3724-4B31-AD3B-0A5B76C26376}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>UnrealControls</RootNamespace>
+    <AssemblyName>UnrealControls</AssemblyName>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>..\..\..\Binaries\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>..\..\..\Binaries\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="ColoredDocumentLineSegment.cs" />
+    <Compile Include="DynamicTabControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="DynamicTabControl.designer.cs">
+      <DependentUpon>DynamicTabControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="DynamicTabControlMenuItem.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="DynamicTabPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="FindResult.cs" />
+    <Compile Include="MenuArrow.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="MenuArrow.designer.cs">
+      <DependentUpon>MenuArrow.cs</DependentUpon>
+    </Compile>
+    <Compile Include="OutputWindowDocument.cs" />
+    <Compile Include="OutputWindowView.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="OutputWindowView.designer.cs">
+      <DependentUpon>OutputWindowView.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <Compile Include="SerializableDictionary.cs" />
+    <Compile Include="TextLocation.cs" />
+    <Compile Include="XButton.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="XButton.designer.cs">
+      <DependentUpon>XButton.cs</DependentUpon>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="OutputWindowView.resx">
+      <DependentUpon>OutputWindowView.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="XButton.bmp" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

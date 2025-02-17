@@ -1,0 +1,192 @@
+﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <ProjectType>Local</ProjectType>
+    <ProductVersion>8.0.50727</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{23F0940E-0749-4432-BB48-445F5DCCA454}</ProjectGuid>
+    <SccProjectName>SAK</SccProjectName>
+    <SccLocalPath>SAK</SccLocalPath>
+    <SccAuxPath>SAK</SccAuxPath>
+    <SccProvider>SAK</SccProvider>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ApplicationIcon>Unreal.ico</ApplicationIcon>
+    <AssemblyKeyContainerName>
+    </AssemblyKeyContainerName>
+    <AssemblyName>UnrealFrontend</AssemblyName>
+    <AssemblyOriginatorKeyFile>
+    </AssemblyOriginatorKeyFile>
+    <DefaultClientScript>JScript</DefaultClientScript>
+    <DefaultHTMLPageLayout>Grid</DefaultHTMLPageLayout>
+    <DefaultTargetSchema>IE50</DefaultTargetSchema>
+    <DelaySign>false</DelaySign>
+    <OutputType>WinExe</OutputType>
+    <RootNamespace>UnrealFrontend</RootNamespace>
+    <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
+    <StartupObject>
+    </StartupObject>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+    <UpgradeBackupLocation>
+    </UpgradeBackupLocation>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <OutputPath>..\..\..\Binaries\</OutputPath>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+    <BaseAddress>285212672</BaseAddress>
+    <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
+    <ConfigurationOverrideFile>
+    </ConfigurationOverrideFile>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DocumentationFile>
+    </DocumentationFile>
+    <DebugSymbols>true</DebugSymbols>
+    <FileAlignment>4096</FileAlignment>
+    <NoStdLib>false</NoStdLib>
+    <NoWarn>
+    </NoWarn>
+    <Optimize>false</Optimize>
+    <RegisterForComInterop>false</RegisterForComInterop>
+    <RemoveIntegerChecks>false</RemoveIntegerChecks>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <WarningLevel>4</WarningLevel>
+    <DebugType>full</DebugType>
+    <ErrorReport>prompt</ErrorReport>
+    <UseVSHostingProcess>false</UseVSHostingProcess>
+    <PlatformTarget>x86</PlatformTarget>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <OutputPath>..\..\..\Binaries\</OutputPath>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+    <BaseAddress>285212672</BaseAddress>
+    <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
+    <ConfigurationOverrideFile>
+    </ConfigurationOverrideFile>
+    <DefineConstants>TRACE</DefineConstants>
+    <DocumentationFile>
+    </DocumentationFile>
+    <DebugSymbols>true</DebugSymbols>
+    <FileAlignment>4096</FileAlignment>
+    <NoStdLib>false</NoStdLib>
+    <NoWarn>
+    </NoWarn>
+    <Optimize>true</Optimize>
+    <RegisterForComInterop>false</RegisterForComInterop>
+    <RemoveIntegerChecks>false</RemoveIntegerChecks>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <WarningLevel>4</WarningLevel>
+    <DebugType>pdbonly</DebugType>
+    <ErrorReport>prompt</ErrorReport>
+    <UseVSHostingProcess>false</UseVSHostingProcess>
+    <PlatformTarget>x86</PlatformTarget>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System">
+      <Name>System</Name>
+    </Reference>
+    <Reference Include="System.Data">
+      <Name>System.Data</Name>
+    </Reference>
+    <Reference Include="System.Drawing">
+      <Name>System.Drawing</Name>
+    </Reference>
+    <Reference Include="System.Management" />
+    <Reference Include="System.Runtime.Remoting" />
+    <Reference Include="System.Windows.Forms">
+      <Name>System.Windows.Forms</Name>
+    </Reference>
+    <Reference Include="System.Xml">
+      <Name>System.XML</Name>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Unreal.ico" />
+    <Compile Include="AssemblyInfo.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Commandlet.cs" />
+    <Compile Include="GoW2ChaptersConfig.cs" />
+    <Compile Include="ModSelector.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ModSelector.Designer.cs">
+      <DependentUpon>ModSelector.cs</DependentUpon>
+    </Compile>
+    <Compile Include="PlatformGameBoolCollection.cs" />
+    <Compile Include="PlatformGameMapCollection.cs" />
+    <Compile Include="PlatformTargetCollection.cs" />
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <DependentUpon>Settings.settings</DependentUpon>
+    </Compile>
+    <Compile Include="Resolution.cs" />
+    <Compile Include="ReviewInis.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ReviewInis.Designer.cs">
+      <DependentUpon>ReviewInis.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Settings.cs" />
+    <Compile Include="StringQuery.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="StringQuery.Designer.cs">
+      <DependentUpon>StringQuery.cs</DependentUpon>
+    </Compile>
+    <Compile Include="TargetListViewItem.cs" />
+    <Compile Include="UnrealFrontend.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="CookerSettings.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="NamedPipe.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <EmbeddedResource Include="ModSelector.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>ModSelector.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ReviewInis.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>ReviewInis.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="StringQuery.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>StringQuery.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UnrealFrontend.resx">
+      <DependentUpon>UnrealFrontend.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="app.config" />
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ConsoleInterface\ConsoleInterface.vcproj">
+      <Project>{763D2919-71C4-4468-80A5-9339C6541556}</Project>
+      <Name>ConsoleInterface</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\UnrealConsoleRemoting\UnrealConsoleRemoting.csproj">
+      <Project>{F39D8FC7-4DEA-40F4-B7B3-28D2074E9B82}</Project>
+      <Name>UnrealConsoleRemoting</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\UnrealControls\UnrealControls.csproj">
+      <Project>{8F079097-3724-4B31-AD3B-0A5B76C26376}</Project>
+      <Name>UnrealControls</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PreBuildEvent>
+    </PreBuildEvent>
+    <PostBuildEvent>
+    </PostBuildEvent>
+  </PropertyGroup>
+</Project>

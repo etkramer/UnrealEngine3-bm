@@ -1,0 +1,19 @@
+Microsoft Visual Studio Solution File, Format Version 9.00
+# Visual Studio 2005
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Scripting", "Scripting_2005.vcproj", "{5BBC940E-834C-48D6-B1B7-E5E91440F75F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Default = Debug|Default
+		Release|Default = Release|Default
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5BBC940E-834C-48D6-B1B7-E5E91440F75F}.Debug|Default.ActiveCfg = Debug|Win32
+		{5BBC940E-834C-48D6-B1B7-E5E91440F75F}.Debug|Default.Build.0 = Debug|Win32
+		{5BBC940E-834C-48D6-B1B7-E5E91440F75F}.Release|Default.ActiveCfg = Release|Win32
+		{5BBC940E-834C-48D6-B1B7-E5E91440F75F}.Release|Default.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

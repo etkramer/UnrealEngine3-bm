@@ -1,0 +1,27 @@
+Microsoft Visual Studio Solution File, Format Version 8.00
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CustomFormat", "CustomFormat_2003.vcproj", "{E0F33662-5A24-419F-8B58-16DEAF947F3A}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfiguration) = preSolution
+		Debug = Debug
+		Debug Unicode = Debug Unicode
+		Release = Release
+		Release Unicode = Release Unicode
+	EndGlobalSection
+	GlobalSection(ProjectConfiguration) = postSolution
+		{E0F33662-5A24-419F-8B58-16DEAF947F3A}.Debug.ActiveCfg = Debug|Win32
+		{E0F33662-5A24-419F-8B58-16DEAF947F3A}.Debug.Build.0 = Debug|Win32
+		{E0F33662-5A24-419F-8B58-16DEAF947F3A}.Debug Unicode.ActiveCfg = Debug Unicode|Win32
+		{E0F33662-5A24-419F-8B58-16DEAF947F3A}.Debug Unicode.Build.0 = Debug Unicode|Win32
+		{E0F33662-5A24-419F-8B58-16DEAF947F3A}.Release.ActiveCfg = Release|Win32
+		{E0F33662-5A24-419F-8B58-16DEAF947F3A}.Release.Build.0 = Release|Win32
+		{E0F33662-5A24-419F-8B58-16DEAF947F3A}.Release Unicode.ActiveCfg = Release Unicode|Win32
+		{E0F33662-5A24-419F-8B58-16DEAF947F3A}.Release Unicode.Build.0 = Release Unicode|Win32
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+	EndGlobalSection
+	GlobalSection(ExtensibilityAddIns) = postSolution
+	EndGlobalSection
+EndGlobal

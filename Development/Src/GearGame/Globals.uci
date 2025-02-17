@@ -1,0 +1,86 @@
+/**
+ * Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
+ */
+ 
+`include ( GearGame\GearStats.uci )
+  
+`if(`isdefined(FINAL_RELEASE))
+
+/** Convenience macro for special moves debugging */
+`define DLog(msg)
+`define LogExt(msg)
+`define LogSM(msg)
+`define LogSMExt(A,msg)
+`define CamDLog(msg)
+`define AILog(text)
+`define AILog(text, category)
+`define AILog(text, category, bForce)
+`define AILog_Ext(text, category, object)
+`define DEBUGSTATE
+`define GameplayEvent(text,player,desc)
+`define GUDSLog(msg)
+`define SpeechLog(msg)
+`define LogVars(var0,var1,var2,var3,var4)
+
+`else
+
+/** Convenience macro for special moves debugging */
+`define DLog(msg)			`Log(WorldInfo.TimeSeconds @ Self @ GetStateName() $ "::" $ GetFuncName() @ `msg)
+`define LogExt(msg)			`Log("["$self@WorldInfo.TimeSeconds$":"$GetStateName()$":"$GetFuncName()$"]"@`msg)
+`define LogSM(msg)			`Log(WorldInfo.TimeSeconds @ Self @ GetStateName() $ "::" $ GetFuncName() @ `msg,, 'SpecialMoves')
+`define LogSMExt(A,msg)		`Log(`A.WorldInfo.TimeSeconds @ `A @ `A.GetStateName() $ "::" $ `A.GetFuncName() @ `msg,, 'SpecialMoves')
+`define CamDLog(msg)        `Log("[" $ WorldInfo.TimeSeconds $ "]" @ `msg,bCamDebug)
+`define AILog(text)             AILog_Internal(`text)
+`define AILog(text, category)   AILog_Internal(`text,`category)
+`define AILog(text, category, bForce)   AILog_Internal(`text,`category,`bForce)
+`define AILog_Ext(text, category, object)  if( `object != None ) { `object.AILog_Internal(`text,`category); }
+`define DEBUGSTATE              extends DEBUGSTATE
+`define GameplayEvent(text,player,desc)       if (GearGame(WorldInfo.Game) != None && Role == ROLE_Authority) { GearGame(WorldInfo.Game).LogGameplayEvent(`text,`player,`desc); }
+
+`define GUDSLog(msg)			`Log("GUDS [" $ WorldInfo.TimeSeconds $ "]"@`msg,bDebugGUDEvents)
+`define SpeechLog(msg)			`Log(self@"Speech [" $ WorldInfo.TimeSeconds $ "]"@`msg,bDebugSpeech)
+`define LogVars(var0,var1,var2,var3,var4)      `Log("[" $ WorldInfo.TimeSeconds $ "]" \
+														@"`var0="$`var0		\
+														`if(`var1)@"`var1="$`var1`endif		\
+														`if(`var2)@"`var2="$`var2`endif		\
+														`if(`var3)@"`var3="$`var3`endif		\
+														`if(`var4)@"`var4="$`var4`endif		\
+														)
+`endif
+
+/** stats logging macro */
+`if(FALSE)
+        `define DEBUGSTATS(text)              `LogExt(`text)
+`else
+        `define DEBUGSTATS(text)
+`endif
+
+/** Tutorial logging macro */
+`if(FALSE)
+	`define DEBUGTUTORIAL(text)		`Log("TUTORIAL"@`text)
+`else
+	`define DEBUGTUTORIAL(text)
+`endif
+
+/** MP logging macro */
+`if(FALSE)
+	`define DEBUGMP(text)		`Log("MP:"@`text)
+`else
+	`define DEBUGMP(text)
+`endif
+
+
+/** === UI macros === */
+
+/** the index of the player that is considered the alpha player */
+`define		PRIMARY_PLAYER_INDEX	0
+
+/** the maximum number of split-screen players supported */
+`define		MAX_SPLITSCREEN_PLAYERS	2
+
+/** the name of the map used for streaming in campaign levels */
+`define		CAMPAIGN_ENTRY_LEVEL	"GearGame_P"
+
+/** the markup to use for navigation icons in the front-end */
+`define	NavigationMarkup_NewStuff	"<Styles:Xbox360Font>-<Styles:/>"
+`define NavigationMarkup_Complete	"<Styles:Xbox360Font>g<Styles:/>"

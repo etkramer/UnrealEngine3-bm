@@ -1,0 +1,23 @@
+HKCR
+{
+	UCDebuggerSDK.Engine.1 = s 'Engine Class'
+	{
+		CLSID = s '{9195946B-D25F-4001-8C20-B22A743013C7}'
+	}
+	UCDebuggerSDK.Engine = s 'Engine Class'
+	{
+		CLSID = s '{9195946B-D25F-4001-8C20-B22A743013C7}'
+		CurVer = s 'UCDebuggerSDK.Engine.1'
+	}
+	NoRemove CLSID
+	{
+		ForceRemove {9195946B-D25F-4001-8C20-B22A743013C7} = s 'Engine Class'
+		{
+			ProgID = s 'UCDebuggerSDK.Engine.1'
+			VersionIndependentProgID = s 'UCDebuggerSDK.Engine'
+			LocalServer32 = s '%MODULE%'
+			val AppID = s '%APPID%'
+			'TypeLib' = s '{CF7ADF3E-7899-4c95-8E38-0B9417AA7D84}'
+		}
+	}
+}

@@ -1,0 +1,29 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 9.00
+# Visual Studio 2005
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FxXSI", "FxXSI_vs8.vcproj", "{9B540342-A81D-494B-BBF8-A524BAE95EE4}"
+	ProjectSection(ProjectDependencies) = postProject
+		{83FC6FD6-1C61-4CD2-862D-25F1F1179F07} = {83FC6FD6-1C61-4CD2-862D-25F1F1179F07}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FxToolBase_vs8", "..\FxToolBase\FxToolBase_vs8.vcproj", "{83FC6FD6-1C61-4CD2-862D-25F1F1179F07}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug XSI 6.5 Unreal|Win32 = Debug XSI 6.5 Unreal|Win32
+		Release XSI 6.5 Unreal|Win32 = Release XSI 6.5 Unreal|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9B540342-A81D-494B-BBF8-A524BAE95EE4}.Debug XSI 6.5 Unreal|Win32.ActiveCfg = Debug XSI 6.5 Unreal|Win32
+		{9B540342-A81D-494B-BBF8-A524BAE95EE4}.Debug XSI 6.5 Unreal|Win32.Build.0 = Debug XSI 6.5 Unreal|Win32
+		{9B540342-A81D-494B-BBF8-A524BAE95EE4}.Release XSI 6.5 Unreal|Win32.ActiveCfg = Release XSI 6.5 Unreal|Win32
+		{9B540342-A81D-494B-BBF8-A524BAE95EE4}.Release XSI 6.5 Unreal|Win32.Build.0 = Release XSI 6.5 Unreal|Win32
+		{83FC6FD6-1C61-4CD2-862D-25F1F1179F07}.Debug XSI 6.5 Unreal|Win32.ActiveCfg = Unreal Debug|Win32
+		{83FC6FD6-1C61-4CD2-862D-25F1F1179F07}.Debug XSI 6.5 Unreal|Win32.Build.0 = Unreal Debug|Win32
+		{83FC6FD6-1C61-4CD2-862D-25F1F1179F07}.Release XSI 6.5 Unreal|Win32.ActiveCfg = Unreal Release|Win32
+		{83FC6FD6-1C61-4CD2-862D-25F1F1179F07}.Release XSI 6.5 Unreal|Win32.Build.0 = Unreal Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,171 @@
+checkerrors
+ignorewarnings
+
+triggeraddress 
+failaddress
+successaddress
+
+status Syncing to original source
+dependency #LatestPublishedGearXenonBuild_%DatabaseParameter%
+define 
+sync
+
+Game Gear
+
+clean
+preheatmapoven
+
+Platform Xenon
+timeout 120
+
+status Getting cooked build from \\prop-01\Builds\Gear\Xenon
+define %DatabaseParameter%
+language INT
+GetCookedBuild \\prop-01\Builds\Gear\Xenon
+
+language FRA
+GetCookedLanguage \\prop-01\Builds\Gear\Xenon
+
+language ITA
+GetCookedLanguage \\prop-01\Builds\Gear\Xenon
+
+language DEU
+GetCookedLanguage \\prop-01\Builds\Gear\Xenon
+
+language ESN
+GetCookedLanguage \\prop-01\Builds\Gear\Xenon
+
+language ESM
+GetCookedLanguage \\prop-01\Builds\Gear\Xenon
+
+language INT
+
+// ---------------------------------------------
+
+buildconfig Release
+timeout 45
+
+status Creating hashes and signing inis
+scriptconfig %DatabaseParameter%
+checkout GearGame\Build\hashes.sha
+createhashes
+
+// ---------------------------------------------
+
+timeout 15
+
+buildconfig Release
+msbuild UnrealBuildTool/UnrealBuildTool.csproj
+
+status	Building Xenon release executables
+buildconfig Release
+checkoutgame Gear
+unrealbuild
+
+status	Building Xenon shipping executables
+buildconfig Shipping
+checkoutgame Gear
+unrealbuild
+
+status	Building Xenon shipping-debug executables
+buildconfig Shipping-Debug
+checkoutgame Gear
+unrealbuild
+
+status	Updating source and symbol server
+getengineversion
+updatesymbolserver
+
+// ---------------------------------------------
+
+Status Creating NA layout
+
+languages INT FRA ESM
+checkoutlayout
+CreateDVDLayout 
+
+status Publishing NA build
+define NA
+languageagnostic
+
+language FRA
+publishlayoutlanguage \\prop-01\Builds\Gear\Xenon
+language ESM
+publishlayoutlanguage \\prop-01\Builds\Gear\Xenon
+
+language INT
+publishlayout \\prop-01\Builds\Gear\Xenon
+
+language FRA
+publishlayoutlanguage \\file-01\GearsBuilds\Xenon
+language ESM
+publishlayoutlanguage \\file-01\GearsBuilds\Xenon
+
+language INT
+publishlayout \\file-01\GearsBuilds\Xenon
+
+// ---------------------------------------------
+
+Status Creating NEURO layout
+
+languages INT FRA DEU
+checkoutlayout
+CreateDVDLayout 
+
+status Publishing NEURO build
+define NEURO
+languageagnostic
+
+language FRA
+publishlayoutlanguage \\prop-01\Builds\Gear\Xenon
+language DEU
+publishlayoutlanguage \\prop-01\Builds\Gear\Xenon
+
+language INT
+publishlayout \\prop-01\Builds\Gear\Xenon
+
+language FRA
+publishlayoutlanguage \\file-01\GearsBuilds\Xenon
+language DEU
+publishlayoutlanguage \\file-01\GearsBuilds\Xenon
+
+language INT
+publishlayout \\file-01\GearsBuilds\Xenon
+
+// ---------------------------------------------
+
+Status Creating SEURO layout
+
+languages INT ITA ESN
+checkoutlayout
+CreateDVDLayout 
+
+status Publishing SEURO build
+define SEURO
+languageagnostic
+
+language ITA
+publishlayoutlanguage \\prop-01\Builds\Gear\Xenon
+language ESN
+publishlayoutlanguage \\prop-01\Builds\Gear\Xenon
+
+language INT
+publishlayout \\prop-01\Builds\Gear\Xenon
+
+language ITA
+publishlayoutlanguage \\file-01\GearsBuilds\Xenon
+language ESN
+publishlayoutlanguage \\file-01\GearsBuilds\Xenon
+
+language INT
+publishlayout \\file-01\GearsBuilds\Xenon
+
+// ---------------------------------------------
+
+status Submitting layout and hash files
+submit
+
+checkout GearGame\Build\hashes.sha
+renamecopy GearGame\Build\hashesnull.sha GearGame\Build\hashes.sha
+submit
+

@@ -1,0 +1,25 @@
+Microsoft Visual Studio Solution File, Format Version 9.00
+# Visual Studio 2005
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dualmode", "dualmode.vcproj", "{532DA3F9-2039-44AA-9E9C-FE5DA455BDFE}"
+EndProject
+Global
+	GlobalSection(SourceCodeControl) = preSolution
+		SccNumberOfProjects = 2
+		SccLocalPath0 = .
+		SccProjectUniqueName1 = dualmode.vcproj
+		SccLocalPath1 = .
+	EndGlobalSection
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{532DA3F9-2039-44AA-9E9C-FE5DA455BDFE}.Debug|Win32.ActiveCfg = Debug|Win32
+		{532DA3F9-2039-44AA-9E9C-FE5DA455BDFE}.Debug|Win32.Build.0 = Debug|Win32
+		{532DA3F9-2039-44AA-9E9C-FE5DA455BDFE}.Release|Win32.ActiveCfg = Release|Win32
+		{532DA3F9-2039-44AA-9E9C-FE5DA455BDFE}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

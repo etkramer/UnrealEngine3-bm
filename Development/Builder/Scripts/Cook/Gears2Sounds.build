@@ -1,0 +1,124 @@
+status Cooking all sounds for Gears2
+platform PC
+buildconfig Release
+
+triggeraddress mike.larson@epicgames.com
+failaddress mike.larson@epicgames.com
+successaddress mike.larson@epicgames.com
+
+dependency #LatestApprovedBuild
+
+Game Gear
+
+Status Syncing to latest sound files
+artistsync
+
+timeout 60
+
+languages %Language%
+language %Language%
+
+status Recooking sounds for Anya
+checkoutdialog Gear Human_Anya_Chatter
+checkoutdialog Gear Human_Anya_Dialog
+CookSounds Human_Anya_Chatter Human_Anya_Dialog
+
+status Recooking sounds for Baird
+checkoutdialog Gear Human_Baird_Chatter
+checkoutdialog Gear Human_Baird_Dialog
+CookSounds Human_Baird_Chatter Human_Baird_Dialog
+
+status Recooking sounds for BCarmine
+checkoutdialog Gear Human_BCarmine_Chatter
+checkoutdialog Gear Human_BCarmine_Dialog
+CookSounds Human_BCarmine_Chatter Human_BCarmine_Dialog
+
+status Recooking sounds for Chaps
+checkoutdialog Gear Human_Chaps_Chatter
+checkoutdialog Gear Human_Chaps_Dialog
+CookSounds Human_Chaps_Chatter Human_Chaps_Dialog
+
+status Recooking sounds for Dizzy
+checkoutdialog Gear Human_Dizzy_Chatter
+checkoutdialog Gear Human_Dizzy_Dialog
+CookSounds Human_Dizzy_Chatter Human_Dizzy_Dialog
+
+status Recooking sounds for Dom
+checkoutdialog Gear Human_Dom_Chatter
+checkoutdialog Gear Human_Dom_Dialog
+CookSounds Human_Dom_Chatter Human_Dom_Dialog
+
+status Recooking sounds for Franklin
+checkoutdialog Gear Human_Franklin_Chatter
+checkoutdialog Gear Human_Franklin_Dialog
+CookSounds Human_Franklin_Chatter Human_Franklin_Dialog
+
+status Recooking sounds for Gus
+checkoutdialog Gear Human_Gus_Chatter
+checkoutdialog Gear Human_Gus_Dialog
+CookSounds Human_Gus_Chatter Human_Gus_Dialog
+
+status Recooking sounds for Hoffman
+checkoutdialog Gear Human_Hoffman_Chatter
+checkoutdialog Gear Human_Hoffman_Dialog
+CookSounds Human_Hoffman_Chatter Human_Hoffman_Dialog
+
+status Recooking sounds for Marcus
+checkoutdialog Gear Human_Marcus_Chatter
+checkoutdialog Gear Human_Marcus_Dialog
+CookSounds Human_Marcus_Chatter Human_Marcus_Dialog
+
+status Recooking sounds for Myrrah
+checkoutdialog Gear Human_Myrrah_Chatter
+checkoutdialog Gear Human_Myrrah_Dialog
+CookSounds Human_Myrrah_Chatter Human_Myrrah_Dialog
+
+status Recooking sounds for Tai
+checkoutdialog Gear Human_Tai_Chatter
+checkoutdialog Gear Human_Tai_Dialog
+CookSounds Human_Tai_Chatter Human_Tai_Dialog
+
+status Recooking sounds for Drunk
+checkoutdialog Gear Human_Drunk_Chatter
+CookSounds Human_Drunk_Chatter
+
+status Recooking sounds for Henny
+checkoutdialog Gear Human_Henny_Dialog
+CookSounds Human_Henny_Dialog
+
+status Recooking sounds for Maria
+checkoutdialog Gear Human_Maria_Dialog
+CookSounds Human_Maria_Dialog
+
+status Recooking sounds for Mihn
+checkoutdialog Gear Human_Mihn_Chatter
+CookSounds Human_Mihn_Chatter
+
+status Recooking sounds for Misc
+checkoutdialog Gear Human_Miscellaneous_Dialog
+CookSounds Human_Miscellaneous_Dialog
+
+status Recooking sounds for Prescott
+checkoutdialog Gear Human_Prescott_Dialog
+CookSounds Human_Prescott_Dialog
+
+status Recooking sounds for Stranded
+checkoutdialog Gear Human_Stranded_Chatter
+CookSounds Human_Stranded_Chatter
+
+status Recooking sounds for Boomer
+checkoutdialog Gear Locust_Boomer1_Chatter
+checkoutdialog Gear Locust_Boomer2_Chatter
+checkoutdialog Gear Locust_Boomer_Chatter
+CookSounds Locust_Boomer1_Chatter Locust_Boomer2_Chatter Locust_Boomer_Chatter
+
+status Recooking sounds for Locust
+checkoutdialog Gear Locust_Drone_Chatter
+checkoutdialog Gear Locust_Kantus_Chatter
+checkoutdialog Gear Locust_Raam_Chatter
+checkoutdialog Gear Locust_Skorge_Chatter
+checkoutdialog Gear Locust_Theron_Chatter
+CookSounds Locust_Drone_Chatter Locust_Kantus_Chatter Locust_Raam_Chatter Locust_Skorge_Chatter Locust_Theron_Chatter
+
+status Submitting recooked files
+submit

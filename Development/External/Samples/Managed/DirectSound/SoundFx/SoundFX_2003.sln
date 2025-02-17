@@ -1,0 +1,21 @@
+Microsoft Visual Studio Solution File, Format Version 8.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SoundFX_2003", "SoundFX_2003.csproj", "{88850650-925A-4E90-8D04-A95F4A2478EA}"
+EndProject
+Global
+	GlobalSection(SolutionConfiguration) = preSolution
+		ConfigName.0 = Debug
+		ConfigName.1 = Release
+	EndGlobalSection
+	GlobalSection(ProjectDependencies) = postSolution
+	EndGlobalSection
+	GlobalSection(ProjectConfiguration) = postSolution
+		{88850650-925A-4E90-8D04-A95F4A2478EA}.Debug.ActiveCfg = Debug|.NET
+		{88850650-925A-4E90-8D04-A95F4A2478EA}.Debug.Build.0 = Debug|.NET
+		{88850650-925A-4E90-8D04-A95F4A2478EA}.Release.ActiveCfg = Release|.NET
+		{88850650-925A-4E90-8D04-A95F4A2478EA}.Release.Build.0 = Release|.NET
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+	EndGlobalSection
+	GlobalSection(ExtensibilityAddIns) = postSolution
+	EndGlobalSection
+EndGlobal

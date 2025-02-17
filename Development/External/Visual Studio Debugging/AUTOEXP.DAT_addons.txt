@@ -1,0 +1,342 @@
+[AutoExpand]
+
+; Unreal Engine
+FFontCharacter=X=<USize>,V=<VSize>
+FGuid=<A,X>,<B,X>,<C,X>,<D,X>
+
+
+[Visualizer]
+
+;------------------------------------------------------------------------------
+;	Unreal Engine classes
+;------------------------------------------------------------------------------
+
+FName{
+	preview
+	(
+		#if(($e.Index) < ($e.Names.ArrayNum))
+		(
+			#if(($e.Index) >= 0)
+			(
+				#if(($e.Number) > 0)
+				(
+					#if(((((FNameEntry**)$e.Names.AllocatorInstance.Data)[$e.Index])->Index) & 1)
+					(
+						#([(((FNameEntry**)$e.Names.AllocatorInstance.Data)[$e.Index])->UniName, su], "_", $e.Number-1)
+					)
+					#else
+					(
+						#([(((FNameEntry**)$e.Names.AllocatorInstance.Data)[$e.Index])->AnsiName, s], "_", $e.Number-1)
+					)
+				)
+				#else
+				(
+					#if(((((FNameEntry**)$e.Names.AllocatorInstance.Data)[$e.Index])->Index) & 1)
+					(
+						#([(((FNameEntry**)$e.Names.AllocatorInstance.Data)[$e.Index])->UniName, su])
+					)
+					#else
+					(
+						#([(((FNameEntry**)$e.Names.AllocatorInstance.Data)[$e.Index])->AnsiName, s])
+					)
+				)
+			)
+			#else
+			(
+				"Invalid"
+			)
+		)
+		#else
+		(
+			"Invalid"
+		)
+	)
+}
+
+TArray<*,*>|TArrayNoInit<*,*>{
+	preview
+	(
+		#if(($c.ArrayNum) >= 0)
+		(
+			#if(($c.ArrayNum) == 0)
+			(
+				"Empty"
+			)
+			#else
+			(
+				#if(($c.ArrayNum) <= ($c.ArrayMax))
+				(
+					#("Num=", $c.ArrayNum)
+				)
+				#else
+				(
+					"Invalid"
+				)
+			)
+		)
+		#else
+		(
+			"Invalid"
+		)
+	)
+	children
+	(
+		#(
+			#if(($c.ArrayNum) >= 0)
+			(
+				#if(($c.ArrayNum) <= ($c.ArrayMax))
+				(
+					#if(($c.ArrayNum) > 0)
+					(
+						#array 
+						(
+							expr: *(($T1 *)$c.AllocatorInstance.Data + $i),
+							size: $c.ArrayNum
+						)
+					)
+				)
+			),
+			#([Members]: [$c,!])
+		)
+	)
+}
+
+TBitArray<*>{
+	preview
+	(
+		#($c.NumBits, " / ", $c.MaxBits)
+	)
+	children
+	(
+		#(
+			#if(($c.NumBits >= 0) && ($c.NumBits <= $c.MaxBits))
+			(
+				#if($c.SecondaryData.Data != 0)
+				(
+					#array
+					(
+						expr: (((unsigned long*)$c.SecondaryData.Data)[$i / 32] >> ($i % 32)),
+						size: $c.NumBits
+					) : (bool)($e & 1)
+				)
+				#else
+				(
+					#array
+					(
+						expr: (((unsigned long*)$c.InlineData)[$i / 32] >> ($i % 32)),
+						size: $c.NumBits
+					) : (bool)($e & 1)
+				)
+			)
+			#else
+			(
+				"Invalid"
+			),
+			#([Members]: [$c,!])
+		)
+	)
+}
+
+TSparseArray<*,*>{
+	children
+	(
+		#(
+			#if($c.Data.ArrayNum >= 0 && $c.Data.ArrayNum <= $c.Data.ArrayMax)
+			(
+				#if(($c.Data.ArrayNum) > 0)
+				(
+					#array 
+					(
+						expr: ((($T1 *)$c.Data.AllocatorInstance.Data)[$i]),
+						size: $c.Data.ArrayNum
+					)
+				)
+			),
+			#([Members]: [$c,!])
+		)
+	)
+}
+
+TSet<*,*,*>::FElement{
+	preview 
+	(
+		#($c.Value)
+	)
+}
+
+TMapBase<*,*,*,*>::FPair{
+	preview 
+	(
+		#("(", $c.Key, ", ", $c.Value, ")")
+	)
+}
+
+TMapBase<*,*,*,*>{
+	preview
+	(
+		#if(($c.Pairs.Elements.Data.ArrayNum) > 0)
+		(
+			#if(($c.Pairs.Elements.Data.ArrayNum) <= ($c.Pairs.Elements.Data.ArrayMax))
+			(
+				#("Num=", $c.Pairs.Elements.Data.ArrayNum)
+			)
+			#else
+			(
+				"Invalid"
+			)
+		)
+		#else
+		(
+			"Empty"
+		)
+	)
+	
+	children
+	(
+		#(
+			#if(($c.Pairs.Elements.Data.ArrayNum) > 0)
+			(
+				#if(($c.Pairs.Elements.Data.ArrayNum) <= ($c.Pairs.Elements.Data.ArrayMax))
+				(
+					#array
+					(
+						expr: ((TSet<TMapBase<$T1,$T2,$T3,$T4>::FPair,TMapBase<$T1,$T2,$T3,$T4>::KeyFuncs,$T4>::FElement *)$c.Pairs.Elements.Data.AllocatorInstance.Data + $i)->Value,
+						size: $c.Pairs.Elements.Data.ArrayNum
+					)
+				)
+				#else
+				(
+					"Invalid"
+				)
+			)
+			#else
+			(
+				"Empty"
+			),
+			#([Members]: [$c,!])
+		)
+	)
+}
+
+TMap<*,*,*>{
+	preview
+	(
+		#if(($c.Pairs.Elements.Data.ArrayNum) > 0)
+		(
+			#if(($c.Pairs.Elements.Data.ArrayNum) <= ($c.Pairs.Elements.Data.ArrayMax))
+			(
+				#("Num=", $c.Pairs.Elements.Data.ArrayNum)
+			)
+			#else
+			(
+				"Invalid"
+			)
+		)
+		#else
+		(
+			"Empty"
+		)
+	)
+	
+	children
+	(
+		#(
+			#if(($c.Pairs.Elements.Data.ArrayNum) > 0)
+			(
+				#if(($c.Pairs.Elements.Data.ArrayNum) <= ($c.Pairs.Elements.Data.ArrayMax))
+				(
+					#array
+					(
+						expr: ((TSet<TMapBase<$T1,$T2,0,$T3>::FPair,TMapBase<$T1,$T2,0,$T3>::KeyFuncs,$T3>::FElement *)$c.Pairs.Elements.Data.AllocatorInstance.Data + $i)->Value,
+						size: $c.Pairs.Elements.Data.ArrayNum
+					)
+				)
+				#else
+				(
+					"Invalid"
+				)
+			)
+			#else
+			(
+				"Empty"
+			),
+			[Members]: [$c,!]
+		)
+	)
+}
+
+TMultiMap<*,*,*>{
+	preview
+	(
+		#if(($c.Pairs.Elements.Data.ArrayNum) > 0)
+		(
+			#if(($c.Pairs.Elements.Data.ArrayNum) <= ($c.Pairs.Elements.Data.ArrayMax))
+			(
+				#("Num=", $c.Pairs.Elements.Data.ArrayNum)
+			)
+			#else
+			(
+				"Invalid"
+			)
+		)
+		#else
+		(
+			"Empty"
+		)
+	)
+	
+	children
+	(
+		#(
+			#if(($c.Pairs.Elements.Data.ArrayNum) > 0)
+			(
+				#if(($c.Pairs.Elements.Data.ArrayNum) <= ($c.Pairs.Elements.Data.ArrayMax))
+				(
+					#array
+					(
+						expr: ((TSet<TMapBase<$T1,$T2,1,$T3>::FPair,TMapBase<$T1,$T2,1,$T3>::KeyFuncs,$T3>::FElement *)$c.Pairs.Elements.Data.AllocatorInstance.Data + $i)->Value,
+						size: $c.Pairs.Elements.Data.ArrayNum
+					)
+				)
+				#else
+				(
+					"Invalid"
+				)
+			)
+			#else
+			(
+				"Empty"
+			),
+			[Members]: [$c,!]
+		)
+	)
+}
+
+TDoubleLinkedList<*>|FEditPropertyChain{
+	children
+	(
+		#list
+		(
+			head: $c.HeadNode,
+			next: NextNode,
+			size: $c.ListSize
+		) : $e.Value
+	)
+}
+
+FString|FStringNoInit|FStringOutputDevice|FFilename{
+	preview
+	( 
+		#if((($e.ArrayNum) <= ($e.ArrayMax)) && (($e.ArrayNum) >= 0))
+		(
+			#([$e.AllocatorInstance.Data,su], " (Len=", ($e.ArrayNum - 1), ")") 
+		)
+		#else ( "Invalid" )
+	)
+	
+	stringview
+	( 
+		#if((($e.ArrayNum) <= ($e.ArrayMax)) && (($e.ArrayNum) >= 0)) ( [$e.AllocatorInstance.Data,sub] )
+		#else ( "Invalid" )
+	)
+}

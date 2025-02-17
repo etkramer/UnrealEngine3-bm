@@ -1,0 +1,155 @@
+// Cooks all Gear maps for Xenon
+
+watchstart Gears2Cook_Xenon
+
+checkerrors
+ignorewarnings
+
+failaddress joe.graf@epicgames.com;jeff.farris@epicgames.com
+successaddress gears-coders@epicgames.com
+
+report Gear GearMaps GearContent Engine Xenon
+
+dependency #LatestBuild
+
+trigger Cook Xenon (Gears2) {FRA} %DatabaseParameter%
+trigger Cook Xenon (Gears2) {DEU} %DatabaseParameter%
+trigger Cook Xenon (Gears2) {ITA} %DatabaseParameter%
+trigger Cook Xenon (Gears2) {ESN} %DatabaseParameter%
+trigger Cook Xenon (Gears2) {ESM} %DatabaseParameter%
+
+status	Syncing to latest build
+sync
+
+Game Gear
+platform Xenon
+scriptconfig %DatabaseParameter%
+preheatmapoven
+
+timeout 30
+
+define %DatabaseParameter%
+languageagnostic
+
+Status Cooking text only INT
+language INT
+cookmaps GearStart
+
+Status Cooking text only POL
+language POL
+cookmaps GearStart
+
+Status Cooking text only HUN
+language HUN
+cookmaps GearStart
+
+Status Cooking text only CZE
+language CZE
+cookmaps GearStart
+
+Status Cooking text only RUS
+language RUS
+cookmaps GearStart
+
+Status Cooking text only KOR
+language KOR
+cookmaps GearStart
+
+Status Cooking text only CHT
+language CHT
+cookmaps GearStart
+
+timeout 240
+language INT
+
+Status Cook SP maps 1/5
+cookmaps SP_Hospital_P SP_Assault_P SP_Nexis_P SP_Tunnels_P
+
+Status Cook SP maps 2/5
+cookmaps SP_Landown_P SP_Intervention_P SP_Intervention_Outro_P SP_Palace_P SP_Escape_P
+
+Status Cook SP maps 3/5
+cookmaps SP_Rescue_P SP_Riftworm_P SP_Riftworm_Cine_Outro_P SP_Cavern_P SP_Forest_P 
+
+Status Cook SP maps 4/5
+cookmaps SP_Outpost_P SP_MountKadar_P SP_Hydra_P SP_JacintoIntro_P SP_Jacinto_P
+
+Status Cook SP maps 5/5
+cookmaps SP_Leviathan_P SP_Maria_P SP_Sinkhole_P SP_Closure_P
+
+Status Cook cinematics
+cookmaps SP_HospitalIntro_P SP_AssaultIntro_P SP_Credits_P
+
+Status Cook MP maps 1/2
+cookmaps MP_Avalanche MP_BloodDrive MP_Hail MP_Jacinto MP_Ruins 
+
+Status Cook MP maps 2/2
+cookmaps MP_Pavilion MP_River MP_Security MP_Stasis MP_DayOne MP_Training
+  
+Status Cook MP maps DLC 1/2
+cookmaps MP_Waystation MP_Highway MP_Sanctuary
+
+Status Cook MP maps DLC 2/2
+cookmaps MP_UnderHill MP_GrindYard MP_Courtyard  
+
+Status Cook MP maps Day 1 DLC
+ModName DLC1
+PreHeatDLC
+cookmaps  MP_Mansion MP_Canals MP_Trainstation MP_Gridlock MP_Subway
+Status Blasting DLC1
+blast DLC1
+
+Status Cook MP maps Combustibles DLC
+ModName DLC2
+PreHeatDLC
+cookmaps  MP_Flood MP_GoldRush MP_Fuel
+Status Blasting DLC2
+blast DLC2
+
+Status Blasting DLC100
+ModName DLC100
+PreHeatDLC
+blast GoldLancer
+
+Status Blasting DLC101
+ModName DLC101
+PreHeatDLC
+blast GoldHammerburst
+
+timeout 360
+
+Status Waiting for other cooks
+
+wait Cook Xenon (Gears2) {FRA} %DatabaseParameter%
+wait Cook Xenon (Gears2) {DEU} %DatabaseParameter%
+wait Cook Xenon (Gears2) {ITA} %DatabaseParameter%
+wait Cook Xenon (Gears2) {ESN} %DatabaseParameter%
+wait Cook Xenon (Gears2) {ESM} %DatabaseParameter%
+
+timeout 120
+
+watchstart Gears2Publish_Xenon_UnProp
+
+status Publishing to \\prop-01\Builds\Gear\Xenon
+blockonpublish
+define %DatabaseParameter%
+languageagnostic
+publish \\prop-01\Builds\Gear\Xenon
+
+watchstop
+
+watchstart Gears2Publish_Xenon_File01
+
+status Publishing to \\file-01\GearsBuilds\Xenon
+blockonpublish
+define %DatabaseParameter%
+languageagnostic
+publish \\file-01\GearsBuilds\Xenon
+
+watchstop
+
+UpdateFolder LatestPublishedGearXenonBuild_%DatabaseParameter%
+
+// trigger Create Layouts %DatabaseParameter% (Gears2)
+
+watchstop

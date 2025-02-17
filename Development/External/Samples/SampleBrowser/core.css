@@ -1,0 +1,33 @@
+BODY
+{
+	margin: 0px 0px 0px 0px;
+	background-image: url('img/core_bg.gif');
+	background-repeat: repeat-x;
+	background-color: #2B2B2B;
+}
+
+.top_right_bar
+{
+	background-image: url('img/core_top_right_bg.gif');
+	background-position: top right;
+	background-repeat: no-repeat;
+}
+
+.links
+{
+	padding-right: 10px;   
+	font: bold 8pt Tahoma, Sans-Serif;
+	color: white;
+	text-decoration: underline;
+	position: relative;
+	top: -1px;
+	cursor: hand;
+}
+
+.options
+{
+   padding: 10px 10px 0px 20px;
+   font: 10pt Tahoma, Sans-Serif;
+   color: white;
+}
+

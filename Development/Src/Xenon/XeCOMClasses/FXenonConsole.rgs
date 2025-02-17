@@ -1,0 +1,27 @@
+HKCR
+{
+	XeCOMClasses.FXenonConsole.1 = s 'FXenonConsole Class'
+	{
+		CLSID = s '{7FCB80BE-FD6B-4412-9CB8-29022EDE5EBC}'
+	}
+	XeCOMClasses.FXenonConsole = s 'FXenonConsole Class'
+	{
+		CLSID = s '{7FCB80BE-FD6B-4412-9CB8-29022EDE5EBC}'
+		CurVer = s 'XeCOMClasses.FXenonConsole.1'
+	}
+	NoRemove CLSID
+	{
+		ForceRemove {7FCB80BE-FD6B-4412-9CB8-29022EDE5EBC} = s 'FXenonConsole Class'
+		{
+			ProgID = s 'XeCOMClasses.FXenonConsole.1'
+			VersionIndependentProgID = s 'XeCOMClasses.FXenonConsole'
+			ForceRemove 'Programmable'
+			InprocServer32 = s '%MODULE%'
+			{
+				val ThreadingModel = s 'Free'
+			}
+			val AppID = s '%APPID%'
+			'TypeLib' = s '{35067A80-F0AC-4931-B60A-35ACD4AD50F3}'
+		}
+	}
+}

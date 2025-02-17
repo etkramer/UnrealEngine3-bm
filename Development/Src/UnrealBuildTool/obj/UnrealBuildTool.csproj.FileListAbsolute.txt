@@ -1,0 +1,5 @@
+I:\UnrealEngine3-gears2\Development\Src\UnrealBuildTool\obj\Release\ResolveAssemblyReference.cache
+I:\UnrealEngine3-gears2\Development\Src\UnrealBuildTool\bin\release\UnrealBuildTool.exe
+I:\UnrealEngine3-gears2\Development\Src\UnrealBuildTool\bin\release\UnrealBuildTool.pdb
+I:\UnrealEngine3-gears2\Development\Src\UnrealBuildTool\obj\Release\UnrealBuildTool.exe
+I:\UnrealEngine3-gears2\Development\Src\UnrealBuildTool\obj\Release\UnrealBuildTool.pdb

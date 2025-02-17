@@ -1,0 +1,70 @@
+<!--
+Copyright (C) 1998-2007 Epic Games, Inc. All Rights Reserved.
+-->
+
+ <project name="UE3_dailyBuilder" buildafterfailed="false">
+
+    <dateformat format="yyyy-MM-dd HH:mm:ss"/>
+
+    <listeners>
+      <currentbuildstatuslistener file="logs/${project.name}/buildstatus.txt"/>
+    </listeners>
+
+    <!-- Bootstrappers are run every time the build runs, *before* the modification checks -->
+    <bootstrappers>
+    </bootstrappers>
+
+    <!-- Defines where cruise looks for changes, to decide whether to run the build --> 
+    <modificationset> 
+        <p4 port="perforce.epicgames.net:1666" client="SWEITZER-P4-UE3-continuousIntegration-dailyBuilder" user="martin_sweitzer" view="//depot/UnrealEngine3/..."/>
+    </modificationset>
+
+    <!-- Configures the actual build loop, how often and which build file/target --> 
+    <schedule interval="60">
+
+      <ant antscript="C:\bin\ant\bin\ant.bat"
+           buildfile="UE3_dailyBuilder.xml"
+           target="build"
+           uselogger="false"
+           usedebug="false"
+           time="0300"/> 
+    </schedule>
+
+    <!-- Directory to write build logs to encoding="ISO-8859-1"--> 
+    <log dir="logs/${project.name}"> 
+       <!-- <merge dir="logs/test-results"/> -->
+       <merge dir="E:\continuousIntegration\checkout\${project.name}\UnrealEngine3\AutomatedBuildFilez" pattern="*.xml" />
+    </log>
+
+    <!-- Publishers are run *after* a build completes --> 
+    <publishers>
+
+       <currentbuildstatuspublisher file="logs/${project.name}/buildstatus.txt"/>
+
+       <artifactspublisher 
+           dir="checkout/${project.name}/UnrealEngine3/AutomatedBuildFilez"
+           dest="artifacts/${project.name}"/>
+
+       <htmlemail mailhost="apollo.epicgames.net" 
+           returnaddress="build@epicgames.com" 
+           buildresultsurl="${buildMachineURL}" 
+           skipusers="true" 
+           spamwhilebroken="true"
+           css="C:/bin/cruisecontrol/reporting/jsp/webcontent/css/cruisecontrol.css"
+           xsldir="C:/bin/cruisecontrol/reporting/jsp/webcontent/xsl" 
+           logdir="logs/${project.name}">
+   
+           <always address="msew@epicgames.com"/>
+           <!-- <always address="msew@epicgames.com"/> -->
+           <failure reportWhenFixed="true" address="msew@epicgames.com"/>
+           <!-- <failure reportWhenFixed="true" address="engine-qa@epicgames.com"/> -->
+       </htmlemail>
+
+
+       <!-- we always copy as portions of the build may be good and we also want to have history of all badness -->
+       <execute command="C:\bin\ant\bin\ant.bat -f UE3_DailyBuildArchiver.xml" />
+
+
+   </publishers>
+
+  </project> 

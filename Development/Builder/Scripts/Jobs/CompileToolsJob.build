@@ -1,0 +1,159 @@
+watchstart CompileTools
+
+checkerrors
+ignorewarnings
+
+status	Syncing to build label
+watchstart SyncBuildLabel
+sync
+watchstop
+
+platform PC
+buildconfig %JobParameter%
+
+status	Building Stats viewer
+checkout Binaries/Stats.dll
+checkout Binaries/StatsComparison.exe
+checkout Binaries/StatsThreshold.exe
+checkout Binaries/StatsViewer.exe
+msvcfull Development/Tools/StatsViewer/StatsViewer
+
+sign Binaries/Stats.dll
+sign Binaries/StatsComparison.exe
+sign Binaries/StatsThreshold.exe
+sign Binaries/StatsViewer.exe
+
+status	Building script profiler
+checkout Binaries/ueScriptProfiler.exe
+msvcfull Development/Tools/ueScriptProfiler/ueScriptProfiler
+
+sign Binaries/ueScriptProfiler.exe
+
+status	Building tools dlls
+checkout Binaries/PS3/PS3Tools.dll
+checkout Binaries/PS3/PS3Tools.pdb
+msvcfull Development/Src/PS3/PS3Tools/PS3Tools
+
+sign Binaries/PS3/PS3Tools.dll
+
+checkout Binaries/Xenon/XeTools.dll
+checkout Binaries/Xenon/XeTools.pdb
+checkout Binaries/Xenon/XeCOMClasses.dll
+checkout Binaries/Xenon/XeCOMClasses.pdb
+msvcfull Development/Src/Xenon/XeTools/XeTools
+
+sign Binaries/Xenon/XeTools.dll
+sign Binaries/Xenon/XeCOMClasses.dll
+
+checkout Binaries/Windows/WindowsTools.dll
+checkout Binaries/Windows/WindowsTools.pdb
+msvcfull Development/Src/Windows/WindowsTools/WindowsTools
+
+sign Binaries/Windows/WindowsTools.dll
+
+status	Building UnrealFrontEnd and UnrealConsole
+checkout Binaries/CookerSync.exe
+checkout Binaries/CookerSync.pdb
+checkout Binaries/ConsoleInterface.dll
+checkout Binaries/ConsoleInterface.pdb
+checkout Binaries/UnrealConsole.exe
+checkout Binaries/UnrealConsole.pdb
+checkout Binaries/UnrealFrontend.exe
+checkout Binaries/UnrealFrontend.pdb
+checkout Binaries/UnrealConsoleRemoting.dll
+checkout Binaries/UnrealConsoleRemoting.pdb
+checkout Binaries/UnrealControls.dll
+checkout Binaries/UnrealControls.pdb
+msvcfull Development/Tools/UnrealFrontend/UnrealFrontend
+
+sign Binaries/CookerSync.exe
+sign Binaries/ConsoleInterface.dll
+sign Binaries/UnrealConsole.exe
+sign Binaries/UnrealFrontend.exe
+sign Binaries/UnrealConsoleRemoting.dll
+sign Binaries/UnrealControls.dll
+
+status	Building Autoreporter
+checkout Binaries/AutoReporter.exe
+checkout Binaries/AutoReporter.pdb
+checkout Binaries/AutoReporter.XmlSerializers.dll
+msvcfull Development/Tools/Autoreporter/Autoreporter
+
+sign Binaries/AutoReporter.exe
+sign Binaries/AutoReporter.XmlSerializers.dll
+
+status Building MemoryProfiler2
+Checkout Binaries/MemoryProfiler2.exe
+Checkout Binaries/MemoryProfiler2.pdb
+Checkout Binaries/StandaloneSymbolParser.dll
+Checkout Binaries/StandaloneSymbolParser.pdb
+msvcfull Development/Tools/MemoryProfiler2/MemoryProfiler2
+
+sign Binaries/MemoryProfiler2.exe
+sign Binaries/StandaloneSymbolParser.dll
+
+status Building UnrealLoc
+Checkout Binaries/UnrealLoc.exe
+Checkout Binaries/UnrealLoc.pdb
+msvcfull Development/Tools/UnrealLoc/UnrealLoc
+
+sign Binaries/UnrealLoc.exe
+
+status Building ShaderCompilerWorker
+Checkout Binaries/UE3ShaderCompileWorker.exe
+Checkout Binaries/UE3ShaderCompileWorker.pdb
+msvcfull Development/Tools/ShaderCompileWorker/ShaderCompileWorker
+
+sign Binaries/UE3ShaderCompileWorker.exe
+
+Status Submitting all files
+submit
+
+tagfile Binaries/Stats.dll
+tagfile Binaries/StatsComparison.exe
+tagfile Binaries/StatsThreshold.exe
+tagfile Binaries/StatsViewer.exe
+
+tagfile Binaries/ueScriptProfiler.exe
+
+tagfile Binaries/PS3/PS3Tools.dll
+
+tagfile Binaries/Xenon/XeTools.dll
+tagfile Binaries/Xenon/XeCOMClasses.dll
+
+tagfile Binaries/Windows/WindowsTools.dll
+
+tagfile Binaries/CookerSync.exe
+tagfile Binaries/CookerSync.pdb
+tagfile Binaries/ConsoleInterface.dll
+tagfile Binaries/ConsoleInterface.pdb
+tagfile Binaries/UnrealConsole.exe
+tagfile Binaries/UnrealConsole.pdb
+tagfile Binaries/UnrealFrontend.exe
+tagfile Binaries/UnrealFrontend.pdb
+tagfile Binaries/UnrealConsoleRemoting.dll
+tagfile Binaries/UnrealConsoleRemoting.pdb
+tagfile Binaries/UnrealControls.dll
+tagfile Binaries/UnrealControls.pdb
+
+tagfile Binaries/AutoReporter.exe
+tagfile Binaries/AutoReporter.pdb
+tagfile Binaries/AutoReporter.XmlSerializers.dll
+
+tagfile Binaries/MemoryProfiler.exe
+tagfile Binaries/MemoryProfiler.pdb
+tagfile Binaries/StandaloneSymbolParser.dll
+tagfile Binaries/StandaloneSymbolParser.pdb
+
+tagfile Binaries/UnrealLoc.exe
+tagfile Binaries/UnrealLoc.pdb
+
+tagfile Binaries/UE3ShaderCompileWorker.exe
+tagfile Binaries/UE3ShaderCompileWorker.pdb
+
+watchstop
+
+
+
+
+

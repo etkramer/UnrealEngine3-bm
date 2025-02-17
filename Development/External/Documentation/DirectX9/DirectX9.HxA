@@ -1,0 +1,7 @@
+﻿<?xml version="1.0" encoding="utf-8" ?> 
+<!DOCTYPE HelpAttributes>
+<HelpAttributes DTDVersion="1.0">
+   <AttName Name="Product" Display="Yes" UIString="Product" AttType="Enum">
+      <AttVal Name="DirectX9" Display="Yes" UIString="DirectX 9.0" />	
+   </AttName>
+</HelpAttributes>

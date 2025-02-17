@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<xex>
+  <titleid id="0x4D53082D"/>
+  <version major="0x1" minor="0x0" 
+     build="4645"
+     qfe="0x00"
+  />
+  <section file="GearGame\Live\Gears2.spa" name="4D53082D" memory="RW"/>
+  <section file="..\..\GearGame\Build\Hashes.sha" name="HashSec" memory="RO"/>
+  <section file="..\..\GearGame\ContentServer\content.ini" name="ContSrvr" memory="RO"/>
+  <mediatypes>
+	<cd/>
+	<consolepackage/>
+	<dvdxg2/>
+	<harddisk/>
+	<livepackage/>
+	<mu/>
+	<network/>
+	<signedpackage/>
+	<usbmass/>
+  </mediatypes>
+</xex>

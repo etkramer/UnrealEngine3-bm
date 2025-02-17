@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioProject
+	ProjectType="Visual C++"
+	Version="8.00"
+	Name="Shared Win32"
+	ProjectGUID="{C46373B6-6838-4A94-B4D4-C6752EAC93D6}"
+	RootNamespace="Shared Win32"
+	Keyword="MakeFileProj"
+	>
+	<Platforms>
+		<Platform
+			Name="Win32"
+		/>
+	</Platforms>
+	<ToolFiles>
+	</ToolFiles>
+	<Configurations>
+		<Configuration
+			Name="Debug|Win32"
+			OutputDirectory="..\..\Intermediate\$(ProjectName) $(ConfigurationName)"
+			IntermediateDirectory="..\..\Intermediate\$(ProjectName) $(ConfigurationName)"
+			ConfigurationType="0"
+			>
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="@echo off"
+				ReBuildCommandLine="@cd ..&#x0D;&#x0A;@call Targets/Clean.bat $(ProjectName) $(ConfigurationName)"
+				CleanCommandLine="@cd ..&#x0D;&#x0A;@call Targets/Clean.bat $(ProjectName) $(ConfigurationName)"
+				Output="../../../Binaries/Debug-ExampleGame.exe"
+				PreprocessorDefinitions=""
+				IncludeSearchPath=""
+				ForcedIncludes=""
+				AssemblySearchPath=""
+				ForcedUsingAssemblies=""
+				CompileAsManaged=""
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release|Win32"
+			OutputDirectory="..\..\Intermediate\$(ProjectName) $(ConfigurationName)"
+			IntermediateDirectory="..\..\Intermediate\$(ProjectName) $(ConfigurationName)"
+			ConfigurationType="0"
+			>
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="@echo off"
+				ReBuildCommandLine="@cd ..&#x0D;&#x0A;@call Targets/Clean.bat $(ProjectName) $(ConfigurationName)"
+				CleanCommandLine="@cd ..&#x0D;&#x0A;@call Targets/Clean.bat $(ProjectName) $(ConfigurationName)"
+				Output="../../../Binaries/ExampleGame.exe"
+				PreprocessorDefinitions=""
+				IncludeSearchPath=""
+				ForcedIncludes=""
+				AssemblySearchPath=""
+				ForcedUsingAssemblies=""
+				CompileAsManaged=""
+			/>
+		</Configuration>
+		<Configuration
+			Name="Shipping|Win32"
+			OutputDirectory="..\..\Intermediate\$(ProjectName) $(ConfigurationName)"
+			IntermediateDirectory="..\..\Intermediate\$(ProjectName) $(ConfigurationName)"
+			ConfigurationType="0"
+			>
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="@echo off"
+				ReBuildCommandLine="@cd ..&#x0D;&#x0A;@call Targets/Clean.bat $(ProjectName) $(ConfigurationName)"
+				CleanCommandLine="@cd ..&#x0D;&#x0A;@call Targets/Clean.bat $(ProjectName) $(ConfigurationName)"
+				Output="../../../Binaries/ShippingPC-ExampleGame.exe"
+				PreprocessorDefinitions=""
+				IncludeSearchPath=""
+				ForcedIncludes=""
+				AssemblySearchPath=""
+				ForcedUsingAssemblies=""
+				CompileAsManaged=""
+			/>
+		</Configuration>
+		<Configuration
+			Name="ShippingDebugConsole|Win32"
+			OutputDirectory="..\..\Intermediate\$(ProjectName) $(ConfigurationName)"
+			IntermediateDirectory="..\..\Intermediate\$(ProjectName) $(ConfigurationName)"
+			ConfigurationType="0"
+			>
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="@echo off"
+				ReBuildCommandLine="@cd ..&#x0D;&#x0A;@call Targets/Clean.bat $(ProjectName) $(ConfigurationName)"
+				CleanCommandLine="@cd ..&#x0D;&#x0A;@call Targets/Clean.bat $(ProjectName) $(ConfigurationName)"
+				Output="../../../Binaries/ShippingPC-ExampleGame.exe"
+				PreprocessorDefinitions=""
+				IncludeSearchPath=""
+				ForcedIncludes=""
+				AssemblySearchPath=""
+				ForcedUsingAssemblies=""
+				CompileAsManaged=""
+			/>
+		</Configuration>
+	</Configurations>
+	<References>
+	</References>
+	<Files>
+	</Files>
+	<Globals>
+	</Globals>
+</VisualStudioProject>

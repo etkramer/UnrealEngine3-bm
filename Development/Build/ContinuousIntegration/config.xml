@@ -1,0 +1,137 @@
+<!--
+Copyright (C) 1998-2007 Epic Games, Inc. All Rights Reserved.
+-->
+
+<!DOCTYPE cruisecontrol [ 
+	<!ENTITY benchmarkBuilder-UTXenon SYSTEM "file:UE3_benchmarkUTFPSBuilder-XenonProject.xml">
+
+	<!ENTITY benchmarkUTFPS SYSTEM "file:UE3_benchmarkUTFPSBuilderProject.xml">
+	<!ENTITY benchmarkBuilder-UTFPS-PS3 SYSTEM "file:UE3_benchmarkUTFPSBuilderProject_PS3.xml">
+
+	<!ENTITY codeBuilder SYSTEM "file:UE3_codeBuilderProject.xml">
+
+	<!ENTITY codeBuilderPS3_SmokeTest SYSTEM "file:UE3_codeBuilderPS3_SmokeTestProject.xml">
+
+	<!ENTITY sansBuilderPS3 SYSTEM "file:UE3_sansBuilderPS3Project.xml">
+
+	<!ENTITY contentBuilder_GearGame SYSTEM "file:UE3_contentBuilderProject_GearGame.xml">
+	<!ENTITY contentBuilder_UTGame SYSTEM "file:UE3_contentBuilderProject_UTGame.xml">
+
+	<!ENTITY smoketest SYSTEM "file:UE3_smoketestBuilderProject.xml">
+        <!ENTITY smoketest_Licensee SYSTEM "file:UE3_smoketestBuilderProject_Licensee.xml">
+
+	<!ENTITY verificationBuilder SYSTEM "file:UE3_verificationBuilderProject.xml">
+	<!ENTITY verificationBuilder_CHECK_NATIVE_CLASS_SIZES SYSTEM "file:UE3_verificationBuilderProject_CHECK_NATIVE_CLASS_SIZES.xml">
+	<!ENTITY verificationBuilder_CHECK_NATIVE_MATCH SYSTEM "file:UE3_verificationBuilderProject_CHECK_NATIVE_MATCH.xml">
+	<!ENTITY verificationBuilder_CHECK_PUREVIRTUALS SYSTEM "file:UE3_verificationBuilderProject_CHECK_PUREVIRTUALS.xml">
+	<!ENTITY verificationBuilder_FINAL_RELEASE SYSTEM "file:UE3_verificationBuilderProject_FINAL_RELEASE.xml">
+	<!ENTITY verificationBuilder_KEEP_XMEM_ALLOC_STATS SYSTEM "file:UE3_verificationBuilderProject_KEEP_XMEM_ALLOC_STATS.xml">
+	<!ENTITY verificationBuilder_ProdG SYSTEM "file:UE3_verificationBuilderProject_ProdG.xml">
+	<!ENTITY verificationBuilder_SansPS3 SYSTEM "file:UE3_verificationBuilderProject_SansPS3.xml">
+	<!ENTITY verificationBuilder_SansUTPrivate SYSTEM "file:UE3_verificationBuilderProject_SansUTPrivate.xml">
+	<!ENTITY verificationBuilder_SHIPPING_PC_GAME SYSTEM "file:UE3_verificationBuilderProject_SHIPPING_PC_GAME.xml">
+	<!ENTITY verificationBuilder_USE_BINK_CODEC SYSTEM "file:UE3_verificationBuilderProject_USE_BINK_CODEC.xml">
+	<!ENTITY verificationBuilder_USE_NULL_RHI SYSTEM "file:UE3_verificationBuilderProject_USE_NULL_RHI.xml">
+	<!ENTITY verificationBuilder_WITH_COLLADA SYSTEM "file:UE3_verificationBuilderProject_WITH_COLLADA.xml">
+	<!ENTITY verificationBuilder_WITH_FACEFX SYSTEM "file:UE3_verificationBuilderProject_WITH_FACEFX.xml">
+        <!ENTITY verificationBuilder_WITH_GAMESPY SYSTEM "file:UE3_verificationBuilderProject_WITH_GAMESPY.xml">
+	<!ENTITY verificationBuilder_WITH_LZO SYSTEM "file:UE3_verificationBuilderProject_WITH_LZO.xml">
+	<!ENTITY verificationBuilder_WITH_MGS_EXTERNAL_LIBS SYSTEM "file:UE3_verificationBuilderProject_WITH_MGS_EXTERNAL_LIBS.xml">
+	<!ENTITY verificationBuilder_WITH_NOVODEX SYSTEM "file:UE3_verificationBuilderProject_WITH_NOVODEX.xml">
+	<!ENTITY verificationBuilder_WITH_SPEEDTREE SYSTEM "file:UE3_verificationBuilderProject_WITH_SPEEDTREE.xml">
+	<!ENTITY verificationBuilder_WITH_SPEECH_RECOGNITION SYSTEM "file:UE3_verificationBuilderProject_WITH_SPEECH_RECOGNITION.xml">
+	<!ENTITY verificationBuilder_WITH_TTS SYSTEM "file:UE3_verificationBuilderProject_WITH_TTS.xml">
+        <!ENTITY verificationBuilder_WITH_UE3_NETWORKING SYSTEM "file:UE3_verificationBuilderProject_WITH_UE3_NETWORKING.xml">
+]>
+
+
+<cruisecontrol>
+  <system dateformat="yyyy-MM-dd HH:mm:ss">
+    <configuration>
+      <threads count="1"/>
+    </configuration>
+  </system>
+
+  <property name="buildMachineURL" value="http://build-farm-01:8080/cruisecontrol/buildresults"/>
+  <!-- <property name="buildMachineURL" value="http://localhost:8080/cruisecontrol/buildresults"/> -->
+
+  <!-- currently not run on this mahine
+
+
+
+-->
+
+
+  <!-- all of the projects -->
+  &benchmarkBuilder-UTXenon;
+  &benchmarkUTFPS;
+  &benchmarkBuilder-UTFPS-PS3;
+  &codeBuilderPS3_SmokeTest;
+
+  &codeBuilder;
+
+  &contentBuilder_GearGame;
+  &contentBuilder_UTGame;
+
+  &sansBuilderPS3;
+
+  &smoketest;
+  &smoketest_Licensee;
+
+  &verificationBuilder_CHECK_NATIVE_CLASS_SIZES;
+  &verificationBuilder_CHECK_NATIVE_MATCH;
+  &verificationBuilder_CHECK_PUREVIRTUALS;
+  &verificationBuilder_FINAL_RELEASE;
+  &verificationBuilder_KEEP_XMEM_ALLOC_STATS;
+  &verificationBuilder_ProdG;
+  &verificationBuilder_SansPS3;
+  &verificationBuilder_SansUTPrivate;
+  &verificationBuilder_SHIPPING_PC_GAME SYSTEM;
+  &verificationBuilder_USE_BINK_CODEC;
+  &verificationBuilder_USE_NULL_RHI;
+  &verificationBuilder_WITH_COLLADA;
+  &verificationBuilder_WITH_FACEFX;
+  &verificationBuilder_WITH_GAMESPY;
+  &verificationBuilder_WITH_LZO;
+  &verificationBuilder_WITH_MGS_EXTERNAL_LIBS;
+  &verificationBuilder_WITH_NOVODEX;
+  &verificationBuilder_WITH_SPEEDTREE;
+  &verificationBuilder_WITH_SPEECH_RECOGNITION;
+  &verificationBuilder_WITH_TTS;
+  &verificationBuilder_WITH_UE3_NETWORKING;
+
+</cruisecontrol>
+
+
+
+
+
+<!--
+
+http://sourceforge.net/mailarchive/forum.php?thread_id=1325949&forum_id=2203
+
+Because the pauses are only as large as the
+ interval to check the schedule, only one build will fire during the time 
+ the builds are unpaused.  So technically,
+ the pause builders do my time schedule for me and using the multiple 
+ builds makes sure that
+ the build runs and avoids problems with syncing up the pauses and time 
+ schedule wierdnesses.
+ However, it doesn"t allow the rebuild to happen if failure occurs until 
+ the next unpaused time. 
+
+-->
+
+
+<!-- Do a daily build at 1300 -->
+
+
+<!--
+       <schedule interval="600">
+          <pause starttime="1310" endtime="1259"/>
+          <ant buildfile="cruise_build.xml" target="dist.master.build"
+          multiple="1"/>
+       </schedule>
+
+-->
+

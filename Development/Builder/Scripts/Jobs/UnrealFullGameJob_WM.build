@@ -1,0 +1,61 @@
+watchstart UnrealFullGameJob_%JobGame%_%JobPlatform%_%JobParameter%
+
+checkerrors
+ignorewarnings
+
+status	Syncing to build label
+watchstart SyncBuildLabel
+sync
+watchstop
+
+clean
+
+buildconfig Release
+msbuild UnrealBuildTool/UnrealBuildTool.csproj
+
+timeout 60
+buildconfig %JobParameter%
+
+Status	Compiling %JobGame% %JobPlatform% %JobParameter%
+
+watchstart UnrealFullGameJob_%JobGame%_%JobPlatform%_%JobParameter%
+checkoutgame %JobGame%
+Game %JobGame%
+UnrealBuild
+watchstop
+
+scriptconfig MGS_WATERMARK MGS_VINCE
+
+status	Building script for %JobGame%
+checkout %JobGame%Game/Script/*.u
+watchstart ScriptCompile_%JobGame%_%JobPlatform%_%JobParameter%
+buildscript %JobGame%
+watchstop
+
+scriptconfig final_release MGS_WATERMARK MGS_VINCE
+
+status	Building final release script for %JobGame%
+checkout %JobGame%Game/ScriptFinalRelease/*.u
+watchstart ScriptCompileFR_%JobGame%_%JobPlatform%_%JobParameter%
+buildscript %JobGame%
+watchstop
+
+status	Updating source and symbol server for %JobGame%
+watchstart UpdateSymbolServer_%JobGame%_%JobPlatform%_%JobParameter%
+getengineversion
+updatesymbolserver
+watchstop
+
+sign Binaries/%JobGame%Game.exe
+
+Status	Submitting %JobGame% %JobPlatform% %JobParameter% files
+submit
+
+Game %JobGame%
+tagexe
+
+tagfile %JobGame%Game/Script/*.u
+tagfile %JobGame%Game/ScriptFinalRelease/*.u
+
+watchstop
+

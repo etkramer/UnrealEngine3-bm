@@ -1,0 +1,37 @@
+// Clearing out cooked data
+
+clean
+
+platform PC
+game Example
+cleanup
+
+game Gear
+cleanup
+
+game UT
+cleanup
+
+platform PS3
+game Example
+cleanup
+
+game UT
+cleanup
+
+platform Xenon
+game Example
+cleanup
+
+game Gear
+cleanup
+
+game UT
+cleanup
+
+Status Syncing to head
+sync
+
+checkconsistency
+
+

@@ -1,0 +1,10 @@
+D:\Workspace\UE3\Gears2\UnrealEngine3\binaries\GameFrameworkWizard.exe
+D:\Workspace\UE3\Gears2\UnrealEngine3\Development\Tools\GameFrameworkWizard\obj\Debug\ResolveAssemblyReference.cache
+D:\Workspace\UE3\Gears2\UnrealEngine3\Development\Tools\GameFrameworkWizard\obj\Debug\WindowsApplication55.Form1.resources
+D:\Workspace\UE3\Gears2\UnrealEngine3\Development\Tools\GameFrameworkWizard\obj\Debug\GameFrameworkWizard.csproj.GenerateResource.Cache
+D:\Workspace\UE3\Gears2\UnrealEngine3\Development\Tools\GameFrameworkWizard\obj\Debug\GameFrameworkWizard.exe
+D:\Workspace\UE3\Gears2\UnrealEngine3\Development\Tools\GameFrameworkWizard\obj\Debug\GameFrameworkWizard.pdb
+D:\Workspace\UE3\Gears2\UnrealEngine3\Development\Tools\GameFrameworkWizard\obj\Release\ResolveAssemblyReference.cache
+D:\Workspace\UE3\Gears2\UnrealEngine3\Development\Tools\GameFrameworkWizard\obj\Release\WindowsApplication55.Form1.resources
+D:\Workspace\UE3\Gears2\UnrealEngine3\Development\Tools\GameFrameworkWizard\obj\Release\GameFrameworkWizard.csproj.GenerateResource.Cache
+D:\Workspace\UE3\Gears2\UnrealEngine3\Development\Tools\GameFrameworkWizard\obj\Release\GameFrameworkWizard.exe

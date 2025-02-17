@@ -1,0 +1,105 @@
+.name_installed
+{
+    padding: 0px 0px 0px 15px;
+    font: bold 13pt Tahoma, Sans-Serif;
+    text-decoration: none;
+    letter-spacing: -0.05em;
+    color: white;   
+    position: relative;
+}
+
+.name_notinstalled
+{
+    padding: 0px 0px 0px 15px;
+    font: bold 13pt Tahoma, Sans-Serif;
+    text-decoration: none;
+    letter-spacing: -0.05em;
+    color: #aaaaaa;   
+    position: relative;
+}
+
+.help
+{
+    padding-left: 35px;
+    
+    font: 10pt Tahoma, Sans-Serif;
+    color: #cccccc;
+}
+
+.dateformat
+{
+    font: bold 8pt/150% Tahoma, Sans-Serif;
+    color: #cccccc;
+}
+
+.description
+{
+    padding-right: 30px;
+    padding-left: 25px;
+    
+    font: 8pt/150% Tahoma, Sans-Serif;
+    color: #cccccc;
+    
+    position: relative;
+    top: -30px
+}
+
+.description_highlight
+{
+    padding: 0px 0px 0px 0px;
+    background-image: url('img/results_highlight.gif');
+    
+    position: relative;
+    left: 15px;
+    top: 2px;
+    z-index: -2;
+    
+    width: 100%;
+    height: 37px;
+}
+
+.language
+{
+    position: relative;
+    top: 3px
+}
+
+.difficulty
+{
+    position: relative;
+    left: -10px;
+    top: 6px;
+}
+
+.screenshot
+{
+    background-position: 0px 6px;
+    background-image: url('img/results_frame.gif');
+    background-repeat: no-repeat;
+    
+    width: 100px;
+    height: 100px
+}
+.noScreenshot
+{
+    padding-top: 19px;
+    background-position: 0px 6px;
+	background-image: url('img/results_noframe.gif');
+    background-repeat: no-repeat;
+    
+    width: 100px;
+    height: 100px
+}
+
+.links
+{
+        padding: 0px 8px 5px 0px;
+	font: bold 8pt Tahoma, Sans-Serif;
+	line-height: 150%;
+	color: #EEEECC;
+	text-decoration: underline;
+	
+	position: relative;
+	top: -35px;
+	left: 3px;
+}

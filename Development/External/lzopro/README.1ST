@@ -1,0 +1,107 @@
+============================================================================
+LZO Professional Data Compression Library
+============================================================================
+
+Author  : Markus Franz Xaver Johannes Oberhumer
+          <markus@oberhumer.com>
+          http://www.oberhumer.com/products/lzo-professional/
+Version : 2.02.20060405
+Date    : 05 Apr 2006
+
+
+Abstract
+--------
+Welcome to LZO Professional, an enhanced version of the OpenSource LZO
+Library (hereinafter "LZO Classic").
+
+LZO Professional is a true superset of LZO Classic, i.e. it contains
+the full LZO Classic library and adds a number of new implementations.
+
+LZO Professional improves all key aspects of the LZO technology:
+  * it adds new implementations of the fast compressors [faster]
+  * it adds new implementations of the decompressors    [faster]
+  * it adds new implementations of the pre-compressors  [better compression]
+
+
+Status
+------
+While LZO Professional has not been officially announced yet it is in
+heavy use by major applications for quite some time.
+
+The only missing features are an adequate documentation and Autoconf
+support for the build system.
+
+LZO Professional ships with a very exhaustive self-verfication example
+which you can run by typing something like
+  "find . -type f -print0 | xargs -0r ./selftest.out".
+
+
+Building LZO Professional
+-------------------------
+Under Unix:  type 'sh ./B/generic/build.sh' or 'sh ./B/generic/build_gcc.sh'
+
+Under Win32: type 'B\win32\vc.bat'
+
+Under Win64: type 'B\win64\vc.bat'
+
+[Autoconf scripts will be added in the future.]
+
+Some performance tips:
+  * under Win32 try Visual Studio 2005 (Visual C++ 8)
+  * under amd64 (x86_64) and i386 (x86) try gcc-3.4, which seems to produce
+    faster code than gcc-4.0 and gcc-4.1
+  * try to compile and link the LZO Professional library statically
+  * if possible, try make sure that the wrkmem pointer is aligned
+    to a page size (typically 4096)
+
+
+Using LZO Professional
+----------------------
+[This section assumes you are familiar with LZO Classic]
+
+For a quick introduction please study the file examples/simple.c.
+
+LZO Professional adds a number of new functions, all of which can be
+found in the include files <lzo/lzopro/lzo1x.h> and <lzo/lzopro/lzo1y.h>.
+
+All new functions are prefixed with "lzopro_".
+
+The fast compressors and decompressors are drop-in compatible to LZO Classic.
+
+The good pre-compressors ("lzopro_lzo1[xy]_99_compress") have a new interface
+as these require malloc/free callbacks.
+
+
+Performance Details
+-------------------
+What you can expect - a comparision to LZO Classic:
+
+- The fast compressors are about 10-20% percent faster. The real killer
+  feature, though, is the dynamic model predictor, which means that dealing
+  with incompressible data chunks is now about 2-3 times faster!
+
+- The fast decompressors are about 50%-100% percent faster (on i386). They
+  are significantly larger though, so they may not be a win on all
+  architectures.
+
+- The good pre-compressors do get very close to the theroretical limit
+  of the LZO compressed data format. In practice they can improve compression
+  ratio by about 3%-5%, which also causes an equivalent speed improvement
+  for decompression.
+
+In any case you should run your own benchmarks. Please be aware that
+LZO is _very_ fast, so issues like cache and memory speed are often
+equally important as bare CPU speed. Also, LZO Professional is highly
+dependent on various qualities of your C compiler (like the register
+allocator), so you might want to test different compiler options.
+
+
+Release History
+---------------
+Changes in 2.02.20060405 (05 Apr 2006):
+  * Minor changes to fix compilation problems on some embedded
+    systems compilers.
+
+Changes in 2.02.20051215 (15 Dec 2005):
+  * First public source code release of LZO Professional.
+

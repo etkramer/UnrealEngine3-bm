@@ -1,0 +1,21 @@
+Microsoft Visual Studio Solution File, Format Version 8.00
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CoreDetection", "CoreDetection_2003.vcproj", "{B348DA7E-121A-48C9-AAEC-FF368442B4D1}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfiguration) = preSolution
+		Debug = Debug
+		Release = Release
+	EndGlobalSection
+	GlobalSection(ProjectConfiguration) = postSolution
+		{B348DA7E-121A-48C9-AAEC-FF368442B4D1}.Debug.ActiveCfg = Debug|Win32
+		{B348DA7E-121A-48C9-AAEC-FF368442B4D1}.Debug.Build.0 = Debug|Win32
+		{B348DA7E-121A-48C9-AAEC-FF368442B4D1}.Release.ActiveCfg = Release|Win32
+		{B348DA7E-121A-48C9-AAEC-FF368442B4D1}.Release.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+	EndGlobalSection
+	GlobalSection(ExtensibilityAddIns) = postSolution
+	EndGlobalSection
+EndGlobal

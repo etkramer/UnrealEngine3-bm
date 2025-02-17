@@ -1,0 +1,29 @@
+Microsoft Visual Studio Solution File, Format Version 8.00
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WTUnrealDebuggerUC", "WTUnrealDebuggerUC.vcproj", "{22536E74-C9A5-47CB-BE45-6F193297270F}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Tst1", "TextDriver\Tst1.vcproj", "{6650F955-3B23-4A28-8213-BA3BBF272F07}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfiguration) = preSolution
+		Debug = Debug
+		Release = Release
+	EndGlobalSection
+	GlobalSection(ProjectConfiguration) = postSolution
+		{22536E74-C9A5-47CB-BE45-6F193297270F}.Debug.ActiveCfg = Debug|Win32
+		{22536E74-C9A5-47CB-BE45-6F193297270F}.Debug.Build.0 = Debug|Win32
+		{22536E74-C9A5-47CB-BE45-6F193297270F}.Release.ActiveCfg = Release|Win32
+		{22536E74-C9A5-47CB-BE45-6F193297270F}.Release.Build.0 = Release|Win32
+		{6650F955-3B23-4A28-8213-BA3BBF272F07}.Debug.ActiveCfg = Debug|Win32
+		{6650F955-3B23-4A28-8213-BA3BBF272F07}.Debug.Build.0 = Debug|Win32
+		{6650F955-3B23-4A28-8213-BA3BBF272F07}.Release.ActiveCfg = Release|Win32
+		{6650F955-3B23-4A28-8213-BA3BBF272F07}.Release.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+	EndGlobalSection
+	GlobalSection(ExtensibilityAddIns) = postSolution
+	EndGlobalSection
+EndGlobal

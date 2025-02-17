@@ -1,0 +1,178 @@
+<html xmlns:MSHelp="http://msdn.microsoft.com/mshelp" xmlns:ph="http://placeholder">
+    <head>
+        <META http-equiv="Content-Type" content="text/html; charset=Windows-1252">
+        <title>Simple2D Sample</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=Windows-1252">
+        <style>
+            p.clsInfo {margin-bottom:0px;margin-top:2px}
+            
+            span.clsWarning {display:none}
+                
+                
+            span.clsPreliminary {color:#C1C0C0}
+            span.clsLink{color:blue;cursor:pointer;}    
+        </style>
+        <xml>
+            <MSHelp:Attr Name="DocSet" Value="Xbox 360"></MSHelp:Attr>
+            <MSHelp:Attr Name="projtype" Value="XenonProj"></MSHelp:Attr>
+            <MSHelp:Attr Name="DocSet" Value="Visual C++"></MSHelp:Attr>
+            <MSHelp:Attr Name="DocSet" Value="WCSDK"></MSHelp:Attr>
+            <MSHelp:Attr Name="DocSet" Value="LHSDK"></MSHelp:Attr>
+            <MSHelp:Attr Name="DocSet" Value="PSDK"></MSHelp:Attr>
+            <MSHelp:Attr Name="HelpPriority" Value="1"></MSHelp:Attr>
+            <MSHelp:Attr Name="Locale" Value="kbEnglish"></MSHelp:Attr>
+            <MSHelp:Keyword Index="K" Term="Simple2D Sample"></MSHelp:Keyword>
+            <MSHelp:Attr Name="TopicType" Value="kbOrient"></MSHelp:Attr>
+        </xml>
+    </head>
+    <body topmargin="0">
+
+
+        <h1>Simple2D Sample</h1>
+        <p>DirectDraw APIs are no longer supported in the DirectX SDK, and therefore 
+            alternatives for high performance 2D multimedia applications are necessary. 
+            This sample shows several ways to use D3D to render 2D multimedia applications 
+            and games. This sample is structured such that the user should need only 
+            minimal knowledge of 3D graphics to begin using Direct3D for 2D applications.</p>
+        <p>The samples all utilize an immediate mode game loop. This is a game loop that 
+            updates the entire world and then renders the game as quickly as possible. 
+            However, in many 2D games, the display does not need to be rendered until the 
+            state of the game is updated (such as moving a card in a game of Solitaire). 
+            This will reduce the CPU and GPU load significantly and allow more time for 
+            background applications. Depending on the kind of application being created, a 
+            different render loop might be advantageous.</p>
+        <h2><a name="Sample Overview"></a>Sample Overview</h2>
+        <p>The Simple2D sample is divided into to source files. The simple2d.cs file uses 
+            the DirectX Managed Utility Toolkit as a framework for the 3D application. The 
+            spritecontainers.cs file contains wrapper classes that show off some common 2D 
+            operations that take advantage of the D3D Sprite class.</p>
+        <h2><a name="The D3DX Sprite class"></a>The D3DX Sprite class</h2>
+        <p>The Microsoft.DirectX.Direct3D.Sprite interface is a convenience class in 
+            (Microsoft.DirectX.Direct3DX.dll) that simplifies the process of drawing in 
+            screen coordinates. At its most basic level of usage, the sprite class has a 
+            constructor, drawing functions, and notification methods. The samples framework 
+            provides a convenient place to add notifications to the sprite (OnDeviceLost 
+            and OnDeviceReset). The most important thing to know about sprite is that it is 
+            a drawing interface, not a representation of a single on-screen sprite. The 
+            application is responsible for maintaining information about a sprite’s state; 
+            the sprite interface can only draw sprites to the backbuffer.</p>
+        <p>Sprite drawing is done between begin/end pairs. This means that for every frame 
+            that is rendered, there is a call to Sprite.Begin() and a subsequent call to 
+            Sprite.End(). Multiple calls to begin and end can be used, and is often useful 
+            when different SpriteFlags are specified on a call to Begin(). Between these 
+            calls, the application makes calls to Sprite.Draw to draw a sprite on to the 
+            screen.</p>
+        <p>Calls to Sprite.Draw() are deferred, as the actual rendering of the sprite to 
+            the back buffer is not done until Sprite.End(). This is because Sprite offers 
+            several automatic batching operations to improve performance and usability when 
+            drawing multiple times per frame. The sample shows off some different ways of 
+            calling Sprite.Begin() to take advantage of its sorting and batching 
+            functionality.</p>
+        <p>Sprite.Draw() will attempt to map texels directly to pixels. This means that a 
+            64x64 rectangle will draw to a 64x64 region in screen space. The center point 
+            is relative to the rectangle being drawn, so that specifying a center point of 
+            (32,32) would be the middle of a 64x64 sprite. This is also the point at which 
+            the sprite is transformed to its destination, so a sprite with a center of 
+            (32,32) would need a position of (32,32) to appear in the upper-left corner of 
+            the screen.</p>
+        <p>One last note about using sprites for 2D applications: the SetWorldViewLH is 
+            used when sorting and billboarding sprites. It does not change how the sprites 
+            are drawn to the screen except in those two situations. This value is not 
+            useful for changing the viewer’s eye position to the sprites – instead the 
+            sprites themselves are moved in screen coordinates. That means that any camera 
+            system developed for 2D sprites must transform the positions of the drawn 
+            sprites relative to the viewer's "eye" position.</p>
+        <h2><a name="Using Transformations"></a>Using Transformations</h2>
+        <p>Perhaps one of the most confusing issues with the Sprite class pertains to order 
+            of matrix operations. If the application scales a sprite, using 
+            Sprite.Transform, the resultant transform is applied after the translation done 
+            by Draw(). That means that when specifying a position for a transformed sprite, 
+            the position is the transformation of the original screen coordinate. A sprite 
+            scaled by a factor of (2,2) and positioned at (5,5) would actually be drawn at 
+            the screen coordinate (10,10). This can be unintuitive for the developer 
+            planning to deal purely in screen coordinates.</p>
+        <h2><a name="Using Draw2D"></a>Using Draw2D</h2>
+<pre class="clsCode">
+sprite.Draw2D(Texture texture, Rectangle srcRect, SizeF destSize, 
+                Point center,  float rotationAngle, Point position, Color color);
+</pre>
+        <p>The Managed DirectX SDK provides a Draw2D() method to make screen-coordinate 
+            transformations more intuitive. Draw2D allows the application developer to work 
+            in screen coordinates while providing a simplified interface without having to 
+            deal with transformation matrices. The Draw2D method will transform a sprite 
+            using the following steps:</p>
+            
+             
+        <OL>
+            <li>
+                The image is scaled to the size (in screen-pixels) specified by the SizeF 
+                parameter.</li>
+            <li>
+                The image is rotated about the center by the angle (in radians).  It is important
+                to not that the center point used is relative to the original image data, not the scaled center.</li>
+            <li>
+                The image is translated to the target position in screen coordinates relative 
+                to the center of the sprite (this is the scaled center point of the sprite).</li>
+        </OL>
+        <p>Of course, if drawing large number of sprites, it can still be prudent to 
+            optimize your own transformations to reduce wasted API calls. Additionally, 
+            other transformation effects (such as skewing, or changing transformation 
+            order) are more intuitive using Matrices and Sprite.Transform.</p>
+        <h2><a name="Tile Example"></a>Tile Example</h2>
+        <p>The sample provides a sample implementation of a tiling system. This shows off 
+            the display of uniformly scaled sprites as well as a visibility determination 
+            system. Tiling shows the importance of draw order when using alpha blending. In 
+            this example, no sorting is done on the draw submission, so the application is 
+            directly responsible for draw order.</p>
+        <p>Additionally, tiling shows off an important problem that can occur when scaling 
+            sprites. When “zooming” in and out of the tile view, seams can appear between 
+            tiles. This occurs because the floating point multiplication can result in a 
+            level of aliasing when converting to pixel-space. This also accounts for 
+            texture shift resulting from texels that don’t map directly to pixels. D3D uses 
+            an “upper-left” rasterization rule. In very general terms, this means that in 
+            some cases the scaling transformation will be truncated at the sub-pixel level 
+            and a seam will appear on the right or bottom edge of the sprite quads. The 
+            sample shows an example workaround that rounds the scaling pixel to the next 
+            nearest sized destination pixel. This removes any seams or distortions that 
+            might result from the scaling operation.</p>
+        <h2><a name="Moving Sprite Example"></a>Moving Sprite Example</h2>
+        <p>The MovingSprite class shows off a very simple mobile sprite that moves 
+            independently around the screen. The class draws a single texture rectangle to 
+            the screen using Sprite.Draw2D. This is the simplest way to use your own 
+            transformations for positioning, scaling, and rotating sprites.  For comparison
+            purposes, the DrawAlternate() method shows how to do the same transformations manually 
+            using the Sprite.Transform property and Matrix transformations.</p>
+        <h2><a name="Animated Sprite Example"></a>Animated Sprite Example</h2>
+        <p>Frame animation can be implemented by storing multiple frames of a 2D animation 
+            on a single texture. The AnimatedSprite class shows a simple loop that 
+            increments the frames of an animation by changing the position of the source 
+            rectangle that indicates what part of the texture is drawn to the screen.</p>
+        <p>In this example, the animation speed is throttled, meaning that synchronization 
+            is handled by only incrementing the animation frame 60 times per second. The 
+            animation is not incremented until an ample amount of time has passed, in this 
+            case, 1/60th of a second.</p>
+        <h2><a name="Canvas Example"></a>Canvas Example</h2>
+        <p>The sample provides an example of drawing directly to a texture at the pixel 
+            level. The class is an example of a 2D effect applied to the Canvas class, 
+            which is simply a wrapper for a managed texture.</p>
+        <p>A Managed pool texture is essential when making repeated calls to 
+            Texture.LockRectangle(). Default pool textures cannot be used unless created 
+            with the Usage.Dynamic flag, which is not available on all hardware. 
+            Additionally, allowing Direct3D to manage the texture greatly improves its 
+            performance.</p>
+        <p>Another important showcase is the use of an unsafe code block in the Fairy class 
+            which greatly improves performance. GraphicsBuffer serves as a way to directly 
+            access resource data without requiring the instantiation and copy to a managed 
+            array. This expensive operation also adds a deferred cost: the garbage created 
+            by multiple large managed allocations will increase the frequency of garbage 
+            collections.</p>
+       
+        <div class="footer" id="footer"><br>
+            <p class="special" style="text-align:center; margin-top:0; margin-bottom:0;"><a href="mailto:dxsdkdoc@microsoft.com?subject=Simple2D Sample">Feedback? 
+                    Please provide us with your comments on this topic.</a><br>
+                <a href="http://msdn.microsoft.com/directx/">For more help, visit the DirectX 
+                    Developer Center</a></p>
+            <br>
+            © 2005 Microsoft Corporation. All rights reserved.</div>
+    </body>
+</html>

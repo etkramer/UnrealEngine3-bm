@@ -1,0 +1,12 @@
+﻿<?xml version='1.0' encoding='utf-8'?>
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="AutoReporter.Properties" GeneratedClassName="Settings">
+  <Profiles />
+  <Settings>
+    <Setting Name="AutoReporter_RegisterReport_RegisterReport" Type="(Web Service URL)" Scope="Application">
+      <Value Profile="(Default)">http://localhost/AutoReportService/RegisterReport.asmx</Value>
+    </Setting>
+    <Setting Name="AutoReporter_ReportService_RegisterReport" Type="(Web Service URL)" Scope="Application">
+      <Value Profile="(Default)">http://crashreport/RegisterReport.asmx</Value>
+    </Setting>
+  </Settings>
+</SettingsFile>

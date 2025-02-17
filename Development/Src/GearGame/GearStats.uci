@@ -1,0 +1,64 @@
+/**
+ * Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
+ */
+
+// Global gameplay stat defines
+
+`if(`isdefined(DECLARE_STATS))
+
+const GAMEEVENT_PLAYER_LOGIN			= 1;		// player logged in
+const GAMEEVENT_PLAYER_LOGOUT			= 2;		// player looged out
+
+const GAMEEVENT_PLAYER_KILL				= 3;		// player killed another player
+const GAMEEVENT_PLAYER_KILL_EXECUTION	= 4;		// player executed a DBNO player
+const GAMEEVENT_PLAYER_KILL_HEADSHOT	= 5;		// player headshotted a player
+const GAMEEVENT_PLAYER_KILL_GIB			= 6;		// player gibbed a player
+
+const GAMEEVENT_PLAYER_DEATH			= 7;		// player died
+const GAMEEVENT_PLAYER_DEATH_EXECUTION	= 8;		// player was executed
+const GAMEEVENT_PLAYER_DEATH_BLEDOUT	= 9;		// player bled out
+const GAMEEVENT_PLAYER_DEATH_HEADSHOT	= 10;		// player was headshotted
+const GAMEEVENT_PLAYER_DEATH_GIB		= 11;		// player was gibbed
+
+const GAMEEVENT_PLAYER_SPECIALMOVE		= 12;		// player did a special move
+
+const GAMEEVENT_PLAYER_ENTEREDCOVER		= 13;		// player entered cover
+const GAMEEVENT_PLAYER_LEFTCOVER		= 14;		// player left cover
+
+const GAMEEVENT_PLAYER_KNOCKEDDOWN		= 15;		// player was knocked down (concussion)
+const GAMEEVENT_PLAYER_KNOCKEDDBNO		= 16;		// player was knocked DBNO
+
+const GAMEEVENT_PLAYER_REVIVE			= 17;		// player revived another player
+const GAMEEVENT_PLAYER_REVIVED			= 18;		// player was revived
+
+const GAMEEVENT_ROUND_BEGIN				= 19;		// new round started
+const GAMEEVENT_ROUND_END				= 20;		// round has ended
+const GAMEEVENT_MATCH_BEGIN				= 21;		// match has started
+const GAMEEVENT_MATCH_END				= 22;		// match has ended
+
+`endif
+
+`define StatId(Id)								class'GearStatsObject'.const.`Id
+
+
+// Macros for recording stats
+
+`if(`isdefined(GAMEINFO))
+	`define StatsContext		StatsObject
+	`define ValidStatsContext	(StatsObject != None)
+`else
+	`define StatsContext		GearGame(WorldInfo.Game).StatsObject
+	`define ValidStatsContext	(GearGame(WorldInfo.Game) != None && GearGame(WorldInfo.Game).StatsObject != None)
+`endif
+
+
+
+`define RecordStat(Mask,Id,Instigator,Desc,Target,Loc)	if(`ValidStatsContext){`StatsContext.LogGameplayEvent(`Mask,`Id`if(`Instigator),`Instigator`else,None`endif`if(`Desc),`Desc`else,""`endif`if(`Target),`Target`else,None`endif`if(`Loc),`Loc`else,vect(0,0,0)`endif);}
+
+// use this to start Game Event logging
+//`define RecordStat(Id,Instigator,Desc,Target,Loc)
+
+
+
+
+

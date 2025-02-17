@@ -1,0 +1,19 @@
+checkerrors
+ignorewarnings
+
+preheatmapoven
+preheatjoboven
+
+status	Syncing to latest build
+watchstart SyncLatestBuildLabel
+sync
+watchstop
+
+timeout 60
+
+status	Cooking packages
+cookpackagejob %JobParameter%
+
+status	Copying map to instigator
+// Param is share on instigator machine to copy to
+copyjobs depot

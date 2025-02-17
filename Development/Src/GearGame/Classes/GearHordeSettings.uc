@@ -1,0 +1,32 @@
+/**
+ * Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
+ */
+
+/**
+ * Holds the base configuration settings for Horde match.
+ * NOTE: This class will normally be code generated
+ */
+class GearHordeSettings extends GearVersusGameSettings;
+
+defaultproperties
+{
+	// Horde is the sub-game mode (const)
+	LocalizedSettings(1)=(Id=CONTEXT_VERSUSMODES,ValueIndex=eGEARMP_CombatTrials,AdvertisementType=ODAT_OnlineService)
+
+	/************************************************************************/
+	/* NOTE: VERY IMPORTANT!!! MUST START INDEXING AT THE END OF THE		*/
+	/*       SUPERCLASS LIST!!!!											*/
+	/************************************************************************/
+	// Horde settings that are only configurable in private matches
+	LocalizedSettings.Add((Id=CONTEXT_ENEMYDIFFICULTY,ValueIndex=CONTEXT_AIDIFFICULTY_NORMAL,AdvertisementType=ODAT_DontAdvertise))
+	LocalizedSettingsMappings.Add({
+		(Id=CONTEXT_ENEMYDIFFICULTY,Name="EnemyDifficulty",ValueMappings=(
+			(Id=CONTEXT_AIDIFFICULTY_CASUAL),
+			(Id=CONTEXT_AIDIFFICULTY_NORMAL),
+			(Id=CONTEXT_AIDIFFICULTY_HARDCORE),
+			(Id=CONTEXT_AIDIFFICULTY_INSANE)))
+		})
+
+	LocalizedSettings.Add((Id=CONTEXT_HORDE_WAVE,ValueIndex=CONTEXT_HORDE_WAVE_0,AdvertisementType=ODAT_DontAdvertise))
+	LocalizedSettingsMappings.Add((Id=CONTEXT_HORDE_WAVE,Name="HordeWave",ValueMappings=((Id=CONTEXT_HORDE_WAVE_0),(Id=CONTEXT_HORDE_WAVE_1),(Id=CONTEXT_HORDE_WAVE_2),(Id=CONTEXT_HORDE_WAVE_3),(Id=CONTEXT_HORDE_WAVE_4),(Id=CONTEXT_HORDE_WAVE_5),(Id=CONTEXT_HORDE_WAVE_6),(Id=CONTEXT_HORDE_WAVE_7),(Id=CONTEXT_HORDE_WAVE_8),(Id=CONTEXT_HORDE_WAVE_9),(Id=CONTEXT_HORDE_WAVE_10),(Id=CONTEXT_HORDE_WAVE_11),(Id=CONTEXT_HORDE_WAVE_12),(Id=CONTEXT_HORDE_WAVE_13),(Id=CONTEXT_HORDE_WAVE_14),(Id=CONTEXT_HORDE_WAVE_15),(Id=CONTEXT_HORDE_WAVE_16),(Id=CONTEXT_HORDE_WAVE_17),(Id=CONTEXT_HORDE_WAVE_18),(Id=CONTEXT_HORDE_WAVE_19),(Id=CONTEXT_HORDE_WAVE_20),(Id=CONTEXT_HORDE_WAVE_21),(Id=CONTEXT_HORDE_WAVE_22),(Id=CONTEXT_HORDE_WAVE_23),(Id=CONTEXT_HORDE_WAVE_24),(Id=CONTEXT_HORDE_WAVE_25),(Id=CONTEXT_HORDE_WAVE_26),(Id=CONTEXT_HORDE_WAVE_27),(Id=CONTEXT_HORDE_WAVE_28),(Id=CONTEXT_HORDE_WAVE_29),(Id=CONTEXT_HORDE_WAVE_30),(Id=CONTEXT_HORDE_WAVE_31),(Id=CONTEXT_HORDE_WAVE_32),(Id=CONTEXT_HORDE_WAVE_33),(Id=CONTEXT_HORDE_WAVE_34),(Id=CONTEXT_HORDE_WAVE_35),(Id=CONTEXT_HORDE_WAVE_36),(Id=CONTEXT_HORDE_WAVE_37),(Id=CONTEXT_HORDE_WAVE_38),(Id=CONTEXT_HORDE_WAVE_39),(Id=CONTEXT_HORDE_WAVE_40),(Id=CONTEXT_HORDE_WAVE_41),(Id=CONTEXT_HORDE_WAVE_42),(Id=CONTEXT_HORDE_WAVE_43),(Id=CONTEXT_HORDE_WAVE_44),(Id=CONTEXT_HORDE_WAVE_45),(Id=CONTEXT_HORDE_WAVE_46),(Id=CONTEXT_HORDE_WAVE_47),(Id=CONTEXT_HORDE_WAVE_48),(Id=CONTEXT_HORDE_WAVE_49))))
+}

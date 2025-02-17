@@ -1,0 +1,23 @@
+Microsoft Visual Studio Solution File, Format Version 8.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DxDiagOutput_2003", "DxDiagOutput_2003.csproj", "{C076C037-4E6F-4786-A1FF-D548E271BCBC}"
+EndProject
+Global
+	GlobalSection(DevPartner Solution Properties) = postSolution
+	EndGlobalSection
+	GlobalSection(SolutionConfiguration) = preSolution
+		ConfigName.0 = Debug
+		ConfigName.1 = Release
+	EndGlobalSection
+	GlobalSection(ProjectDependencies) = postSolution
+	EndGlobalSection
+	GlobalSection(ProjectConfiguration) = postSolution
+		{C076C037-4E6F-4786-A1FF-D548E271BCBC}.Debug.ActiveCfg = Debug|.NET
+		{C076C037-4E6F-4786-A1FF-D548E271BCBC}.Debug.Build.0 = Debug|.NET
+		{C076C037-4E6F-4786-A1FF-D548E271BCBC}.Release.ActiveCfg = Release|.NET
+		{C076C037-4E6F-4786-A1FF-D548E271BCBC}.Release.Build.0 = Release|.NET
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+	EndGlobalSection
+	GlobalSection(ExtensibilityAddIns) = postSolution
+	EndGlobalSection
+EndGlobal

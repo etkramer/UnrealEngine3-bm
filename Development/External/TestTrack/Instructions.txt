@@ -1,0 +1,40 @@
+
+
+How To Build the TestTrack SDK Using gSOAP:
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+
+* Make sure the TestTrack server is running.
+        - The SOAP tool will connect to it to download the WSDL data.
+        - Alternatively, you can obtain the file from the installed TestTrack web server.
+                - ttsoapcgi.wsdl
+                        - This can usually be found in the /inetpub/wwwroot/ folder
+        
+* Download gSOAP and locate the following binaries:
+        - soapcpp2.exe
+        - wsdl2h.exe
+        
+* Run:  wsdl2h.exe -n TT -s -o ttsoapcgi.h http://<TestTrackServer>/ttsoapcgi.wsdl
+        - '-n TT' overrides the namespace prefix 'ns'
+        - '-s' disables generation of STL code
+        - '-o ttsoapcgi.h' specifies the output header file
+        - 'http://<TestTrackServer>/ttsoapcgi.wsdl' specifies the URL to the TestTrack WSDL file
+
+* Run:  soapcpp2.exe -C -L -p TestTrack -d <target_folder> ttsoapcgi.h
+        - '-C' forces client-side code only
+        - '-L' disables generation of soapClientLib (we don't need it)
+        - '-p TestTrack' overrides the default file prefix 'soap'
+        - '-d <target_folder>' specifies the output folder
+        - 'ttsoapcgi.h' is the input header previously generated with wsdl2h.exe
+        
+* The output folder will now contain the files you need.
+        - You can delete all of the .xml files and .nsmap files.
+
+* Make any necessary edits to the auto-generated files
+        - Rename the TestTracktsoapcgiProxy.h to TestTrackSoapCGIProxy.h
+        - You may want to remove the default endpoint URL from the proxy header file
+        
+* You'll also need the following files from the original gSOAP distribution.
+        - stdsoap2.h
+        - stdsoap2.cpp
+      

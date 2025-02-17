@@ -1,0 +1,34 @@
+﻿// guids.h: definitions of GUIDs/IIDs/CLSIDs used in this VsPackage
+
+/*
+Do not use #pragma once, as this file needs to be included twice.  Once to declare the externs
+for the GUIDs, and again right after including initguid.h to actually define the GUIDs.
+*/
+
+
+// guidPersistanceSlot ID for the Tool Window
+// { 58f08ec2-9154-47be-9be7-2932ce386f21 }
+#define guidUCDebuggerPkgPersistenceSlot { 0x58F08EC2, 0x9154, 0x47BE, { 0x9B, 0xE7, 0x29, 0x32, 0xCE, 0x38, 0x6F, 0x21 } }
+#ifdef DEFINE_GUID
+DEFINE_GUID(CLSID_guidPersistanceSlot, 
+0x58F08EC2, 0x9154, 0x47BE, 0x9B, 0xE7, 0x29, 0x32, 0xCE, 0x38, 0x6F, 0x21 );
+#endif
+
+
+// package guid
+// { 949b49e2-9051-424d-a3bf-44c7ea2bc347 }
+#define guidUCDebuggerPkgPkg { 0x949B49E2, 0x9051, 0x424D, { 0xA3, 0xBF, 0x44, 0xC7, 0xEA, 0x2B, 0xC3, 0x47 } }
+#ifdef DEFINE_GUID
+DEFINE_GUID(CLSID_UCDebuggerPkg,
+0x949B49E2, 0x9051, 0x424D, 0xA3, 0xBF, 0x44, 0xC7, 0xEA, 0x2B, 0xC3, 0x47 );
+#endif
+
+// Command set guid for our commands (used with IOleCommandTarget)
+// { 71139bf3-0043-4e3c-be8e-7690f957c4b7 }
+#define guidUCDebuggerPkgCmdSet { 0x71139BF3, 0x43, 0x4E3C, { 0xBE, 0x8E, 0x76, 0x90, 0xF9, 0x57, 0xC4, 0xB7 } }
+#ifdef DEFINE_GUID
+DEFINE_GUID(CLSID_UCDebuggerPkgCmdSet, 
+0x71139BF3, 0x43, 0x4E3C, 0xBE, 0x8E, 0x76, 0x90, 0xF9, 0x57, 0xC4, 0xB7 );
+#endif
+
+

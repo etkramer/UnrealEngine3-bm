@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Liveconfig xmlns="http://schemas.microsoft.com/XBOX/LIVE/LIVECONFIG/2007/01">
+  <titleid>4D53082D</titleid>
+  <titleversion>100d0c81</titleversion>
+  <rating>1</rating>
+  <enableCrossPlatformSystemLink>false</enableCrossPlatformSystemLink>
+  <lankey>FAEBE01D21122334546571728B8CB99F</lankey>
+</Liveconfig>

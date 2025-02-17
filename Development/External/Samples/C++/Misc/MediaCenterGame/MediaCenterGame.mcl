@@ -1,0 +1,21 @@
+<!-- To use this MCL file, create a shortcut called MediaCenterGame.lnk that links to the exe with a command line of '-relaunchmce' -->
+<application
+	Title = "MediaCenterGame"
+	ID = ""
+	Run = "MediaCenterGame.lnk" 
+	BGColor = "RGB(0,0,0)" 
+	Name = "MediaCenterGame"
+	CompanyName = "Microsoft"
+	StartImage = "MediaCenterGame.gif" 
+	ThumbnailImage = "MediaCenterGame.gif" 
+	SharedViewport = ""
+	NowPlayingDirective = ""
+>
+    <capabilitiesRequired
+        directX="True"
+        audio="False"
+        video="False"
+        intensiveRendering="True"
+        console="False"
+    />
+</application>

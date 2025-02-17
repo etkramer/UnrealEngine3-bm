@@ -1,0 +1,44 @@
+﻿body 
+{ 
+	font: 12pt Tahoma;
+} 
+
+h1
+{ 
+	font: bold 32pt Segoe;
+	color: darkslateblue;
+}
+
+td.header
+{
+	background-color: silver; 
+	width: 20%;
+	height: 14px;
+	font-weight: bold;
+	font-size: small;
+}
+
+td.logo
+{
+	height: 165px;
+	background-color: silver; 
+	background-image: url(images/composite.png);
+	background-repeat: no-repeat; 
+	text-align: center;
+}
+
+.content 
+{ 
+	width: 100%;
+	padding: 4px 16px 4px 18px;
+}
+
+.collapsePanelHeader
+{
+	width: 100%;
+	height: 20px;
+	background-image: url(images/bg-menu-main.png);
+	background-repeat: repeat-x;
+	color: white;
+	font-weight: bold;
+}

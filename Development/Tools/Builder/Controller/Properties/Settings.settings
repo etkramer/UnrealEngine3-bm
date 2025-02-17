@@ -1,0 +1,18 @@
+﻿<?xml version='1.0' encoding='utf-8'?>
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="Controller.Properties" GeneratedClassName="Settings">
+  <Profiles />
+  <Settings>
+    <Setting Name="DBConnection" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">Data Source=DB-02;Initial Catalog=Perf_Build;Integrated Security=True</Value>
+    </Setting>
+    <Setting Name="MailServer" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">mail-01.epicgames.net</Value>
+    </Setting>
+    <Setting Name="FailedLogLocation" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">\\file-01/UnrealEngine/BuilderFailedLogs</Value>
+    </Setting>
+    <Setting Name="SymbolStoreLocation" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">\\file-01/UnrealEngine/BuilderSymbols</Value>
+    </Setting>
+  </Settings>
+</SettingsFile>

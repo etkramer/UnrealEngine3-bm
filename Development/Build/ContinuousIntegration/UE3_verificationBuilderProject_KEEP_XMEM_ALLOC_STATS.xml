@@ -1,0 +1,74 @@
+<!--
+Copyright (C) 1998-2007 Epic Games, Inc. All Rights Reserved.
+-->
+
+  <project name="UE3_verificationBuilder_KEEP_XMEM_ALLOC_STATS" buildafterfailed="false">
+
+    <dateformat format="yyyy-MM-dd HH:mm:ss"/>
+
+    <listeners>
+      <currentbuildstatuslistener file="\\build-farm-01\logs/${project.name}/buildstatus.txt"/>
+    </listeners>
+
+    <!-- Bootstrappers are run every time the build runs, *before* the modification checks -->
+    <bootstrappers>
+    </bootstrappers>
+
+    <!-- Defines where cruise looks for changes, to decide whether to run the build --> 
+    <modificationset quietperiod="1" >
+
+        <veto>
+           <triggers>
+              <p4 port="p4-server.epicgames.net:1666" client="CIS-${project.name}" user="build_machine" view="//depot/UnrealEngine3/Development/..."/>
+           </triggers>
+
+           <!-- for verification builds we are dependent on the code builder having a clean build -->
+           <buildstatus logdir="\\build-farm-01\logs/UE3_codeBuilder" /> 
+        </veto>
+
+        <p4 port="p4-server.epicgames.net:1666" client="CIS-${project.name}" user="build_machine" view="//depot/UnrealEngine3/Development/..."/>
+
+    </modificationset>
+
+    <!-- Configures the actual build loop, how often and which build file/target --> 
+    <schedule interval="60" >
+      <ant antscript="C:\bin\ant\bin\ant.bat"
+           buildfile="${project.name}.xml"
+           target="build"
+           uselogger="false"
+           usedebug="false"/> 
+    </schedule>
+
+    <!-- Directory to write build logs to encoding="ISO-8859-1"--> 
+    <log dir="\\build-farm-01\logs/${project.name}"> 
+       <!-- <merge dir="logs/test-results"/> -->
+       <merge dir="E:\continuousIntegration\checkout\${project.name}\UnrealEngine3\AutomatedBuildFilez" pattern="*.xml" />
+    </log>
+
+    <!-- Publishers are run *after* a build completes --> 
+    <publishers>
+
+       <currentbuildstatuspublisher file="\\build-farm-01\logs/${project.name}/buildstatus.txt"/>
+
+       <artifactspublisher 
+           dir="checkout/${project.name}/UnrealEngine3/AutomatedBuildFilez"
+           dest="\\build-farm-01\artifacts/${project.name}"/>
+
+       <htmlemail mailhost="mailedge-01.epicgames.net" 
+           returnaddress="build@epicgames.com" 
+           buildresultsurl="${buildMachineURL}/${project.name}"
+           skipusers="true" 
+           spamwhilebroken="true"
+           css="C:/bin/cruisecontrol/reporting/jsp/webcontent/css/cruisecontrol.css"
+           xsldir="C:/bin/cruisecontrol/reporting/jsp/webcontent/xsl" 
+           logdir="\\build-farm-01\logs/${project.name}">
+   
+           <always address="msew@epicgames.com"/>
+           <!-- <always address="msew@epicgames.com"/> -->
+           <!-- <failure reportWhenFixed="true" address="msew@epicgames.com"/> -->
+           <failure reportWhenFixed="true" address="engine-qa@epicgames.com"/>
+       </htmlemail>
+
+   </publishers>
+
+  </project> 

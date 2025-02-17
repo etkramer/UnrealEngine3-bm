@@ -1,0 +1,119 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <meta content="text/html; charset=ISO-8859-1"
+ http-equiv="content-type">
+  <title>XBox 360 Notes</title>
+  <link rel="stylesheet" href="stylesheet.css" type="text/css">
+</head>
+<body>
+<img alt="" src="images/PhysXlogo.png" align="middle"> <br>
+<hr style="width: 100%; height: 2px;"><br>
+<br>
+<h1 style="text-align: center;">XBox 360 Notes<br>
+<br>
+<span style="font-family: arial;"></span></h1>
+<ul>
+  <li>The Xbox 360
+version of the SDK uses static libraries, unlike the Win32 version
+which uses DLLs. The library files are located in <em>lib\xbox36</em><em>0</em>.&nbsp;
+The Xbox installer includes
+Release and
+Release_LTCG (Link Time Code Generation) versions of the libraries.</li>
+</ul>
+<ul>
+  <li>Building
+with the Xbox 360 version of the library requires that the preprocessor
+define
+NX_USE_SDK_STATICLIBS for your project.<font face="Arial" size="2"><span
+ style="font-size: 10pt; font-family: Arial;"><br>
+    <br>
+    </span></font></li>
+  <li>All of the sample programs (excluding fluids) have been ported to
+the Xbox 360. However they make use of a OpenGL emulation layer on top
+of Direct3D. Hence there may be some graphical differences. In addition
+there is a significant performance overhead for graphics intense
+samples.<br>
+    <br>
+  </li>
+  <li>For some samples(eg SampleThreading and SampleCloth) it may be
+necessary to copy media files to the d:] drive / Sample directory.<br>
+    <br>
+  </li>
+  <li>When connecting to the Visual Remote Debugger from an Xbox 360, you need to specify 
+    the IP address of the computer running the VRD in the NxRemoteDebugger::connect() call
+    (rather than "localhost").<br>
+    Also, you need to take care that the Xbox 360 network libraries you use allow
+    for connecting to PCs in order to use the VRD.<br>
+    <br>
+  </li>
+  <li> Input is handled either through a USB keyboard attached to the
+Xbox 360 or the controller. The left thumb stick provides mouse input
+and the controller buttons are mapped to a selection of keys.</li>
+</ul>
+<br>
+<div style="text-align: center;"><img alt="" src="images/keymap360.PNG"
+ style="width: 780px; height: 391px;"><br>
+</div>
+Certain of the samples depart from this general control scheme:<br>
+<ul>
+<li>
+<b>
+SampleAssetExport</b>: The left shoulder button saves the scene, right shoulder
+clears the scene, and shift+left shoulder loads a saved scene.</li>
+<li>
+<b>
+SampleCCDDynamic</b>: A creates a big box stack. Left shoulder toggles CCD,
+right shoulder resets the scene.</li>
+<li>
+<b>
+SampleCCDExplosion</b>: A explodes the stack. B toggles CCD,
+right shoulder resets the scene.</li>
+<li>
+<b>
+SampleCharacterController</b>: Left and right shoulders reset the scene and the character,
+respectively. A jumps, B creates a cube, X a capsule and Y a sphere. Shift + B
+creates a tower of boxes. Shift+A toggles gravity application, Shift+X switches
+controlled character.</li>
+<li>
+<b>
+SampleContactStreamIterator</b>: The right shoulder button toggles display of normals.
+<li>
+<b>
+SampleConvex</b>: A spawns a convex actor.</li>
+<li>
+<b>
+SampleD6Joint</b>: The D-pad and shoulder buttons control forces. When 
+Shift is depressed, they control the camera. A selects the next actor, 
+Shift+A toggles joint lock, and B,X and Y (and shift) controls joint motion.
+Shift+right shoulder resets the scene and shift+left shoulder selects the force mode.</li>
+<li>
+<b>
+SampleHeightfield</b>: A spawns spheres, B capsules, X boxes and Y convexes, and
+the right shoulder button resets the scene.</li>
+<li>
+<b>
+SampleMaterials</b>: A shoots a box. B, X, and Y (with shift) drops boxes in different
+places.</li>
+<li>
+<b>SamplePulleyJoint</b>: The D-pad and shoulder buttons control forces. When 
+Shift is depressed, they control the camera. B, X and Y control
+the joint motor. With Shift depressed, A toggles shadows, B selects actor,
+X selects force mode and Y toggles wireframe display.</li>
+<li>
+<b>
+SampleRaycastCar</b>: A shoots boxes, B toggles debug rendering, X toggles free flight,
+Y switches active cars, and the right shoulder button flips the car upright.</li>
+<li>
+<b>
+SampleSceneExport</b>: The left shoulder button saves the scene, right shoulder
+clears the scene, and shift+left shoulder loads a saved scene.</li>
+<li>
+<b>
+SampleTrigger</b>: A shoots a dynamic cube, B a kinematic cube, X a dynamic trigger
+and Y a kinematic trigger.</li>
+<hr style="width: 100%; height: 2px;"><br>
+Copyright &copy; 2006 Ageia Technologies Inc, Suite 118, 82 Pioneer
+Way, Mountain View, Ca 94041 U.S.A. All rights reserved. www.ageia.com
+</body>
+</html>

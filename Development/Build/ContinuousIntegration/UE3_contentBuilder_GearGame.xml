@@ -1,0 +1,69 @@
+<!--
+Copyright (C) 1998-2007 Epic Games, Inc. All Rights Reserved.
+-->
+
+<!DOCTYPE property [ 
+	<!ENTITY UE3GenericTargets SYSTEM "file:UE3GenericTargets.xml">
+]>
+
+
+<project name="UE3_contentBuilder_GearGame"
+        default="build"
+        basedir="checkout/UE3_contentBuilder_GearGame/UnrealEngine3/Development/Src">
+
+ <property name="projName" value="UE3_contentBuilder_GearGame" />
+
+  <target name="init">
+    <!-- set some properties -->
+  </target>
+  <target name="clean" depends="init">
+    <!-- clean up object files -->
+  </target>
+  <target name="nuke" depends="init">
+    <!-- delete the working dir -->
+  </target>
+  <target name="checkout" depends="nuke">
+    <!-- check out the working dir -->
+  </target>
+  <target name="update" depends="clean">
+    <!-- run a cvs update on the working dir -->
+  </target>
+
+  <!-- this will set the immutable properties for this builder. -->
+  <!-- NOTE:  properties are inherited so when we do our antcall it will get them -->
+  <target name="setProperties">
+     <property name="unrealEngine3.binaries.dir" value="C:\continuousIntegration\checkout\${projName}\UnrealEngine3\Binaries"/>
+     <property name="unrealEngine3.src.dir" value="C:\continuousIntegration\checkout\${projName}\UnrealEngine3\Development\Src"/>
+
+     <property name="compileOptions.buildmode.PC" value="release"/>
+     <property name="compileOptions.buildmode.Xbox360" value="xerelease"/>
+     <property name="compileOptions.buildmode.PS3" value="release"/>
+
+     <property name="compileOptions.rebuild.PC" value="true"/>
+     <property name="compileOptions.rebuild.Xbox360" value="true"/>
+     <property name="compileOptions.rebuild.PS3" value="true"/>
+
+     <property name="exampleGame.execName" value="ExampleGame.com"/>
+     <property name="gearGame.execName" value="GearGame.com"/>
+     <property name="ut2007.execName" value="GearGame.com"/>
+     <property name="warfare.execName" value="WarGame.com"/>
+
+     <property name="VS_DIR" value="C:\Program Files\Microsoft Visual Studio 8\Common7\IDE"/>
+
+  </target>
+
+
+  <!-- 
+       after this we are guarenteed to have all of our project specific properties set so we can bring
+       in our generic targets
+  -->  
+
+  &UE3GenericTargets;
+
+
+
+
+
+</project>
+
+

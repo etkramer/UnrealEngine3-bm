@@ -1,0 +1,131 @@
+<!DOCTYPE html public "-//w3c//dtd html 4.0 transitional//en">
+<HTML>
+    <HEAD>
+        <META name="vs_targetSchema" content="http://schemas.microsoft.com/intellisense/ie5">
+        <META name="VI60_defaultClientScript" content="JavaScript">
+        <META name="GENERATOR" content="Microsoft Visual Studio 6.0">
+        <LINK rel="StyleSheet" href="results.css" type="text/css">
+        <SCRIPT ID="clientEventHandlersJS" LANGUAGE="javascript">
+		<!--
+		var sServerDocLoc = "sampleInfo.xml";
+		var sXSLTDocLoc = "samples.xslt";
+		var sXSLTInstallDocLoc = "install.xslt";
+		var sHelpDocLoc = "help.htm";
+		var xDoc = new ActiveXObject("MSXML.DOMDocument");
+		var xRet = new ActiveXObject("MSXML.DOMDocument");
+		var xTrans = new ActiveXObject("MSXML.DOMDocument");
+		var xInstall = new ActiveXObject("MSXML.DOMDocument");
+		var xHelp = new ActiveXObject("MSXML.DOMDocument");
+		var strEmptyDoc = "";
+		var showDoc = true;
+		
+		xDoc.async = false;
+		xRet.async = false;
+		xTrans.async = false;
+
+		function window_onload()
+		{	
+         if (!xTrans.load(sXSLTDocLoc) || 
+             !xInstall.load(sXSLTInstallDocLoc) ||
+             !xDoc.load(sServerDocLoc) || 
+             !xHelp.load(sHelpDocLoc))
+         {
+            alert("Error loading file");
+            return;
+         }
+			
+			// Determine what an empty search looks like
+			var xEle = xTrans.selectSingleNode( "//xsl:for-each" );
+			xEle.setAttribute( "select", "//sample[dxarea=\"none\"]" );
+			xDoc.transformNodeToObject(xTrans, xRet);
+			strEmptyDoc = xRet.xml;
+
+			// Now that the samples are loaded, we're ready to initialize
+			// the parent
+			parent.init()
+		}	
+
+		function disableLanguage( strLang )
+		{
+			// Set the installed attribute for all nodes
+			var nodeList = xDoc.selectNodes("samples/sample[language=\"" + strLang + "\"]");
+			
+			// For each sample in the XML file
+			for( var nodeIndex=0; nodeIndex < nodeList.length; nodeIndex++ )
+			{	
+				// Set the installed flag
+				nodeList[nodeIndex].setAttribute("installed", "no");
+			}
+		}
+		
+		function enableX64()
+		{
+		    // Set the X64 flag for all nodes
+		    var nodeList = xDoc.selectNodes("samples/sample[language=\"C++\"]");
+		    
+		    // For each sample in the XML file
+		    for( var nodeIndex=0; nodeIndex < nodeList.length; nodeIndex++ )
+			{	
+				// Set the installed flag
+				nodeList[nodeIndex].setAttribute("onX64", "yes");
+			}
+		}
+		
+		function filter( strFilter, strSortby, doc )
+		{
+			var  xEle = xTrans.selectSingleNode( "//xsl:for-each" );
+			
+			if(strSortby=="")
+			   strSortby="- @new; - @updated; name";
+			xEle.setAttribute( "select", strFilter );
+			xEle.setAttribute( "order-by", strSortby );
+			
+			doc.transformNodeToObject(xTrans, xRet);
+				
+			if( xRet.xml == strEmptyDoc )
+				display.innerHTML = xHelp.xml;
+			else
+				display.innerHTML = xRet.xml;
+			
+		}	
+		
+		function getXMLDoc()
+		{
+			return (xDoc);
+		}
+
+		function getXSLDoc()
+		{
+			return (xTrans);
+		}	
+		
+		function getXSLInstallDoc()
+		{
+			return (xInstall);
+		}		
+
+		function sendfeedback(name,lang,type)
+		{
+		    var alias = "directx@microsoft.com";
+		    
+            if( type.indexOf("article") != -1 )
+                alias = "dxsdkdoc@microsoft.com";
+		
+			location.href = "mailto:" + alias +
+							"?subject=" + "DirectX SampleBrowser Feedback: " + 
+							lang + " " + 
+							name + " " +
+							"&body=%0d%0a%0d%0aThe DirectX SDK team appreciates your feedback. You can have a great impact " +
+							"on DirectX developers worldwide. Please provide any suggestions you may " +
+							"have for this " + type + " or comments about the SDK in general.  " +
+							"If you have more general questions about DirectX, please visit the MSDN DirectX " +
+							"Developer Center at http://msdn.microsoft.com/directx%20%0d%0a%0d%0a" + 
+							"Your%20comments on " + lang + " " + name + ":%20%0d%0a%0d%0a";
+		}						  
+		//-->
+        </SCRIPT>
+    </HEAD>
+    <BODY LANGUAGE="javascript" onload="return window_onload()" style="font:bold 10pt Arial; background-Color:Black; margin:20px 0px 0px 0px;">
+        <div id="display" LANGUAGE="javascript"></div>
+    </BODY>
+</HTML>

@@ -1,0 +1,25 @@
+Microsoft Visual Studio Solution File, Format Version 9.00
+# Visual Studio 2005
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DVDLogParser", "DVDLogParser.csproj", "{A274D9E5-2ECD-49F3-A595-60D9DC19ED66}"
+EndProject
+Global
+	GlobalSection(SourceCodeControl) = preSolution
+		SccNumberOfProjects = 2
+		SccLocalPath0 = .
+		SccProjectUniqueName1 = DVDLogParser.csproj
+		SccLocalPath1 = .
+	EndGlobalSection
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A274D9E5-2ECD-49F3-A595-60D9DC19ED66}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A274D9E5-2ECD-49F3-A595-60D9DC19ED66}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A274D9E5-2ECD-49F3-A595-60D9DC19ED66}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A274D9E5-2ECD-49F3-A595-60D9DC19ED66}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

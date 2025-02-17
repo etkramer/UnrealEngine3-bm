@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioProject
+	ProjectType="Visual C++"
+	Version="8.00"
+	Name="UTGame Win32"
+	ProjectGUID="{CF6C5053-7990-4E4C-9614-30CF8527FAD0}"
+	RootNamespace="UTGame Win32"
+	Keyword="MakeFileProj"
+	>
+	<Platforms>
+		<Platform
+			Name="Win32"
+		/>
+	</Platforms>
+	<ToolFiles>
+	</ToolFiles>
+	<Configurations>
+		<Configuration
+			Name="Debug|Win32"
+			OutputDirectory="..\..\Intermediate\$(ProjectName) $(ConfigurationName)"
+			IntermediateDirectory="..\..\Intermediate\$(ProjectName) $(ConfigurationName)"
+			ConfigurationType="0"
+			>
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="@cd ..&#x0D;&#x0A;@call Targets/Build.bat $(ProjectName) $(ConfigurationName) -output &quot;$(TargetPath)&quot;"
+				ReBuildCommandLine="@cd ..&#x0D;&#x0A;@call Targets/CleanGame.bat $(ProjectName) $(ConfigurationName) $(TargetPath)&#x0D;&#x0A;@call Targets/Build.bat $(ProjectName) $(ConfigurationName) -output &quot;$(TargetPath)&quot;"
+				CleanCommandLine="@cd ..&#x0D;&#x0A;@call Targets/CleanGame.bat $(ProjectName) $(ConfigurationName) $(TargetPath)"
+				Output="../../../Binaries/Debug-UTGame.exe"
+				PreprocessorDefinitions=""
+				IncludeSearchPath=""
+				ForcedIncludes=""
+				AssemblySearchPath=""
+				ForcedUsingAssemblies=""
+				CompileAsManaged=""
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release|Win32"
+			OutputDirectory="..\..\Intermediate\$(ProjectName) $(ConfigurationName)"
+			IntermediateDirectory="..\..\Intermediate\$(ProjectName) $(ConfigurationName)"
+			ConfigurationType="0"
+			>
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="@cd ..&#x0D;&#x0A;@call Targets/Build.bat $(ProjectName) $(ConfigurationName) -output &quot;$(TargetPath)&quot;"
+				ReBuildCommandLine="@cd ..&#x0D;&#x0A;@call Targets/CleanGame.bat $(ProjectName) $(ConfigurationName) $(TargetPath)&#x0D;&#x0A;@call Targets/Build.bat $(ProjectName) $(ConfigurationName) -output &quot;$(TargetPath)&quot;"
+				CleanCommandLine="@cd ..&#x0D;&#x0A;@call Targets/CleanGame.bat $(ProjectName) $(ConfigurationName) $(TargetPath)"
+				Output="../../../Binaries/UTGame.exe"
+				PreprocessorDefinitions=""
+				IncludeSearchPath=""
+				ForcedIncludes=""
+				AssemblySearchPath=""
+				ForcedUsingAssemblies=""
+				CompileAsManaged=""
+			/>
+		</Configuration>
+		<Configuration
+			Name="Shipping|Win32"
+			OutputDirectory="..\..\Intermediate\$(ProjectName) $(ConfigurationName)"
+			IntermediateDirectory="..\..\Intermediate\$(ProjectName) $(ConfigurationName)"
+			ConfigurationType="0"
+			>
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="@cd ..&#x0D;&#x0A;@call Targets/Build.bat $(ProjectName) $(ConfigurationName) -output &quot;$(TargetPath)&quot;"
+				ReBuildCommandLine="@cd ..&#x0D;&#x0A;@call Targets/CleanGame.bat $(ProjectName) $(ConfigurationName) $(TargetPath)&#x0D;&#x0A;@call Targets/Build.bat $(ProjectName) $(ConfigurationName) -output &quot;$(TargetPath)&quot;"
+				CleanCommandLine="@cd ..&#x0D;&#x0A;@call Targets/CleanGame.bat $(ProjectName) $(ConfigurationName) $(TargetPath)"
+				Output="../../../Binaries/ShippingPC-UTGame.exe"
+				PreprocessorDefinitions=""
+				IncludeSearchPath=""
+				ForcedIncludes=""
+				AssemblySearchPath=""
+				ForcedUsingAssemblies=""
+				CompileAsManaged=""
+			/>
+		</Configuration>
+		<Configuration
+			Name="ShippingDebugConsole|Win32"
+			OutputDirectory="..\..\Intermediate\$(ProjectName) $(ConfigurationName)"
+			IntermediateDirectory="..\..\Intermediate\$(ProjectName) $(ConfigurationName)"
+			ConfigurationType="0"
+			>
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="@cd ..&#x0D;&#x0A;@call Targets/Build.bat $(ProjectName) $(ConfigurationName) -output &quot;$(TargetPath)&quot;"
+				ReBuildCommandLine="@cd ..&#x0D;&#x0A;@call Targets/CleanGame.bat $(ProjectName) $(ConfigurationName) $(TargetPath)&#x0D;&#x0A;@call Targets/Build.bat $(ProjectName) $(ConfigurationName) -output &quot;$(TargetPath)&quot;"
+				CleanCommandLine="@cd ..&#x0D;&#x0A;@call Targets/CleanGame.bat $(ProjectName) $(ConfigurationName) $(TargetPath)"
+				Output="../../../Binaries/ShippingPC-UTGame.exe"
+				PreprocessorDefinitions=""
+				IncludeSearchPath=""
+				ForcedIncludes=""
+				AssemblySearchPath=""
+				ForcedUsingAssemblies=""
+				CompileAsManaged=""
+			/>
+		</Configuration>
+	</Configurations>
+	<References>
+	</References>
+	<Files>
+	</Files>
+	<Globals>
+	</Globals>
+</VisualStudioProject>

@@ -1,0 +1,592 @@
+/**
+ * Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
+ */
+class GameExplosionActor extends Actor
+	notplaceable
+	config(Weapon)
+	native;
+
+// this should be promoted to GameFramework.
+
+
+/** Logging pre-processor macros */
+/** GoW global macros */
+
+/** True if explosion has occurred. */
+var protected transient bool bHasExploded;
+
+/** The actual light used for the explosion. */
+var protected transient PointLightComponent ExplosionLight;
+
+/** Temp data for light fading. */
+var protected transient float LightFadeTime;
+var protected transient float LightInitialBrightness;
+
+/** Temp reference to the explosion template, used for delayed damage */
+var GameExplosion ExplosionTemplate;
+
+/** Whether or not this Explosion is from something that has an ActiveReload bonus that is active **/
+var bool bActiveReloadBonusActive;
+
+/** Used to push physics when explosion goes off. */
+var protected RB_RadialImpulseComponent	RadialImpulseComponent;
+
+/** player responsible for damage */
+var Controller InstigatorController;
+
+/** This the saved off hit actor and location from the GetPhysicalMaterial trace so we can see if it is a FluidSurfaceActor and then apply some forces to it **/
+var Actor HitActorFromPhysMaterialTrace;
+var vector HitLocationFromPhysMaterialTrace;
+
+event PreBeginPlay()
+{
+	Super.PreBeginPlay();
+
+	if (Instigator != None && InstigatorController == None)
+	{
+		InstigatorController = Instigator.Controller;
+	}
+}
+
+/**
+ * Internal. Tries to find a physical material for the surface the explosion occurred upon.
+ * @note: It sucks doing an extra trace here.  We could conceivably pass the physical material info around
+ * by changing the lower level physics code (e.g. processHitWall), but that's a big engine-level change.
+ */
+simulated protected function PhysicalMaterial GetPhysicalMaterial()
+{
+	local PhysicalMaterial Retval;
+	local vector TraceStart, TraceDest, OutHitNorm, ExploNormal;
+	local TraceHitInfo OutHitInfo;
+
+	// here we have to do an additional trace shooting straight down to see if we are under water.
+	TraceStart = Location + (vect(0,0,1) * 256.f);
+	TraceDest = Location - (vect(0,0,1) * 16.f);
+
+	HitActorFromPhysMaterialTrace = Trace(HitLocationFromPhysMaterialTrace, OutHitNorm, TraceDest, TraceStart, TRUE, vect(0,0,0), OutHitInfo, TRACEFLAG_Bullet|TRACEFLAG_PhysicsVolumes);
+	//DrawDebugLine( TraceStart, TraceDest, 0, 255, 0, TRUE);
+	//`log("EXPLOSION SURFACE:"@HitActorFromPhysMaterialTrace);
+	//DrawDebugCoordinateSystem( TraceStart, Rotation, 10.0f, TRUE );
+
+	if( FluidSurfaceActor(HitActorFromPhysMaterialTrace) != None )
+	{
+		Retval = OutHitInfo.PhysMaterial;
+		return Retval;
+	}
+
+	ExploNormal = vector(Rotation);
+	TraceStart = Location + (ExploNormal * 8.f);
+	TraceDest = TraceStart - (ExploNormal * 64.f);
+
+	HitActorFromPhysMaterialTrace = Trace(HitLocationFromPhysMaterialTrace, OutHitNorm, TraceDest, TraceStart, TRUE, vect(0,0,0), OutHitInfo, TRACEFLAG_Bullet);
+	//DrawDebugLine( TraceStart, TraceDest, 0, 255, 0, TRUE);
+	//DrawDebugCoordinateSystem( TraceStart, Rotation, 10.0f, TRUE );
+
+	if( HitActorFromPhysMaterialTrace != None )
+	{
+		Retval = OutHitInfo.PhysMaterial;
+	}
+
+	return Retval;
+}
+
+simulated function bool DoFullDamageToActor(Actor Victim)
+{
+	if ( Victim.bStatic ||
+		Victim.IsA('KActor') ||
+		Victim.IsA('InterpActor') ||
+		Victim.IsA('FracturedStaticMeshPart') )
+	{
+		return TRUE;
+	}
+	else
+	{
+		return FALSE;
+	}
+}
+
+/** Does damage modeling and application for explosions */
+protected final simulated function HurtExplosion
+(
+	float				BaseDamage,
+	float				DamageRadius,
+	float				DamageFalloffExp,
+	class<DamageType>	DamageType,
+	float				MomentumScale,
+	vector				ExploOrigin,
+	Actor		IgnoredActor,
+	class<Actor> ActorClassToIgnoreForDamage,
+	Controller InstigatedByController,
+	bool       bDoFullDamage
+)
+{
+	local Actor		Victim, HitActor;
+	local vector	HitL, HitN, Dir;
+	local bool		bDamageBlocked;
+	local float		ColRadius, ColHeight;
+	local float		DamageScale, Dist;
+	//local GamePawn	HitGamePawn;
+	local array<Actor> VictimsList;
+
+	local Box BBox;
+	local vector BBoxCenter;
+
+	local Controller ModInstigator;
+	local Pawn VictimPawn;
+	local class<DamageType> ModDamageType;
+
+	//`log(self@`showvar(Instigator)@`showvar(InstigatedByController)@`showvar(InstigatorController));
+
+	// GamePawn hit by explosion projectile.
+	//HitGamePawn = GamePawn(ExplosionTemplate.HitActor);
+
+//	FlushPersistentDebugLines();
+//	DrawDebugSphere(ExploOrigin, DamageRadius, 12, 255, 0, 0, TRUE);
+
+	//debug
+	`log(WorldInfo.TimeSeconds @ Self @ GetFuncName() @ "BaseDamage:" @ BaseDamage @ "DamageRadius:" @ DamageRadius @ "DamageFalloffExp:" @ DamageFalloffExp @ "IgnoredActor:" @ IgnoredActor @ "HitActor:" @ ExplosionTemplate.HitActor, bDebug);
+	//`log( ".... Attachee:"@ExplosionTemplate.Attachee@"AttachCont"@ExplosionTemplate.AttacheeController@"HitPawn"@HitGamePawn, bDebug );
+	`log(`showvar(ExplosionTemplate.bUseOverlapCheck), bDebug);
+
+	foreach CollidingActors(class'Actor', Victim, DamageRadius, ExploOrigin, ExplosionTemplate.bUseOverlapCheck)
+	{
+		bDamageBlocked = FALSE;
+
+		// Look for things that are not yourself and not world geom (or an e-hole)
+		if ( Victim != Self
+			&& Victim != IgnoredActor
+			//&& (Victim.Role == ROLE_Authority || Victim.bTearOff ) != None || NanoKnockableActor(Victim) != None)
+			&& (!Victim.bWorldGeometry)
+			&& ( ClassIsChildOf( Victim.Class, ActorClassToIgnoreForDamage ) == FALSE )
+			)
+		{
+			ModDamageType = DamageType;
+			ModInstigator = InstigatedByController;
+
+			// If attached to a pawn and victim is a pawn on other team
+			VictimPawn = Pawn(Victim);
+
+			//debug
+			`log( "Check vs Victim"@Victim@"CurDamInfo"@ModDamageType@ModInstigator@"Checks..."@ExplosionTemplate.AttacheeController@VictimPawn@WorldInfo.GRI.OnSameTeam(ExplosionTemplate.AttacheeController, VictimPawn.Controller), bDebug );
+
+			if( ExplosionTemplate.AttacheeController != None && VictimPawn != None && !WorldInfo.GRI.IsCoopMultiplayerGame() && !WorldInfo.GRI.OnSameTeam(ExplosionTemplate.AttacheeController, VictimPawn.Controller) )
+			{
+				//debug
+				`log( "Change instigator to"@ExplosionTemplate.AttacheeController@ExplosionTemplate.Attachee, bDebug );
+
+				ModInstigator = ExplosionTemplate.AttacheeController;			// Make the instigator the base pawn's controller
+			}
+
+			// skip line check for physics objects
+			if ( DoFullDamageToActor(Victim) )
+			{
+				bDamageBlocked = FALSE;
+				bDoFullDamage = TRUE;			// force full damage for physics objects
+			}
+			else
+			{
+				// note: using bbox center instead of location, because that's what visiblecollidingactors does
+				// and we use that function for knockdowns.  it also claims better results.
+				// Use per-poly collision, as that is what grenade movement uses, and that way damage uses line-of-sight
+				Victim.GetComponentsBoundingBox(BBox);
+				BBoxCenter = (BBox.Min + BBox.Max) * 0.5f;
+				HitActor = Trace(HitL, HitN, BBoxCenter, ExploOrigin, FALSE,,,TRACEFLAG_Bullet);
+				if (HitActor != None && HitActor != Victim)
+				{
+					bDamageBlocked = TRUE;
+				}
+			}
+
+			if( !bDamageBlocked )
+			{
+				// Calculate and apply radius damage
+				Victim.GetBoundingCylinder(ColRadius, ColHeight);
+
+				dir	= Victim.Location - ExploOrigin;
+				dist = VSize(dir);
+				dir	= Normal(Dir);
+
+				if( bDoFullDamage )
+				{
+					DamageScale = 1.f;
+				}
+				else
+				{
+					//`log(`showvar(Dist)@`showvar(ColRadius));
+					Dist = FMax(Dist - ColRadius,0.f);
+					DamageScale = FClamp(1.f - Dist/DamageRadius, 0.f, 1.f);
+					DamageScale = DamageScale ** DamageFalloffExp;
+				}
+
+				if( DamageScale > 0.f )
+				{
+					//debug
+					`log("*****"@self@"Hurting"@Victim@Pawn(Victim).Health@"for"@BaseDamage*DamageScale@ModDamageType@"by"@ModInstigator@ModInstigator.Pawn, bDebug	);
+					Victim.TakeDamage
+					(
+						BaseDamage * DamageScale,
+						ModInstigator,
+						Victim.Location - 0.5 * (ColHeight + ColRadius) * dir,
+						(DamageScale * MomentumScale * dir),
+						ModDamageType,,
+						self
+					);
+					//debug
+					`log("     Newhealth"@Victim@Pawn(Victim).Health, bDebug );
+
+					VictimsList[VictimsList.Length] = Victim;
+				}
+			}
+		}
+	}
+
+	if( ExplosionTemplate.bFullDamageToAttachee && VictimsList.Find( ExplosionTemplate.Attachee ) < 0 )
+	{
+		Victim	= ExplosionTemplate.Attachee;
+
+		Victim.GetBoundingCylinder(ColRadius, ColHeight);
+		dir		= Victim.Location - ExploOrigin;
+		dist	= VSize(dir);
+		dir		= Normal(Dir);
+
+		Victim.TakeDamage
+		(
+			BaseDamage,
+			InstigatedByController,
+			Victim.Location - 0.5 * (ColHeight + ColRadius) * dir,
+			(MomentumScale * dir),
+			DamageType,,
+			self
+		);
+	}
+}
+
+/** Look for FSMAs in radius and break parts off. */
+protected simulated function DoBreakFracturedMeshes(vector ExploOrigin, float DamageRadius, float RBStrength, class<DamageType> DmgType)
+{
+	local FracturedStaticMeshActor FracActor;
+	local byte bWantPhysChunksAndParticles;
+
+	foreach CollidingActors(class'FracturedStaticMeshActor', FracActor, DamageRadius, ExploOrigin, TRUE)
+	{
+		if((FracActor.Physics == PHYS_None) && FracActor.IsFracturedByDamageType(DmgType))
+		{
+			// Make sure the impacted fractured mesh is visually relevant
+			if( FracActor.FractureEffectIsRelevant( false, Instigator, bWantPhysChunksAndParticles ) )
+			{
+				FracActor.BreakOffPartsInRadius(
+					ExploOrigin,
+					DamageRadius,
+					RBStrength,
+					bWantPhysChunksAndParticles == 1 ? true : false);
+			}
+		}
+	}
+}
+
+/** Return if this particular actor should do a cringe/knockdown */
+protected function bool ShouldDoCringeFor(GamePawn Victim)
+{
+	// only cringe if on opposite team OR you hit yourself and you're human controlled OR the explosion is attached to you
+
+	if ( ( (InstigatorController == None)
+		|| (!WorldInfo.GRI.OnSameTeam(InstigatorController, Victim) || ExplosionTemplate.bAllowTeammateCringes)
+		|| (Victim == ExplosionTemplate.Attachee)
+		|| (Instigator == Victim && Instigator.IsHumanControlled())
+		)
+		&& ( ClassIsChildOf( Victim.Class, ExplosionTemplate.ActorClassToIgnoreForKnockdownsAndCringes ) == FALSE ) )
+	{
+		return TRUE;
+	}
+	else
+	{
+		return FALSE;
+	}
+}
+
+// @todo, do we want to handle single player and multi differently for this?
+/** Internal.  Handle making pawns cringe or fall down from nearby explosions.  Server only. */
+protected function DoCringesAndKnockdowns()
+{
+	local GamePawn Victim;
+	local float DistFromExplosion;
+	local vector ExplosionToVictimDir;
+	local float KnockDownRad, CringeRad;
+
+	// should only happen on the server
+	if (ExplosionTemplate != None && WorldInfo.NetMode != NM_Client)
+	{
+		KnockDownRad = ExplosionTemplate.KnockDownRadius;
+		CringeRad = ExplosionTemplate.CringeRadius;
+
+		// @fixme, unify this with the HurtRadius stuff.  Explosions are doing 2 separate collections
+		// of nearby actors at the moment
+		foreach VisibleCollidingActors( class'GamePawn', Victim, FMax(CringeRad, KnockDownRad), Location, TRUE )
+		{
+			if( /*!Victim.bRespondToExplosions ||*/ Victim.InGodMode() )
+			{
+				continue;
+			}
+
+			if ( ShouldDoCringeFor(Victim) )
+			{
+				ExplosionToVictimDir = Victim.Location - Location;
+				DistFromExplosion = VSize(ExplosionToVictimDir);
+				if (DistFromExplosion == 0.f)
+				{
+					// if explosion is directly on this guy, pretend it's actually 1 unit below him
+					// it's an arbitrary convention, but chosen to tend to blow things upward in more spectacular fashion.
+					DistFromExplosion = 1.f;
+					ExplosionToVictimDir = vect(0,0,1);
+				}
+				else
+				{
+					ExplosionToVictimDir /= DistFromExplosion;
+				}
+
+				if (DistFromExplosion < KnockDownRad)
+				{
+					KnockdownPawn(Victim, DistFromExplosion);
+				}
+				else if (DistFromExplosion < CringeRad)
+				{
+					// outside of knockdown radius, do cringe
+					//Victim.Cringe();
+				}
+			}
+		}
+	}
+}
+
+/** Internal.  Knocks given pawn down from the explosion.  */
+protected function KnockdownPawn(GamePawn Victim, float DistFromExplosion)
+{
+	// Note we double the KnockdownRadius.  This ensures the applied force at the furthest possible
+	// knockdown is 50% of the KnockdownStrength.  Going ragdoll with zero explosion force tends to feel odd.
+	//Victim.ServerKnockdown(,, Location, ExplosionTemplate.KnockDownRadius*2.f, ExplosionTemplate.KnockDownStrength);
+}
+
+/**
+ * Internal.  Extract what data we can from the physical material-based effects system
+ * and stuff it into the ExplosionTemplate.
+ * Data in the physical material will take precedence.
+ *
+ * We are also going to be checking for relevance here as when any of these params are "none" / invalid we do not
+ * play those effects in Explode().  So this way we avoid any work on looking things up in the physmaterial
+ *
+ */
+simulated protected function UpdateExplosionTemplateWithPerMaterialFX(PhysicalMaterial PhysMaterial)
+{
+}
+
+simulated function SpawnExplosionParticleSystem(ParticleSystem Template)
+{
+
+}
+
+simulated function SpawnExplosionDecal()
+{
+
+}
+
+simulated function DoExplosionCameraShakes()
+{
+
+}
+
+simulated function SpawnExplosionFogVolume()
+{
+
+}
+
+/**
+ * @todo break this up into the same methods that NanoWeapon uses (SpawnImpactEffects, SpawnImpactSounds, SpawnImpactDecal) as they are all
+ * orthogonal and so indiv subclasses can choose to have base functionality or override
+ **/
+simulated event Explode(GameExplosion NewExplosionTemplate)
+{
+	local float HowLongToLive;
+	local PhysicalMaterial PhysMat;
+
+
+	//local PlayerController PC;
+
+	ExplosionTemplate = NewExplosionTemplate;
+
+	// by default, live just long enough to go boom
+	HowLongToLive = ExplosionTemplate.DamageDelay + 0.01f;
+
+	if (!bHasExploded)
+	{
+		// maybe find the physical material and extract the properties we need
+		if (ExplosionTemplate.bAllowPerMaterialFX)
+		{
+			PhysMat = GetPhysicalMaterial();
+			if (PhysMat != None)
+			{
+				UpdateExplosionTemplateWithPerMaterialFX(PhysMat);
+			}
+		}
+
+		// spawn explosion effects
+		if( WorldInfo.NetMode != NM_DedicatedServer )
+		{
+			if( ExplosionTemplate.ParticleEmitterTemplate != none )
+			{
+				SpawnExplosionParticleSystem(ExplosionTemplate.ParticleEmitterTemplate);
+			}
+
+			// spawn a decal
+			SpawnExplosionDecal();
+
+			// turn on the light
+			if (ExplosionTemplate.ExploLight != None)
+			{
+				// construct a copy of the PLC, turn it on
+				ExplosionLight = new(self) class'PointLightComponent' (ExplosionTemplate.ExploLight);
+				if (ExplosionLight != None)
+				{
+					AttachComponent(ExplosionLight);
+					ExplosionLight.SetEnabled(TRUE);
+					SetTimer(ExplosionTemplate.ExploLightFadeOutTime);
+					LightFadeTime = ExplosionTemplate.ExploLightFadeOutTime;
+					HowLongToLive = FMax( LightFadeTime + 0.2f, HowLongToLive );
+					LightInitialBrightness = ExplosionTemplate.ExploLight.Brightness;
+				}
+			}
+
+			// play the sound
+			if ( (ExplosionTemplate.ExplosionSound != None) && !ExplosionTemplate.bSuppressAudio )
+			{
+				//`log( "Playing Explosion Sound (debug left in to test distance)" @ ExplosionTemplate.ExplosionSound );
+				PlaySound( ExplosionTemplate.ExplosionSound, TRUE, TRUE, FALSE, Location, TRUE );
+				//PlaySound(ExplosionTemplate.ExplosionSound, TRUE, TRUE);
+			}
+
+			DoExplosionCameraShakes();
+
+			// Apply impulse to physics stuff (before we do fracture)
+			RadialImpulseComponent.ImpulseRadius = FMax(ExplosionTemplate.DamageRadius, ExplosionTemplate.KnockDownRadius);
+			RadialImpulseComponent.ImpulseStrength = ExplosionTemplate.MyDamageType.default.RadialDamageImpulse;
+			RadialImpulseComponent.bVelChange = ExplosionTemplate.MyDamageType.default.bRadialDamageVelChange;
+			RadialImpulseComponent.ImpulseFalloff = RIF_Constant;
+			//`log("AA"@ExplosionTemplate.MyDamageType@RadialImpulseComponent.ImpulseStrength@RadialImpulseComponent.ImpulseRadius);
+			RadialImpulseComponent.FireImpulse(Location);
+
+			// Do fracturing
+			if(ExplosionTemplate.bCausesFracture)
+			{
+				DoBreakFracturedMeshes(Location, ExplosionTemplate.FractureMeshRadius, ExplosionTemplate.FracturePartVel, ExplosionTemplate.MyDamageType);
+			}
+
+			SpawnExplosionFogVolume();
+
+			/*
+			if( ExplosionTemplate.CameraEffect != None )
+			{
+				foreach WorldInfo.LocalPlayerControllers( class'PlayerController', PC )
+				{
+					// splatter some blood on their camera if they are a human and decently close
+					if( ( PC.Pawn != none && VSize(PC.Pawn.Location - Location) < ExplosionTemplate.CameraEffectRadius )
+						&& PC.IsAimingAt( self, 0.1f ) // if we are semi looking in the direction of the explosion
+						)
+					{
+						PC.ClientSpawnCameraLensEffect( ExplosionTemplate.CameraEffect );
+					}
+				}
+			}
+			*/
+
+			if( FluidSurfaceActor(HitActorFromPhysMaterialTrace) != none )
+			{
+				FluidSurfaceActor(HitActorFromPhysMaterialTrace).FluidComponent.ApplyForce( HitLocationFromPhysMaterialTrace, 1024.0f, 20.0f, FALSE );
+			}
+		}
+
+		// do damage
+		// delay the damage if necessary,
+		if (ExplosionTemplate.DamageDelay > 0.0f)
+		{
+			SetTimer( ExplosionTemplate.DamageDelay, FALSE, nameof(DoExplosionDamage) );
+		}
+		else
+		{
+			// otherwise apply immediately
+			DoExplosionDamage();
+		}
+		if( Role == Role_Authority )
+		{
+			MakeNoise(1.0f);
+		}
+
+`if(`notdefined(FINAL_RELEASE))
+		//if( GamePawn(Instigator).bWeaponDebug_DamageRadius == TRUE )
+		//{
+		//	// debug spheres
+		//	FlushPersistentDebugLines();
+		//	DrawDebugSphere(HitLocation, InnerExploRadius, 12, 255, 128, 16, TRUE);
+		//	DrawDebugSphere(HitLocation, OuterCoreDamageRadius, 12, 255, 16, 16, TRUE);
+		//	DrawDebugLine(HitLocation, HitLocation + HitNormal*16, 255, 255, 255, TRUE);
+		//}
+`endif
+
+		bHasExploded = TRUE;
+
+		// done with it
+		if (!bPendingDelete && !bDeleteMe)
+		{
+			LifeSpan = HowLongToLive;
+		}
+	}
+}
+
+simulated function DoExplosionDamage()
+{
+	if (ExplosionTemplate != None)
+	{
+		// Actually do the damage
+		if ( (ExplosionTemplate.Damage > 0.f) && (ExplosionTemplate.DamageRadius > 0.f) )
+		{
+			HurtExplosion(ExplosionTemplate.Damage, ExplosionTemplate.DamageRadius, ExplosionTemplate.DamageFalloffExponent, ExplosionTemplate.MyDamageType, ExplosionTemplate.MomentumTransferScale, Location, ExplosionTemplate.ActorToIgnoreForDamage, ExplosionTemplate.ActorClassToIgnoreForDamage, InstigatorController, FALSE );
+		}
+
+		if (Role == ROLE_Authority)
+		{
+			DoCringesAndKnockdowns();
+		}
+	}
+}
+
+simulated function Tick( float DeltaTime )
+{
+	local float TimerCount, Pct;
+
+	if (ExplosionLight != None)
+	{
+		TimerCount = GetTimerCount();
+		if( TimerCount >= 0 )
+		{
+			Pct = 1.f - (TimerCount / LightFadeTime);
+			Pct *= Pct;		// note that fades out as a square
+			ExplosionLight.SetLightProperties(LightInitialBrightness * Pct);
+		}
+		else
+		{
+			ExplosionLight.SetEnabled(FALSE);
+		}
+	}
+}
+
+defaultproperties
+{
+	// Note that this actor does not replicate.  If you want the server to dictate an explosion on
+	// all clients, use a NanoExplosionActorReplicated.
+	RemoteRole=ROLE_None
+
+	Begin Object Class=RB_RadialImpulseComponent Name=ImpulseComponent0
+	End Object
+	RadialImpulseComponent=ImpulseComponent0
+	Components.Add(ImpulseComponent0)
+
+	//bDebug=TRUE
+}

@@ -1,0 +1,1 @@
+"C:\Unreal\UnrealEngine3\Binaries\DEBUG-ExampleGame.exe" -vadebug -autodebug

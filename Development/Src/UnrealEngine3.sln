@@ -1,0 +1,393 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 9.00
+# Visual Studio 2005
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Build", "Build", "{C4545F94-F74E-45E2-AF71-3473B4F3C09F}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Unreal Engine", "Unreal Engine", "{C77F9B60-722B-4E86-B7B4-F0025687C359}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Windows", "Windows", "{1297D2D0-7B02-4C20-8BB3-56279E8385C8}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Xbox 360", "Xbox 360", "{4F37BDF1-2525-4F9E-8BE0-8326C4588632}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Unreal Editor", "Unreal Editor", "{95F9398D-D309-488C-B0A9-13ADB3C168BA}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Gears of War", "Gears of War", "{06C263EE-5828-4D33-BE2A-C60B03CC02CE}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Games", "Games", "{1AD35CF3-470C-44EA-B1B5-5CD621053814}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Platforms", "Platforms", "{014DC93C-9FF9-42DC-A252-87F6508C741B}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnrealBuildTool", "UnrealBuildTool\UnrealBuildTool.csproj", "{09BE474C-E143-4E7F-89E6-925ECBB69D20}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Core", "Core\Core.vcproj", "{9E3C0A84-2520-4CB2-9202-55AF64CD84A5}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Engine", "Engine\Engine.vcproj", "{F33F4FE6-1840-446E-A7D8-903B8EDFB14B}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Editor", "Editor\Editor.vcproj", "{D701000E-E334-4915-ACE9-D59E50F98A4B}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "UnrealEd", "UnrealEd\UnrealEd.vcproj", "{20C50653-B887-40EC-B85B-06BF6E24FDB4}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "XenonShared", "Xenon\Xenon.vcproj", "{AFB0B542-01A8-4765-8797-4099D7294A10}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GameFramework", "GameFramework\GameFramework.vcproj", "{D81C72CB-E8FC-4442-9D29-E060415DDBAA}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OnlineSubsystemLive", "OnlineSubsystemLive\OnlineSubsystemLive.vcproj", "{EEDADA55-1F78-46AA-BE37-7F6EA57910E5}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Multiple", "Multiple", "{895426F0-D2CE-49BA-A496-46A2ABB76A0C}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Launch", "Launch\Launch.vcproj", "{559F6F18-3B99-4A8B-A384-BCF2A9FD69EF}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WinDrv", "WinDrv\WinDrv.vcproj", "{AE2B1A55-E493-4E93-8416-7144201E183E}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "D3D9Drv", "D3D9Drv\D3D9Drv.vcproj", "{77D547F4-1691-42B3-99D3-FB4429DE2ADB}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "D3D10Drv", "D3D10Drv\D3D10Drv.vcproj", "{17011B84-F505-4155-84FE-D849F4AFDFD1}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "IpDrv", "IpDrv\IpDrv.vcproj", "{0EE028CA-72A3-4A1D-ADEF-0D60B3B2EEE7}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "UnrealScriptTest", "UnrealScriptTest\UnrealScriptTest.vcproj", "{43494D47-541C-486E-91F8-1EB0F552CAFD}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Studio", "..\External\FaceFX\Studio\Studio_vs8.vcproj", "{CB870BCA-E5E6-467F-AA38-CE5DF837D968}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ALAudio", "ALAudio\ALAudio.vcproj", "{E67A30E5-2A88-494A-8AEC-9D079A6BE10A}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GearGame", "GearGame\GearGame.vcproj", "{F5FEC30C-9460-4238-BA32-81126E438421}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GearEditor", "GearEditor\GearEditor.vcproj", "{AAA81ED5-BBFE-40F0-B784-55AC152343EC}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GearGameContent", "GearGameContent\GearGameContent.vcproj", "{41069B8A-E2C8-4460-940D-BB936F6F3F77}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GearGameContentWeapons", "GearGameContentWeapons\GearGameContentWeapons.vcproj", "{D532BF3B-6ECC-41CA-B4AE-D229EE1630EA}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GearGame Win32", "Windows\GearGame Win32.vcproj", "{91F36CA2-71F4-4A6F-ABEF-DBC38B93FDD4}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+	ProjectSection(ProjectDependencies) = postProject
+		{C46373B6-6838-4A94-B4D4-C6752EAC93D6} = {C46373B6-6838-4A94-B4D4-C6752EAC93D6}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GearGame Xbox360", "Xenon\GearGame Xbox360.vcproj", "{29B33253-16C8-4337-8FF6-70B746D77E7B}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+	ProjectSection(ProjectDependencies) = postProject
+		{8384238D-4D2C-40A9-9048-89CEE3E5F865} = {8384238D-4D2C-40A9-9048-89CEE3E5F865}
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Targets", "Targets", "{F44C7038-C26B-4B9A-8DB6-0DCC27293089}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Shared Win32", "Windows\Shared Win32.vcproj", "{C46373B6-6838-4A94-B4D4-C6752EAC93D6}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Shared Xbox360", "Xenon\Shared Xbox360.vcproj", "{8384238D-4D2C-40A9-9048-89CEE3E5F865}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared projects (used only for cleaning)", "Shared projects (used only for cleaning)", "{7B2BEAF6-6DA5-48DB-84DA-A7CC7F4B5ACA}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Batch files", "Batch files", "{A8A66D15-812D-42A6-BD73-D6E64D805F01}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+	ProjectSection(SolutionItems) = preProject
+		Targets\Build.bat = Targets\Build.bat
+		Targets\Clean.bat = Targets\Clean.bat
+		Targets\CleanAll.bat = Targets\CleanAll.bat
+		Targets\CleanGame.bat = Targets\CleanGame.bat
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Mixed platforms = Debug|Mixed platforms
+		Release|Mixed platforms = Release|Mixed platforms
+		Shipping|Mixed platforms = Shipping|Mixed platforms
+		ShippingDebugConsole|Mixed platforms = ShippingDebugConsole|Mixed platforms
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{09BE474C-E143-4E7F-89E6-925ECBB69D20}.Debug|Mixed platforms.ActiveCfg = Release|Any CPU
+		{09BE474C-E143-4E7F-89E6-925ECBB69D20}.Debug|Mixed platforms.Build.0 = Release|Any CPU
+		{09BE474C-E143-4E7F-89E6-925ECBB69D20}.Release|Mixed platforms.ActiveCfg = Release|Any CPU
+		{09BE474C-E143-4E7F-89E6-925ECBB69D20}.Release|Mixed platforms.Build.0 = Release|Any CPU
+		{09BE474C-E143-4E7F-89E6-925ECBB69D20}.Shipping|Mixed platforms.ActiveCfg = Release|Any CPU
+		{09BE474C-E143-4E7F-89E6-925ECBB69D20}.Shipping|Mixed platforms.Build.0 = Release|Any CPU
+		{09BE474C-E143-4E7F-89E6-925ECBB69D20}.ShippingDebugConsole|Mixed platforms.ActiveCfg = Release|Any CPU
+		{09BE474C-E143-4E7F-89E6-925ECBB69D20}.ShippingDebugConsole|Mixed platforms.Build.0 = Release|Any CPU
+		{9E3C0A84-2520-4CB2-9202-55AF64CD84A5}.Debug|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{9E3C0A84-2520-4CB2-9202-55AF64CD84A5}.Release|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{9E3C0A84-2520-4CB2-9202-55AF64CD84A5}.Shipping|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{9E3C0A84-2520-4CB2-9202-55AF64CD84A5}.ShippingDebugConsole|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{F33F4FE6-1840-446E-A7D8-903B8EDFB14B}.Debug|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{F33F4FE6-1840-446E-A7D8-903B8EDFB14B}.Release|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{F33F4FE6-1840-446E-A7D8-903B8EDFB14B}.Shipping|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{F33F4FE6-1840-446E-A7D8-903B8EDFB14B}.ShippingDebugConsole|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{D701000E-E334-4915-ACE9-D59E50F98A4B}.Debug|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{D701000E-E334-4915-ACE9-D59E50F98A4B}.Release|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{D701000E-E334-4915-ACE9-D59E50F98A4B}.Shipping|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{D701000E-E334-4915-ACE9-D59E50F98A4B}.ShippingDebugConsole|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{20C50653-B887-40EC-B85B-06BF6E24FDB4}.Debug|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{20C50653-B887-40EC-B85B-06BF6E24FDB4}.Release|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{20C50653-B887-40EC-B85B-06BF6E24FDB4}.Shipping|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{20C50653-B887-40EC-B85B-06BF6E24FDB4}.ShippingDebugConsole|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{AFB0B542-01A8-4765-8797-4099D7294A10}.Debug|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{AFB0B542-01A8-4765-8797-4099D7294A10}.Release|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{AFB0B542-01A8-4765-8797-4099D7294A10}.Shipping|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{AFB0B542-01A8-4765-8797-4099D7294A10}.ShippingDebugConsole|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{D81C72CB-E8FC-4442-9D29-E060415DDBAA}.Debug|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{D81C72CB-E8FC-4442-9D29-E060415DDBAA}.Release|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{D81C72CB-E8FC-4442-9D29-E060415DDBAA}.Shipping|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{D81C72CB-E8FC-4442-9D29-E060415DDBAA}.ShippingDebugConsole|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{EEDADA55-1F78-46AA-BE37-7F6EA57910E5}.Debug|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{EEDADA55-1F78-46AA-BE37-7F6EA57910E5}.Release|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{EEDADA55-1F78-46AA-BE37-7F6EA57910E5}.Shipping|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{EEDADA55-1F78-46AA-BE37-7F6EA57910E5}.ShippingDebugConsole|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{559F6F18-3B99-4A8B-A384-BCF2A9FD69EF}.Debug|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{559F6F18-3B99-4A8B-A384-BCF2A9FD69EF}.Release|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{559F6F18-3B99-4A8B-A384-BCF2A9FD69EF}.Shipping|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{559F6F18-3B99-4A8B-A384-BCF2A9FD69EF}.ShippingDebugConsole|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{AE2B1A55-E493-4E93-8416-7144201E183E}.Debug|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{AE2B1A55-E493-4E93-8416-7144201E183E}.Release|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{AE2B1A55-E493-4E93-8416-7144201E183E}.Shipping|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{AE2B1A55-E493-4E93-8416-7144201E183E}.ShippingDebugConsole|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{77D547F4-1691-42B3-99D3-FB4429DE2ADB}.Debug|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{77D547F4-1691-42B3-99D3-FB4429DE2ADB}.Release|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{77D547F4-1691-42B3-99D3-FB4429DE2ADB}.Shipping|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{77D547F4-1691-42B3-99D3-FB4429DE2ADB}.ShippingDebugConsole|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{17011B84-F505-4155-84FE-D849F4AFDFD1}.Debug|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{17011B84-F505-4155-84FE-D849F4AFDFD1}.Release|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{17011B84-F505-4155-84FE-D849F4AFDFD1}.Shipping|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{17011B84-F505-4155-84FE-D849F4AFDFD1}.ShippingDebugConsole|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{0EE028CA-72A3-4A1D-ADEF-0D60B3B2EEE7}.Debug|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{0EE028CA-72A3-4A1D-ADEF-0D60B3B2EEE7}.Release|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{0EE028CA-72A3-4A1D-ADEF-0D60B3B2EEE7}.Shipping|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{0EE028CA-72A3-4A1D-ADEF-0D60B3B2EEE7}.ShippingDebugConsole|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{43494D47-541C-486E-91F8-1EB0F552CAFD}.Debug|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{43494D47-541C-486E-91F8-1EB0F552CAFD}.Release|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{43494D47-541C-486E-91F8-1EB0F552CAFD}.Shipping|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{43494D47-541C-486E-91F8-1EB0F552CAFD}.ShippingDebugConsole|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{CB870BCA-E5E6-467F-AA38-CE5DF837D968}.Debug|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{CB870BCA-E5E6-467F-AA38-CE5DF837D968}.Release|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{CB870BCA-E5E6-467F-AA38-CE5DF837D968}.Shipping|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{CB870BCA-E5E6-467F-AA38-CE5DF837D968}.ShippingDebugConsole|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{E67A30E5-2A88-494A-8AEC-9D079A6BE10A}.Debug|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{E67A30E5-2A88-494A-8AEC-9D079A6BE10A}.Release|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{E67A30E5-2A88-494A-8AEC-9D079A6BE10A}.Shipping|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{E67A30E5-2A88-494A-8AEC-9D079A6BE10A}.ShippingDebugConsole|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{F5FEC30C-9460-4238-BA32-81126E438421}.Debug|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{F5FEC30C-9460-4238-BA32-81126E438421}.Release|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{F5FEC30C-9460-4238-BA32-81126E438421}.Shipping|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{F5FEC30C-9460-4238-BA32-81126E438421}.ShippingDebugConsole|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{AAA81ED5-BBFE-40F0-B784-55AC152343EC}.Debug|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{AAA81ED5-BBFE-40F0-B784-55AC152343EC}.Release|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{AAA81ED5-BBFE-40F0-B784-55AC152343EC}.Shipping|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{AAA81ED5-BBFE-40F0-B784-55AC152343EC}.ShippingDebugConsole|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{41069B8A-E2C8-4460-940D-BB936F6F3F77}.Debug|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{41069B8A-E2C8-4460-940D-BB936F6F3F77}.Release|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{41069B8A-E2C8-4460-940D-BB936F6F3F77}.Shipping|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{41069B8A-E2C8-4460-940D-BB936F6F3F77}.ShippingDebugConsole|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{D532BF3B-6ECC-41CA-B4AE-D229EE1630EA}.Debug|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{D532BF3B-6ECC-41CA-B4AE-D229EE1630EA}.Release|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{D532BF3B-6ECC-41CA-B4AE-D229EE1630EA}.Shipping|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{D532BF3B-6ECC-41CA-B4AE-D229EE1630EA}.ShippingDebugConsole|Mixed platforms.ActiveCfg = BuiltWithUnrealBuildTool|Win32
+		{91F36CA2-71F4-4A6F-ABEF-DBC38B93FDD4}.Debug|Mixed platforms.ActiveCfg = Debug|Win32
+		{91F36CA2-71F4-4A6F-ABEF-DBC38B93FDD4}.Debug|Mixed platforms.Build.0 = Debug|Win32
+		{91F36CA2-71F4-4A6F-ABEF-DBC38B93FDD4}.Release|Mixed platforms.ActiveCfg = Release|Win32
+		{91F36CA2-71F4-4A6F-ABEF-DBC38B93FDD4}.Release|Mixed platforms.Build.0 = Release|Win32
+		{91F36CA2-71F4-4A6F-ABEF-DBC38B93FDD4}.Shipping|Mixed platforms.ActiveCfg = Shipping|Win32
+		{91F36CA2-71F4-4A6F-ABEF-DBC38B93FDD4}.Shipping|Mixed platforms.Build.0 = Shipping|Win32
+		{91F36CA2-71F4-4A6F-ABEF-DBC38B93FDD4}.ShippingDebugConsole|Mixed platforms.ActiveCfg = ShippingDebugConsole|Win32
+		{91F36CA2-71F4-4A6F-ABEF-DBC38B93FDD4}.ShippingDebugConsole|Mixed platforms.Build.0 = ShippingDebugConsole|Win32
+		{29B33253-16C8-4337-8FF6-70B746D77E7B}.Debug|Mixed platforms.ActiveCfg = Debug|Xbox 360
+		{29B33253-16C8-4337-8FF6-70B746D77E7B}.Debug|Mixed platforms.Build.0 = Debug|Xbox 360
+		{29B33253-16C8-4337-8FF6-70B746D77E7B}.Release|Mixed platforms.ActiveCfg = Release|Xbox 360
+		{29B33253-16C8-4337-8FF6-70B746D77E7B}.Release|Mixed platforms.Build.0 = Release|Xbox 360
+		{29B33253-16C8-4337-8FF6-70B746D77E7B}.Shipping|Mixed platforms.ActiveCfg = Shipping|Xbox 360
+		{29B33253-16C8-4337-8FF6-70B746D77E7B}.Shipping|Mixed platforms.Build.0 = Shipping|Xbox 360
+		{29B33253-16C8-4337-8FF6-70B746D77E7B}.ShippingDebugConsole|Mixed platforms.ActiveCfg = ShippingDebugConsole|Xbox 360
+		{29B33253-16C8-4337-8FF6-70B746D77E7B}.ShippingDebugConsole|Mixed platforms.Build.0 = ShippingDebugConsole|Xbox 360
+		{C46373B6-6838-4A94-B4D4-C6752EAC93D6}.Debug|Mixed platforms.ActiveCfg = Debug|Win32
+		{C46373B6-6838-4A94-B4D4-C6752EAC93D6}.Debug|Mixed platforms.Build.0 = Debug|Win32
+		{C46373B6-6838-4A94-B4D4-C6752EAC93D6}.Release|Mixed platforms.ActiveCfg = Release|Win32
+		{C46373B6-6838-4A94-B4D4-C6752EAC93D6}.Release|Mixed platforms.Build.0 = Release|Win32
+		{C46373B6-6838-4A94-B4D4-C6752EAC93D6}.Shipping|Mixed platforms.ActiveCfg = Shipping|Win32
+		{C46373B6-6838-4A94-B4D4-C6752EAC93D6}.Shipping|Mixed platforms.Build.0 = Shipping|Win32
+		{C46373B6-6838-4A94-B4D4-C6752EAC93D6}.ShippingDebugConsole|Mixed platforms.ActiveCfg = ShippingDebugConsole|Win32
+		{C46373B6-6838-4A94-B4D4-C6752EAC93D6}.ShippingDebugConsole|Mixed platforms.Build.0 = ShippingDebugConsole|Win32
+		{8384238D-4D2C-40A9-9048-89CEE3E5F865}.Debug|Mixed platforms.ActiveCfg = Debug|Win32
+		{8384238D-4D2C-40A9-9048-89CEE3E5F865}.Debug|Mixed platforms.Build.0 = Debug|Win32
+		{8384238D-4D2C-40A9-9048-89CEE3E5F865}.Release|Mixed platforms.ActiveCfg = Release|Win32
+		{8384238D-4D2C-40A9-9048-89CEE3E5F865}.Release|Mixed platforms.Build.0 = Release|Win32
+		{8384238D-4D2C-40A9-9048-89CEE3E5F865}.Shipping|Mixed platforms.ActiveCfg = Shipping|Win32
+		{8384238D-4D2C-40A9-9048-89CEE3E5F865}.Shipping|Mixed platforms.Build.0 = Shipping|Win32
+		{8384238D-4D2C-40A9-9048-89CEE3E5F865}.ShippingDebugConsole|Mixed platforms.ActiveCfg = ShippingDebugConsole|Win32
+		{8384238D-4D2C-40A9-9048-89CEE3E5F865}.ShippingDebugConsole|Mixed platforms.Build.0 = ShippingDebugConsole|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{09BE474C-E143-4E7F-89E6-925ECBB69D20} = {C4545F94-F74E-45E2-AF71-3473B4F3C09F}
+		{7B2BEAF6-6DA5-48DB-84DA-A7CC7F4B5ACA} = {C4545F94-F74E-45E2-AF71-3473B4F3C09F}
+		{A8A66D15-812D-42A6-BD73-D6E64D805F01} = {C4545F94-F74E-45E2-AF71-3473B4F3C09F}
+		{9E3C0A84-2520-4CB2-9202-55AF64CD84A5} = {C77F9B60-722B-4E86-B7B4-F0025687C359}
+		{F33F4FE6-1840-446E-A7D8-903B8EDFB14B} = {C77F9B60-722B-4E86-B7B4-F0025687C359}
+		{D81C72CB-E8FC-4442-9D29-E060415DDBAA} = {C77F9B60-722B-4E86-B7B4-F0025687C359}
+		{0EE028CA-72A3-4A1D-ADEF-0D60B3B2EEE7} = {C77F9B60-722B-4E86-B7B4-F0025687C359}
+		{43494D47-541C-486E-91F8-1EB0F552CAFD} = {C77F9B60-722B-4E86-B7B4-F0025687C359}
+		{4F37BDF1-2525-4F9E-8BE0-8326C4588632} = {014DC93C-9FF9-42DC-A252-87F6508C741B}
+		{1297D2D0-7B02-4C20-8BB3-56279E8385C8} = {014DC93C-9FF9-42DC-A252-87F6508C741B}
+		{895426F0-D2CE-49BA-A496-46A2ABB76A0C} = {014DC93C-9FF9-42DC-A252-87F6508C741B}
+		{AFB0B542-01A8-4765-8797-4099D7294A10} = {4F37BDF1-2525-4F9E-8BE0-8326C4588632}
+		{D701000E-E334-4915-ACE9-D59E50F98A4B} = {95F9398D-D309-488C-B0A9-13ADB3C168BA}
+		{20C50653-B887-40EC-B85B-06BF6E24FDB4} = {95F9398D-D309-488C-B0A9-13ADB3C168BA}
+		{CB870BCA-E5E6-467F-AA38-CE5DF837D968} = {95F9398D-D309-488C-B0A9-13ADB3C168BA}
+		{06C263EE-5828-4D33-BE2A-C60B03CC02CE} = {1AD35CF3-470C-44EA-B1B5-5CD621053814}
+		{F5FEC30C-9460-4238-BA32-81126E438421} = {06C263EE-5828-4D33-BE2A-C60B03CC02CE}
+		{AAA81ED5-BBFE-40F0-B784-55AC152343EC} = {06C263EE-5828-4D33-BE2A-C60B03CC02CE}
+		{41069B8A-E2C8-4460-940D-BB936F6F3F77} = {06C263EE-5828-4D33-BE2A-C60B03CC02CE}
+		{D532BF3B-6ECC-41CA-B4AE-D229EE1630EA} = {06C263EE-5828-4D33-BE2A-C60B03CC02CE}
+		{F44C7038-C26B-4B9A-8DB6-0DCC27293089} = {06C263EE-5828-4D33-BE2A-C60B03CC02CE}
+		{AE2B1A55-E493-4E93-8416-7144201E183E} = {1297D2D0-7B02-4C20-8BB3-56279E8385C8}
+		{77D547F4-1691-42B3-99D3-FB4429DE2ADB} = {1297D2D0-7B02-4C20-8BB3-56279E8385C8}
+		{17011B84-F505-4155-84FE-D849F4AFDFD1} = {1297D2D0-7B02-4C20-8BB3-56279E8385C8}
+		{E67A30E5-2A88-494A-8AEC-9D079A6BE10A} = {1297D2D0-7B02-4C20-8BB3-56279E8385C8}
+		{EEDADA55-1F78-46AA-BE37-7F6EA57910E5} = {895426F0-D2CE-49BA-A496-46A2ABB76A0C}
+		{559F6F18-3B99-4A8B-A384-BCF2A9FD69EF} = {895426F0-D2CE-49BA-A496-46A2ABB76A0C}
+		{29B33253-16C8-4337-8FF6-70B746D77E7B} = {F44C7038-C26B-4B9A-8DB6-0DCC27293089}
+		{91F36CA2-71F4-4A6F-ABEF-DBC38B93FDD4} = {F44C7038-C26B-4B9A-8DB6-0DCC27293089}
+		{8384238D-4D2C-40A9-9048-89CEE3E5F865} = {7B2BEAF6-6DA5-48DB-84DA-A7CC7F4B5ACA}
+		{C46373B6-6838-4A94-B4D4-C6752EAC93D6} = {7B2BEAF6-6DA5-48DB-84DA-A7CC7F4B5ACA}
+	EndGlobalSection
+EndGlobal

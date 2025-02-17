@@ -1,0 +1,21 @@
+Microsoft Visual Studio Solution File, Format Version 8.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RunFColladaTests", "RunFColladaTests.csproj", "{6F1DAB3D-3089-46F3-A872-5CA21421F8C4}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfiguration) = preSolution
+		Debug = Debug
+		Release = Release
+	EndGlobalSection
+	GlobalSection(ProjectConfiguration) = postSolution
+		{6F1DAB3D-3089-46F3-A872-5CA21421F8C4}.Debug.ActiveCfg = Debug|.NET
+		{6F1DAB3D-3089-46F3-A872-5CA21421F8C4}.Debug.Build.0 = Debug|.NET
+		{6F1DAB3D-3089-46F3-A872-5CA21421F8C4}.Release.ActiveCfg = Release|.NET
+		{6F1DAB3D-3089-46F3-A872-5CA21421F8C4}.Release.Build.0 = Release|.NET
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+	EndGlobalSection
+	GlobalSection(ExtensibilityAddIns) = postSolution
+	EndGlobalSection
+EndGlobal

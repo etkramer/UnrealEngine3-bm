@@ -1,0 +1,30 @@
+Microsoft Visual Studio Solution File, Format Version 8.00
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GameuxInstallHelper", "GameuxInstallHelper_2003.vcproj", "{C93E74C8-D021-4DA6-92DE-4BF63FAC418B}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GDFInstall", "GDFInstall_2003.vcproj", "{86EEDF9B-C84E-47E2-8D12-723B0C00AADB}"
+	ProjectSection(ProjectDependencies) = postProject
+		{C93E74C8-D021-4DA6-92DE-4BF63FAC418B} = {C93E74C8-D021-4DA6-92DE-4BF63FAC418B}
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfiguration) = preSolution
+		Debug = Debug
+		Release = Release
+	EndGlobalSection
+	GlobalSection(ProjectConfiguration) = postSolution
+		{C93E74C8-D021-4DA6-92DE-4BF63FAC418B}.Debug.ActiveCfg = Debug|Win32
+		{C93E74C8-D021-4DA6-92DE-4BF63FAC418B}.Debug.Build.0 = Debug|Win32
+		{C93E74C8-D021-4DA6-92DE-4BF63FAC418B}.Release.ActiveCfg = Release|Win32
+		{C93E74C8-D021-4DA6-92DE-4BF63FAC418B}.Release.Build.0 = Release|Win32
+		{86EEDF9B-C84E-47E2-8D12-723B0C00AADB}.Debug.ActiveCfg = Debug|Win32
+		{86EEDF9B-C84E-47E2-8D12-723B0C00AADB}.Debug.Build.0 = Debug|Win32
+		{86EEDF9B-C84E-47E2-8D12-723B0C00AADB}.Release.ActiveCfg = Release|Win32
+		{86EEDF9B-C84E-47E2-8D12-723B0C00AADB}.Release.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+	EndGlobalSection
+	GlobalSection(ExtensibilityAddIns) = postSolution
+	EndGlobalSection
+EndGlobal

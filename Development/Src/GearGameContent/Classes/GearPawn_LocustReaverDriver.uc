@@ -1,0 +1,66 @@
+
+/**
+ * Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
+ */
+
+class GearPawn_LocustReaverDriver extends GearPawn_LocustDroneBase
+	config(Pawn);
+
+function bool Died(Controller Killer, class<DamageType> GearDamageType, vector HitLocation)
+{
+	local Vehicle_Reaver_Base Reaver;
+	local bool bDied;
+
+	bCollideWorld = TRUE;
+
+	Reaver = Vehicle_Reaver_Base(Base);
+
+	bDied = Super.Died( Killer, GearDamageType, HitLocation );
+
+	if(Reaver != None && bDied)
+	{
+		Reaver.DriverDied(GearDamageType);
+	}
+
+	return bDied;
+}
+
+
+/** just explode when shot by centaur using particles */
+simulated function bool ShouldUseSimpleEffectDeath(class<GearDamageType> GearDamageType)
+{
+	if( ClassIsChildOf(GearDamageType, class'GearGame.GDT_RocketCannon') ||
+		ClassIsChildOf(GearDamageType, class'GearGame.GDT_ReaverCannonCheap'))
+	{
+		return TRUE;
+	}
+	else
+	{
+		return Super.ShouldUseSimpleEffectDeath(GearDamageType);
+	}
+}
+
+defaultproperties
+{
+	IdleBreakFreq=(X=0.f,Y=0.f)
+
+	Begin Object Name=GearPawnMesh
+		AnimTreeTemplate=AnimTree'Locust_Reaver_Anim.AT_Locust_ReaverDriver'
+		AnimSets.Empty
+		AnimSets(0)=AnimSet'Locust_Grunt.Locust_Grunt_OnReaver'
+		Translation=(Z=0)
+	End Object
+
+	SpecialMoveClasses(SM_DeathAnim)=class'GSM_DeathAnimFallFromBeast'
+	SpecialMoveClasses(SM_DeathAnimFire)=None
+
+	bCollideWorld=FALSE
+	bAllowInventoryDrops=FALSE
+	bEnableEncroachCheckOnRagdoll=TRUE
+	bRespondToExplosions=FALSE
+
+	HelmetType=class'Item_Helmet_LocustBeastRider'
+
+	bNoDeathGUDSEvent=TRUE
+	NoticedGUDSEvent=GUDEvent_None
+}

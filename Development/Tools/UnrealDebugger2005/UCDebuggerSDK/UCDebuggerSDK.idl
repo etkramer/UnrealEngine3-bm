@@ -1,0 +1,45 @@
+// UCDebuggerSDK.idl : IDL source for UCDebuggerSDK
+//
+
+// This file will be processed by the MIDL tool to
+// produce the type library (UCDebuggerSDK.tlb) and marshalling code.
+
+import "oaidl.idl";
+import "ocidl.idl";
+import "msdbg.idl";
+
+#ifndef PROXYSTUB
+[
+	uuid(CF7ADF3E-7899-4c95-8E38-0B9417AA7D84),
+	version(1.0),
+	helpstring("UCDebuggerSDK 1.0 Type Library")
+]
+library UCDebuggerSDKLib
+{
+	importlib("stdole2.tlb");
+#endif // PROXYSTUB
+
+    [
+        object,
+        uuid(E5C82E75-8543-48d2-8460-7412BF245BCB),
+        helpstring("IBatchProgramNode Interface"),
+        pointer_default(unique)
+    ]
+    interface IBatchProgramNode : IUnknown
+    {
+        HRESULT EngineAttach([in] IDebugEngine2*  pEngine,
+                             [in] IDebugEventCallback2* pCallback, 
+                             [in] DWORD dwReason);
+    }
+
+#ifndef PROXYSTUB
+	[
+		uuid(9195946B-D25F-4001-8C20-B22A743013C7),
+		helpstring("Engine Class")
+	]
+	coclass Engine
+	{
+		[default] interface IDebugEngine2;
+	};
+};
+#endif // PROXYSTUB

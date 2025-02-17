@@ -1,0 +1,40 @@
+watchstart UnrealGameJob_%JobGame%_%JobPlatform%_%JobParameter%
+
+checkerrors
+ignorewarnings
+
+status	Syncing to build label
+watchstart SyncBuildLabel
+sync
+watchstop
+
+clean
+
+buildconfig Release
+msbuild UnrealBuildTool/UnrealBuildTool.csproj
+
+timeout 120
+buildconfig %JobParameter%
+
+Status	Compiling %JobGame% %JobPlatform% %JobParameter%
+
+watchstart GCCCompile_%JobGame%_%JobPlatform%_%JobParameter%
+checkoutgame %JobGame%
+Game %JobGame%
+UnrealBuild
+watchstop
+
+status	Updating source and symbol server
+watchstart UpdateSymbolServer_%JobGame%_%JobPlatform%_%JobParameter%
+getengineversion
+updatesymbolserver
+watchstop
+
+Status	Submitting %JobGame% %JobPlatform% %JobParameter% files
+submit
+
+Game %JobGame%
+tagexe
+
+watchstop
+

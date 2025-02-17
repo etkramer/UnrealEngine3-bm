@@ -1,0 +1,70 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+	<Product Id="1B34CEE1-17BE-4155-955A-E49430952070" Name="UnrealSync v1.0.1" Language="1033"
+			 Version="1.0.1.0" Manufacturer="Epic Games" UpgradeCode="F7BA7575-E96D-43fc-AC88-5B88E52CD106">
+
+		<Package InstallerVersion="200" Compressed="yes"/>
+
+		<Condition Message="You need to be an administrator to install this product.">
+			Privileged
+		</Condition>
+
+		<Condition Message='This setup requires the .NET Framework 2.0 or higher.'>
+			<![CDATA[MsiNetAssemblySupport >= "2.0.50727"]]>
+		</Condition>
+
+		<CloseApplication xmlns="http://schemas.microsoft.com/wix/UtilExtension" Id="CloseUnrealSyncManager" CloseMessage="yes" Target="UnrealSyncManager" Description="The UnrealSync Manager is currently running and needs to be closed before the installation can continue."/>
+
+		<Media Id="1" Cabinet="MySetup.cab" EmbedCab="yes"/>
+
+		<Directory Id="TARGETDIR" Name="SourceDir">
+			<Directory Id="ProgramFilesFolder" Name="PFiles">
+				<Directory Id="EpicDir" Name="Epic Games">
+					<Directory Id="INSTALLDIR" Name="UnrealSync">
+						<Component Id="UnrealSyncLib" Guid="3CC3444B-4A1F-4ae8-A11D-A0237C55ED68">
+							<File Source="UnrealSyncLib.dll" Name="UnrealSyncLib.dll" DiskId="1" Vital="yes" KeyPath="yes"/>
+						</Component>
+						<Component Id="UnrealSyncManager" Guid="160A6286-84A7-47ad-B7B2-D321444A77B7">
+							<File Name="UnrealSyncManager.exe" Source="UnrealSyncManager.exe" DiskId="1" Vital="yes" KeyPath="yes"/>
+						</Component>
+						<Component Id="UnrealSyncService" Guid="A64F4E3D-434D-4853-988F-F509FB1C9488">
+							<File Name="UnrealSyncService.exe" Source="UnrealSyncService.exe" Id="UnrealSyncService" DiskId="1"  Vital="yes" KeyPath="yes"/>
+							<File Name="UnrealSyncService.exe.config" Source="UnrealSyncService.exe.config" Id="UnrealSyncServiceConfig" DiskId="1" Vital="no"/>
+							<User xmlns="http://schemas.microsoft.com/wix/UtilExtension" LogonAsService="yes" CreateUser="no" Id="CreateServiceUser" Name="[ACCOUNT_NAME]" Password="[ACCOUNT_PASSWORD]" RemoveOnUninstall="no" UpdateIfExists="yes" FailIfExists="no"/>
+							<ServiceInstall Id="UnrealSyncServiceInstall" Vital="yes" DisplayName="UnrealSync" Name="UnrealSyncService.exe" ErrorControl="normal" Start="auto" Type="ownProcess" Account="[ACCOUNT_NAME]" Password="[ACCOUNT_PASSWORD]"/>
+							<ServiceControl Id="UnrealSyncServiceControl" Name="UnrealSyncService.exe" Start="install" Stop="uninstall" Remove="uninstall" Wait="yes"/>
+						</Component>
+					</Directory>
+				</Directory>
+			</Directory>
+			<Directory Id="ProgramMenuFolder" Name="Programs">
+				<Directory Id="ProgramMenuDir" Name="UnrealSync">
+					<Component Id="ShortCuts" Guid="E92E7041-CA49-495a-AC36-D6343B69A119">
+						<Shortcut Id="StartUnrealSyncManager" Directory="ProgramMenuDir" WorkingDirectory="INSTALLDIR" Name="UnrealSyncManager" Icon="UnrealSyncManager.exe" IconIndex="0" Description="Run the UnrealSync Manager." Target="[INSTALLDIR]UnrealSyncManager.exe"/>
+						<RegistryValue Id="RunUnrealSyncManager" Root="HKCU" Key="Software\Microsoft\Windows\CurrentVersion\Run" Name="UnrealSyncManager" Action="write" Type="string" Value="&quot;[INSTALLDIR]UnrealSyncManager.exe&quot; -hidden" KeyPath="yes"/>
+						<RemoveFolder Id="ProgramMenuDir" On="uninstall"/>
+					</Component>
+				</Directory>
+			</Directory>
+			<!--<Directory Id ="DesktopFolder" Name="Desktop"/>-->
+		</Directory>
+
+		<Feature Id="UnrealSync" Title="UnrealSync" Level="1" ConfigurableDirectory="INSTALLDIR">
+			<ComponentRef Id="UnrealSyncLib" />
+			<ComponentRef Id="UnrealSyncManager" />
+			<ComponentRef Id="UnrealSyncService" />
+			<ComponentRef Id="ShortCuts" />
+		</Feature>
+
+		<Property Id="ACCOUNT_NAME" Value="EPICGAMES\first.last"/>
+		<Property Id="ACCOUNT_PASSWORD"/>
+		<Property Id="WIXUI_INSTALLDIR" Value="INSTALLDIR" />
+		<UIRef Id="MyWixUI_InstallDir"/>
+
+		<Icon Id="UnrealSyncManager.exe" SourceFile="UnrealSyncManager.exe"/>
+
+		<Property Id='ARPPRODUCTICON'>UnrealSync.ico</Property>
+		<Icon Id="UnrealSync.ico" SourceFile="UnrealSync.ico" />
+
+	</Product>
+</Wix>

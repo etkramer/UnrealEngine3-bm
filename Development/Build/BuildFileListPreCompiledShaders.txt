@@ -1,0 +1,6 @@
+ExampleGame\Content\RefShaderCache*.upk
+GearGame\Content\RefShaderCache*.upk
+UTGame\Content\RefShaderCache*.upk
+WarGame\Content\RefShaderCache*.upk
+
+

@@ -1,0 +1,9 @@
+
+`define		LAST_ITEM_INDEX		-100
+
+// for now, we'll only allow 3 items per page; eventually we may dynamically size these guys to allow more...
+`define	MAX_COLLECTABLES_PER_PAGE	3
+
+
+//@note 07/10/08 - changed behavior so that bumpers always move to next/previous section of the war journal
+//`define	WJ_CHAPTER_NAVIGATION_SUPPORTED

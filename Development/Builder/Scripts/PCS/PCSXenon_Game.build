@@ -1,0 +1,24 @@
+
+dependency #LatestBuild
+
+successaddress daniel.wright@epicgames.com
+failaddress joe.graf@epicgames.com;jeff.farris@epicgames.com;daniel.wright@epicgames.com
+
+timeout 540
+
+Status Syncing to latest build
+sync
+
+platform Xenon
+game %DatabaseParameter%
+
+Status Building Xenon shaders for %DatabaseParameter%
+checkoutshader 
+shaderfull 
+
+Status Submitting new Xenon shader cache for %DatabaseParameter%
+submit
+
+tagpcs
+
+

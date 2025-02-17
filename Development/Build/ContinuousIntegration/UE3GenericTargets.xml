@@ -1,0 +1,81 @@
+
+  <!-- need to merge in these here as we use them in this snipper of .xml -->
+  <taskdef name="text2xml" classname="com.gb.bci.ant.taskdefs.TextToXml"/>
+  <taskdef resource="net/sf/antcontrib/antlib.xml"/>
+
+  <property name="p4ClientSpecName" value="CIS-${projName}" />
+
+
+  <target name="makeBuildFilezDir">
+    <mkdir dir="${unrealEngine3.src.dir}\..\..\..\AutomatedBuildFilez"/>
+  </target>
+
+
+  <!-- this will get the latest code from p4 for this builder -->
+  <target name="getLatestFromP4">
+
+    <p4sync 
+	port="p4-server.epicgames.net:1666"
+        client="CIS-${projName}"
+        user="build_machine"
+	view="//depot/UnrealEngine3/..."
+    />
+
+  </target>
+
+
+
+<!--
+this is run after all of the builders have run / failed.  
+it will take all of the .log and convert them to .xml
+so we can then merge them into the mega log which will be parsed for getting the error/warning messages
+-->
+<target name="ConvertLogsToXML" >
+
+ <for param="file">
+    <path id="convertToXMLDir">
+       <fileset dir="${unrealEngine3.src.dir}\..\..\AutomatedBuildFilez" defaultexcludes="no">
+          <include name="*.log"/>
+      </fileset>
+    </path>
+ 
+    <sequential>
+       <!-- the real work goes here -->	
+       <!-- <echo>Filename === @{file}</echo> -->
+
+       <text2xml srcfile = "@{file}"
+          destfile = "@{file}.xml"
+          element = "UnrealEngine3"
+          attribute = "name"
+          value = "@{file}"
+       />      
+
+    </sequential>
+ </for>
+
+</target>
+
+
+
+  <!-- this is our generic builder.  It will trycatch the ${projName} and then convert all the logs to xml -->
+  <target name="build" depends="makeBuildFilezDir, setProperties, getLatestFromP4"> 
+
+    <trycatch property="FailureLine" reference="FailureLineRef">
+
+       <try>
+           <!-- Call the target that builds -->
+     	   <ant antfile="build.xml" target="${projName}"/>
+       </try>
+
+       <catch>
+         <fail>${FailureLine}</fail>
+       </catch>
+
+       <finally>
+         <antcall target="ConvertLogsToXML" />
+       </finally>
+
+     </trycatch>
+
+  </target>
+

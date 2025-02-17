@@ -1,0 +1,67 @@
+// Cooks all Gear maps for Xenon
+
+watchstart Gears2Cook_Xenon_%Language%
+
+checkerrors
+ignorewarnings
+
+failaddress joe.graf@epicgames.com;jeff.farris@epicgames.com
+
+dependency #LatestBuild
+
+status	Syncing to latest build
+sync
+
+timeout 240
+platform Xenon
+Game Gear
+language %Language%
+scriptconfig %DatabaseParameter%
+
+preheatmapoven
+
+Status Cook SP maps 1/5
+cookmaps SP_Hospital_P SP_Assault_P SP_Nexis_P SP_Tunnels_P
+
+Status Cook SP maps 2/5
+cookmaps SP_Landown_P SP_Intervention_P SP_Intervention_Outro_P SP_Palace_P SP_Escape_P
+
+Status Cook SP maps 3/5
+cookmaps SP_Rescue_P SP_Riftworm_P SP_Riftworm_Cine_Outro_P SP_Cavern_P SP_Forest_P 
+
+Status Cook SP maps 4/5
+cookmaps SP_Outpost_P SP_MountKadar_P SP_Hydra_P SP_JacintoIntro_P SP_Jacinto_P
+
+Status Cook SP maps 5/5
+cookmaps SP_Leviathan_P SP_Maria_P SP_Sinkhole_P SP_Closure_P
+
+Status Cook cinematics
+cookmaps SP_HospitalIntro_P SP_AssaultIntro_P SP_Credits_P
+
+Status Cook MP maps 1/2
+cookmaps MP_Avalanche MP_BloodDrive MP_Hail MP_Jacinto MP_Ruins 
+
+Status Cook MP maps 2/2
+cookmaps MP_Pavilion MP_River MP_Security MP_Stasis MP_DayOne MP_Training
+
+Status Cook MP maps DLC 1/2
+cookmaps MP_Waystation MP_Highway MP_Sanctuary  
+
+Status Cook MP maps DLC 2/2
+cookmaps MP_UnderHill MP_GrindYard MP_Courtyard  
+
+timeout 120
+
+status Publishing to \\prop-01\Builds\Gear\Xenon
+blockonpublish
+define %DatabaseParameter%
+languageagnostic
+publishlanguage \\prop-01\Builds\Gear\Xenon
+
+status Publishing to \\file-01\GearsBuilds\Xenon
+blockonpublish
+define %DatabaseParameter%
+languageagnostic
+publishlanguage \\file-01\GearsBuilds\Xenon
+
+watchstop

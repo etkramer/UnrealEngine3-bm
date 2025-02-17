@@ -1,0 +1,13 @@
+
+dependency #LatestBuild
+
+sync
+
+trigger PCS SM3 Example
+trigger PCS SM3 Gear
+trigger PCS SM3 UT
+
+
+
+
+

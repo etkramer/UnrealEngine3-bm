@@ -1,0 +1,42 @@
+Microsoft Visual Studio Solution File, Format Version 9.00
+# Visual Studio 2005
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "XeTools", "XeTools.vcproj", "{2A103C1B-2579-4857-ABE6-338A70C8483E}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "XeCOMClasses", "..\XeCOMClasses\XeCOMClasses.vcproj", "{3F41598A-BC56-40E9-976B-DE215EB01D07}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "XeCOMClassesPS", "..\XeCOMClasses\XeCOMClassesPS.vcproj", "{6BD72D3D-127F-4B4E-B5D0-D876CAEB09DB}"
+	ProjectSection(ProjectDependencies) = postProject
+		{3F41598A-BC56-40E9-976B-DE215EB01D07} = {3F41598A-BC56-40E9-976B-DE215EB01D07}
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SourceCodeControl) = preSolution
+		SccNumberOfProjects = 4
+		SccProjectUniqueName0 = XeTools.vcproj
+		SccLocalPath0 = .
+		SccLocalPath1 = .
+		SccProjectUniqueName2 = ..\\XeCOMClasses\\XeCOMClasses.vcproj
+		SccLocalPath2 = ..\\XeCOMClasses
+		SccProjectUniqueName3 = ..\\XeCOMClasses\\XeCOMClassesPS.vcproj
+		SccLocalPath3 = ..\\XeCOMClasses
+	EndGlobalSection
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{2A103C1B-2579-4857-ABE6-338A70C8483E}.Debug|Win32.ActiveCfg = Debug|Win32
+		{2A103C1B-2579-4857-ABE6-338A70C8483E}.Debug|Win32.Build.0 = Debug|Win32
+		{2A103C1B-2579-4857-ABE6-338A70C8483E}.Release|Win32.ActiveCfg = Release|Win32
+		{2A103C1B-2579-4857-ABE6-338A70C8483E}.Release|Win32.Build.0 = Release|Win32
+		{3F41598A-BC56-40E9-976B-DE215EB01D07}.Debug|Win32.ActiveCfg = Debug|Win32
+		{3F41598A-BC56-40E9-976B-DE215EB01D07}.Debug|Win32.Build.0 = Debug|Win32
+		{3F41598A-BC56-40E9-976B-DE215EB01D07}.Release|Win32.ActiveCfg = Release|Win32
+		{3F41598A-BC56-40E9-976B-DE215EB01D07}.Release|Win32.Build.0 = Release|Win32
+		{6BD72D3D-127F-4B4E-B5D0-D876CAEB09DB}.Debug|Win32.ActiveCfg = Debug|Win32
+		{6BD72D3D-127F-4B4E-B5D0-D876CAEB09DB}.Release|Win32.ActiveCfg = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

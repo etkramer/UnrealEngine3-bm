@@ -1,0 +1,24 @@
+checkerrors
+ignorewarnings
+
+Dependency #LatestBuild
+
+status	Syncing to latest build
+sync
+
+timeout 120
+
+Game %DatabaseParameter%
+Platform PC
+
+checkoutcontenttag %DatabaseParameter%
+
+status	Creating content tags for %DatabaseParameter%
+CreateContentTags
+
+status	Submitting and tagging content tag index
+submit
+
+tagcontenttag
+
+

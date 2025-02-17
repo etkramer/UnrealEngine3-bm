@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<xex>
+  <titleid id="0x4D5707DB"/>
+  <version major="0x1" minor="0x0" 
+     build="4645"
+     qfe="0x00"
+  />
+  <section file="UTGame\Live\UT3.spa" name="4D5707DB" memory="RW"/>
+  <mediatypes>
+	<cd/>
+	<consolepackage/>
+	<dvdxg2/>
+	<harddisk/>
+	<livepackage/>
+	<mu/>
+	<network/>
+	<signedpackage/>
+	<usbmass/>
+  </mediatypes>
+</xex>

@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioProject
+	ProjectType="Visual C++"
+	Version="8.00"
+	Name="GearGame Xbox360"
+	ProjectGUID="{29B33253-16C8-4337-8FF6-70B746D77E7B}"
+	RootNamespace="GearGame Xbox360"
+	Keyword="MakeFileProj"
+	>
+	<Platforms>
+		<Platform
+			Name="Xbox 360"
+		/>
+	</Platforms>
+	<ToolFiles>
+	</ToolFiles>
+	<Configurations>
+		<Configuration
+			Name="Debug|Xbox 360"
+			OutputDirectory="..\..\Intermediate\$(ProjectName) $(ConfigurationName)"
+			IntermediateDirectory="..\..\Intermediate\$(ProjectName) $(ConfigurationName)"
+			ConfigurationType="0"
+			UseOfMFC="-1"
+			UseOfATL="0"
+			>
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="@cd ..&#x0D;&#x0A;@call Targets/Build.bat $(ProjectName) $(ConfigurationName) -output &quot;$(TargetPath)&quot;"
+				ReBuildCommandLine="@cd ..&#x0D;&#x0A;@call Targets/CleanGame.bat $(ProjectName) $(ConfigurationName) $(TargetPath)&#x0D;&#x0A;@call Targets/Build.bat $(ProjectName) $(ConfigurationName) -output &quot;$(TargetPath)&quot;"
+				CleanCommandLine="@cd ..&#x0D;&#x0A;@call Targets/CleanGame.bat $(ProjectName) $(ConfigurationName) $(TargetPath)"
+				Output="../../../GearGame-XeDebug.xex"
+				PreprocessorDefinitions=""
+				IncludeSearchPath=""
+				ForcedIncludes=""
+				AssemblySearchPath=""
+				ForcedUsingAssemblies=""
+				CompileAsManaged=""
+			/>
+			<Tool
+				Name="VCX360DeploymentTool"
+				DeploymentFiles=""
+				DeploymentType="0"
+			/>
+			<DebuggerTool
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release|Xbox 360"
+			OutputDirectory="..\..\Intermediate\$(ProjectName) $(ConfigurationName)"
+			IntermediateDirectory="..\..\Intermediate\$(ProjectName) $(ConfigurationName)"
+			ConfigurationType="0"
+			UseOfMFC="-1"
+			UseOfATL="0"
+			>
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="@cd ..&#x0D;&#x0A;@call Targets/Build.bat $(ProjectName) $(ConfigurationName) -output &quot;$(TargetPath)&quot;"
+				ReBuildCommandLine="@cd ..&#x0D;&#x0A;@call Targets/CleanGame.bat $(ProjectName) $(ConfigurationName) $(TargetPath)&#x0D;&#x0A;@call Targets/Build.bat $(ProjectName) $(ConfigurationName) -output &quot;$(TargetPath)&quot;"
+				CleanCommandLine="@cd ..&#x0D;&#x0A;@call Targets/CleanGame.bat $(ProjectName) $(ConfigurationName) $(TargetPath)"
+				Output="../../../GearGame-XeRelease.xex"
+				PreprocessorDefinitions=""
+				IncludeSearchPath=""
+				ForcedIncludes=""
+				AssemblySearchPath=""
+				ForcedUsingAssemblies=""
+				CompileAsManaged=""
+			/>
+			<Tool
+				Name="VCX360DeploymentTool"
+				DeploymentFiles=""
+				DeploymentType="0"
+			/>
+			<DebuggerTool
+			/>
+		</Configuration>
+		<Configuration
+			Name="Shipping|Xbox 360"
+			OutputDirectory="..\..\Intermediate\$(ProjectName) $(ConfigurationName)"
+			IntermediateDirectory="..\..\Intermediate\$(ProjectName) $(ConfigurationName)"
+			ConfigurationType="0"
+			UseOfMFC="-1"
+			UseOfATL="0"
+			>
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="@cd ..&#x0D;&#x0A;@call Targets/Build.bat $(ProjectName) $(ConfigurationName) -output &quot;$(TargetPath)&quot;"
+				ReBuildCommandLine="@cd ..&#x0D;&#x0A;@call Targets/CleanGame.bat $(ProjectName) $(ConfigurationName) $(TargetPath)&#x0D;&#x0A;@call Targets/Build.bat $(ProjectName) $(ConfigurationName) -output &quot;$(TargetPath)&quot;"
+				CleanCommandLine="@cd ..&#x0D;&#x0A;@call Targets/CleanGame.bat $(ProjectName) $(ConfigurationName) $(TargetPath)"
+				Output="../../../GearGame-XeReleaseLTCG.xex"
+				PreprocessorDefinitions=""
+				IncludeSearchPath=""
+				ForcedIncludes=""
+				AssemblySearchPath=""
+				ForcedUsingAssemblies=""
+				CompileAsManaged=""
+			/>
+			<Tool
+				Name="VCX360DeploymentTool"
+				DeploymentFiles=""
+				DeploymentType="0"
+			/>
+			<DebuggerTool
+			/>
+		</Configuration>
+		<Configuration
+			Name="ShippingDebugConsole|Xbox 360"
+			OutputDirectory="..\..\Intermediate\$(ProjectName) $(ConfigurationName)"
+			IntermediateDirectory="..\..\Intermediate\$(ProjectName) $(ConfigurationName)"
+			ConfigurationType="0"
+			UseOfMFC="-1"
+			UseOfATL="0"
+			>
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="@cd ..&#x0D;&#x0A;@call Targets/Build.bat $(ProjectName) $(ConfigurationName) -output &quot;$(TargetPath)&quot;"
+				ReBuildCommandLine="@cd ..&#x0D;&#x0A;@call Targets/CleanGame.bat $(ProjectName) $(ConfigurationName) $(TargetPath)&#x0D;&#x0A;@call Targets/Build.bat $(ProjectName) $(ConfigurationName) -output &quot;$(TargetPath)&quot;"
+				CleanCommandLine="@cd ..&#x0D;&#x0A;@call Targets/CleanGame.bat $(ProjectName) $(ConfigurationName) $(TargetPath)"
+				Output="../../../GearGame-XeReleaseLTCG-DebugConsole.xex"
+				PreprocessorDefinitions=""
+				IncludeSearchPath=""
+				ForcedIncludes=""
+				AssemblySearchPath=""
+				ForcedUsingAssemblies=""
+				CompileAsManaged=""
+			/>
+			<Tool
+				Name="VCX360DeploymentTool"
+				DeploymentFiles=""
+				DeploymentType="0"
+			/>
+			<DebuggerTool
+			/>
+		</Configuration>
+	</Configurations>
+	<References>
+	</References>
+	<Files>
+		<Filter
+			Name="Ini files"
+			>
+			<File
+				RelativePath="..\..\..\GearGame\Config\Xenon\XenonEditor.ini"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\GearGame\Config\Xenon\XenonEngine.ini"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\GearGame\Config\Xenon\XenonGame.ini"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\GearGame\Config\Xenon\XenonInput.ini"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\GearGame\Config\Xenon\XenonUI.ini"
+				>
+			</File>
+		</Filter>
+	</Files>
+	<Globals>
+	</Globals>
+</VisualStudioProject>

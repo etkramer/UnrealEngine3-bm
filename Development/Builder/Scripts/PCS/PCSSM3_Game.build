@@ -1,0 +1,22 @@
+
+dependency #LatestBuild
+
+successaddress daniel.wright@epicgames.com
+failaddress joe.graf@epicgames.com;jeff.farris@epicgames.com;daniel.wright@epicgames.com
+
+timeout 540
+
+Status Syncing to latest build
+sync
+
+platform PC
+game %DatabaseParameter%
+
+Status Building SM3 shaders for %DatabaseParameter%
+checkoutshader
+shaderfull
+
+Status Submitting new SM3 shader cache for %DatabaseParameter%
+submit
+
+tagpcs

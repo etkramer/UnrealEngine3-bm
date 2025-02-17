@@ -1,0 +1,116 @@
+// XeCOMClasses.idl : IDL source for XeCOMClasses
+//
+
+// This file will be processed by the MIDL tool to
+// produce the type library (XeCOMClasses.tlb) and marshalling code.
+
+import "oaidl.idl";
+import "ocidl.idl";
+import "XDevkit.idl";
+
+[
+	object,
+	uuid(AFEF7040-4537-4420-B036-F3C6250E28DD),
+	dual,
+	nonextensible,
+	helpstring("IFXenonConsole Interface"),
+	pointer_default(unique)
+]
+interface IFXenonConsole : IXboxEvents
+{
+	[id(1), helpstring("Initializes the coclass.")]
+	HRESULT Initialize([in] IXboxConsole *Console, [in] BSTR TargetMgrName, [in] VARIANT_BOOL bIsDefault);
+	
+	[id(2), helpstring("Attaches a debugger to the console beginning the flow of debug events.")]
+	HRESULT ConnectDebugger(BSTR DebuggerName);
+	
+	[id(3), helpstring("Disconnects the debugger from the console ending the flow of debug events.")]
+	HRESULT DisconnectDebugger();
+	
+	[propget, id(4), helpstring("Gets the name of the console.")]
+	HRESULT Name([out, retval] BSTR *OutName);
+	
+	[propget, id(5), helpstring("Retrieves the name of the running process.")]
+	HRESULT RunningProcessName([out, retval] BSTR *OutName);
+
+	[propget, id(6), helpstring("Returns the title IP of the console.")]
+	HRESULT IPAddressTitle([out, retval] DWORD *OutIPAddress);
+
+	[propget, id(7), helpstring("Returns true if the current user is debugging the console.")]
+	HRESULT IsDebugging([out, retval] VARIANT_BOOL *OutValue);
+
+	[id(8), helpstring("Creates a directory on the console.")]
+	HRESULT MakeDirectory([in] BSTR DirectoryName);
+
+	[id(9), helpstring("Retrieves a file object.")]
+	HRESULT GetFileObject([in] BSTR FilePath, [out] IXboxFile **OutFile);
+
+	[id(10), helpstring("Sends a file to the console.")]
+	HRESULT SendFile([in] BSTR LocalName, [in] BSTR RemoteName);
+
+	[id(11), helpstring("Receives a file from the console.")]
+	HRESULT ReceiveFile([in] BSTR LocalName, [in] BSTR RemoteName);
+
+	[id(12), helpstring("Reboots the console.")]
+	HRESULT Reboot([in] BSTR Name, [in] BSTR MediaDirectory, [in] BSTR CmdLine, [in] _XboxRebootFlags Flags);
+
+	[propget, id(13), helpstring("Gets the threads running on the xbox.")]
+	HRESULT Threads([out, retval] IXboxThreads **OutThreads);
+
+	[id(14), helpstring("Takes a screenshot and saves it as a bitmap.")]
+	HRESULT ScreenShot([in] BSTR FileName);
+
+	[id(15), helpstring("Sends a command on the UNREAL channel.")]
+	HRESULT SendCommand([in] BSTR Command);
+
+	[propget, id(16), helpstring("Gets whether or not the console is the default.")]
+	HRESULT IsDefault([out, retval] VARIANT_BOOL *bOutIsDefault);
+
+	[propget, id(17), helpstring("Gets the current execution state.")]
+	HRESULT ExecState([out, retval] LONG *bOutExecState);
+
+	[id(18), helpstring("Determines whether or not a file needs to be copied.")]
+	HRESULT NeedsToCopyFile([in] BSTR SourceFilename, [in] BSTR DestFilename, [in] VARIANT_BOOL bReverse, [out] VARIANT_BOOL *bOutShouldCopy);
+
+	[id(19), helpstring("Sets the TTY callback pointer. This should only be called if the DLL is in-proc and is more or less a hack around COM.")]
+	HRESULT SetTTYCallback(unsigned hyper CallbackPtr);
+
+	[propget, id(20), helpstring("Gets the name of the console as viewed by the target manager.")]
+	HRESULT TargetManagerName([out, retval] BSTR *OutTMName);
+
+	[id(21), helpstring("Sets the crash callback pointer. This should only be called if the DLL is in-proc and is more or less a hack around COM.")]
+	HRESULT SetCrashCallback(unsigned hyper CallbackPtr);
+
+	[propget, id(22), helpstring("Gets the IP address for the debug channel.")]
+	HRESULT DebugChannelIPAddress([out, retval] DWORD *OutIPAddress);
+
+	[propget, id(23), helpstring("Gets the type of the target")]
+	HRESULT TargetType([out, retval] int *OutTargetType);
+
+	[propput, id(24), helpstring("Sets the crash report filter for the target.")]
+	HRESULT CrashReportFilter([in] DWORD Filter);
+
+	[propput, id(25), helpstring("Sets the type of dumps that are generated for the target.")]
+	HRESULT DumpType([in] DWORD DumpType);
+
+	[propget, id(25), helpstring("Gets the type of dumps that are generated for the target.")]
+	HRESULT DumpType([out, retval] DWORD *OutDumpType);
+};
+
+[
+	uuid(35067A80-F0AC-4931-B60A-35ACD4AD50F3),
+	version(1.0),
+	helpstring("XeCOMClasses 1.0 Type Library")
+]
+library XeCOMClassesLib
+{
+	importlib("stdole2.tlb");
+	[
+		uuid(7FCB80BE-FD6B-4412-9CB8-29022EDE5EBC),
+		helpstring("FXenonConsole Class")
+	]
+	coclass FXenonConsole
+	{
+		[default] interface IFXenonConsole;
+	};
+};

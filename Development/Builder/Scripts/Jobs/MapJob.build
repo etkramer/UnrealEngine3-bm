@@ -1,0 +1,25 @@
+watchstart MapJob_%JobPlatform%_%JobParameter%_%JobGame%
+
+checkerrors
+ignorewarnings
+
+preheatmapoven
+preheatjoboven
+
+status	Syncing to latest build
+watchstart SyncLatestBuild
+sync
+watchstop
+
+copydest %JobGame%Game\Cooked%JobPlatform%
+copy %JobGame%Game\Build\Distributed\%JobPlatform%\GlobalPersistentCookerData.upk
+
+timeout 60
+
+status	Cooking map
+cookmapjob %JobParameter%
+
+status	Copying map to instigator (param is share on instigator machine to copy to)
+copyjobs depot
+
+watchstop

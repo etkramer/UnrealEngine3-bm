@@ -1,0 +1,21 @@
+Microsoft Visual Studio Solution File, Format Version 8.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AdjustSound_2003", "AdjustSound_2003.csproj", "{0DA7D887-D855-4C65-9B68-E6BFE8261CD0}"
+EndProject
+Global
+	GlobalSection(SolutionConfiguration) = preSolution
+		ConfigName.0 = Debug
+		ConfigName.1 = Release
+	EndGlobalSection
+	GlobalSection(ProjectDependencies) = postSolution
+	EndGlobalSection
+	GlobalSection(ProjectConfiguration) = postSolution
+		{0DA7D887-D855-4C65-9B68-E6BFE8261CD0}.Debug.ActiveCfg = Debug|.NET
+		{0DA7D887-D855-4C65-9B68-E6BFE8261CD0}.Debug.Build.0 = Debug|.NET
+		{0DA7D887-D855-4C65-9B68-E6BFE8261CD0}.Release.ActiveCfg = Release|.NET
+		{0DA7D887-D855-4C65-9B68-E6BFE8261CD0}.Release.Build.0 = Release|.NET
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+	EndGlobalSection
+	GlobalSection(ExtensibilityAddIns) = postSolution
+	EndGlobalSection
+EndGlobal

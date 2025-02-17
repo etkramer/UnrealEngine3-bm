@@ -1,0 +1,13 @@
+// Promotes GearGame
+
+successaddress Gears-List@epicgames.com;wrbldnts@microsoft.com;mike.fricker@epicgames.com;markmih@microsoft.com;gregsn@microsoft.com
+
+dependency #LatestApprovedBuild
+
+getchanges
+
+report Gear GearMaps GearContent Engine PC Xenon
+
+tag latestUnrealEngine3_Gears2
+
+

@@ -1,0 +1,216 @@
+watchstart Gears2FullBuild
+
+checkerrors
+ignorewarnings
+
+triggeraddress
+failaddress joe.graf@epicgames.com;jeff.farris@epicgames.com
+successaddress SupportQA@epicgames.com;Roger.collum@epicgames.com;Ben.chaney@epicgames.com;Jonathan.taylor@epicgames.com;John.mauney@epicgames.com;John.liberto@epicgames.com;Alex.conner@epicgames.com;Jerry.gilland@epicgames.com;Steven.haines@epicgames.com;Justin.hair@epicgames.com;Joshua.keller@epicgames.com;rod.fergusson@epicgames.com
+
+watchstart CodeSync
+status	Syncing to head
+sync
+watchstop
+
+CreateNewLabel
+
+platform PC
+buildconfig Release
+
+checkout Development/Src/Core/Src/UnObjVer.cpp
+checkout Development/Src/ExampleGame/Live/xex.xml
+checkout Development/Src/GearGame/Live/xex.xml
+checkout Development/Src/UTGame/Live/xex.xml
+checkout Binaries/build.properties
+bumpengineversion
+
+Status	Submitting version files
+submit
+
+Platform Xenon
+AddUnrealGameJob Release Gear MGS
+AddUnrealGameJob Shipping Gear
+
+AddUnrealGameJob Shipping-Debug Gear MGS
+
+Platform PC
+AddUnrealFullGameJob Release Gear WM
+
+// Compile all tools
+
+platform PC
+buildconfig Release
+
+status	Building Stats viewer
+checkout Binaries/Stats.dll
+checkout Binaries/Stats.pdb
+checkout Binaries/StatsComparison.exe
+checkout Binaries/StatsComparison.pdb
+checkout Binaries/StatsThreshold.exe
+checkout Binaries/StatsThreshold.pdb
+checkout Binaries/StatsViewer.exe
+checkout Binaries/StatsViewer.pdb
+msvcfull Development/Tools/StatsViewer/StatsViewer
+
+sign Binaries/Stats.dll
+sign Binaries/StatsComparison.exe
+sign Binaries/StatsThreshold.exe
+sign Binaries/StatsViewer.exe
+
+status	Building script profiler
+checkout Binaries/ueScriptProfiler.exe
+checkout Binaries/ueScriptProfiler.pdb
+msvcfull Development/Tools/ueScriptProfiler/ueScriptProfiler
+
+sign Binaries/ueScriptProfiler.exe
+
+checkout Binaries/Xenon/XeTools.dll
+checkout Binaries/Xenon/XeTools.pdb
+checkout Binaries/Xenon/XeCOMClasses.dll
+checkout Binaries/Xenon/XeCOMClasses.pdb
+msvcfull Development/Src/Xenon/XeTools/XeTools
+
+sign Binaries/Xenon/XeTools.dll
+sign Binaries/Xenon/XeCOMClasses.dll
+
+checkout Binaries/Windows/WindowsTools.dll
+checkout Binaries/Windows/WindowsTools.pdb
+msvcfull Development/Src/Windows/WindowsTools/WindowsTools
+
+sign Binaries/Windows/WindowsTools.dll
+
+status	Building UnrealFrontEnd and UnrealConsole
+checkout Binaries/CookerSync.exe
+checkout Binaries/CookerSync.pdb
+checkout Binaries/ConsoleInterface.dll
+checkout Binaries/ConsoleInterface.pdb
+checkout Binaries/UnrealConsole.exe
+checkout Binaries/UnrealConsole.pdb
+checkout Binaries/UnrealControls.dll
+checkout Binaries/UnrealControls.pdb
+checkout Binaries/UnrealFrontend.exe
+checkout Binaries/UnrealFrontend.pdb
+checkout Binaries/UnrealConsoleRemoting.dll
+checkout Binaries/UnrealConsoleRemoting.pdb
+msvcfull Development/Tools/UnrealFrontend/UnrealFrontend
+
+sign Binaries/CookerSync.exe
+sign Binaries/ConsoleInterface.dll
+sign Binaries/UnrealConsole.exe
+sign Binaries/UnrealControls.dll
+sign Binaries/UnrealFrontend.exe
+sign Binaries/UnrealConsoleRemoting.dll
+
+status	Building Autoreporter
+checkout Binaries/AutoReporter.exe
+checkout Binaries/AutoReporter.pdb
+checkout Binaries/AutoReporter.XmlSerializers.dll
+msvcfull Development/Tools/Autoreporter/Autoreporter
+
+sign Binaries/AutoReporter.exe
+sign Binaries/AutoReporter.XmlSerializers.dll
+
+// status Building MemoryProfiler2
+// Checkout Binaries/MemoryProfiler2.exe
+// Checkout Binaries/MemoryProfiler2.pdb
+// Checkout Binaries/StandaloneSymbolParser.dll
+// Checkout Binaries/StandaloneSymbolParser.pdb
+// msvcfull Development/Tools/MemoryProfiler2/MemoryProfiler2
+
+sign Binaries/MemoryProfiler2.exe
+sign Binaries/StandaloneSymbolParser.dll
+
+status Building UnrealLoc
+Checkout Binaries/UnrealLoc.exe
+Checkout Binaries/UnrealLoc.pdb
+msvcfull Development/Tools/UnrealLoc/UnrealLoc
+
+sign Binaries/UnrealLoc.exe
+
+status Building UnrealDVDLayout
+Checkout Binaries/UnrealDVDLayout.exe
+Checkout Binaries/UnrealDVDLayout.pdb
+msvcfull Development/Tools/UnrealDVDLayout/UnrealDVDLayout
+
+sign Binaries/UnrealDVDLayout.exe
+
+status Building ShaderCompilerWorker
+Checkout Binaries/UE3ShaderCompileWorker.exe
+Checkout Binaries/UE3ShaderCompileWorker.pdb
+msvcfull Development/Tools/ShaderCompileWorker/ShaderCompileWorker
+
+sign Binaries/UE3ShaderCompileWorker.exe
+
+checkout Binaries/PackageDiffFrontEnd.exe
+checkout Binaries/ISCopyFiles.exe
+checkout Binaries/*.dll
+checkout Binaries/*.com
+checkout Binaries/PhysXLocal/PhysXLoader.dll
+
+watchstart SignBinaries
+sign Binaries/DebuggerInterface.dll
+sign Binaries/FxGraphLayout.dll
+sign Binaries/NxCooking.dll
+sign Binaries/NxCharacter.dll
+sign Binaries/libresample.dll
+sign Binaries/ogg.dll
+sign Binaries/PhysXCore.dll
+sign Binaries/PhysXExtensions.dll
+sign Binaries/PhysXLocal/PhysXLoader.dll
+sign Binaries/vorbis.dll
+sign Binaries/vorbisenc.dll
+sign Binaries/vorbisfile.dll
+
+sign Binaries/wxmsw28u_adv_vc_custom.dll
+sign Binaries/wxmsw28u_aui_vc_custom.dll
+sign Binaries/wxmsw28u_core_vc_custom.dll
+sign Binaries/wxmsw28u_dbgrid_vc_custom.dll
+sign Binaries/wxmsw28u_gl_vc_custom.dll
+sign Binaries/wxmsw28u_html_vc_custom.dll
+sign Binaries/wxmsw28u_media_vc_custom.dll
+sign Binaries/wxmsw28u_net_vc_custom.dll
+sign Binaries/wxmsw28u_odbc_vc_custom.dll
+sign Binaries/wxmsw28u_qa_vc_custom.dll
+sign Binaries/wxmsw28u_richtext_vc_custom.dll
+sign Binaries/wxmsw28u_vc_custom.dll
+sign Binaries/wxmsw28u_xml_vc_custom.dll
+sign Binaries/wxmsw28u_xrc_vc_custom.dll
+
+sign Binaries/binkw32.dll
+sign Binaries/OpenAL32.dll
+sign Binaries/wrap_oal.dll
+
+sign Binaries/FonixTtsDtSimpleFr.dll
+sign Binaries/FonixTtsDtSimpleGr.dll
+sign Binaries/FonixTtsDtSimpleIt.dll
+sign Binaries/FonixTtsDtSimpleLa.dll
+sign Binaries/FonixTtsDtSimpleSp.dll
+sign Binaries/FonixTtsDtSimpleUk.dll
+sign Binaries/FonixTtsDtSimpleUs.dll
+
+sign Binaries/dbghelp.dll
+sign Binaries/PackageDiffFrontEnd.exe
+
+sign Binaries/GearGame.com
+
+sign Binaries/ISCopyFiles.exe
+watchstop
+
+watchstart SubmitBuildGears2DF
+Status Submitting all files
+submit
+watchstop
+
+Status Waiting for other compiles to finish
+WaitForJobs
+
+updatelabeldescription
+UpdateLabel LatestBuild
+
+trigger PCS Xenon (Gears2)
+trigger PCS SM3 (Gears2)
+
+trigger Cook Xenon (Gears2)
+trigger Cook Xenon FR (Gears2)
+
+watchstop

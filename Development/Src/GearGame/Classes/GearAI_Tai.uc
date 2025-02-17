@@ -1,0 +1,9 @@
+/**
+ * Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
+ */
+class GearAI_Tai extends GearAI_Dom;
+
+defaultproperties
+{
+	bDebug=FALSE
+}

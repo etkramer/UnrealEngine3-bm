@@ -1,0 +1,29 @@
+/**
+ * AnimNodeBlendByProperty.uc
+ * Looks at a specific property of the Pawn and will blend between two inputs based on its value
+ *
+ * Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
+ */
+
+class AnimNodeBlendByProperty extends AnimNodeBlendList
+		native(Anim);
+
+var()	name	PropertyName;
+
+var()	float	BlendTime;
+
+cpptext
+{
+	virtual	void TickAnim( FLOAT DeltaSeconds, FLOAT TotalWeight );
+	virtual FString GetNodeTitle();
+}
+
+defaultproperties
+{
+	Children(0)=(Name="Child1")
+	Children(1)=(Name="Child2")
+
+	bFixNumChildren=FALSE
+	
+	BlendTime=0.1
+}

@@ -1,0 +1,83 @@
+// Cooks all DLC Gear maps for Xenon
+
+watchstart Gears2CookDLC_Xenon
+
+checkerrors
+ignorewarnings
+
+failaddress joe.graf@epicgames.com;jeff.farris@epicgames.com
+successaddress gears-coders@epicgames.com
+
+report Gear GearMaps GearContent Engine Xenon
+
+Game Gear
+platform Xenon
+
+// Set the dependency to the shipping label
+dependency UnrealEngine3-Gears2-X360_[2008-09-23_12.44]
+
+// Sync everything to the label, except content and more to #head
+status	"Artist Syncing" to build label
+artistsync
+
+scriptconfig FR
+preheatmapoven
+
+languageagnostic
+
+timeout 30
+
+status Getting published packages from \\prop-01\Builds\Gear\Xenon
+define FR
+language INT
+GetTagset Shipped \\prop-01\Builds\Gear\Xenon
+
+
+timeout 240
+language INT
+
+Status Cook MP maps Combustibles DLC
+ModName DLC2
+PreHeatDLC
+cookmaps  MP_Flood MP_GoldRush MP_Fuel
+Status Blasting DLC2
+blast DLC2
+
+Status Cook DLC3
+ModName DLC3
+PreHeatDLC
+cookmaps  MP_Waystation MP_Highway MP_Sanctuary SP_Highway_p
+Status Blasting DLC3
+blast DLC3
+
+Status Cook DLC4
+ModName DLC4
+PreHeatDLC
+cookmaps  MP_UnderHill MP_GrindYard MP_Courtyard
+Status Blasting DLC4
+blast DLC4
+
+timeout 360
+
+define DLC
+touchlabel
+
+watchstart Gears2Publish_Xenon_UnProp
+
+status Publishing to \\prop-01\Builds\Gear\Xenon
+blockonpublish
+languageagnostic
+PublishTagset Gears2DLC \\prop-01\Builds\Gear\Xenon
+
+watchstop
+
+watchstart Gears2Publish_Xenon_File01
+
+status Publishing to \\file-01\GearsBuilds\Xenon
+blockonpublish
+languageagnostic
+PublishTagset Gears2DLC \\file-01\GearsBuilds\Xenon
+
+watchstop
+
+watchstop

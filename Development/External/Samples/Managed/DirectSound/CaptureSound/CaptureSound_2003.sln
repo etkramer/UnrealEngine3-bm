@@ -1,0 +1,21 @@
+Microsoft Visual Studio Solution File, Format Version 8.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CaptureSound_2003", "CaptureSound_2003.csproj", "{467F98C9-4BF9-4120-974B-72247337DE32}"
+EndProject
+Global
+	GlobalSection(SolutionConfiguration) = preSolution
+		ConfigName.0 = Debug
+		ConfigName.1 = Release
+	EndGlobalSection
+	GlobalSection(ProjectDependencies) = postSolution
+	EndGlobalSection
+	GlobalSection(ProjectConfiguration) = postSolution
+		{467F98C9-4BF9-4120-974B-72247337DE32}.Debug.ActiveCfg = Debug|.NET
+		{467F98C9-4BF9-4120-974B-72247337DE32}.Debug.Build.0 = Debug|.NET
+		{467F98C9-4BF9-4120-974B-72247337DE32}.Release.ActiveCfg = Release|.NET
+		{467F98C9-4BF9-4120-974B-72247337DE32}.Release.Build.0 = Release|.NET
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+	EndGlobalSection
+	GlobalSection(ExtensibilityAddIns) = postSolution
+	EndGlobalSection
+EndGlobal

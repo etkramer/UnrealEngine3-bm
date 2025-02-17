@@ -1,0 +1,72 @@
+﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{09BE474C-E143-4E7F-89E6-925ECBB69D20}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <NoStandardLibraries>false</NoStandardLibraries>
+    <AssemblyName>UnrealBuildTool</AssemblyName>
+    <RootNamespace>UnrealBuildToll</RootNamespace>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>.\bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Scripts\DebugInfoHeuristic.cs" />
+    <Compile Include="Scripts\UE3BuildConfiguration.cs" />
+    <Compile Include="Scripts\UE3BuildExampleGame.cs" />
+    <Compile Include="Scripts\UE3BuildExternal.cs" />
+    <Compile Include="Scripts\UE3BuildGearGame.cs" />
+    <Compile Include="Scripts\UE3BuildNanoGame.cs" />
+    <Compile Include="Scripts\UE3BuildPS3.cs" />
+    <Compile Include="Scripts\UE3BuildTarget.cs" />
+    <Compile Include="Scripts\UE3BuildUTGame.cs" />
+    <Compile Include="Scripts\UE3BuildWin32.cs" />
+    <Compile Include="Scripts\UE3BuildXbox360.cs" />
+    <Compile Include="System\ActionGraph.cs" />
+    <Compile Include="System\BuildConfiguration.cs" />
+    <Compile Include="System\BuildException.cs" />
+    <Compile Include="System\CPPEnvironment.cs" />
+    <Compile Include="System\CPPHeaders.cs" />
+    <Compile Include="System\DataBase.cs" />
+    <Compile Include="System\DependencyCache.cs" />
+    <Compile Include="System\FileItem.cs" />
+    <Compile Include="System\IntelToolChain.cs" />
+    <Compile Include="System\LinkEnvironment.cs" />
+    <Compile Include="System\LocalExecutor.cs" />
+    <Compile Include="System\PS3ToolChain.cs" />
+    <Compile Include="System\ResponseFile.cs" />
+    <Compile Include="System\StripHeaders.cs" />
+    <Compile Include="System\Target.cs" />
+    <Compile Include="System\Unity.cs" />
+    <Compile Include="System\UnrealBuildTool.cs" />
+    <Compile Include="System\Utils.cs" />
+    <Compile Include="System\VCProject.cs" />
+    <Compile Include="System\VCToolChain.cs" />
+    <Compile Include="System\Xbox360ToolChain.cs" />
+    <Compile Include="System\XGE.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="SQL\UnrealBuildToolPerf.sql" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSHARP.Targets" />
+  <ProjectExtensions>
+    <VisualStudio AllowExistingFolder="true" />
+  </ProjectExtensions>
+</Project>

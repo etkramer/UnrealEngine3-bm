@@ -1,0 +1,185 @@
+status Conforming 
+platform PC
+buildconfig Release
+
+triggeraddress matt.oelfke@epicgames.com
+failaddress joe.graf@epicgames.com;jeff.farris@epicgames.com;matt.oelfke@epicgames.com
+successaddress matt.oelfke@epicgames.com
+
+dependency #LatestApprovedBuild
+
+Game Gear
+
+Status Syncing and getting changes
+artistsync
+
+languages INT CZE HUN POL RUS KOR CHT
+checkoutfonts Gear Interface/WarfareFonts
+conform Interface/WarfareFonts
+
+languages INT FRA ITA DEU ESN ESM
+
+status Conforming Human_Anya_Chatter
+checkoutdialog Gear Human_Anya_Chatter
+conform Human_Anya_Chatter
+
+status Conforming Human_Anya_Dialog
+checkoutdialog Gear Human_Anya_Dialog
+conform Human_Anya_Dialog
+
+status Conforming Human_Baird_Chatter
+checkoutdialog Gear Human_Baird_Chatter
+conform Human_Baird_Chatter
+
+status Conforming Human_Baird_Dialog
+checkoutdialog Gear Human_Baird_Dialog
+conform Human_Baird_Dialog
+
+status Conforming Human_BCarmine_Chatter
+checkoutdialog Gear Human_BCarmine_Chatter
+conform Human_BCarmine_Chatter
+
+status Conforming Human_BCarmine_Dialog
+checkoutdialog Gear Human_BCarmine_Dialog
+conform Human_BCarmine_Dialog
+
+status Conforming Human_Chaps_Chatter
+checkoutdialog Gear Human_Chaps_Chatter
+conform Human_Chaps_Chatter
+
+status Conforming Human_Chaps_Dialog
+checkoutdialog Gear Human_Chaps_Dialog
+conform Human_Chaps_Dialog
+
+status Conforming Human_Dizzy_Chatter
+checkoutdialog Gear Human_Dizzy_Chatter
+conform Human_Dizzy_Chatter
+
+status Conforming Human_Dizzy_Dialog
+checkoutdialog Gear Human_Dizzy_Dialog
+conform Human_Dizzy_Dialog
+
+status Conforming Human_Dom_Chatter
+checkoutdialog Gear Human_Dom_Chatter
+conform Human_Dom_Chatter
+
+status Conforming Human_Dom_Dialog
+checkoutdialog Gear Human_Dom_Dialog
+conform Human_Dom_Dialog
+
+status Conforming Human_Drunk_Chatter
+checkoutdialog Gear Human_Drunk_Chatter
+conform Human_Drunk_Chatter
+
+status Submitting conformed files (1/3)
+submit
+
+status Conforming Human_Franklin_Chatter
+checkoutdialog Gear Human_Franklin_Chatter
+conform Human_Franklin_Chatter
+
+status Conforming Human_Franklin_Dialog
+checkoutdialog Gear Human_Franklin_Dialog
+conform Human_Franklin_Dialog
+
+status Conforming Human_Gus_Chatter
+checkoutdialog Gear Human_Gus_Chatter
+conform Human_Gus_Chatter
+
+status Conforming Human_Gus_Dialog
+checkoutdialog Gear Human_Gus_Dialog
+conform Human_Gus_Dialog
+
+status Conforming Human_Henny_Dialog
+checkoutdialog Gear Human_Henny_Dialog
+conform Human_Henny_Dialog
+
+status Conforming Human_Hoffman_Chatter
+checkoutdialog Gear Human_Hoffman_Chatter
+conform Human_Hoffman_Chatter
+
+status Conforming Human_Hoffman_Dialog
+checkoutdialog Gear Human_Hoffman_Dialog
+conform Human_Hoffman_Dialog
+
+status Conforming Human_Marcus_Chatter
+checkoutdialog Gear Human_Marcus_Chatter
+conform Human_Marcus_Chatter
+
+status Conforming Human_Marcus_Dialog
+checkoutdialog Gear Human_Marcus_Dialog
+conform Human_Marcus_Dialog
+
+status Conforming Human_Maria_Dialog
+checkoutdialog Gear Human_Maria_Dialog
+conform Human_Maria_Dialog
+
+status Conforming Human_Mihn_Chatter
+checkoutdialog Gear Human_Mihn_Chatter
+conform Human_Mihn_Chatter
+
+status Conforming Human_Miscellaneous_Dialog
+checkoutdialog Gear Human_Miscellaneous_Dialog
+conform Human_Miscellaneous_Dialog
+
+status Conforming Human_Myrrah_Chatter
+checkoutdialog Gear Human_Myrrah_Chatter
+conform Human_Myrrah_Chatter
+
+status Submitting conformed files (2/3)
+submit
+
+status Conforming Human_Myrrah_Dialog
+checkoutdialog Gear Human_Myrrah_Dialog
+conform Human_Myrrah_Dialog
+
+status Conforming Human_Prescott_Dialog
+checkoutdialog Gear Human_Prescott_Dialog
+conform Human_Prescott_Dialog
+
+status Conforming Human_Stranded_Chatter
+checkoutdialog Gear Human_Stranded_Chatter
+conform Human_Stranded_Chatter
+
+status Conforming Human_Tai_Chatter
+checkoutdialog Gear Human_Tai_Chatter
+conform Human_Tai_Chatter
+
+status Conforming Human_Tai_Dialog
+checkoutdialog Gear Human_Tai_Dialog
+conform Human_Tai_Dialog
+
+status Conforming Locust_Boomer1_Chatter
+checkoutdialog Gear Locust_Boomer1_Chatter
+conform Locust_Boomer1_Chatter
+
+status Conforming Locust_Boomer2_Chatter
+checkoutdialog Gear Locust_Boomer2_Chatter
+conform Locust_Boomer2_Chatter
+
+status Conforming Locust_Boomer_Chatter
+checkoutdialog Gear Locust_Boomer_Chatter
+conform Locust_Boomer_Chatter
+
+status Conforming Locust_Drone_Chatter
+checkoutdialog Gear Locust_Drone_Chatter
+conform Locust_Drone_Chatter
+
+status Conforming Locust_Kantus_Chatter
+checkoutdialog Gear Locust_Kantus_Chatter
+conform Locust_Kantus_Chatter
+
+status Conforming Locust_Raam_Chatter
+checkoutdialog Gear Locust_Raam_Chatter
+conform Locust_Raam_Chatter
+
+status Conforming Locust_Skorge_Chatter
+checkoutdialog Gear Locust_Skorge_Chatter
+conform Locust_Skorge_Chatter
+
+status Conforming Locust_Theron_Chatter
+checkoutdialog Gear Locust_Theron_Chatter
+conform Locust_Theron_Chatter
+
+status Submitting conformed files (3/3)
+submit

@@ -1,0 +1,29 @@
+Microsoft Visual Studio Solution File, Format Version 8.00
+Project("{F184B08F-C81C-45F6-A57F-5ABD9991F28F}") = "BasicHLSL_VBNET_2003", "BasicHLSL_VBNET_2003.vbproj", "{2D7AB553-EBE6-42D6-B743-48004614EA6A}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SampleFramework_2003", "SampleFramework_2003.csproj", "{B2386D14-262E-40D2-BB6F-892A34101BA8}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfiguration) = preSolution
+		Debug = Debug
+		Release = Release
+	EndGlobalSection
+	GlobalSection(ProjectConfiguration) = postSolution
+		{2D7AB553-EBE6-42D6-B743-48004614EA6A}.Debug.ActiveCfg = Debug|.NET
+		{2D7AB553-EBE6-42D6-B743-48004614EA6A}.Debug.Build.0 = Debug|.NET
+		{2D7AB553-EBE6-42D6-B743-48004614EA6A}.Release.ActiveCfg = Release|.NET
+		{2D7AB553-EBE6-42D6-B743-48004614EA6A}.Release.Build.0 = Release|.NET
+		{B2386D14-262E-40D2-BB6F-892A34101BA8}.Debug.ActiveCfg = Debug|.NET
+		{B2386D14-262E-40D2-BB6F-892A34101BA8}.Debug.Build.0 = Debug|.NET
+		{B2386D14-262E-40D2-BB6F-892A34101BA8}.Release.ActiveCfg = Release|.NET
+		{B2386D14-262E-40D2-BB6F-892A34101BA8}.Release.Build.0 = Release|.NET
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+	EndGlobalSection
+	GlobalSection(ExtensibilityAddIns) = postSolution
+	EndGlobalSection
+EndGlobal

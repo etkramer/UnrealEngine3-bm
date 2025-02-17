@@ -1,0 +1,141 @@
+Microsoft Visual Studio Solution File, Format Version 8.00
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FxToolBase", "FxToolBase\FxToolBase_vs7.vcproj", "{83FC6FD6-1C61-4CD2-862D-25F1F1179F07}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FxMaya", "FxMaya\FxMaya_vs7.vcproj", "{C1CAD1A1-DE58-4B06-9DBE-23DA68D4146B}"
+	ProjectSection(ProjectDependencies) = postProject
+		{83FC6FD6-1C61-4CD2-862D-25F1F1179F07} = {83FC6FD6-1C61-4CD2-862D-25F1F1179F07}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FxMax", "FxMax\FxMax_vs7.vcproj", "{B0C92794-80A8-42A0-AE5E-F7789E0EC4D8}"
+	ProjectSection(ProjectDependencies) = postProject
+		{83FC6FD6-1C61-4CD2-862D-25F1F1179F07} = {83FC6FD6-1C61-4CD2-862D-25F1F1179F07}
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SourceCodeControl) = preSolution
+		SccNumberOfProjects = 4
+		SccProjectName0 = Perforce\u0020Project
+		SccLocalPath0 = .
+		SccProvider0 = MSSCCI:Perforce\u0020SCM
+		CanCheckoutShared = true
+		SolutionUniqueID = {70DBF6D5-FD18-4C88-986F-8BB882EE8BF7}
+		SccProjectUniqueName1 = FxToolBase\\FxToolBase_vs7.vcproj
+		SccLocalPath1 = .
+		CanCheckoutShared = true
+		SccProjectFilePathRelativizedFromConnection1 = FxToolBase\\
+		SccProjectUniqueName2 = FxMaya\\FxMaya_vs7.vcproj
+		SccLocalPath2 = .
+		CanCheckoutShared = true
+		SccProjectFilePathRelativizedFromConnection2 = FxMaya\\
+		SccProjectUniqueName3 = FxMax\\FxMax_vs7.vcproj
+		SccLocalPath3 = .
+		CanCheckoutShared = true
+		SccProjectFilePathRelativizedFromConnection3 = FxMax\\
+	EndGlobalSection
+	GlobalSection(SolutionConfiguration) = preSolution
+		Debug Max 2008 Unreal = Debug Max 2008 Unreal
+		Debug Max 7 Unreal = Debug Max 7 Unreal
+		Debug Max 8 Unreal = Debug Max 8 Unreal
+		Debug Max 9 Unreal = Debug Max 9 Unreal
+		Debug Maya 2008 Unreal = Debug Maya 2008 Unreal
+		Debug Maya 7 Unreal = Debug Maya 7 Unreal
+		Debug Maya 8 Unreal = Debug Maya 8 Unreal
+		Debug Maya 8.5 Unreal = Debug Maya 8.5 Unreal
+		Release Max 2008 Unreal = Release Max 2008 Unreal
+		Release Max 7 Unreal = Release Max 7 Unreal
+		Release Max 8 Unreal = Release Max 8 Unreal
+		Release Max 9 Unreal = Release Max 9 Unreal
+		Release Maya 2008 Unreal = Release Maya 2008 Unreal
+		Release Maya 7 Unreal = Release Maya 7 Unreal
+		Release Maya 8 Unreal = Release Maya 8 Unreal
+		Release Maya 8.5 Unreal = Release Maya 8.5 Unreal
+	EndGlobalSection
+	GlobalSection(ProjectConfiguration) = postSolution
+		{83FC6FD6-1C61-4CD2-862D-25F1F1179F07}.Debug Max 2008 Unreal.ActiveCfg = Unreal Debug|Win32
+		{83FC6FD6-1C61-4CD2-862D-25F1F1179F07}.Debug Max 2008 Unreal.Build.0 = Unreal Debug|Win32
+		{83FC6FD6-1C61-4CD2-862D-25F1F1179F07}.Debug Max 7 Unreal.ActiveCfg = Unreal Debug|Win32
+		{83FC6FD6-1C61-4CD2-862D-25F1F1179F07}.Debug Max 7 Unreal.Build.0 = Unreal Debug|Win32
+		{83FC6FD6-1C61-4CD2-862D-25F1F1179F07}.Debug Max 8 Unreal.ActiveCfg = Unreal Debug|Win32
+		{83FC6FD6-1C61-4CD2-862D-25F1F1179F07}.Debug Max 8 Unreal.Build.0 = Unreal Debug|Win32
+		{83FC6FD6-1C61-4CD2-862D-25F1F1179F07}.Debug Max 9 Unreal.ActiveCfg = Unreal Debug|Win32
+		{83FC6FD6-1C61-4CD2-862D-25F1F1179F07}.Debug Max 9 Unreal.Build.0 = Unreal Debug|Win32
+		{83FC6FD6-1C61-4CD2-862D-25F1F1179F07}.Debug Maya 2008 Unreal.ActiveCfg = Unreal Debug|Win32
+		{83FC6FD6-1C61-4CD2-862D-25F1F1179F07}.Debug Maya 2008 Unreal.Build.0 = Unreal Debug|Win32
+		{83FC6FD6-1C61-4CD2-862D-25F1F1179F07}.Debug Maya 7 Unreal.ActiveCfg = Unreal Debug|Win32
+		{83FC6FD6-1C61-4CD2-862D-25F1F1179F07}.Debug Maya 7 Unreal.Build.0 = Unreal Debug|Win32
+		{83FC6FD6-1C61-4CD2-862D-25F1F1179F07}.Debug Maya 8 Unreal.ActiveCfg = Unreal Debug|Win32
+		{83FC6FD6-1C61-4CD2-862D-25F1F1179F07}.Debug Maya 8 Unreal.Build.0 = Unreal Debug|Win32
+		{83FC6FD6-1C61-4CD2-862D-25F1F1179F07}.Debug Maya 8.5 Unreal.ActiveCfg = Unreal Debug|Win32
+		{83FC6FD6-1C61-4CD2-862D-25F1F1179F07}.Debug Maya 8.5 Unreal.Build.0 = Unreal Debug|Win32
+		{83FC6FD6-1C61-4CD2-862D-25F1F1179F07}.Release Max 2008 Unreal.ActiveCfg = Unreal Release|Win32
+		{83FC6FD6-1C61-4CD2-862D-25F1F1179F07}.Release Max 2008 Unreal.Build.0 = Unreal Release|Win32
+		{83FC6FD6-1C61-4CD2-862D-25F1F1179F07}.Release Max 7 Unreal.ActiveCfg = Unreal Release|Win32
+		{83FC6FD6-1C61-4CD2-862D-25F1F1179F07}.Release Max 7 Unreal.Build.0 = Unreal Release|Win32
+		{83FC6FD6-1C61-4CD2-862D-25F1F1179F07}.Release Max 8 Unreal.ActiveCfg = Unreal Release|Win32
+		{83FC6FD6-1C61-4CD2-862D-25F1F1179F07}.Release Max 8 Unreal.Build.0 = Unreal Release|Win32
+		{83FC6FD6-1C61-4CD2-862D-25F1F1179F07}.Release Max 9 Unreal.ActiveCfg = Unreal Release|Win32
+		{83FC6FD6-1C61-4CD2-862D-25F1F1179F07}.Release Max 9 Unreal.Build.0 = Unreal Release|Win32
+		{83FC6FD6-1C61-4CD2-862D-25F1F1179F07}.Release Maya 2008 Unreal.ActiveCfg = Unreal Release|Win32
+		{83FC6FD6-1C61-4CD2-862D-25F1F1179F07}.Release Maya 2008 Unreal.Build.0 = Unreal Release|Win32
+		{83FC6FD6-1C61-4CD2-862D-25F1F1179F07}.Release Maya 7 Unreal.ActiveCfg = Unreal Release|Win32
+		{83FC6FD6-1C61-4CD2-862D-25F1F1179F07}.Release Maya 7 Unreal.Build.0 = Unreal Release|Win32
+		{83FC6FD6-1C61-4CD2-862D-25F1F1179F07}.Release Maya 8 Unreal.ActiveCfg = Unreal Release|Win32
+		{83FC6FD6-1C61-4CD2-862D-25F1F1179F07}.Release Maya 8 Unreal.Build.0 = Unreal Release|Win32
+		{83FC6FD6-1C61-4CD2-862D-25F1F1179F07}.Release Maya 8.5 Unreal.ActiveCfg = Unreal Release|Win32
+		{83FC6FD6-1C61-4CD2-862D-25F1F1179F07}.Release Maya 8.5 Unreal.Build.0 = Unreal Release|Win32
+		{C1CAD1A1-DE58-4B06-9DBE-23DA68D4146B}.Debug Max 2008 Unreal.ActiveCfg = Debug Maya 2008 Unreal|Win32
+		{C1CAD1A1-DE58-4B06-9DBE-23DA68D4146B}.Debug Max 7 Unreal.ActiveCfg = Debug Maya 2008 Unreal|Win32
+		{C1CAD1A1-DE58-4B06-9DBE-23DA68D4146B}.Debug Max 8 Unreal.ActiveCfg = Debug Maya 2008 Unreal|Win32
+		{C1CAD1A1-DE58-4B06-9DBE-23DA68D4146B}.Debug Max 9 Unreal.ActiveCfg = Debug Maya 2008 Unreal|Win32
+		{C1CAD1A1-DE58-4B06-9DBE-23DA68D4146B}.Debug Maya 2008 Unreal.ActiveCfg = Debug Maya 2008 Unreal|Win32
+		{C1CAD1A1-DE58-4B06-9DBE-23DA68D4146B}.Debug Maya 2008 Unreal.Build.0 = Debug Maya 2008 Unreal|Win32
+		{C1CAD1A1-DE58-4B06-9DBE-23DA68D4146B}.Debug Maya 7 Unreal.ActiveCfg = Debug Maya 7 Unreal|Win32
+		{C1CAD1A1-DE58-4B06-9DBE-23DA68D4146B}.Debug Maya 7 Unreal.Build.0 = Debug Maya 7 Unreal|Win32
+		{C1CAD1A1-DE58-4B06-9DBE-23DA68D4146B}.Debug Maya 8 Unreal.ActiveCfg = Debug Maya 8 Unreal|Win32
+		{C1CAD1A1-DE58-4B06-9DBE-23DA68D4146B}.Debug Maya 8 Unreal.Build.0 = Debug Maya 8 Unreal|Win32
+		{C1CAD1A1-DE58-4B06-9DBE-23DA68D4146B}.Debug Maya 8.5 Unreal.ActiveCfg = Debug Maya 8.5 Unreal|Win32
+		{C1CAD1A1-DE58-4B06-9DBE-23DA68D4146B}.Debug Maya 8.5 Unreal.Build.0 = Debug Maya 8.5 Unreal|Win32
+		{C1CAD1A1-DE58-4B06-9DBE-23DA68D4146B}.Release Max 2008 Unreal.ActiveCfg = Release Maya 2008 Unreal|Win32
+		{C1CAD1A1-DE58-4B06-9DBE-23DA68D4146B}.Release Max 7 Unreal.ActiveCfg = Release Maya 2008 Unreal|Win32
+		{C1CAD1A1-DE58-4B06-9DBE-23DA68D4146B}.Release Max 8 Unreal.ActiveCfg = Release Maya 2008 Unreal|Win32
+		{C1CAD1A1-DE58-4B06-9DBE-23DA68D4146B}.Release Max 9 Unreal.ActiveCfg = Release Maya 2008 Unreal|Win32
+		{C1CAD1A1-DE58-4B06-9DBE-23DA68D4146B}.Release Maya 2008 Unreal.ActiveCfg = Release Maya 2008 Unreal|Win32
+		{C1CAD1A1-DE58-4B06-9DBE-23DA68D4146B}.Release Maya 2008 Unreal.Build.0 = Release Maya 2008 Unreal|Win32
+		{C1CAD1A1-DE58-4B06-9DBE-23DA68D4146B}.Release Maya 7 Unreal.ActiveCfg = Release Maya 7 Unreal|Win32
+		{C1CAD1A1-DE58-4B06-9DBE-23DA68D4146B}.Release Maya 7 Unreal.Build.0 = Release Maya 7 Unreal|Win32
+		{C1CAD1A1-DE58-4B06-9DBE-23DA68D4146B}.Release Maya 8 Unreal.ActiveCfg = Release Maya 8 Unreal|Win32
+		{C1CAD1A1-DE58-4B06-9DBE-23DA68D4146B}.Release Maya 8 Unreal.Build.0 = Release Maya 8 Unreal|Win32
+		{C1CAD1A1-DE58-4B06-9DBE-23DA68D4146B}.Release Maya 8.5 Unreal.ActiveCfg = Release Maya 8.5 Unreal|Win32
+		{C1CAD1A1-DE58-4B06-9DBE-23DA68D4146B}.Release Maya 8.5 Unreal.Build.0 = Release Maya 8.5 Unreal|Win32
+		{B0C92794-80A8-42A0-AE5E-F7789E0EC4D8}.Debug Max 2008 Unreal.ActiveCfg = Debug Max 2008 (Hybrid) Unreal|Win32
+		{B0C92794-80A8-42A0-AE5E-F7789E0EC4D8}.Debug Max 2008 Unreal.Build.0 = Debug Max 2008 (Hybrid) Unreal|Win32
+		{B0C92794-80A8-42A0-AE5E-F7789E0EC4D8}.Debug Max 7 Unreal.ActiveCfg = Debug Max 7 (Hybrid) Unreal|Win32
+		{B0C92794-80A8-42A0-AE5E-F7789E0EC4D8}.Debug Max 7 Unreal.Build.0 = Debug Max 7 (Hybrid) Unreal|Win32
+		{B0C92794-80A8-42A0-AE5E-F7789E0EC4D8}.Debug Max 8 Unreal.ActiveCfg = Debug Max 8 (Hybrid) Unreal|Win32
+		{B0C92794-80A8-42A0-AE5E-F7789E0EC4D8}.Debug Max 8 Unreal.Build.0 = Debug Max 8 (Hybrid) Unreal|Win32
+		{B0C92794-80A8-42A0-AE5E-F7789E0EC4D8}.Debug Max 9 Unreal.ActiveCfg = Debug Max 9 (Hybrid) Unreal|Win32
+		{B0C92794-80A8-42A0-AE5E-F7789E0EC4D8}.Debug Max 9 Unreal.Build.0 = Debug Max 9 (Hybrid) Unreal|Win32
+		{B0C92794-80A8-42A0-AE5E-F7789E0EC4D8}.Debug Maya 2008 Unreal.ActiveCfg = Debug Max 9 (Hybrid) Unreal|Win32
+		{B0C92794-80A8-42A0-AE5E-F7789E0EC4D8}.Debug Maya 7 Unreal.ActiveCfg = Debug Max 9 (Hybrid) Unreal|Win32
+		{B0C92794-80A8-42A0-AE5E-F7789E0EC4D8}.Debug Maya 8 Unreal.ActiveCfg = Debug Max 9 (Hybrid) Unreal|Win32
+		{B0C92794-80A8-42A0-AE5E-F7789E0EC4D8}.Debug Maya 8.5 Unreal.ActiveCfg = Debug Max 9 (Hybrid) Unreal|Win32
+		{B0C92794-80A8-42A0-AE5E-F7789E0EC4D8}.Release Max 2008 Unreal.ActiveCfg = Release Max 2008 Unreal|Win32
+		{B0C92794-80A8-42A0-AE5E-F7789E0EC4D8}.Release Max 2008 Unreal.Build.0 = Release Max 2008 Unreal|Win32
+		{B0C92794-80A8-42A0-AE5E-F7789E0EC4D8}.Release Max 7 Unreal.ActiveCfg = Release Max 7 Unreal|Win32
+		{B0C92794-80A8-42A0-AE5E-F7789E0EC4D8}.Release Max 7 Unreal.Build.0 = Release Max 7 Unreal|Win32
+		{B0C92794-80A8-42A0-AE5E-F7789E0EC4D8}.Release Max 8 Unreal.ActiveCfg = Release Max 8 Unreal|Win32
+		{B0C92794-80A8-42A0-AE5E-F7789E0EC4D8}.Release Max 8 Unreal.Build.0 = Release Max 8 Unreal|Win32
+		{B0C92794-80A8-42A0-AE5E-F7789E0EC4D8}.Release Max 9 Unreal.ActiveCfg = Release Max 9 Unreal|Win32
+		{B0C92794-80A8-42A0-AE5E-F7789E0EC4D8}.Release Max 9 Unreal.Build.0 = Release Max 9 Unreal|Win32
+		{B0C92794-80A8-42A0-AE5E-F7789E0EC4D8}.Release Maya 2008 Unreal.ActiveCfg = Release Max 9 Unreal|Win32
+		{B0C92794-80A8-42A0-AE5E-F7789E0EC4D8}.Release Maya 7 Unreal.ActiveCfg = Release Max 9 Unreal|Win32
+		{B0C92794-80A8-42A0-AE5E-F7789E0EC4D8}.Release Maya 8 Unreal.ActiveCfg = Release Max 9 Unreal|Win32
+		{B0C92794-80A8-42A0-AE5E-F7789E0EC4D8}.Release Maya 8.5 Unreal.ActiveCfg = Release Max 9 Unreal|Win32
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+	EndGlobalSection
+	GlobalSection(ExtensibilityAddIns) = postSolution
+	EndGlobalSection
+EndGlobal

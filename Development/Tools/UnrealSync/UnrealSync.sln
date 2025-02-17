@@ -1,0 +1,77 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 9.00
+# Visual Studio 2005
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnrealSyncLib", "UnrealSyncLib\UnrealSyncLib.csproj", "{041977F4-CA76-4A10-B14E-10D8483318AC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnrealSyncManager", "UnrealSyncManager\UnrealSyncManager.csproj", "{9F333B88-F1C2-4D8D-9AF5-C90313DB3780}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnrealSyncService", "UnrealSyncService\UnrealSyncService.csproj", "{19C227A9-1D84-4E9E-A3FF-A4C548B008A6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnrealSyncTest", "UnrealSyncTest\UnrealSyncTest.csproj", "{74C9323A-EBBB-4ABD-9EC5-B22F71AD3922}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Deployment", "Deployment", "{BCD04E0C-986C-409D-BCF9-1131B006EB7F}"
+	ProjectSection(SolutionItems) = preProject
+		Deployment\DomainAccountDlg.wxs = Deployment\DomainAccountDlg.wxs
+		Deployment\Installer.wxs = Deployment\Installer.wxs
+		Deployment\MyWixUI_InstallDir.wxs = Deployment\MyWixUI_InstallDir.wxs
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Debug|Mixed Platforms = Debug|Mixed Platforms
+		Debug|Win32 = Debug|Win32
+		Release|Any CPU = Release|Any CPU
+		Release|Mixed Platforms = Release|Mixed Platforms
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{041977F4-CA76-4A10-B14E-10D8483318AC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{041977F4-CA76-4A10-B14E-10D8483318AC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{041977F4-CA76-4A10-B14E-10D8483318AC}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{041977F4-CA76-4A10-B14E-10D8483318AC}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{041977F4-CA76-4A10-B14E-10D8483318AC}.Debug|Win32.ActiveCfg = Debug|x86
+		{041977F4-CA76-4A10-B14E-10D8483318AC}.Debug|Win32.Build.0 = Debug|x86
+		{041977F4-CA76-4A10-B14E-10D8483318AC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{041977F4-CA76-4A10-B14E-10D8483318AC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{041977F4-CA76-4A10-B14E-10D8483318AC}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{041977F4-CA76-4A10-B14E-10D8483318AC}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{041977F4-CA76-4A10-B14E-10D8483318AC}.Release|Win32.ActiveCfg = Release|Any CPU
+		{9F333B88-F1C2-4D8D-9AF5-C90313DB3780}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9F333B88-F1C2-4D8D-9AF5-C90313DB3780}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9F333B88-F1C2-4D8D-9AF5-C90313DB3780}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{9F333B88-F1C2-4D8D-9AF5-C90313DB3780}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{9F333B88-F1C2-4D8D-9AF5-C90313DB3780}.Debug|Win32.ActiveCfg = Debug|x86
+		{9F333B88-F1C2-4D8D-9AF5-C90313DB3780}.Debug|Win32.Build.0 = Debug|x86
+		{9F333B88-F1C2-4D8D-9AF5-C90313DB3780}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9F333B88-F1C2-4D8D-9AF5-C90313DB3780}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9F333B88-F1C2-4D8D-9AF5-C90313DB3780}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{9F333B88-F1C2-4D8D-9AF5-C90313DB3780}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{9F333B88-F1C2-4D8D-9AF5-C90313DB3780}.Release|Win32.ActiveCfg = Release|Any CPU
+		{19C227A9-1D84-4E9E-A3FF-A4C548B008A6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{19C227A9-1D84-4E9E-A3FF-A4C548B008A6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{19C227A9-1D84-4E9E-A3FF-A4C548B008A6}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{19C227A9-1D84-4E9E-A3FF-A4C548B008A6}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{19C227A9-1D84-4E9E-A3FF-A4C548B008A6}.Debug|Win32.ActiveCfg = Debug|x86
+		{19C227A9-1D84-4E9E-A3FF-A4C548B008A6}.Debug|Win32.Build.0 = Debug|x86
+		{19C227A9-1D84-4E9E-A3FF-A4C548B008A6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{19C227A9-1D84-4E9E-A3FF-A4C548B008A6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{19C227A9-1D84-4E9E-A3FF-A4C548B008A6}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{19C227A9-1D84-4E9E-A3FF-A4C548B008A6}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{19C227A9-1D84-4E9E-A3FF-A4C548B008A6}.Release|Win32.ActiveCfg = Release|Any CPU
+		{74C9323A-EBBB-4ABD-9EC5-B22F71AD3922}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{74C9323A-EBBB-4ABD-9EC5-B22F71AD3922}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{74C9323A-EBBB-4ABD-9EC5-B22F71AD3922}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{74C9323A-EBBB-4ABD-9EC5-B22F71AD3922}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{74C9323A-EBBB-4ABD-9EC5-B22F71AD3922}.Debug|Win32.ActiveCfg = Debug|x86
+		{74C9323A-EBBB-4ABD-9EC5-B22F71AD3922}.Debug|Win32.Build.0 = Debug|x86
+		{74C9323A-EBBB-4ABD-9EC5-B22F71AD3922}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{74C9323A-EBBB-4ABD-9EC5-B22F71AD3922}.Release|Any CPU.Build.0 = Release|Any CPU
+		{74C9323A-EBBB-4ABD-9EC5-B22F71AD3922}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{74C9323A-EBBB-4ABD-9EC5-B22F71AD3922}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{74C9323A-EBBB-4ABD-9EC5-B22F71AD3922}.Release|Win32.ActiveCfg = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

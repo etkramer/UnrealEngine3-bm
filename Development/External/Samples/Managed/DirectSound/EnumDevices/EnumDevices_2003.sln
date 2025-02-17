@@ -1,0 +1,21 @@
+Microsoft Visual Studio Solution File, Format Version 8.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EnumDevices_2003", "EnumDevices_2003.csproj", "{E7FE9CFB-D513-4CDC-82A7-F383FB72987B}"
+EndProject
+Global
+	GlobalSection(SolutionConfiguration) = preSolution
+		ConfigName.0 = Debug
+		ConfigName.1 = Release
+	EndGlobalSection
+	GlobalSection(ProjectDependencies) = postSolution
+	EndGlobalSection
+	GlobalSection(ProjectConfiguration) = postSolution
+		{E7FE9CFB-D513-4CDC-82A7-F383FB72987B}.Debug.ActiveCfg = Debug|.NET
+		{E7FE9CFB-D513-4CDC-82A7-F383FB72987B}.Debug.Build.0 = Debug|.NET
+		{E7FE9CFB-D513-4CDC-82A7-F383FB72987B}.Release.ActiveCfg = Release|.NET
+		{E7FE9CFB-D513-4CDC-82A7-F383FB72987B}.Release.Build.0 = Release|.NET
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+	EndGlobalSection
+	GlobalSection(ExtensibilityAddIns) = postSolution
+	EndGlobalSection
+EndGlobal

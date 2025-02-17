@@ -1,0 +1,231 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.S.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+ID_FACEFX_ACTOR_INFO_PANEL DIALOGEX 0, 0, 108, 148
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD | WS_SYSMENU
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    CONTROL         104,IDC_STATIC,"Static",SS_BITMAP,7,7,95,31
+    LTEXT           "Actor:",ID_ACTOR_LABEL,7,41,94,9
+    PUSHBUTTON      "Create Actor...",ID_CREATE_ACTOR_BUTTON,7,54,94,13
+    PUSHBUTTON      "Load Actor...",ID_LOAD_ACTOR_BUTTON,7,68,94,13
+    PUSHBUTTON      "Save Actor...",ID_SAVE_ACTOR_BUTTON,7,83,94,13
+    GROUPBOX        "FaceFX Options",IDC_STATIC,7,112,94,27
+    CONTROL         "Normalize Scale",ID_NORMALIZE_SCALE_CHECK_BOX,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,20,123,68,8
+    PUSHBUTTON      "About...",ID_ABOUT_BUTTON,7,98,94,13
+END
+
+ID_FACEFX_REFERENCE_POSE_PANEL DIALOGEX 0, 0, 108, 190
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD | WS_SYSMENU
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "Reference Bones",ID_REFERENCE_BONES_LABEL,7,7,94,9
+    LISTBOX         ID_REFERENCE_BONES_LIST_BOX,7,22,94,145,LBS_SORT | 
+                    LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_HSCROLL | 
+                    WS_TABSTOP
+    PUSHBUTTON      "Import",ID_IMPORT_REFERENCE_POSE_BUTTON,7,169,45,13
+    PUSHBUTTON      "Export...",ID_EXPORT_REFERENCE_POSE_BUTTON,56,169,45,13
+END
+
+ID_FACEFX_BONE_POSES_PANEL DIALOGEX 0, 0, 108, 222
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD | WS_SYSMENU
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "Bone Poses",ID_BONE_POSES_LABEL,7,7,94,9
+    LISTBOX         ID_BONE_POSES_LIST_BOX,7,22,94,145,LBS_SORT | 
+                    LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_HSCROLL | 
+                    WS_TABSTOP
+    PUSHBUTTON      "Import",ID_IMPORT_BONE_POSE_BUTTON,7,169,45,13
+    PUSHBUTTON      "Export...",ID_EXPORT_BONE_POSE_BUTTON,56,169,45,13
+    PUSHBUTTON      "Batch Import...",ID_BATCH_IMPORT_BONE_POSES_BUTTON,7,
+                    185,94,13
+    PUSHBUTTON      "Batch Export...",ID_BATCH_EXPORT_BONE_POSES_BUTTON,7,
+                    201,94,13
+END
+
+ID_FACEFX_ANIMATIONS_PANEL DIALOGEX 0, 0, 108, 206
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD | WS_SYSMENU
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "Animation Group",ID_ANIMATION_GROUP_LABEL,7,7,94,9
+    COMBOBOX        ID_ANIMATION_GROUP_COMBO_BOX,7,22,94,80,CBS_DROPDOWN | 
+                    CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LISTBOX         ID_ANIMATIONS_LIST_BOX,7,39,94,145,LBS_SORT | 
+                    LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_HSCROLL | 
+                    WS_TABSTOP
+    PUSHBUTTON      "Import",ID_IMPORT_ANIMATION_BUTTON,7,186,94,13
+END
+
+ID_GET_STRING_FROM_USER_DIALOG DIALOGEX 0, 0, 186, 46
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | 
+    WS_SYSMENU
+CAPTION "Enter String:"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",ID_OK_BUTTON,77,25,50,14
+    PUSHBUTTON      "Cancel",ID_CANCEL_BUTTON,129,25,50,14
+    EDITTEXT        ID_USER_STRING_EDIT_BOX,7,7,172,13,ES_AUTOHSCROLL
+END
+
+ID_ABOUT_DIALOG DIALOGEX 0, 0, 109, 110
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | 
+    WS_SYSMENU
+CAPTION "About FaceFX"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",ID_OK_BUTTON,52,89,50,14
+    CONTROL         104,ID_FACEFX_LOGO_ABOUT,"Static",SS_BITMAP,7,7,95,31
+    LTEXT           "FaceFX for 3dsmax",ID_STATIC,21,42,67,11
+    LTEXT           "(plug-in version 1.0)",ID_VERSION_INFO_STRING,20,52,69,
+                    8
+    LTEXT           "Copyright (c) 2002-2008",IDC_STATIC,13,66,82,10
+    LTEXT           "OC3 Entertainment, Inc.",IDC_STATIC,14,76,80,12
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO 
+BEGIN
+    ID_FACEFX_ACTOR_INFO_PANEL, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 101
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 139
+    END
+
+    ID_FACEFX_REFERENCE_POSE_PANEL, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 101
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 183
+    END
+
+    ID_FACEFX_BONE_POSES_PANEL, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 101
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 215
+    END
+
+    ID_FACEFX_ANIMATIONS_PANEL, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 101
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 199
+    END
+
+    ID_GET_STRING_FROM_USER_DIALOG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 179
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 39
+    END
+
+    ID_ABOUT_DIALOG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 102
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 103
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Bitmap
+//
+
+IDB_FACEFX_LOGO         BITMAP                  "FaceFX_Logo_Small.bmp"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE 
+BEGIN
+    IDS_LIBDESCRIPTION      "FaceFX for 3dsmax"
+    IDS_CLASS_NAME          "FaceFX"
+    IDS_PARAMS              "FaceFX"
+    IDS_SPIN                "Spin"
+END
+
+#endif    // English (U.S.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

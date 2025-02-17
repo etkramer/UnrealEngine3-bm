@@ -1,0 +1,20 @@
+<?xml version="1.0" ?>
+    <project name="RunFColladaTests" default="all" xmlns="http://nant.sf.net/schemas/nant.xsd">
+    
+    <target name="all" depends="Release, Tests" />
+
+    <target name="Release">
+        <exec program="C:\Program Files\Microsoft Visual Studio 8\Common7\IDE\VCExpress.exe" commandline='RunFColladaTests.sln /build "Release"'/>
+    </target>
+
+    <target name="Tests">
+        <nunit2>
+            <formatter type="Xml" />
+            <test assemblyname="RunFColladaTests.dll" />
+        </nunit2>
+    </target>
+   
+    <target name="clean">
+         <exec program="C:\Program Files\Microsoft Visual Studio 8\Common7\IDE\VCExpress.exe" commandline='RunFColladaTests.sln /clean "Release"' />
+    </target>
+</project>

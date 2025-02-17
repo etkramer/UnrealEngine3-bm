@@ -1,0 +1,10 @@
+; DebuggerInterface.def : Declares the module parameters for the DLL.
+
+LIBRARY      "UCDebuggerSocket"
+
+EXPORTS
+	IPCSendCommandToVS
+	IPCSendCommandToUC
+	IPCSetCallbackVS
+	IPCSetCallbackUC
+

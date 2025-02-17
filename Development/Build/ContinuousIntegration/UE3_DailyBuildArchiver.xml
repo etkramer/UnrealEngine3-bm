@@ -1,0 +1,72 @@
+<!--
+Copyright (C) 1998-2007 Epic Games, Inc. All Rights Reserved.
+-->
+
+<!--
+This will just copy over the set of files specified in  DIR_TO_COPY
+-->
+
+
+<project name="UnrealEngine3" default="DailyBuildArchiver" basedir=".">
+    <description>
+        UE3_DailyBuildArchiver.xml
+    </description>
+
+  <property name="COPY_LOCATION" value="E:\dailyBuilds\" />
+  <property name="DIR_TO_COPY" value="UE3_dailyBuilder" />
+
+
+  <property name="dailybuilder.clean.age.days" value="20" />
+  <property name="dailybuilder.clean.properties.file" value="dailyBuilderArchiveCleanerProps" />
+
+
+
+<target name="cleanDailyBuildArchives" description="nuke archived builds older than N days" if="dailybuilder.clean.age.days" >
+
+   <!-- determine the date to nuke from -->
+   <propertyfile file="${dailybuilder.clean.properties.file}" >
+      <entry key="dailybuilder.clean.before.time" type="date" value="now" pattern="MM/dd/yyyy HH:mm a"/>
+      <entry key="dailybuilder.clean.before.time" type="date" pattern="MM/dd/yyyy HH:mm a" unit="day" operation="-" value="${dailybuilder.clean.age.days}" />
+   </propertyfile>
+
+   <property file="${dailybuilder.clean.properties.file}"/>
+
+   <echo message="deleting this file {dailybuilder.clean.age.days} ${dailybuilder.clean.before.time}" level="verbose"/>
+
+   <delete failonerror="false" includeemptydirs="true">
+
+       <fileset dir="${COPY_LOCATION}">
+          <date when="before" datetime="${dailybuilder.clean.before.time}"/>
+          <include name="**/*" />
+       </fileset>
+
+   </delete>
+
+</target>
+
+
+
+  <target name="DailyBuildArchiver" depends="cleanDailyBuildArchives" >
+
+       <tstamp>
+          <format property="DAILY_BUILD_ARCHIVE_DIR" pattern="yyyy-MM-dd--HH-mm"/>
+       </tstamp>
+
+       <!-- E: on the CIS -->
+       <copy todir="${COPY_LOCATION}\${DAILY_BUILD_ARCHIVE_DIR}\${DIR_TO_COPY}">
+          <fileset dir="checkout/${DIR_TO_COPY}"/>
+       </copy>
+
+  </target>
+
+
+
+
+
+
+
+
+
+</project>
+
+

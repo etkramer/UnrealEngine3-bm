@@ -1,0 +1,21 @@
+status Conforming 
+platform PC
+buildconfig Release
+
+triggeraddress matt.oelfke@epicgames.com
+failaddress joe.graf@epicgames.com;jeff.farris@epicgames.com;matt.oelfke@epicgames.com
+successaddress matt.oelfke@epicgames.com;maury.mountain@epicgames.com
+
+dependency #LatestApprovedBuild
+
+Game Gear
+
+Status Syncing and getting changes
+artistsync
+
+languages INT CZE HUN POL RUS KOR CHT
+checkoutfonts Gear Interface/WarfareFonts
+conform Interface/WarfareFonts
+
+status Submitting conformed fonts
+submit
