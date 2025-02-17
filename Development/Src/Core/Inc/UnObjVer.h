@@ -8,6 +8,10 @@
 #define PACKAGE_FILE_TAG			0x9E2A83C1
 #define PACKAGE_FILE_TAG_SWAPPED	0xC1832A9E
 
+#if GAMENAME == BMGAME
+#define BATMAN 1
+#endif
+
 //
 //	Package file version log:
 //
@@ -268,7 +272,14 @@
 //	575
 //	- Added persisitent FaceFXAnimSet to the world...
 #define VER_WORLD_PERSISTENT_FACEFXANIMSET					575
+//	576
+// - depcreated redundant editor window position
+// - Delete var - SkelControlBase: ControlPosX, ControlPosY, MaterialExpression: EditorX, EditorY
+#define VER_DEPRECATED_EDITOR_POSITION					576
 
+//  21
+// - BM1 release
+#define VER_BATMAN1												21
 
 // !!
 // !! NOTE: when adding a new version, change the VER_LATEST_ENGINE macro below. This will avoid needing to change UnObjVer.cpp. 
@@ -276,8 +287,8 @@
 // !! WARNING: Only modify this in //depot/UnrealEngine3/Development/Src/Core/Inc/UnObjVer.h on the Epic Perforce server. All 
 // !! WARNING: other places should modify VER_LATEST_ENGINE_LICENSEE instead.
 // !!
-#define VER_LATEST_ENGINE									VER_WORLD_PERSISTENT_FACEFXANIMSET
-#define VER_LATEST_ENGINE_LICENSEE							0
+#define VER_LATEST_ENGINE									VER_DEPRECATED_EDITOR_POSITION
+#define VER_LATEST_ENGINE_LICENSEE							VER_BATMAN1
 
 // Cooked packages loaded with an older package version are recooked
 #define VER_LATEST_COOKED_PACKAGE							87

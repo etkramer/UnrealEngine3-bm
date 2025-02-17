@@ -1,3 +1,10 @@
 {
-  "editor.formatOnSave": false
+  "editor.formatOnSave": false,
+  "C_Cpp.default.defines": [
+    "UNICODE",
+    "_UNICODE",
+    "_WINDOWS",
+    "GAMENAME=BMGAME",
+    "BATMAN=1"
+  ]
 }

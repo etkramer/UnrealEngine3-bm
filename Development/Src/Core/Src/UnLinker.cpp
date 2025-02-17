@@ -3071,6 +3071,9 @@ UObject* ULinkerLoad::CreateExport( INT Index )
 		check(Export.ObjectName!=NAME_None || !(Export.ObjectFlags&RF_Public));
 		check(GObjBeginLoadCount>0);
 
+#if BATMAN
+		// Load cooked packages as normal
+#else
 		// editor loads force exported object from original package, not cooked package (unless we are script patching)
 		if (GIsEditor && !GIsScriptPatcherActive && Export.HasAnyFlags(EF_ForcedExport))
 		{
@@ -3124,6 +3127,7 @@ UObject* ULinkerLoad::CreateExport( INT Index )
 			// return the object we just found (or NULL if we didn't)
 			return OriginalLinkerObject;
 		}
+#endif
 
 		// Get the object's class.
 		UClass* LoadClass = (UClass*)IndexToObject( Export.ClassIndex );
@@ -3483,6 +3487,9 @@ UObject* ULinkerLoad::CreateImport( INT Index )
 #if SUPPORTS_SCRIPTPATCH_CREATION
 		//@script patcher
 		||	GIsScriptPatcherActive
+#endif
+#if BATMAN
+		|| LicenseeVer() >= VER_BATMAN1
 #endif
 			)
 		{
