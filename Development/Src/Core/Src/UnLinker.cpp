@@ -3134,6 +3134,14 @@ UObject* ULinkerLoad::CreateExport( INT Index )
 		}
 #endif
 
+#if BATMAN
+		// Don't load classes from cooked BM packages
+		if (LicenseeVer() >= VER_BATMAN1 && Export.ClassIndex == UCLASS_INDEX && (Export.PackageFlags & PKG_Cooked))
+		{
+			return NULL;
+		}
+#endif
+
 		// Get the object's class.
 		UClass* LoadClass = (UClass*)IndexToObject( Export.ClassIndex );
 		if( !LoadClass && Export.ClassIndex!=UCLASS_INDEX ) // Hack to load packages with classes which do not exist.

@@ -109,6 +109,7 @@ enum AnimationCompressionFormat
 	ACF_IntervalFixed32NoW,
 	ACF_Fixed32NoW,
 	ACF_Float32NoW,
+	ACF_Fixed48Max,
 };
 
 /** The compression format that was used to compress translation tracks. */

@@ -49,6 +49,9 @@ const INT CompressedRotationStrides[ACF_MAX] =
 	sizeof(FQuatIntervalFixed32NoW),	// ACF_IntervalFixed32NoW	(FQuats with one component dropped and the remaining three compressed to 11-11-10 per-component interval fixed point.
 	sizeof(FQuatFixed32NoW),			// ACF_Fixed32NoW			(FQuats with one component dropped and the remaining three compressed to 11-11-10 fixed point.
 	sizeof(FQuatFloat32NoW),			// ACF_Float32NoW			(FQuats with one component dropped and the remaining three compressed to 11-11-10 floating point.
+#if BATMAN
+	sizeof(WORD),						// ACF_Fixed48Max
+#endif
 };
 
 /** Number of swapped chunks per element. */
@@ -60,6 +63,7 @@ const INT CompressedRotationNum[ACF_MAX] =
 	1,	// ACF_IntervalFixed32NoW	(FQuats with one component dropped and the remaining three compressed to 11-11-10 per-component interval fixed point.
 	1,	// ACF_Fixed32NoW			(FQuats with one component dropped and the remaining three compressed to 11-11-10 fixed point.
 	1,  // ACF_Float32NoW			(FQuats with one component dropped and the remaining three compressed to 11-11-10 floating point.
+	3,  // // ACF_Fixed48Max			(FQuats with one component dropped and the remaining three compressed to 16-16-16 fixed point.
 };
 
 /**
@@ -420,6 +424,7 @@ void AnimationFormat_SetInterfaceLinks(UAnimSequence& Seq)
 		static AEFConstantKeyLerp<ACF_IntervalFixed32NoW>	AEFConstantKeyLerp_IntervalFixed32NoW;
 		static AEFConstantKeyLerp<ACF_Fixed32NoW>			AEFConstantKeyLerp_Fixed32NoW;
 		static AEFConstantKeyLerp<ACF_Float32NoW>			AEFConstantKeyLerp_Float32NoW;
+		static AEFConstantKeyLerp<ACF_Fixed48Max>			AEFConstantKeyLerp_Fixed48Max;
 
 		// setup translation codec
 		switch(Seq.TranslationCompressionFormat)
@@ -453,6 +458,9 @@ void AnimationFormat_SetInterfaceLinks(UAnimSequence& Seq)
 			case ACF_Float32NoW:
 				Seq.RotationCodec = &AEFConstantKeyLerp_Float32NoW;
 				break;
+			case ACF_Fixed48Max:
+				Seq.RotationCodec = &AEFConstantKeyLerp_Fixed48Max;
+				break;
 
 			default:
 				appErrorf( TEXT("%i: unknown or unsupported rotation compression"), (INT)Seq.RotationCompressionFormat );
@@ -466,6 +474,9 @@ void AnimationFormat_SetInterfaceLinks(UAnimSequence& Seq)
 		static AEFVariableKeyLerp<ACF_IntervalFixed32NoW>	AEFVariableKeyLerp_IntervalFixed32NoW;
 		static AEFVariableKeyLerp<ACF_Fixed32NoW>			AEFVariableKeyLerp_Fixed32NoW;
 		static AEFVariableKeyLerp<ACF_Float32NoW>			AEFVariableKeyLerp_Float32NoW;
+#if BATMAN
+		static AEFVariableKeyLerp<ACF_Fixed48Max>			AEFVariableKeyLerp_Fixed48Max;
+#endif
 
 		// setup translation codec
 		switch(Seq.TranslationCompressionFormat)
@@ -499,6 +510,11 @@ void AnimationFormat_SetInterfaceLinks(UAnimSequence& Seq)
 			case ACF_Float32NoW:
 				Seq.RotationCodec = &AEFVariableKeyLerp_Float32NoW;
 				break;
+#if BATMAN
+			case ACF_Fixed48Max:
+				Seq.RotationCodec = &AEFVariableKeyLerp_Fixed48Max;
+				break;
+#endif
 
 			default:
 				appErrorf( TEXT("%i: unknown or unsupported rotation compression"), (INT)Seq.RotationCompressionFormat );

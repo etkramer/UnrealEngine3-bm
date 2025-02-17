@@ -114,7 +114,8 @@ enum AnimationCompressionFormat
     ACF_IntervalFixed32NoW  =3,
     ACF_Fixed32NoW          =4,
     ACF_Float32NoW          =5,
-    ACF_MAX                 =6,
+    ACF_Fixed48Max          =6,
+    ACF_MAX                 =7,
 };
 enum EBoneControlSpace
 {

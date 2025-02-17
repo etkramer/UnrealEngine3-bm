@@ -20,6 +20,90 @@
 #define Quant11BitFactor  (1023.f)
 #define Quant11BitOffs    (1023)
 
+#if BATMAN
+// https://github.com/gildor2/UEViewer/blob/a0bfb468d42be831b126632fd8a0ae6b3614f981/Unreal/UnrealMesh/UnMeshTypes.h#L414
+class FQuatFixed48Max
+{
+public:
+	WORD Data[3]; // layout: V2[15] : V1[15] : V0[15] : S[2]
+
+	FQuatFixed48Max()
+	{}
+
+	explicit FQuatFixed48Max(const FQuat& Quat)
+	{
+		FromQuat( Quat );
+	}
+
+	void FromQuat(const FQuat& Quat)
+	{
+		// Unimplemented...
+	}
+
+	void ToQuat(FQuat& Out) const
+	{
+		unsigned tmp;
+		tmp = (Data[1] << 16) | Data[0];
+		int S = tmp & 3;								// bits [0..1]
+		int L = (tmp >> 2) & 0x7FFF;					// bits [2..16]
+		tmp = (Data[2] << 16) | Data[1];
+		int M = (tmp >> 1) & 0x7FFF;					// bits [17..31]
+		int H = (tmp >> 16) & 0x7FFF;					// bits [32..46]
+		// bit 47 is unused ...
+
+		static const float shift = 0.70710678118f;		// sqrt(0.5)
+		static const float scale = 1.41421356237f;		// sqrt(0.5)*2
+		float l = (L - 0.5f) / 32767 * scale - shift;
+		float m = (M - 0.5f) / 32767 * scale - shift;
+		float h = (H - 0.5f) / 32767 * scale - shift;
+		float a = sqrt(1.0f - (l * l + m * m + h * h));
+		// "l", "m", "h" are serialized values, in a range -shift .. +shift
+		// if we will remove one of maximal values ("a"), other values will be smaller
+		// that "a"; if "a" is 1, all other values are 0; when "a" becomes smaller,
+		// other values may grow; maximal value of "other" equals to "a" when
+		// 2 quaternion components equals to "a" and 2 other is 0; so, maximal
+		// stored value can be computed from equation "a*a + a*a + 0 + 0 = 1", so
+		// maximal value is sqrt(1/2) ...
+		// "a" is computed value, up to 1
+
+		switch (S)			// choose where to place "a"
+		{
+		case 0:
+			Out.X = a;
+			Out.Y = l;
+			Out.Z = m;
+			Out.W = h;
+			break;
+		case 1:
+			Out.X = l;
+			Out.Y = a;
+			Out.Z = m;
+			Out.W = h;
+			break;
+		case 2:
+			Out.X = l;
+			Out.Y = m;
+			Out.Z = a;
+			Out.W = h;
+			break;
+		default: // 3
+			Out.X = l;
+			Out.Y = m;
+			Out.Z = h;
+			Out.W = a;
+		}
+	}
+
+	friend FArchive& operator<<(FArchive& Ar, FQuatFixed48Max& Quat)
+	{
+		Ar << Quat.Data[0];
+		Ar << Quat.Data[1];
+		Ar << Quat.Data[2];
+		return Ar;
+	}
+};
+#endif
+
 class FQuatFixed48NoW
 {
 public:
@@ -369,6 +453,12 @@ FORCEINLINE void DecompressRotation(FQuat& Out, const BYTE* RESTRICT TopOfStream
 	{
 		((FQuatFixed48NoW*)KeyData)->ToQuat( Out );
 	}
+#if BATMAN
+	else if (FORMAT == ACF_Fixed48Max)
+	{
+		((FQuatFixed48Max*)KeyData)->ToQuat(Out);
+	}
+#endif
 	else if ( FORMAT == ACF_IntervalFixed32NoW )
 	{
 		const FLOAT* RESTRICT Mins = (FLOAT*)TopOfStream;
