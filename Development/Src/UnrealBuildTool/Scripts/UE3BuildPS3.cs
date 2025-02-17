@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 1998-2009 Epic Games, Inc. All Rights Reserved.
+ * Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
  */
 
 using System;
@@ -31,6 +31,12 @@ namespace UnrealBuildTool
 
 			GlobalCPPEnvironment.IncludePaths.Add("OnlineSubsystemGameSpy/Inc");
 
+			GlobalCPPEnvironment.SystemIncludePaths.Add("PS3/External/PhysX/SDKs/PhysXLoader/include");
+			GlobalCPPEnvironment.SystemIncludePaths.Add("PS3/External/PhysX/SDKs/Foundation/include");
+			GlobalCPPEnvironment.SystemIncludePaths.Add("PS3/External/PhysX/SDKs/Physics/include");
+			GlobalCPPEnvironment.SystemIncludePaths.Add("PS3/External/PhysX/SDKs/Cooking/include");
+			GlobalCPPEnvironment.SystemIncludePaths.Add("PS3/External/PhysX/SDKs/PhysXExtensions/include");
+
 			GlobalCPPEnvironment.SystemIncludePaths.Add("$(CELL_SDK_WIN)/target");
 			GlobalCPPEnvironment.SystemIncludePaths.Add("$(CELL_SDK_WIN)/target/common/include");
 			GlobalCPPEnvironment.SystemIncludePaths.Add("$(CELL_SDK_WIN)/target/ppu/include");
@@ -60,16 +66,10 @@ namespace UnrealBuildTool
 			FinalLinkEnvironment.AdditionalLibraries.Add("sysutil_np_stub");	// Network start dialog utility
 			FinalLinkEnvironment.AdditionalLibraries.Add("l10n_stub");			// Internationalization
 			FinalLinkEnvironment.AdditionalLibraries.Add("pthread");			// POSIX threads
-			FinalLinkEnvironment.AdditionalLibraries.Add("sysutil_game_stub");	// new game content utility
 
 			if (Configuration != UnrealTargetConfiguration.Shipping)
 			{
 				FinalLinkEnvironment.AdditionalLibraries.Add("lv2dbg_stub");	// Non-shipping exception-handling
-
-				// Link in GPAD. In later SDK versions, this API will be part of standard Gcm.
-				GlobalCPPEnvironment.SystemIncludePaths.Add("$(CELL_SDK_WIN)/GPAD");
-				FinalLinkEnvironment.LibraryPaths.Add("$(CELL_SDK_WIN)/GPAD");
-				FinalLinkEnvironment.AdditionalLibraries.Add("dbg_capture");
 			}
 
 			FinalLinkEnvironment.LibraryPaths.Add("../External/Bink/lib/PS3");
@@ -123,18 +123,9 @@ namespace UnrealBuildTool
 			FinalLinkEnvironment.LibraryPaths.Add("PS3/libNull");
 
 			// Add the PS3-specific projects.
-			NonGameProjects.Add( new UE3ProjectDesc( "PS3/PS3.vcproj" ) );
-			NonGameProjects.Add( new UE3ProjectDesc( "OnlineSubsystemGamespy/OnlineSubsystemGamespy.vcproj" ) );
+			NonGameProjects.Add("PS3/PS3.vcproj");
+			NonGameProjects.Add("OnlineSubsystemGamespy/OnlineSubsystemGamespy.vcproj");
 		}
-
-        void SetUpPS3PhysXEnvironment()
-        {
-            GlobalCPPEnvironment.SystemIncludePaths.Add("PS3/External/PhysX/SDKs/PhysXLoader/include");
-            GlobalCPPEnvironment.SystemIncludePaths.Add("PS3/External/PhysX/SDKs/Foundation/include");
-            GlobalCPPEnvironment.SystemIncludePaths.Add("PS3/External/PhysX/SDKs/Physics/include");
-            GlobalCPPEnvironment.SystemIncludePaths.Add("PS3/External/PhysX/SDKs/Cooking/include");
-            GlobalCPPEnvironment.SystemIncludePaths.Add("PS3/External/PhysX/SDKs/PhysXExtensions/include");
-        }
 
 		void PS3AddDataFileToExecutable(string InputDataFilePath/*,string SectionName*/)
 		{

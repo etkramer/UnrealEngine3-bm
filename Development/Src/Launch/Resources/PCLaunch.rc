@@ -21,6 +21,7 @@
 #define EXAMPLEGAME 0
 #define UTGAME 1
 #define GEARGAME 2
+#define BMGAME 3
 
 /////////////////////////////////////////////////////////////////////////////
 // English (U.S.) resources
@@ -141,6 +142,9 @@ IDICON_UTEditor         ICON                    "EnvyEditor.ico"
 #elif GAMENAME==EXAMPLEGAME
 IDICON_DemoGame         ICON                    "Demogame.ico"
 IDICON_DemoEditor       ICON                    "DemoEditor.ico"
+#elif GAMENAME==BMGAME
+IDICON_DemoGame         ICON                    "Demogame.ico"
+IDICON_DemoEditor       ICON                    "DemoEditor.ico"
 #else
 	#error Hook up your game name here
 #endif
@@ -187,6 +191,8 @@ WXCURSOR_CROSS          CURSOR                  "crosshai.cur"
 	ID_HASHFILE RCDATA "..\\..\\..\\..\\UTGame\\Build\\Hashes.sha"
 #elif GAMENAME==EXAMPLEGAME
 	ID_HASHFILE RCDATA "..\\..\\..\\..\\ExampleGame\\Build\\Hashes.sha"
+#elif GAMENAME==BMGAME
+	ID_HASHFILE RCDATA "..\\..\\..\\..\\BmGame\\Build\\Hashes.sha"
 #endif 
 
 //#ifndef APSTUDIO_INVOKED

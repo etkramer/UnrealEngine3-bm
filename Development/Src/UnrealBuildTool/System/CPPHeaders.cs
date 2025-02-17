@@ -1,5 +1,6 @@
 /**
- * Copyright 1998-2009 Epic Games, Inc. All Rights Reserved.
+ *
+ * Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
  */
 
 using System;
@@ -13,29 +14,15 @@ namespace UnrealBuildTool
 {
 	partial class CPPEnvironment
 	{
-		/** Contains a cache of include dependencies (direct and indirect). */
-		public static DependencyCache IncludeCache = null;
-
-		/** Contains a cache of include dependencies (direct only). */
-		public static DependencyCache DirectIncludeCache = null;
-		
 		/** Contains a mapping from filename to the full path of the header in this environment. */
 		Dictionary<string, FileItem> IncludeFileSearchDictionary = new Dictionary<string, FileItem>();
 
-		/** Absolute path to external folder, upper invariant. */
-		string AbsoluteExternalPathUpperInvariant = Path.GetFullPath("..\\External\\").ToUpperInvariant();
-
-		/** 
-         * Finds the header file that is referred to by a partial include filename. 
-         * 
-         * @param RelativeIncludePath path relative to the project
-         * @param bSkipExternalHeader true to skip processing of headers in external path
-         */
-		public FileItem FindIncludedFile(string RelativeIncludePath, bool bSkipExternalHeader)
+		/** Finds the header file that is referred to by a partial include filename. */
+		public FileItem FindIncludedFile(string RelativeIncludePath)
 		{
 			// Only search for the include file if the result hasn't been cached.
 			FileItem Result = null;
-			if( !IncludeFileSearchDictionary.TryGetValue(RelativeIncludePath, out Result) )
+			if (!IncludeFileSearchDictionary.TryGetValue(RelativeIncludePath, out Result))
 			{
 				// Build a single list of include paths to search.
 				List<string> IncludePathsToSearch = new List<string>();
@@ -68,31 +55,12 @@ namespace UnrealBuildTool
 				// Cache the result of the include path search.
 				IncludeFileSearchDictionary.Add(RelativeIncludePath, Result);
 			}
-			
-			// Check whether the header should be skipped. We need to do this after resolving as we need 
-			// the absolute path to compare against the External folder.
-			bool bWasHeaderSkipped = false;
-            if (Result != null && bSkipExternalHeader)
-			{
-				// Check whether header path is under External root.
-				if( Result.AbsolutePathUpperInvariant.Contains( AbsoluteExternalPathUpperInvariant ) )
-				{
-					// It is, skip and reset result.
-					Result = null;
-					bWasHeaderSkipped = true;
-				}
-			}
 
-			// Log status for header.
 			if (BuildConfiguration.bPrintDebugInfo)
 			{
 				if (Result != null)
 				{
 					Console.WriteLine("Resolved included file \"{0}\" to: {1}", RelativeIncludePath, Result.AbsolutePath);
-				}
-				else if( bWasHeaderSkipped )
-				{
-					Console.WriteLine("Skipped included file \"{0}\"", RelativeIncludePath);
 				}
 				else
 				{
@@ -122,7 +90,7 @@ namespace UnrealBuildTool
 				foreach (string DirectlyIncludedFileName in DirectlyIncludedFileNames)
 				{
 					// Resolve the included file name to an actual file.
-                    FileItem IncludedFile = FindIncludedFile(DirectlyIncludedFileName, !BuildConfiguration.bCheckExternalHeadersForModification);
+					FileItem IncludedFile = FindIncludedFile(DirectlyIncludedFileName);
 					if (IncludedFile != null)
 					{
 						if (!IncludedFileDictionary.ContainsKey(IncludedFile))
@@ -159,13 +127,6 @@ namespace UnrealBuildTool
 		/** @return The list of files which are directly or indirectly included by a C++ file. */
 		public List<FileItem> GetIncludeDependencies(FileItem CPPFile)
 		{
-			// Try to fulfill request from cache first.
-			List<FileItem> CachedDependencies = null;
-			if (IncludeCache.TryFetchDependencies(CPPFile, out CachedDependencies))
-			{
-				return CachedDependencies;
-			}
-
 			// Find the dependencies of the file.
 			Dictionary<FileItem, bool> IncludedFileDictionary = new Dictionary<FileItem, bool>();
 			GetIncludeDependencies(CPPFile, ref IncludedFileDictionary);
@@ -177,40 +138,54 @@ namespace UnrealBuildTool
 				Result.Add(IncludedFile.Key);
 			}
 
-			// Populate cache with results.
-			IncludeCache.Update(CPPFile, Result);
-
 			return Result;
 		}
 
 		/** Regex that matches #include statements. */
-		static Regex CPPHeaderRegex = new Regex(	"(([ \t]*#[ \t]*include[ \t]*[<\"](?<HeaderFile>[^\">]*)[\">][^\n]*\n)|([^\n]*\n))*", 
-													RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.ExplicitCapture );
+		static Regex CPPHeaderRegex = new Regex("[ \t]*#[ \t]*include[ \t]*[<\"]([^\">]*)[\">].*", RegexOptions.Compiled);
 
 		/** Finds the names of files directly included by the given C++ file. */
-		public List<string> GetDirectIncludeDependencies( FileItem CPPFile )
+		public List<string> GetDirectIncludeDependencies(FileItem CPPFile)
 		{
-			// Try to fulfill request from cache first.
-			List<string> Result = null;
-			if (DirectIncludeCache.TryFetchDirectDependencies(CPPFile, out Result))
-			{
-				return Result;
-			}
-
 			// Read lines from the C++ file.
-			string FileContents = Utils.ReadAllText( CPPFile.AbsolutePath );
-			Match M = CPPHeaderRegex.Match( FileContents );
-			CaptureCollection CC = M.Groups["HeaderFile"].Captures;
-			Result = new List<string>( CC.Count );
-			foreach( Capture C in CC )
+			using (FileStream CPPFileStream = new FileStream(CPPFile.AbsolutePath, FileMode.Open, FileAccess.Read))
 			{
-				Result.Add( C.Value );
+				using (StreamReader CPPFileReader = new StreamReader(CPPFileStream))
+				{
+					List<string> Result = new List<string>();
+					while(!CPPFileReader.EndOfStream)
+					{
+						string Line = CPPFileReader.ReadLine();
+
+						// Check whether the first non-whitespace character of the line is a #.
+						bool bFirstCharacterIsPound = false;
+						for (int CharacterIndex = 0; CharacterIndex < Line.Length; CharacterIndex++)
+						{
+							if (Line[CharacterIndex] == '#')
+							{
+								bFirstCharacterIsPound = true;
+								break;
+							}
+							else if (Line[CharacterIndex] != ' ' && Line[CharacterIndex] != '\t')
+							{
+								break;
+							}
+						}
+
+						// If the line starts with a #, check whether it's an #include statement.
+						if (bFirstCharacterIsPound)
+						{
+							Match IncludeMatch = CPPHeaderRegex.Match(Line);
+							if (IncludeMatch.Success)
+							{
+								Result.Add(IncludeMatch.Groups[1].Value);
+							}
+						}
+					}
+
+					return Result;
+				}
 			}
-
-			// Populate cache with results.
-			DirectIncludeCache.Update(CPPFile, Result);
-
-			return Result;
 		}
 	}
 }

@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<xex>
+  <titleid id="0x455007D1"/>
+  <version major="0x1" minor="0x0" 
+     build="4645"
+     qfe="0x00"
+  />
+  <mediatypes>
+	<cd/>
+	<consolepackage/>
+	<dvdxg2/>
+	<harddisk/>
+	<livepackage/>
+	<mu/>
+	<network/>
+	<signedpackage/>
+	<usbmass/>
+  </mediatypes>
+</xex>

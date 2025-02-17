@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 1998-2009 Epic Games, Inc. All Rights Reserved.
+ * Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
  */
 
 using System;
@@ -21,14 +21,14 @@ namespace UnrealBuildTool
 			return FileItem.GetExistingItemByPath("ExampleGame/Live/xex.xml");
 		}
 
-		public void SetUpGameEnvironment(CPPEnvironment GameCPPEnvironment, LinkEnvironment FinalLinkEnvironment, List<UE3ProjectDesc> GameProjects)
+		public void SetUpGameEnvironment(CPPEnvironment GameCPPEnvironment, LinkEnvironment FinalLinkEnvironment, List<string> GameProjects)
 		{
 			GameCPPEnvironment.IncludePaths.Add("ExampleGame/Inc");
-			GameProjects.Add( new UE3ProjectDesc( "ExampleGame/ExampleGame.vcproj") );
+			GameProjects.Add("ExampleGame/ExampleGame.vcproj");
 
 			if (GameCPPEnvironment.TargetPlatform == CPPTargetPlatform.Win32)
 			{
-				GameProjects.Add( new UE3ProjectDesc( "ExampleEditor/ExampleEditor.vcproj") );
+				GameProjects.Add("ExampleEditor/ExampleEditor.vcproj");
 				GameCPPEnvironment.IncludePaths.Add("ExampleEditor/Inc");
 			}
 

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 1998-2009 Epic Games, Inc. All Rights Reserved.
+ * Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
  */
 
 using System;
@@ -45,7 +45,6 @@ namespace UnrealBuildTool
 
 				// Add source files to the unity file until the number of included bytes crosses a threshold.
 				long NumIncludedBytesInThisOutputFile = 0;
-                string FileDescription = "";
 				while(	InputFileIndex < CPPFiles.Count &&
 						(BuildConfiguration.bStressTestUnity ||
 						NumIncludedBytesInThisOutputFile < BuildConfiguration.NumIncludedBytesPerUnityCPP))
@@ -53,11 +52,8 @@ namespace UnrealBuildTool
 					FileItem CPPFile = CPPFiles[InputFileIndex];
 					OutputUnityCPPWriter.WriteLine("#include \"{0}\"", CPPFile.AbsolutePath);
 					NumIncludedBytesInThisOutputFile += CPPFile.Info.Length;
-                    InputFileIndex++;
-                    FileDescription += Path.GetFileName(CPPFile.AbsolutePath) + " + ";
+					InputFileIndex++;
 				}
-                // Remove trailing " + "
-                FileDescription = FileDescription.Remove( FileDescription.Length - 3); 
 
 				// Write the unity file to the intermediate folder.
 				string UnityCPPFilePath = Path.Combine(
@@ -65,8 +61,7 @@ namespace UnrealBuildTool
 					string.Format("Unity_{0}EtAl.cpp",Path.GetFileNameWithoutExtension(CPPFiles[InputFileIndex - 1].AbsolutePath))
 					);
 				FileItem UnityCPPFile = FileItem.CreateIntermediateTextFile(UnityCPPFilePath, OutputUnityCPPWriter.ToString());
-				UnityCPPFile.Description = FileDescription;
-                UnityCPPFiles.Add(UnityCPPFile);                
+				UnityCPPFiles.Add(UnityCPPFile);
 			}
 
 			return UnityCPPFiles;

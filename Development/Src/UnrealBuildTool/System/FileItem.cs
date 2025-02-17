@@ -1,5 +1,6 @@
 /**
- * Copyright 1998-2009 Epic Games, Inc. All Rights Reserved.
+ *
+ * Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
  */
 
 using System;
@@ -28,55 +29,24 @@ namespace UnrealBuildTool
 		/** The absolute path of the file. */
 		public readonly string AbsolutePath;
 
-		/** The absolute path of the file, stored as uppercase invariant. */
-		public readonly string AbsolutePathUpperInvariant;
-
-        /** The pch file that this file will use */
-        public string PrecompiledHeaderIncludeFilename;
-
-        /** Description of file, used for logging. */
-        public string Description;
-
 		/** The information about the file. */
 		public FileInfo Info;
 
 		/** A dictionary that's used to map each unique file name to a single FileItem object. */
 		static Dictionary<string, FileItem> UniqueSourceFileMap = new Dictionary<string, FileItem>();
 
-		/** Remove all the entries from the map of unique file item objects */
-        public static void ResetFileMapCache()
-        {
-            UniqueSourceFileMap.Clear();
-        }
-
 		/** @return The FileItem that represents the given file path. */
 		public static FileItem GetItemByPath(string Path)
 		{
 			string FullPath = System.IO.Path.GetFullPath(Path);
 			string InvariantPath = FullPath.ToUpperInvariant();
-			// We don't call GetItemByFullUpperInvariantPath as we want to preserve the case of the path.
-			FileItem Result = null;
-			if (UniqueSourceFileMap.TryGetValue(InvariantPath, out Result))
+			if (UniqueSourceFileMap.ContainsKey(InvariantPath))
 			{
-				return Result;
+				return UniqueSourceFileMap[InvariantPath];
 			}
 			else
 			{
 				return new FileItem(FullPath);
-			}
-		}
-
-		/** @return The FileItem that represents the given file path. */
-		public static FileItem GetItemByFullUpperInvariantPath(string InvariantPath)
-		{
-			FileItem Result = null;
-			if (UniqueSourceFileMap.TryGetValue(InvariantPath, out Result))
-			{
-				return Result;
-			}
-			else
-			{
-				return new FileItem(InvariantPath);
 			}
 		}
 
@@ -104,7 +74,7 @@ namespace UnrealBuildTool
 			Directory.CreateDirectory(Path.GetDirectoryName(AbsolutePath));
 
 			// Only write the file if its contents have changed.
-			if (!File.Exists(AbsolutePath) || Utils.ReadAllText(AbsolutePath) != Contents)
+			if (!File.Exists(AbsolutePath) || File.ReadAllText(AbsolutePath) != Contents)
 			{
 				File.WriteAllText(AbsolutePath, Contents);
 			}
@@ -120,21 +90,19 @@ namespace UnrealBuildTool
 		}
 
 		/** Initialization constructor. */
-		public FileItem(string InAbsolutePath)
+		FileItem(string InAbsolutePath)
 		{
 			AbsolutePath = InAbsolutePath;
-			// Convert to upper invariant as it's the unique key.
-			AbsolutePathUpperInvariant = AbsolutePath.ToUpperInvariant();
-			
-			Info = new FileInfo(AbsolutePath);
-			
-			bExists = Info.Exists;
+
+			bExists = File.Exists(AbsolutePath);
 			if (bExists)
 			{
-				LastWriteTime = Info.LastWriteTime;
+				LastWriteTime = File.GetLastWriteTime(AbsolutePath);
 			}
 
-			UniqueSourceFileMap[AbsolutePathUpperInvariant] = this;
+			Info = new FileInfo(AbsolutePath);
+
+			UniqueSourceFileMap[AbsolutePath.ToUpperInvariant()] = this;
 		}
 
 		public override string ToString()

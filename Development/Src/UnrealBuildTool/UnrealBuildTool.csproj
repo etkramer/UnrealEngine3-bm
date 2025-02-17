@@ -2,24 +2,30 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{09BE474C-E143-4E7F-89E6-925ECBB69D20}</ProjectGuid>
+    <ProductVersion>8.0.50727</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{FD7C5E1A-CFE4-4FD5-A525-1EB1599A39AC}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <NoStandardLibraries>false</NoStandardLibraries>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>UnrealBuildTool</RootNamespace>
     <AssemblyName>UnrealBuildTool</AssemblyName>
-    <RootNamespace>UnrealBuildToll</RootNamespace>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>.\bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <SccProjectName>
+    </SccProjectName>
+    <SccLocalPath>
+    </SccLocalPath>
+    <SccAuxPath>
+    </SccAuxPath>
+    <SccProvider>
+    </SccProvider>
+    <RunPostBuildEvent>OnOutputUpdated</RunPostBuildEvent>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>bin\release\</OutputPath>
+    <OutputPath>..\..\Intermediate\UnrealBuildTool\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -29,30 +35,23 @@
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Scripts\DebugInfoHeuristic.cs" />
+    <Compile Include="Scripts\UE3BuildBmGame.cs" />
     <Compile Include="Scripts\UE3BuildConfiguration.cs" />
     <Compile Include="Scripts\UE3BuildExampleGame.cs" />
     <Compile Include="Scripts\UE3BuildExternal.cs" />
     <Compile Include="Scripts\UE3BuildGearGame.cs" />
-    <Compile Include="Scripts\UE3BuildNanoGame.cs" />
-    <Compile Include="Scripts\UE3BuildPS3.cs" />
     <Compile Include="Scripts\UE3BuildTarget.cs" />
-    <Compile Include="Scripts\UE3BuildUTGame.cs" />
     <Compile Include="Scripts\UE3BuildWin32.cs" />
     <Compile Include="Scripts\UE3BuildXbox360.cs" />
     <Compile Include="System\ActionGraph.cs" />
-    <Compile Include="System\BuildConfiguration.cs" />
     <Compile Include="System\BuildException.cs" />
+    <Compile Include="System\BuildConfiguration.cs" />
     <Compile Include="System\CPPEnvironment.cs" />
     <Compile Include="System\CPPHeaders.cs" />
-    <Compile Include="System\DataBase.cs" />
-    <Compile Include="System\DependencyCache.cs" />
     <Compile Include="System\FileItem.cs" />
-    <Compile Include="System\IntelToolChain.cs" />
     <Compile Include="System\LinkEnvironment.cs" />
     <Compile Include="System\LocalExecutor.cs" />
-    <Compile Include="System\PS3ToolChain.cs" />
     <Compile Include="System\ResponseFile.cs" />
-    <Compile Include="System\StripHeaders.cs" />
     <Compile Include="System\Target.cs" />
     <Compile Include="System\Unity.cs" />
     <Compile Include="System\UnrealBuildTool.cs" />
@@ -62,11 +61,19 @@
     <Compile Include="System\Xbox360ToolChain.cs" />
     <Compile Include="System\XGE.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="SQL\UnrealBuildToolPerf.sql" />
-  </ItemGroup>
-  <Import Project="$(MSBuildBinPath)\Microsoft.CSHARP.Targets" />
-  <ProjectExtensions>
-    <VisualStudio AllowExistingFolder="true" />
-  </ProjectExtensions>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+  <PropertyGroup>
+    <PostBuildEvent>REM This ensures that a full build is done whenever UnrealBuildTool needs to be recompiled.
+cd $(ProjectDir)/..
+call Targets/CleanAll.bat</PostBuildEvent>
+    <PreBuildEvent>del $(TargetPath) /q &gt;NUL 2&gt;&amp;1
+</PreBuildEvent>
+  </PropertyGroup>
 </Project>

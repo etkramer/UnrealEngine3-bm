@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 1998-2009 Epic Games, Inc. All Rights Reserved.
+ * Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
  */
 
 using System;
@@ -20,15 +20,7 @@ namespace UnrealBuildTool
 		public string CommandPath = null;
 		public string CommandArguments = null;
 		public string StatusDescription = "...";
-        public string StatusDetailedDescription = "";
 		public bool bCanExecuteRemotely = false;
-		public bool bIsVCCompiler = false;
-		public bool bIsGCCCompiler = false;
-		/**
-		 * Whether we should log this action if executed by the local executor. This is useful for actions that take time
-		 * but invoke tools without any console output.
-		 */
-		public bool bShouldLogIfExecutedLocally = true;
 
 		public Action()
 		{
@@ -39,10 +31,6 @@ namespace UnrealBuildTool
 	partial class UnrealBuildTool
 	{
 		public static List<Action> AllActions = new List<Action>();
-
-		/** Number of outdated actions encountered. We know we are doing a full rebuild If outdated actions == AllActions.Count. */
-		public static int NumOutdatedActions = 0;
-
 
 		/** Links actions with their prerequisite and produced items into an action graph. */
 		static void LinkActionsAndItems()
@@ -155,9 +143,8 @@ namespace UnrealBuildTool
 		 * and produced items.
 		 * @param RootAction - The action being considered.
 		 * @param OutdatedActionDictionary - 
-         * @return true if outdated
 		 */
-        static public bool IsActionOutdated(Action RootAction, ref Dictionary<Action, bool> OutdatedActionDictionary)
+		static bool IsActionOutdated(Action RootAction, ref Dictionary<Action, bool> OutdatedActionDictionary)
 		{
 			// Only compute the outdated-ness for actions that don't aren't cached in the outdated action dictionary.
 			bool bIsOutdated = false;
@@ -249,12 +236,6 @@ namespace UnrealBuildTool
 
 				// Cache the outdated-ness of this action.
 				OutdatedActionDictionary.Add(RootAction, bIsOutdated);
-
-				// Keep track of how many outdated actions there are. Used to determine whether this was a full rebuild or not.
-				if( bIsOutdated )
-				{
-					NumOutdatedActions++;
-				}
 			}
 
 			return bIsOutdated;

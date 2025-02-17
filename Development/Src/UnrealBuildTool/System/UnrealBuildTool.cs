@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 1998-2009 Epic Games, Inc. All Rights Reserved.
+ * Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
  */
 
 using System;
@@ -9,10 +9,10 @@ using System.Text;
 using System.IO;
 using System.Diagnostics;
 using System.Threading;
-
+ 
 namespace UnrealBuildTool
 {
-    partial class UnrealBuildTool
+	partial class UnrealBuildTool
 	{
 		/** Builds a list of actions that need to be executed to produce the specified output items. */
 		static List<Action> GetActionsToExecute(IEnumerable<FileItem> OutputItems)
@@ -48,7 +48,7 @@ namespace UnrealBuildTool
 			List<Action> ActionsToExecute = new List<Action>();
 			foreach (Action Action in AllActions)
 			{
-				if (ActionsNeededForThisTarget.ContainsKey(Action) && OutdatedActionDictionary[Action] && Action.CommandPath != null)
+				if (ActionsNeededForThisTarget.ContainsKey(Action) && OutdatedActionDictionary[Action])
 				{
 					ActionsToExecute.Add(Action);
 				}
@@ -58,7 +58,7 @@ namespace UnrealBuildTool
 		}
 
 		/** Executes a list of actions. */
-		static bool ExecuteActions(List<Action> ActionsToExecute, out string ExecutorName )
+		static bool ExecuteActions(List<Action> ActionsToExecute)
 		{
 			if (ActionsToExecute.Count > 0)
 			{
@@ -72,19 +72,15 @@ namespace UnrealBuildTool
 					XGE.ExecutionResult XGEResult = XGE.ExecuteTaskFile(XGETaskFilePath);
 					if (XGEResult != XGE.ExecutionResult.Unavailable)
 					{
-						ExecutorName = "XGE";
 						return XGEResult == XGE.ExecutionResult.TasksSucceeded;
 					}
 				}
 
 				// If XGE is disallowed or unavailable, execute the commands locally.
-				ExecutorName = "Local";
 				return LocalExecutor.ExecuteActions(ActionsToExecute);
 			}
-			// Nothing to execute.
 			else
 			{
-				ExecutorName = "NoActionsToExecute";
 				Console.WriteLine("Target is up to date.");
 			}
 
@@ -93,111 +89,57 @@ namespace UnrealBuildTool
 
 		static int Main(string[] Arguments)
 		{
-			// Helpers used for stats tracking.
-			TimeSpan StartTime = new TimeSpan(System.DateTime.Now.Ticks);
-			Target Target =  null;
-			int NumExecutedActions = 0;
-			double MutexWaitTime = 0;
-			string ExecutorName = "Unknown";
-
-			// Don't allow simultaneous execution of Unreal Built Tool. Multi-selection in the UI e.g. causes this and you want serial
-			// execution in this case to avoid contention issues with shared produced items.
 			bool bSuccess = true;
+		
 			bool bCreatedMutex = false;
 			using (Mutex SingleInstanceMutex = new Mutex(true, "Global\\UnrealBuildTool_Mutex", out bCreatedMutex))
 			{
 				try
-                {
-                    // Log command-line arguments.
-                    if (BuildConfiguration.bPrintDebugInfo)
-                    {
-                        Console.Write("Command-line arguments: ");
-                        foreach (string Argument in Arguments)
-                        {
-                            Console.Write("{0} ", Argument);
-                        }
-                        Console.WriteLine("");
-                    }
+				{
+					if (!bCreatedMutex)
+					{
+						// If this instance didn't create the mutex, wait for the existing mutex to be released by the mutex's creator.
+						SingleInstanceMutex.WaitOne();
+					}
 
-                    if (!bCreatedMutex)
-                    {
-                        // If this instance didn't create the mutex, wait for the existing mutex to be released by the mutex's creator.
-                        TimeSpan MutexWaitStartTime = new TimeSpan(System.DateTime.Now.Ticks);
-                        SingleInstanceMutex.WaitOne();
-                        MutexWaitTime = new TimeSpan(System.DateTime.Now.Ticks).Subtract(MutexWaitStartTime).TotalSeconds;
-                    }
+					// Parse optional command-line flags.
+					BuildConfiguration.bPrintDebugInfo = Utils.ParseCommandLineFlag(Arguments, "-Verbose");
 
-                    // Parse optional command-line flags.
-                    if (Utils.ParseCommandLineFlag(Arguments, "-Verbose"))
-                    {
-                        BuildConfiguration.bPrintDebugInfo = true;
-                    }
+					if (Utils.ParseCommandLineFlag(Arguments, "-NoXGE"))
+					{
+						BuildConfiguration.bAllowXGE = false;
+					}
 
-                    if (Utils.ParseCommandLineFlag(Arguments, "-NoXGE"))
-                    {
-                        BuildConfiguration.bAllowXGE = false;
-                    }
+					if (Utils.ParseCommandLineFlag(Arguments, "-StressTestUnity"))
+					{
+						BuildConfiguration.bStressTestUnity = true;
+					}
 
-                    if (Utils.ParseCommandLineFlag(Arguments, "-NoXGEMonitor"))
-                    {
-                        BuildConfiguration.bShowXGEMonitor = false;
-                    }
+					if (Utils.ParseCommandLineFlag(Arguments, "-DisableUnity"))
+					{
+						BuildConfiguration.bUseUnityBuild = false;
+					}
 
-                    if (Utils.ParseCommandLineFlag(Arguments, "-StressTestUnity"))
-                    {
-                        BuildConfiguration.bStressTestUnity = true;
-                    }
+					// Configure the build actions and items.
+					Target Target = new UE3BuildTarget();
+					IEnumerable<FileItem> TargetOutputItems = Target.Build(Arguments);
 
-                    if (Utils.ParseCommandLineFlag(Arguments, "-DisableUnity"))
-                    {
-                        BuildConfiguration.bUseUnityBuild = false;
-                    }
+					// Plan the actions to execute for the build.
+					List<Action> ActionsToExecute = GetActionsToExecute(TargetOutputItems);
 
-                    if (Utils.ParseCommandLineFlag(Arguments, "-NoPCH"))
-                    {
-                        BuildConfiguration.bUsePCHFiles = false;
-                    }
+					// Display some stats to the user.
+					if (BuildConfiguration.bPrintDebugInfo)
+					{
+						Console.WriteLine(
+							"{0} actions, {1} outdated and requested actions",
+							AllActions.Count,
+							ActionsToExecute.Count
+							);
+					}
 
-                    StripHeadersUtil StripHeaders = null;
-                    if (BuildConfiguration.bRemoveUnusedHeaders)
-                    {
-                        StripHeaders = new StripHeadersUtil();
-                    }
-
-                    while(true)
-                    {
-                        // Clear cache of file entries to refresh any files that mayb have been modified 
-                        FileItem.ResetFileMapCache();
-
-                        // Configure the build actions and items.
-                        Target = new UE3BuildTarget();
-                        IEnumerable<FileItem> TargetOutputItems = Target.Build(Arguments);
-
-                        // Plan the actions to execute for the build.
-                        List<Action> ActionsToExecute = GetActionsToExecute(TargetOutputItems);
-                        NumExecutedActions = ActionsToExecute.Count;
-
-                        // Display some stats to the user.
-                        if (BuildConfiguration.bPrintDebugInfo)
-                        {
-                            Console.WriteLine(
-                                "{0} actions, {1} outdated and requested actions",
-                                AllActions.Count,
-                                ActionsToExecute.Count
-                                );
-                        }
-
-                        // Execute the actions.
-                        bSuccess = ExecuteActions(ActionsToExecute, out ExecutorName);
-                        
-                        // Iterate compilation if we're stripping headers from source files
-                        if (StripHeaders == null || 
-							!StripHeaders.ProcessNext(ActionsToExecute,Target))
-                        {
-                            break;
-                        }
-                    }
-                }
+					// Execute the actions.
+					bSuccess = ExecuteActions(ActionsToExecute);
+				}
 				catch (Exception Exception)
 				{
 					Console.WriteLine("{0}", Exception);
@@ -206,23 +148,6 @@ namespace UnrealBuildTool
 
 				// Release the mutex.
 				SingleInstanceMutex.ReleaseMutex();
-			}
-
-			// Figure out how long we took to execute and update stats DB if there is a valid target.
-			double BuildDuration = new TimeSpan(System.DateTime.Now.Ticks).Subtract(StartTime).TotalSeconds - MutexWaitTime;
-			if( Target != null )
-			{
-				PerfDataBase.SendBuildSummary( BuildDuration, Target, bSuccess, AllActions.Count, NumOutdatedActions, NumExecutedActions, ExecutorName );
-			}
-
-			// Update duration to include time taken to talk to the database and log it to the console
-			double BuildAndSqlDuration = new TimeSpan(System.DateTime.Now.Ticks).Subtract(StartTime).TotalSeconds - MutexWaitTime;
-			Console.WriteLine("UBT execution time: {0:0.00} seconds", BuildAndSqlDuration);
-
-			// Warn is connecting to the DB took too long.
-			if( BuildAndSqlDuration - BuildDuration > 1 )
-			{
-				Console.WriteLine("Warning: Communicating with the Database took {0} seconds.",BuildAndSqlDuration - BuildDuration);
 			}
 
 			return bSuccess ? 0 : 1;

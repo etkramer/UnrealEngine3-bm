@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 1998-2009 Epic Games, Inc. All Rights Reserved.
+ * Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
  */
 
 using System;
@@ -43,12 +43,13 @@ namespace UnrealBuildTool
 				foreach (Action Action in Actions)
 				{
 					Process ActionProcess = null;
-					bool bFoundActionProcess = ActionProcessDictionary.TryGetValue(Action, out ActionProcess);
-					if (bFoundActionProcess == false)
+					ActionProcessDictionary.TryGetValue(Action, out ActionProcess);
+
+					if(ActionProcess == null)
 					{
 						NumUnexecutedActions++;
 					}
-					else if (ActionProcess != null && ActionProcess.HasExited == false)
+					else if (ActionProcess.HasExited == false)
 					{
 						NumUnexecutedActions++;
 						NumExecutingActions++;
@@ -66,50 +67,28 @@ namespace UnrealBuildTool
 				foreach (Action Action in Actions)
 				{
 					Process ActionProcess = null;
-					bool bFoundActionProcess = ActionProcessDictionary.TryGetValue(Action, out ActionProcess);
-					if (bFoundActionProcess == false)
+					ActionProcessDictionary.TryGetValue(Action, out ActionProcess);
+					if (ActionProcess == null)
 					{
-						if (NumExecutingActions < Math.Max(1,System.Environment.ProcessorCount * BuildConfiguration.ProcessorCountMultiplier) )
+						if (NumExecutingActions < System.Environment.ProcessorCount)
 						{
 							// Determine whether there are any prerequisites of the action that are outdated.
 							bool bHasOutdatedPrerequisites = false;
-							bool bHasFailedPrerequisites = false;
 							foreach (FileItem PrerequisiteItem in Action.PrerequisiteItems)
 							{
 								if (PrerequisiteItem.ProducingAction != null && Actions.Contains(PrerequisiteItem.ProducingAction))
 								{
 									Process PrerequisiteProcess = null;
-									bool bFoundPrerequisiteProcess = ActionProcessDictionary.TryGetValue( PrerequisiteItem.ProducingAction, out PrerequisiteProcess );
-									if (bFoundPrerequisiteProcess == true)
-									{
-										if (PrerequisiteProcess == null)
-										{
-											bHasFailedPrerequisites = true;
-										}
-										else if (PrerequisiteProcess.HasExited == false)
-										{
-											bHasOutdatedPrerequisites = true;
-										}
-										else if (PrerequisiteProcess.ExitCode != 0)
-										{
-											bHasFailedPrerequisites = true;
-										}
-									}
-									else
+									ActionProcessDictionary.TryGetValue(PrerequisiteItem.ProducingAction, out PrerequisiteProcess);
+									if (PrerequisiteProcess == null || PrerequisiteProcess.HasExited == false)
 									{
 										bHasOutdatedPrerequisites = true;
 									}
 								}
 							}
 
-							// If there are any failed prerequisites of this action, don't execute it.
-							if (bHasFailedPrerequisites)
-							{
-								// Add a null entry in the dictionary for this action.
-								ActionProcessDictionary.Add( Action, null );
-							}
 							// If there aren't any outdated prerequisites of this action, execute it.
-							else if (!bHasOutdatedPrerequisites)
+							if (!bHasOutdatedPrerequisites)
 							{
 								// Create the action's process.
 								ProcessStartInfo ActionStartInfo = new ProcessStartInfo();
@@ -117,17 +96,6 @@ namespace UnrealBuildTool
 								ActionStartInfo.FileName = ExpandEnvironmentVariables(Action.CommandPath);
 								ActionStartInfo.Arguments = ExpandEnvironmentVariables(Action.CommandArguments);
 								ActionStartInfo.UseShellExecute = false;
-
-								// Log command-line used to execute task if debug info printing is enabled.
-								if( BuildConfiguration.bPrintDebugInfo )
-								{
-									Console.WriteLine("Executing: {0} {1}",ActionStartInfo.FileName,ActionStartInfo.Arguments);
-								}
-								// Log summary if wanted.
-								else if( Action.bShouldLogIfExecutedLocally )
-								{
-									Console.WriteLine("{0} {1}",Path.GetFileName(ActionStartInfo.FileName),Action.StatusDescription);
-								}
 
 								// Try to launch the action's process, and produce a friendly error message if it fails.
 								try
@@ -151,44 +119,14 @@ namespace UnrealBuildTool
 				System.Threading.Thread.Sleep(TimeSpan.FromMilliseconds(100));
 			}
 
-            if( BuildConfiguration.bLogDetailedActionStats )
-            {
-                Console.WriteLine("^CPU time^Tool^Task^Description");
-            }
-			double TotalCPUTime = 0;
-
-			// Check whether any of the tasks failed and log action stats if wanted.
+			// Check whether any of the tasks failed.
 			bool bSuccess = true;
 			foreach (KeyValuePair<Action, Process> ActionProcess in ActionProcessDictionary)
 			{
-				// Check for unexecuted actions, preemptive failure
-				if (ActionProcess.Value == null)
-				{
-					bSuccess = false;
-					continue;
-				}
-				// Check for executed action but general failure
 				if (ActionProcess.Value.ExitCode != 0)
 				{
 					bSuccess = false;
 				}
-                // Log CPU time, tool and task.
-				if (BuildConfiguration.bLogDetailedActionStats)
-				{
-                    Console.WriteLine( "^{0}^{1}^{2}^{3}", 
-                        ActionProcess.Value.TotalProcessorTime.TotalSeconds, 
-						Path.GetFileName(ActionProcess.Key.CommandPath), 
-                        ActionProcess.Key.StatusDescription,
-                        ActionProcess.Key.StatusDetailedDescription);
-                }
-				// Keep track of total CPU seconds spent on tasks.
-				TotalCPUTime += ActionProcess.Value.TotalProcessorTime.TotalSeconds;
-			}
-
-			// Log total CPU seconds and numbers of processors involved in tasks.
-			if( BuildConfiguration.bLogDetailedActionStats || BuildConfiguration.bPrintDebugInfo )
-			{
-				Console.WriteLine("Total CPU seconds: {0}  Processors: {1}", TotalCPUTime, System.Environment.ProcessorCount);
 			}
 
 			return bSuccess;

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 1998-2009 Epic Games, Inc. All Rights Reserved.
+ * Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
  */
 
 using System;
@@ -11,45 +11,29 @@ namespace UnrealBuildTool
 {
 	class PS3ToolChain
 	{
-		static string GetCompileArguments_Global(CPPEnvironment CompileEnvironment)
+		/**
+		 * Whether precompiled headers should be disabled on PS3; this is currently necessary to work around errors that GCC errors that occur
+		 * when using PCHs in conjunction with XGE.
+		 */
+		static bool bDisablePrecompiledHeaders = true;
+
+		static string GetCompileArguments_Global()
 		{
 			string Result = "";
-
 			Result += " -fmessage-length=0";
 			Result += " -fshort-wchar";
-			Result += " -fno-exceptions";
-			Result += " -pipe";
-			Result += " -c";
-
-			// Compiler warnings.
 			Result += " -Wcomment";
 			Result += " -Wmissing-braces";
 			Result += " -Wparentheses";
 			Result += " -Wredundant-decls";
 			Result += " -Werror";
+			Result += " -fno-exceptions";
 			Result += " -Winvalid-pch";
+			Result += " -pipe";
 			Result += " -Wno-redundant-decls";
 			Result += " -Wreturn-type";
 			Result += " -Winit-self";
-
-			// Optimize non- debug builds.
-			if( CompileEnvironment.TargetConfiguration != CPPTargetConfiguration.Debug )
-			{
-				Result += " -fno-strict-aliasing";
-				Result += " -O3";
-				Result += " -fforce-addr";
-				Result += " -ffast-math";
-				Result += " -funroll-loops";
-				Result += " -Wuninitialized";
-			}
-
-			// Create GDB format debug info if wanted.
-			if (CompileEnvironment.bCreateDebugInfo)
-			{
-				Result += " -g";
-				Result += " -ggdb";
-			}
-
+			Result += " -c";
 			return Result;
 		}
 
@@ -69,6 +53,36 @@ namespace UnrealBuildTool
 			Result += " -x c";
 			Result += " -ffunction-sections";
 			Result += " -fdata-sections";
+			return Result;
+		}
+
+		static string GetCompileArguments_Debug()
+		{
+			string Result = "";
+			return Result;
+		}
+
+		static string GetCompileArguments_Release()
+		{
+			string Result = "";
+			Result += " -fno-strict-aliasing";
+			Result += " -O3";
+			Result += " -fforce-addr";
+			Result += " -ffast-math";
+			Result += " -funroll-loops";
+			Result += " -Wuninitialized";
+			return Result;
+		}
+
+		static string GetCompileArguments_ReleaseLTCG()
+		{
+			string Result = "";
+			Result += " -fno-strict-aliasing";
+			Result += " -O3";
+			Result += " -fforce-addr";
+			Result += " -ffast-math";
+			Result += " -funroll-loops";
+			Result += " -Wuninitialized";
 			return Result;
 		}
 
@@ -135,7 +149,33 @@ namespace UnrealBuildTool
 
 		public static CPPOutput CompileCPPFiles(CPPEnvironment CompileEnvironment,IEnumerable<FileItem> SourceFiles)
 		{
-			string Arguments = GetCompileArguments_Global(CompileEnvironment);
+			// Optionally disable precompiled headers by not creating the .gch file.
+			if (CompileEnvironment.PrecompiledHeaderAction == PrecompiledHeaderAction.Create && bDisablePrecompiledHeaders)
+			{
+				return null;
+			}
+
+			string Arguments = GetCompileArguments_Global();
+
+			switch (CompileEnvironment.TargetConfiguration)
+			{
+				case CPPTargetConfiguration.Debug:
+					Arguments += GetCompileArguments_Debug();
+					break;
+				case CPPTargetConfiguration.Release:
+					Arguments += GetCompileArguments_Release();
+					break;
+				case CPPTargetConfiguration.ReleaseLTCG:
+					Arguments += GetCompileArguments_ReleaseLTCG();
+					break;
+			}
+
+			if (CompileEnvironment.bCreateDebugInfo)
+			{
+				// Create GDB format debug data.
+				Arguments += " -g";
+				Arguments += " -ggdb";
+			}
 
 			if (CompileEnvironment.PrecompiledHeaderAction == PrecompiledHeaderAction.Include)
 			{
@@ -228,12 +268,11 @@ namespace UnrealBuildTool
 				CompileAction.CommandPath = Path.Combine(GetSCEPS3Root(), "host-win32/ppu/bin/ppu-lv2-g++.exe");
 				CompileAction.CommandArguments = Arguments + FileArguments + CompileEnvironment.AdditionalArguments;
 				CompileAction.StatusDescription = string.Format("{0}", Path.GetFileName(SourceFile.AbsolutePath));
-                CompileAction.StatusDetailedDescription = SourceFile.Description;
-				CompileAction.bIsGCCCompiler = true;
 
 				// Allow compiles to execute remotely unless they create a precompiled header.  Force those to run locally to avoid the
 				// need to copy the PCH back to the build instigator before distribution to other remote build agents.
-				CompileAction.bCanExecuteRemotely = CompileEnvironment.PrecompiledHeaderAction != PrecompiledHeaderAction.Create;
+				// For now compiles that use a precompiled header are also run locally, since GCC crashes when those compiles are distributed.
+				CompileAction.bCanExecuteRemotely = CompileEnvironment.PrecompiledHeaderAction == PrecompiledHeaderAction.None;
 			}
 			return Result;
 		}
@@ -243,10 +282,7 @@ namespace UnrealBuildTool
 			// Create an action that invokes the linker.
 			Action LinkAction = new Action();
 			LinkAction.WorkingDirectory = Path.GetFullPath(".");
-            if (!BuildConfiguration.bRemoveUnusedHeaders)
-            {
-                LinkAction.CommandPath = Path.Combine(GetSCEPS3Root(), "host-win32/ppu/bin/ppu-lv2-g++.exe");
-            }
+			LinkAction.CommandPath = Path.Combine(GetSCEPS3Root(), "host-win32/ppu/bin/ppu-lv2-g++.exe");
 
 			LinkAction.CommandArguments = GetLinkArguments_Global();
 

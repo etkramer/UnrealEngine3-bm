@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 1998-2009 Epic Games, Inc. All Rights Reserved.
+ * Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
  */
 
 using System;
@@ -28,12 +28,15 @@ namespace UnrealBuildTool
 			}
 		}
 
-		static string GetCLArguments_Global(CPPEnvironment CompileEnvironment)
+		static string GetCLArguments_Global()
 		{
 			string Result = "";
 
 			// Prevents the compiler from displaying its logo for each invocation.
 			Result += " /nologo";
+
+			// Allow inline method expansion.
+			Result += " /Ob2";
 
 			// Favor code speed.
 			Result += " /Ot";
@@ -59,209 +62,106 @@ namespace UnrealBuildTool
 			// Allow large object files to avoid hitting the 2^16 section limit when running with -StressTestUnity.
 			Result += " /bigobj";
 
-			// Handle Common Language Runtime support (C++/CLI)
-			if( CompileEnvironment.CLRMode == CPPCLRMode.CLREnabled )
-			{
-				Result += " /clr";
-			}
-
-			bool bUseDebugRuntimeLibrary = false;
-			bool bUseStaticRuntimeLibrary = false;
-
-			//
-			//	Debug
-			//
-			if( CompileEnvironment.TargetConfiguration == CPPTargetConfiguration.Debug )
-			{
-				// Use debug runtime in debug configuration.
-				bUseDebugRuntimeLibrary = true;
-
-				// Disable compiler optimization.
-				Result += " /Od";
-
-				// Allow inline method expansion unless E&C support is requested.
-				if( !BuildConfiguration.bSupportEditAndContinue )
-				{
-					Result += " /Ob2";
-				}
-
-				if( CompileEnvironment.TargetPlatform == CPPTargetPlatform.Win32 )
-				{
-					// Runtime stack checks are not allowed when compiling for CLR
-					if( CompileEnvironment.CLRMode == CPPCLRMode.CLRDisabled )
-					{
-						Result += " /RTCs";
-					}
-				}
-			}
-			//
-			//	Release and LTCG
-			//
-			else
-			{
-				// Maximum optimizations.
-				Result += " /Ox";
-
-				// Allow inline method expansion.			
-				Result += " /Ob2";
-
-				//
-				// LTCG
-				//
-				if( CompileEnvironment.TargetConfiguration == CPPTargetConfiguration.ReleaseLTCG )
-				{
-					// Link-time code generation.
-					Result += " /GL";
-	
-					// Xbox 360 specific LTCG settings
-					if( CompileEnvironment.TargetPlatform == CPPTargetPlatform.Xbox360 )
-					{
-						// Disable generation of trap instructions around integer divides.
-						Result += " /Oc";
-
-						// Perform an additional code scheduling pass before the register allocation phase.
-						Result += " /Ou";
-
-						// Enable inline assembly optimization.
-						Result += " /Oz";
-					}
-				}
-			}
-
-			//
-			//	PC
-			//
-			if( CompileEnvironment.TargetPlatform == CPPTargetPlatform.Win32 )
-			{
-
-			    // SSE options are not allowed when using CLR compilation
-			    if( CompileEnvironment.CLRMode == CPPCLRMode.CLRDisabled )
-			    {
-				    // Allow the compiler to generate SSE instructions.
-				    Result += " /arch:SSE";
-			    }
-    
-			    // Prompt the user before reporting internal errors to Microsoft.
-			    Result += " /errorReport:prompt";
-    
-			    if( CompileEnvironment.CLRMode == CPPCLRMode.CLRDisabled )
-			    {
-				    // Enable C++ exception handling, but not C exceptions.
-				    Result += " /EHsc";
-			    }
-			    else
-			    {
-				    // For C++/CLI all exceptions must be left enabled
-				    Result += " /EHa";
-			    }
-			}
-			//
-			//	Xbox 360
-			//
-			else
-			{
-				// Use static runtime on Xbox 360.
-				bUseStaticRuntimeLibrary = true;
-
-				// Pool strings as read-only.
-				Result += " /GF";
-			}
-
-			// If enabled, create debug information.
-			if( CompileEnvironment.bCreateDebugInfo )
-			{
-				// Store debug info in .pdb files.
-				if( BuildConfiguration.bUsePDBFiles )
-				{
-					// Create debug info suitable for E&C if wanted.
-					if( BuildConfiguration.bSupportEditAndContinue
-					// We only need to do this in debug as that's the only configuration that supports E&C.
-					&& CompileEnvironment.TargetConfiguration == CPPTargetConfiguration.Debug )
-					{
-						Result += " /ZI";
-					}
-					// Regular PDB debug information.
-					else
-					{
-						Result += " /Zi";
-					}
-				}
-				// Store C7-format debug info in the .obj files, which is faster.
-				else
-				{
-					Result += " /Z7";
-				}
-			}
-
-			// Specify the appropriate runtime library based on the platform and config.
-			Result += string.Format(
-				" /M{0}{1}",
-				bUseStaticRuntimeLibrary ? 'T' : 'D',
-				bUseDebugRuntimeLibrary ? "d" : ""
-				);
-
 			return Result;
 		}
 
-		static string GetCLArguments_CPP( CPPEnvironment CompileEnvironment )
+		static string GetCLArguments_CPP()
 		{
 			string Result = "";
 
 			// Explicitly compile the file as C++.
 			Result += " /TP";
 
-			// C++/CLI requires that RTTI is left enabled
-			if( CompileEnvironment.CLRMode == CPPCLRMode.CLRDisabled )
-			{
-				// Disable C++ RTTI.
-// Atlas-Modif [Begin]
-				//Result += " /GR-";
-// Atlas-Modif [End]
-			}
+			// Disable C++ RTTI.
+			Result += " /GR-";
+
+			// Level 4 warnings.
+			Result += " /W4";
 
 			// Treat warnings as errors.
 			Result += " /WX";
 
-// Atlas-Modif [Begin]
-            Result += " /wd4819";    // to make it work under CJK windows
-// Atlas-Modif [End]
-
-			if( CompileEnvironment.CLRMode == CPPCLRMode.CLRDisabled )
-			{
-				// Level 4 warnings.
-				Result += " /W4";
-			}
-			else
-			{
-				// CLR-specific warnings
-
-				// @WPF: We can't enable Level 4 warnings for CLR projects because for some reason warning
-				//   4339 cannot be suppressed with either #pragma warning or the /wd4339 compiler option.
-				Result += " /W3";
-
-				// // Suppress (level 4) warning about use of undefined types since this comes up with template classes
-				// Result += " /wd4339"; // 'MyClass' : use of undefined type detected in CLR meta-data - use of this type may lead to a runtime exception
-			}
-
 			return Result;
 		}
-		
+
 		static string GetCLArguments_C()
 		{
 			string Result = "";
-			
+
 			// Explicitly compile the file as C.
 			Result += " /TC";
-		
+
 			// Level 0 warnings.  Needed for external C projects that produce warnings at higher warning levels.
 			Result += " /W0";
 
 			return Result;
 		}
 
-		static string GetLinkArguments(LinkEnvironment LinkEnvironment)
+		static string GetCLArguments_Debug()
 		{
 			string Result = "";
+
+			// Disable compiler optimization.
+			Result += " /Od";
+
+			return Result;
+		}
+
+		static string GetCLArguments_Release()
+		{
+			string Result = "";
+
+			// Maximum optimizations.
+			Result += " /Ox";
+
+			return Result;
+		}
+
+		static string GetCLArguments_ReleaseLTCG()
+		{
+			string Result = "";
+
+			// Maximum optimizations.
+			Result += " /Ox";
+
+			// Link-time code generation.
+			Result += " /GL";
+
+			return Result;
+		}
+
+		static string GetCLArguments_Win32()
+		{
+			string Result = "";
+
+			// Allow the compiler to generate SSE instructions.
+			Result += " /arch:SSE";
+
+			// Prompt the user before reporting internal errors to Microsoft.
+			Result += " /errorReport:prompt";
+
+			// Enable C++ exception handling, but not C exceptions.
+			Result += " /EHsc";
+
+			return Result;
+		}
+
+		static string GetCLArguments_Xbox360()
+		{
+			string Result = "";
+
+			// Pool strings as read-only.
+			Result += " /GF";
+
+			return Result;
+		}
+
+		static string GetLinkArguments_Global()
+		{
+			string Result = "";
+
+			// Disable incremental linking; this may no longer be necessary, but it used to cause problems.
+			Result += " /INCREMENTAL:NO";
 
 			// Don't create a side-by-side manifest file for the executable.
 			Result += " /MANIFEST:NO";
@@ -275,104 +175,170 @@ namespace UnrealBuildTool
 			// Prompt the user before reporting internal errors to Microsoft.
 			Result += " /errorReport:prompt";
 
-			//
-			//	PC
-			//
-			if( LinkEnvironment.TargetPlatform == CPPTargetPlatform.Win32 )
+			return Result;
+		}
+
+		static string GetLinkArguments_Win32()
+		{
+			string Result = "";
+
+			// Link for win32.
+			Result += " /SUBSYSTEM:WINDOWS";
+
+			// Allow the OS to load the EXE at different base addresses than its preferred base address.
+			Result += " /FIXED:No";
+
+			// Allow delay-loaded DLLs to be explicitly unloaded.
+			Result += " /DELAY:UNLOAD";
+
+			// Disables the 2GB address space limit on 64-bit Windows and 32-bit Windows with /3GB specified in boot.ini
+			Result += " /LARGEADDRESSAWARE";
+
+			// Explicitly declare that the executable is compatible with Data Execution Prevention.
+			Result += " /NXCOMPAT";
+
+			// Set the default stack size.
+			Result += " /STACK:5000000,5000000";
+
+			// Generates a table of Safe Exception Handlers.  Documentation isn't clear whether they actually mean
+			// Structured Exception Handlers.
+			Result += " /SAFESEH";
+
+			return Result;
+		}
+
+		static string GetLinkArguments_Xbox360()
+		{
+			string Result = "";
+
+			// Don't produce the final XEX directly.
+			Result += " /XEX:NO";
+
+			// Set the default stack size.
+			Result += " /STACK:262144,262144";
+
+			return Result;
+		}
+
+		static string GetLinkArguments_Debug()
+		{
+			string Result = "";
+
+			// Keep symbols that are unreferenced.
+			Result += " /OPT:NOREF";
+
+			// Disable identical COMDAT folding.
+			Result += " /OPT:NOICF";
+
+			if (BuildConfiguration.bUsePDBFiles)
 			{
-				// Link for win32.
-				Result += " /SUBSYSTEM:WINDOWS";
-
-				// Allow the OS to load the EXE at different base addresses than its preferred base address.
-				Result += " /FIXED:No";
-
-				// Disables the 2GB address space limit on 64-bit Windows and 32-bit Windows with /3GB specified in boot.ini
-				Result += " /LARGEADDRESSAWARE";
-
-				// Explicitly declare that the executable is compatible with Data Execution Prevention.
-				Result += " /NXCOMPAT";
-
-				// Set the default stack size.
-				Result += " /STACK:5000000,5000000";
-
-				// E&C can't use /SAFESEH.
-				if( !BuildConfiguration.bSupportEditAndContinue )
-				{
-					// Generates a table of Safe Exception Handlers.  Documentation isn't clear whether they actually mean
-					// Structured Exception Handlers.
-					Result += " /SAFESEH";
-				}
-
-				// Include definition file required for PixelMine's UnrealScript debugger.
-				//Result += " /DEF:UnrealEngine3.def";
-
-				// Allow delay-loaded DLLs to be explicitly unloaded.
-				Result += " /DELAY:UNLOAD";
-			}
-			//
-			//	Xbox 360
-			//
-			else
-			{
-				// Don't produce the final XEX directly.
-				Result += " /XEX:NO";
-
-				// Set the default stack size.
-				Result += " /STACK:262144,262144";
-			}
-
-			//
-			//	ReleaseLTCG
-			//
-			if( LinkEnvironment.TargetConfiguration == CPPTargetConfiguration.ReleaseLTCG )
-			{
-				// Use link-time code generation.
-				Result += " /ltcg";
-			}
-
-			//
-			//	Shipping binary
-			//
-			if( LinkEnvironment.bIsShippingBinary )
-			{
-				// Generate an EXE checksum.
-				Result += " /RELEASE";
-
-				// Eliminate unreferenced symbols.
-				Result += " /OPT:REF";
-
-				// Remove redundant COMDATs.
-				Result += " /OPT:ICF";
-			}
-			//
-			//	Regular development binary. 
-			//
-			else
-			{
-				// Keep symbols that are unreferenced.
-				Result += " /OPT:NOREF";
-
-				// Disable identical COMDAT folding.
-				Result += " /OPT:NOICF";
+				// Allow minimal rebuild.
+				Result += " /Gm";
 			}
 
-			// Enable incremental linking if wanted.
-			if( BuildConfiguration.bUseIncrementalLinking )
-			{
-				Result += " /INCREMENTAL";
-			}
-			// Disabled by default as it can cause issues and forces local execution.
-			else
-			{
-				Result += " /INCREMENTAL:NO";
-			}
+			return Result;
+		}
+
+		static string GetLinkArguments_Release()
+		{
+			string Result = "";
+
+			// Keep symbols that are unreferenced.
+			Result += " /OPT:NOREF";
+
+			// Disable identical COMDAT folding.
+			Result += " /OPT:NOICF";
+
+			return Result;
+		}
+
+		static string GetLinkArguments_ReleaseLTCG()
+		{
+			string Result = "";
+
+			// Eliminate unreferenced symbols.
+			Result += " /OPT:REF";
+
+			// Remove redundant COMDATs.
+			Result += " /OPT:ICF";
+
+			// Use link-time code generation.
+			Result += " /ltcg";
 
 			return Result;
 		}
 
 		public static CPPOutput CompileCPPFiles(CPPEnvironment CompileEnvironment, IEnumerable<FileItem> SourceFiles)
 		{
-			string Arguments = GetCLArguments_Global(CompileEnvironment);
+			string Arguments = GetCLArguments_Global();
+
+			if (CompileEnvironment.bCreateDebugInfo)
+			{
+				if (BuildConfiguration.bUsePDBFiles)
+				{
+					// Store debug info a .pdb file.
+					Arguments += " /Zi";
+				}
+				else
+				{
+					// Store C7-format debug info in the .obj files.
+					Arguments += " /Z7";
+				}
+			}
+
+			// Add platform-specific compiler options.
+			bool bUseStaticRuntimeLibrary = false;
+			if(CompileEnvironment.TargetPlatform == CPPTargetPlatform.Win32)
+			{
+				Arguments += GetCLArguments_Win32();
+
+				if(CompileEnvironment.TargetConfiguration == CPPTargetConfiguration.Debug)
+				{
+					// Enable runtime stack checking for Win32 debug builds.
+					Arguments += " /RTCs";
+				}
+			}
+			else
+			{
+				bUseStaticRuntimeLibrary = true;
+
+				Arguments += GetCLArguments_Xbox360();
+
+				if(CompileEnvironment.TargetConfiguration == CPPTargetConfiguration.ReleaseLTCG)
+				{
+					// Disable generation of trap instructions around integer divides.
+					Arguments += " /Oc";
+
+					// Perform an additional code scheduling pass before the register allocation phase.
+					Arguments += " /Ou";
+
+					// Enable inline assembly optimization.
+					Arguments += " /Oz";
+				}
+			}
+			
+			// Add configuration specific arguments.
+			bool bUseDebugRuntimeLibrary = false;
+			switch (CompileEnvironment.TargetConfiguration)
+			{
+				case CPPTargetConfiguration.Debug:
+					bUseDebugRuntimeLibrary = true;
+					Arguments += GetCLArguments_Debug();
+					break;
+				case CPPTargetConfiguration.Release:
+					Arguments += GetCLArguments_Release();
+					break;
+				case CPPTargetConfiguration.ReleaseLTCG:
+					Arguments += GetCLArguments_ReleaseLTCG();
+					break;
+			};
+
+			// Specify the appropriate runtime library based on the platform and config.
+			Arguments += string.Format(
+				" /M{0}{1}",
+				bUseStaticRuntimeLibrary ? 'T' : 'D',
+				bUseDebugRuntimeLibrary ? "d" : ""
+				);
 
 			// Add include paths to the argument list.
 			foreach (string IncludePath in CompileEnvironment.IncludePaths)
@@ -383,31 +349,6 @@ namespace UnrealBuildTool
 			{
 				Arguments += string.Format(" /I \"{0}\"", IncludePath);
 			}
-
-
-			if( CompileEnvironment.CLRMode == CPPCLRMode.CLREnabled )
-			{
-				// Add .NET framework assembly paths.  This is needed so that C++/CLI projects
-				// can reference assemblies with #using, without having to hard code a path in the
-				// .cpp file to the assembly's location.				
-				foreach (string AssemblyPath in CompileEnvironment.SystemDotNetAssemblyPaths)
-				{
-					Arguments += string.Format(" /AI \"{0}\"", AssemblyPath);
-				}
-
-				// Add explicit .NET framework assembly references				
-				foreach( string AssemblyName in CompileEnvironment.FrameworkAssemblyDependencies )
-				{
-					Arguments += string.Format( " /FU \"{0}\"", AssemblyName );
-				}
-
-				// Add private assembly references				
-				foreach( string AssemblyName in CompileEnvironment.PrivateAssemblyDependencies )
-				{
-					Arguments += string.Format( " /FU \"{0}\"", AssemblyName );
-				}
-			}
-
 
 			// Add preprocessor definitions to the argument list.
 			foreach (string Definition in CompileEnvironment.Definitions)
@@ -427,16 +368,6 @@ namespace UnrealBuildTool
 				foreach (FileItem IncludedFile in CompileEnvironment.GetIncludeDependencies(SourceFile))
 				{
 					CompileAction.PrerequisiteItems.Add(IncludedFile);
-				}
-
-				// If this is a CLR file then make sure our dependent assemblies are added as prerequisites
-				if( CompileEnvironment.CLRMode == CPPCLRMode.CLREnabled )
-				{
-					foreach( string CurPrivateAssemblyDependency in CompileEnvironment.PrivateAssemblyDependencies )
-					{
-						FileItem AssemblyFile = FileItem.GetItemByPath( CurPrivateAssemblyDependency );
-						CompileAction.PrerequisiteItems.Add( AssemblyFile );
-					}
 				}
 
 				if (CompileEnvironment.PrecompiledHeaderAction == PrecompiledHeaderAction.Create)
@@ -471,6 +402,7 @@ namespace UnrealBuildTool
 						CompileAction.PrerequisiteItems.Add(CompileEnvironment.PrecompiledHeaderFile);
 						FileArguments += string.Format(" /Yu\"{0}\"", CompileEnvironment.PrecompiledHeaderIncludeFilename);
 						FileArguments += string.Format(" /Fp\"{0}\"", CompileEnvironment.PrecompiledHeaderFile.AbsolutePath);
+
 					}
 					
 					// Add the source file path to the command-line.
@@ -490,22 +422,11 @@ namespace UnrealBuildTool
 
 				if (BuildConfiguration.bUsePDBFiles)
 				{
-					// All files using the same PCH are required to share a PDB.
-					string PDBFileName;
-					if (CompileEnvironment.PrecompiledHeaderAction == PrecompiledHeaderAction.Include)
-					{
-						PDBFileName = Path.GetFileName(CompileEnvironment.PrecompiledHeaderIncludeFilename);
-					}
-					else
-					{
-						PDBFileName = Path.GetFileName(SourceFile.AbsolutePath);
-					}
-
 					// Specify the PDB file that the compiler should write to.
 					FileItem PDBFile = FileItem.GetItemByPath(
 							Path.Combine(
 								CompileEnvironment.OutputDirectory,
-								PDBFileName + ".pdb"
+								Path.GetFileName(SourceFile.AbsolutePath) + ".pdb"
 								)
 							);
 					FileArguments += string.Format(" /Fd\"{0}\"", PDBFile.AbsolutePath);
@@ -520,18 +441,17 @@ namespace UnrealBuildTool
 				}
 				else
 				{
-					FileArguments += GetCLArguments_CPP( CompileEnvironment );
+					FileArguments += GetCLArguments_CPP();
 				}
 
 				CompileAction.WorkingDirectory = Path.GetFullPath(".");
 				CompileAction.CommandPath = Path.Combine(GetVCBinDirectory(CompileEnvironment.TargetPlatform), "cl.exe");
-				CompileAction.bIsVCCompiler = true;
 				CompileAction.CommandArguments = Arguments + FileArguments + CompileEnvironment.AdditionalArguments;
 				CompileAction.StatusDescription = string.Format("{0}",Path.GetFileName(SourceFile.AbsolutePath));
-				CompileAction.StatusDetailedDescription = SourceFile.Description;
-				CompileAction.bShouldLogIfExecutedLocally = false;
 
-				// Only tasks that don't use precompiled headers can be distributed with the current version of XGE.
+				// Allow compiles to execute remotely unless they create a precompiled header.  Force those to run locally to avoid the
+				// need to copy the PCH back to the build instigator before distribution to other remote build agents.
+				// Also, distributing compiles that use precompiled headers doesn't work for an unknown reason.
 				CompileAction.bCanExecuteRemotely = CompileEnvironment.PrecompiledHeaderAction == PrecompiledHeaderAction.None;
 			}
 			return Result;
@@ -593,22 +513,44 @@ namespace UnrealBuildTool
 			// Create an action that invokes the linker.
 			Action LinkAction = new Action();
 			LinkAction.WorkingDirectory = Path.GetFullPath(".");
-            if (!BuildConfiguration.bRemoveUnusedHeaders)
-            {
-                LinkAction.CommandPath = Path.Combine(GetVCBinDirectory(LinkEnvironment.TargetPlatform), "link.exe");
-            }
+			LinkAction.CommandPath = Path.Combine(GetVCBinDirectory(LinkEnvironment.TargetPlatform), "link.exe");
 
-			// Get link arguments.
-			LinkAction.CommandArguments = GetLinkArguments(LinkEnvironment);
+			LinkAction.CommandArguments = GetLinkArguments_Global();
 
-			// Add delay loaded DLLs.
+			// Add platform-specific arguments.
 			if (LinkEnvironment.TargetPlatform == CPPTargetPlatform.Win32)
 			{
+				LinkAction.CommandArguments += GetLinkArguments_Win32();
+
 				// Delay-load these DLLs.
 				foreach (string DelayLoadDLL in LinkEnvironment.DelayLoadDLLs)
 				{
 					LinkAction.CommandArguments += string.Format(" /DELAYLOAD:\"{0}\"", DelayLoadDLL);
 				}
+			}
+			else
+			{
+				LinkAction.CommandArguments += GetLinkArguments_Xbox360();
+
+				if (LinkEnvironment.TargetConfiguration != CPPTargetConfiguration.Debug)
+				{
+					// Generate an EXE checksum for release binaries.
+					LinkAction.CommandArguments += " /RELEASE";
+				}
+			}
+
+			// Add the configuration-specific arguments.
+			switch (LinkEnvironment.TargetConfiguration)
+			{
+				case CPPTargetConfiguration.Debug:
+					LinkAction.CommandArguments += GetLinkArguments_Debug();
+					break;
+				case CPPTargetConfiguration.Release:
+					LinkAction.CommandArguments += GetLinkArguments_Release();
+					break;
+				case CPPTargetConfiguration.ReleaseLTCG:
+					LinkAction.CommandArguments += GetLinkArguments_ReleaseLTCG();
+					break;
 			}
 
 			// Add the library paths to the argument list.

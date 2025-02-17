@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 1998-2009 Epic Games, Inc. All Rights Reserved.
+ * Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
  */
 
 using System;
@@ -21,14 +21,14 @@ namespace UnrealBuildTool
 			return FileItem.GetExistingItemByPath("NanoGame/Live/xex.xml");
 		}
 
-		public void SetUpGameEnvironment(CPPEnvironment GameCPPEnvironment, LinkEnvironment FinalLinkEnvironment, List<UE3ProjectDesc> GameProjects)
+		public void SetUpGameEnvironment(CPPEnvironment GameCPPEnvironment, LinkEnvironment FinalLinkEnvironment, List<string> GameProjects)
 		{
-			GameProjects.Add( new UE3ProjectDesc( "NanoGame/NanoGame.vcproj" ) );
-			GameCPPEnvironment.IncludePaths.Add( "NanoGame/Inc" );
+			GameProjects.Add("NanoGame/NanoGame.vcproj");
+			GameCPPEnvironment.IncludePaths.Add("NanoGame/Inc");
 
 			if (GameCPPEnvironment.TargetPlatform == CPPTargetPlatform.Win32)
 			{
-				GameProjects.Add( new UE3ProjectDesc( "NanoEditor/NanoEditor.vcproj" ) );
+				GameProjects.Add("NanoEditor/NanoEditor.vcproj");
 				GameCPPEnvironment.IncludePaths.Add("NanoEditor/Inc");
 			}
 

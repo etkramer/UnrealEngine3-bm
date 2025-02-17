@@ -57,6 +57,8 @@ extern void AutoInitializeRegistrantsUTGame( INT& Lookup );
 extern void AutoInitializeRegistrantsUTEditor( INT& Lookup );
 extern void AutoInitializeRegistrantsExampleGame( INT& Lookup );
 extern void AutoInitializeRegistrantsExampleEditor( INT& Lookup );
+extern void AutoInitializeRegistrantsBmGame( INT& Lookup );
+extern void AutoInitializeRegistrantsBmEditor( INT& Lookup );
 
 //	AutoGenerateNames* declarations.
 extern void AutoGenerateNamesCore();
@@ -74,6 +76,8 @@ extern void AutoGenerateNamesUTGame();
 extern void AutoGenerateNamesUTEditor();
 extern void AutoGenerateNamesExampleGame();
 extern void AutoGenerateNamesExampleEditor();
+extern void AutoGenerateNamesBmGame();
+extern void AutoGenerateNamesBmEditor();
 
 // !!! FIXME: remove this.
 #if PLATFORM_UNIX
@@ -270,6 +274,9 @@ INT			GEditorIcon	= IDICON_Editor;
 #elif GAMENAME == EXAMPLEGAME
 INT			GGameIcon	= IDICON_DemoGame;
 INT			GEditorIcon	= IDICON_DemoEditor;
+#elif GAMENAME == BMGAME
+INT			GGameIcon	= IDICON_DemoGame;
+INT			GEditorIcon	= IDICON_DemoEditor;
 #else
 	#error Hook up your game name here
 #endif
@@ -328,7 +335,7 @@ extern void appPlatformPostInit();
  */
 DWORD appGetTitleId(void)
 {
-#if   GAMENAME == EXAMPLEGAME
+#if   GAMENAME == EXAMPLEGAME || GAMENAME == BMGAME
 	return 0;
 #elif GAMENAME == UTGAME
 	return 0x4D5707DB;
@@ -368,7 +375,7 @@ const TCHAR* appGetGameSpyGameName(void)
 	GSGameName[5] = 0;
 	return GSGameName;
 #endif
-#elif GAMENAME == GEARGAME || GAMENAME == EXAMPLEGAME 
+#elif GAMENAME == GEARGAME || GAMENAME == EXAMPLEGAME || GAMENAME == BMGAME
 	return NULL;
 #else
 	#error Hook up your game's GameSpy game name here
@@ -391,7 +398,7 @@ const TCHAR* appGetGameSpySecretKey(void)
 	GSSecretKey[5] = TEXT('z');
 	GSSecretKey[6] = 0;
 	return GSSecretKey;
-#elif GAMENAME == GEARGAME || GAMENAME == EXAMPLEGAME
+#elif GAMENAME == GEARGAME || GAMENAME == EXAMPLEGAME || GAMENAME == BMGAME
 	return NULL;
 #else
 	#error Hook up your game's secret key here
@@ -412,6 +419,8 @@ void appSetGameName()
 	appStrcpy(GGameName, TEXT("Gear"));
 #elif GAMENAME == UTGAME
 	appStrcpy(GGameName, TEXT("UT"));
+#elif GAMENAME == BMGAME
+	appStrcpy(GGameName, TEXT("Bm"));
 #else
 	#error Hook up your game name here
 #endif
@@ -453,6 +462,13 @@ void appGetGameScriptPackageNames(TArray<FString>& PackageNames, UBOOL bCanInclu
 	{
 		PackageNames.AddItem(TEXT("UTEditor"));
 	}
+#elif GAMENAME == BMGAME
+	PackageNames.AddItem(TEXT("BmGame"));
+	PackageNames.AddItem(TEXT("BmGameContent"));
+	if (bCanIncludeEditorOnlyPackages)
+	{
+		PackageNames.AddItem(TEXT("BmEditor"));
+	}
 
 #else
 	#error Hook up your game name here
@@ -487,6 +503,12 @@ void appGetGameNativeScriptPackageNames(TArray<FString>& PackageNames, UBOOL bCa
 	if (bCanIncludeEditorOnlyPackages)
 	{
 		PackageNames.AddItem(TEXT("UTEditor"));
+	}
+#elif GAMENAME == BMGAME
+	PackageNames.AddItem(TEXT("BmGame"));
+	if (bCanIncludeEditorOnlyPackages)
+	{
+		PackageNames.AddItem(TEXT("BmEditor"));
 	}
 #else
 	#error Hook up your game name here
@@ -961,6 +983,11 @@ void CheckNativeClassSizes()
 	#include "ExampleGameClasses.h"
 #if !CONSOLE
     #include "ExampleEditorClasses.h"
+#endif
+#elif GAMENAME == BMGAME
+	#include "BmGameClasses.h"
+#if !CONSOLE
+    #include "BmEditorClasses.h"
 #endif
 #else
 	#error Hook up your game name here
@@ -2831,6 +2858,12 @@ void InitializeRegistrantsAndRegisterNames()
 	AutoInitializeRegistrantsExampleEditor( Lookup );
 #endif
 
+#elif GAMENAME == BMGAME
+	AutoInitializeRegistrantsBmGame( Lookup );
+#if _WINDOWS
+	AutoInitializeRegistrantsBmEditor( Lookup );
+#endif
+
 #else
 	#error Hook up your game name here
 #endif
@@ -2866,6 +2899,12 @@ void InitializeRegistrantsAndRegisterNames()
 	AutoGenerateNamesExampleGame();
 	#if _WINDOWS
 		AutoGenerateNamesExampleEditor();
+	#endif
+
+#elif GAMENAME == BMGAME
+	AutoGenerateNamesBmGame();
+	#if _WINDOWS
+		AutoGenerateNamesBmEditor();
 	#endif
 
 #else

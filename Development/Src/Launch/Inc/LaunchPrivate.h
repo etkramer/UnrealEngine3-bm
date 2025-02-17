@@ -8,6 +8,7 @@
 #define UTGAME		2
 #define EXAMPLEGAME 3
 #define GEARGAME	4
+#define BMGAME	5
 
 //@warning: this needs to be the very first include
 #if _WINDOWS
@@ -80,6 +81,9 @@
 #elif GAMENAME == EXAMPLEGAME
 #include "ExampleGameClasses.h"
 #include "ExampleEditorClasses.h"
+#elif GAMENAME == BMGAME
+#include "BmGameClasses.h"
+#include "BmEditorClasses.h"
 #error Hook up your game name here
 #endif
 #include "EditorClasses.h"

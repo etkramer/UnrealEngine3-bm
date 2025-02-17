@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 1998-2009 Epic Games, Inc. All Rights Reserved.
+ * Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
  */
 
 using System;
@@ -16,9 +16,9 @@ namespace UnrealBuildTool
 		public static string GetBinDirectory()
 		{
 			string MoreInfoString =
-				"See https://udn.epicgames.com/Three/GettingStartedPS3 for help setting up the UE3 PS3 compilation environment";
+                "See https://udn.epicgames.com/Three/GettingStartedXbox360 for help setting up the UE3 XBox360 compilation environment";
 
-			// Read the root directory of the PS3 SDK from the environment.
+			// Read the location of the XDK from the environment.
 			string XEDKEnvironmentVariable = Environment.GetEnvironmentVariable("XEDK");
 
 			// Check that the environment variable is defined

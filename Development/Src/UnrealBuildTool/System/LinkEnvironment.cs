@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 1998-2009 Epic Games, Inc. All Rights Reserved.
+ * Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
  */
 
 using System;
@@ -45,9 +45,6 @@ namespace UnrealBuildTool
 		/** Additional arguments to pass to the linker. */
 		public string AdditionalArguments = "";
 
-		/** Whether the produced binary is going to ship to consumers. */
-		public bool bIsShippingBinary = false;
-
 		/** Default constructor. */
 		public LinkEnvironment()
 		{
@@ -66,35 +63,19 @@ namespace UnrealBuildTool
 			DelayLoadDLLs.AddRange(InCopyEnvironment.DelayLoadDLLs);
 			InputFiles.AddRange(InCopyEnvironment.InputFiles);
 			AdditionalArguments = InCopyEnvironment.AdditionalArguments;
-			bIsShippingBinary = InCopyEnvironment.bIsShippingBinary;
 		}
 
 		/** Links the input files into an executable. */
 		public FileItem LinkExecutable()
 		{
-			if (TargetPlatform == CPPTargetPlatform.Win32)
+			if (TargetPlatform == CPPTargetPlatform.Win32 || TargetPlatform == CPPTargetPlatform.Xbox360)
 			{
-                if (BuildConfiguration.bUseIntelCompiler)
-                {
-                    return IntelToolChain.LinkFiles(this);
-                }
-                else
-                {
-                    return VCToolChain.LinkFiles(this);
-                }
+				return VCToolChain.LinkFiles(this);
 			}
-            else if (TargetPlatform == CPPTargetPlatform.Xbox360)
-            {
-                return VCToolChain.LinkFiles(this);
-            }
-            else if (TargetPlatform == CPPTargetPlatform.PS3_PPU)
-            {
-                return PS3ToolChain.LinkFiles(this);
-            }
-            else
-            {
-                return null;
-            }
+			else
+			{
+				return null;
+			}
 		}
 	}
 }

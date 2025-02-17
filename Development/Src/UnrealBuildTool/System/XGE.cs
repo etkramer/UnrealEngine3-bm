@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 1998-2009 Epic Games, Inc. All Rights Reserved.
+ * Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
  */
 
 using System;
@@ -48,11 +48,6 @@ namespace UnrealBuildTool
 				ToolElement.SetAttribute("GroupPrefix", Action.StatusDescription);
 				ToolElement.SetAttribute("Params", Action.CommandArguments);
 				ToolElement.SetAttribute("Path", Action.CommandPath);
-				ToolElement.SetAttribute("VCCompiler", Action.bIsVCCompiler.ToString());
-				if (Action.bIsGCCCompiler)
-				{
-					ToolElement.SetAttribute( "AutoReserveMemory", "*.gch" );
-				}
 				ToolElement.SetAttribute(
 					"OutputFileMasks", 
 					string.Join(
@@ -122,11 +117,9 @@ namespace UnrealBuildTool
 		 */
 		public static ExecutionResult ExecuteTaskFile(string TaskFilePath)
 		{
-            string SilentOption = BuildConfiguration.bSilentCompileOutput ? "/Silent" : "";
-
-            ProcessStartInfo XGEStartInfo = new ProcessStartInfo(
+			ProcessStartInfo XGEStartInfo = new ProcessStartInfo(
 				"xgConsole",
-				string.Format("{0} /Rebuild /NoWait /NoLogo {1}", TaskFilePath, SilentOption)
+				string.Format("{0} /Rebuild /NoWait /NoLogo", TaskFilePath)
 				);
 			XGEStartInfo.UseShellExecute = false;
 

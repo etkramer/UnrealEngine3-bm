@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 1998-2009 Epic Games, Inc. All Rights Reserved.
+ * Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
  */
 
 using System;
@@ -16,7 +16,6 @@ namespace UnrealBuildTool
 	enum CPPTargetPlatform
 	{
 		Win32,
-		PS3_PPU,
 		Xbox360
 	}
 
@@ -34,13 +33,6 @@ namespace UnrealBuildTool
 		None,
 		Include,
 		Create
-	}
-
-	/** Whether the Common Language Runtime is enabled when compiling C++ targets (enables C++/CLI) */
-	enum CPPCLRMode
-	{
-		CLRDisabled,
-		CLREnabled,
 	}
 
 	/** Encapsulates the compilation output of compiling a set of C++ files. */
@@ -75,9 +67,6 @@ namespace UnrealBuildTool
 		/** True if debug info should be created. */
 		public bool bCreateDebugInfo = true;
 
-		/** Whether the CLR (Common Language Runtime) support should be enabled for C++ targets (C++/CLI). */
-		public CPPCLRMode CLRMode = CPPCLRMode.CLRDisabled;
-
 		/** The include paths to look for included files in. */
 		public List<string> IncludePaths = new List<string>();
 
@@ -86,15 +75,6 @@ namespace UnrealBuildTool
 		 * be recompiled, unless BuildConfiguration.bCheckSystemHeadersForModification==TRUE.
 		 */
 		public List<string> SystemIncludePaths = new List<string>();
-
-		/** Paths where .NET framework assembly references are found, when compiling CLR applications. */
-		public List<string> SystemDotNetAssemblyPaths = new List<string>();
-
-		/** Full path and file name of .NET framework assemblies we're referencing */
-		public List<string> FrameworkAssemblyDependencies = new List<string>();
-
-		/** List of private CLR assemblies that, when modified, will force recompilation of any CLR source files */
-		public List<string> PrivateAssemblyDependencies = new List<string>();
 
 		/** The C++ preprocessor definitions to use. */
 		public List<string> Definitions = new List<string>();
@@ -116,12 +96,8 @@ namespace UnrealBuildTool
 			TargetPlatform = InCopyEnvironment.TargetPlatform;
 			TargetConfiguration = InCopyEnvironment.TargetConfiguration;
 			bCreateDebugInfo = InCopyEnvironment.bCreateDebugInfo;
-			CLRMode = InCopyEnvironment.CLRMode;
 			IncludePaths.AddRange(InCopyEnvironment.IncludePaths);
 			SystemIncludePaths.AddRange(InCopyEnvironment.SystemIncludePaths);
-			SystemDotNetAssemblyPaths.AddRange(InCopyEnvironment.SystemDotNetAssemblyPaths);
-			FrameworkAssemblyDependencies.AddRange( InCopyEnvironment.FrameworkAssemblyDependencies );
-			PrivateAssemblyDependencies.AddRange(InCopyEnvironment.PrivateAssemblyDependencies);
 			Definitions.AddRange(InCopyEnvironment.Definitions);
 			AdditionalArguments = InCopyEnvironment.AdditionalArguments;
 		}
@@ -133,24 +109,9 @@ namespace UnrealBuildTool
 		 */
 		public CPPOutput CompileFiles(IEnumerable<FileItem> CPPFiles)
 		{
-			if (TargetPlatform == CPPTargetPlatform.Win32 )
-			{
-                if (BuildConfiguration.bUseIntelCompiler)
-                {
-                    return IntelToolChain.CompileCPPFiles(this, CPPFiles);
-                }
-                else                
-                {
-                    return VCToolChain.CompileCPPFiles(this, CPPFiles);
-                }
-			}
-            else if (TargetPlatform == CPPTargetPlatform.Xbox360)
+			if (TargetPlatform == CPPTargetPlatform.Win32 || TargetPlatform == CPPTargetPlatform.Xbox360)
 			{
 				return VCToolChain.CompileCPPFiles(this, CPPFiles);
-			}
-			else if (TargetPlatform == CPPTargetPlatform.PS3_PPU)
-			{
-				return PS3ToolChain.CompileCPPFiles(this, CPPFiles);
 			}
 			else
 			{

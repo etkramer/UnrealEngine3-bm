@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 1998-2009 Epic Games, Inc. All Rights Reserved.
+ * Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
  */
 
 using System;
@@ -29,8 +29,7 @@ namespace UnrealBuildTool
 			GlobalCPPEnvironment.IncludePaths.Add("Xenon/XeEngine/Inc");
 			GlobalCPPEnvironment.IncludePaths.Add("Xenon/XeIpDrv/Inc");
 			GlobalCPPEnvironment.IncludePaths.Add("Xenon/XeLaunch/Src");
-            //GlobalCPPEnvironment.IncludePaths.Add( "XAudio2/Inc" );
-            GlobalCPPEnvironment.IncludePaths.Add( "OnlineSubsystemLive/Inc" );
+			GlobalCPPEnvironment.IncludePaths.Add("OnlineSubsystemLive/Inc");
 			GlobalCPPEnvironment.IncludePaths.Add("OnlineSubsystemPC/Inc");
 
 			// Include lzo and zlib headers.
@@ -42,10 +41,10 @@ namespace UnrealBuildTool
 			FinalLinkEnvironment.LibraryPaths.Add("$(XEDK)/lib/xbox");
 			if (Configuration == UnrealTargetConfiguration.Debug)
 			{
-                FinalLinkEnvironment.AdditionalLibraries.Add( "xmcored.lib" );
-                FinalLinkEnvironment.AdditionalLibraries.Add( "xgraphicsd.lib" );
+				FinalLinkEnvironment.AdditionalLibraries.Add("xgraphicsd.lib");
 				FinalLinkEnvironment.AdditionalLibraries.Add("xboxkrnl.lib");
 				FinalLinkEnvironment.AdditionalLibraries.Add("xnetd.lib");
+				FinalLinkEnvironment.AdditionalLibraries.Add("xaudiod.lib");
 				FinalLinkEnvironment.AdditionalLibraries.Add("x3daudiod.lib");
 				FinalLinkEnvironment.AdditionalLibraries.Add("xonlined.lib");
 				FinalLinkEnvironment.AdditionalLibraries.Add("xmpd.lib");
@@ -56,71 +55,44 @@ namespace UnrealBuildTool
 				// Debug builds use XAPILIBD, so suppress any references to the other versions of the library.
 				FinalLinkEnvironment.ExcludedLibraries.Add("xapilib");
 				FinalLinkEnvironment.ExcludedLibraries.Add("xapilibi");
-
-                // Compile and link with XAudio2
-                FinalLinkEnvironment.AdditionalLibraries.Add( "xaudiod2.lib" );
-            }
+			}
 			else
 			{
 				if (Configuration == UnrealTargetConfiguration.Release)
 				{
+					FinalLinkEnvironment.AdditionalLibraries.Add("xaudio.lib");
 					FinalLinkEnvironment.AdditionalLibraries.Add("x3daudio.lib");
+
 					// Release builds use xapilibi, so suppress any references to the other versions of the library.
 					FinalLinkEnvironment.ExcludedLibraries.Add("xapilib");
 					FinalLinkEnvironment.ExcludedLibraries.Add("xapilibd");
 				}
 				else
 				{
+					FinalLinkEnvironment.AdditionalLibraries.Add("xaudioltcg.lib");
 					FinalLinkEnvironment.AdditionalLibraries.Add("x3daudioltcg.lib");
+
 					// Shipping builds use xapilib, so suppress any references to the other versions of the library.
 					FinalLinkEnvironment.ExcludedLibraries.Add("xapilibi");
 					FinalLinkEnvironment.ExcludedLibraries.Add("xapilibd");
 				}
 
-                FinalLinkEnvironment.AdditionalLibraries.Add( "xmcore.lib" );
-                FinalLinkEnvironment.AdditionalLibraries.Add( "xgraphics.lib" );
+				FinalLinkEnvironment.AdditionalLibraries.Add("xgraphics.lib");
 				FinalLinkEnvironment.AdditionalLibraries.Add("xboxkrnl.lib");
 				FinalLinkEnvironment.AdditionalLibraries.Add("xnet.lib");
 				FinalLinkEnvironment.AdditionalLibraries.Add("xonline.lib");
 				FinalLinkEnvironment.AdditionalLibraries.Add("xmp.lib");
 
-                // Compile and link with XAudio2
-             //   FinalLinkEnvironment.AdditionalLibraries.Add( "xaudio2.lib" );
-
 				// Release and Shipping builds use LIBCMT, so suppress any references to the other versions of the library.
 				FinalLinkEnvironment.ExcludedLibraries.Add("LIBCMTD");
 			}
-
-            FinalLinkEnvironment.AdditionalLibraries.Add( "XAPOFX.lib" );
 
 			// Set up the part of the environment that is used on both PC and Xbox360.
 			SetUpWin32AndXbox360Environment();
 
 			// Add the Xbox360-specific projects.
-			NonGameProjects.Add( new UE3ProjectDesc( "Xenon/Xenon.vcproj" ) );
-            NonGameProjects.Add( new UE3ProjectDesc( "Xenon/XeCore/XenonCore.vcproj" ) );
-            NonGameProjects.Add( new UE3ProjectDesc( "Xenon/XeD3DDrv/XenonD3DDrv.vcproj" ) );
-            NonGameProjects.Add( new UE3ProjectDesc( "Xenon/XeDrv/XenonDrv.vcproj" ) );
-            NonGameProjects.Add( new UE3ProjectDesc( "Xenon/XeEngine/XenonEngine.vcproj" ) );
-            NonGameProjects.Add( new UE3ProjectDesc( "Xenon/XeLaunch/XenonLaunch.vcproj" ) );
-			NonGameProjects.Add( new UE3ProjectDesc( "OnlineSubsystemLive/OnlineSubsystemLive.vcproj" ) );
-         //   NonGameProjects.Add( new UE3ProjectDesc( "XAudio2/XAudio2.vcproj" ) );
-
-			// Add library search paths for libraries included via pragma comment (lib)
-			FinalLinkEnvironment.LibraryPaths.Add("../External/Bink/lib/Xenon/");
-			FinalLinkEnvironment.LibraryPaths.Add("../External/GamersSDK/4.2.1/lib/Xenon/");
-			if (Configuration == UnrealTargetConfiguration.Debug)
-			{
-				FinalLinkEnvironment.LibraryPaths.Add("../External/SpeedTreeRT/lib/Xenon/Debug/");
-			}
-			else
-			{
-				FinalLinkEnvironment.LibraryPaths.Add("../External/SpeedTreeRT/lib/Xenon/Release/");
-			}
-			FinalLinkEnvironment.LibraryPaths.Add("../External/DECtalk464/lib/Xenon/");
-			FinalLinkEnvironment.LibraryPaths.Add("Xenon/External/FaceFX/FxSDK/lib/xbox360/vs8/");
-			FinalLinkEnvironment.LibraryPaths.Add("Xenon/External/PhysX/SDKs/lib/xbox360/");
-			FinalLinkEnvironment.LibraryPaths.Add("../External/XNAContentServer/lib/xbox/");
+			NonGameProjects.Add("Xenon/Xenon.vcproj");
+			NonGameProjects.Add("OnlineSubsystemLive/OnlineSubsystemLive.vcproj");
 		}
 
 		IEnumerable<FileItem> GetXbox360OutputItems()
@@ -181,12 +153,6 @@ namespace UnrealBuildTool
 
 				// Use the UnrealBuildTool tagset to only copy the executables.
 				CookerSyncAction.CommandArguments += " -x UnrealBuildTool";
-
-				// use the default target as we aren't supplying a target
-				CookerSyncAction.CommandArguments += " -deftarget";
-
-				// reboot targets
-				CookerSyncAction.CommandArguments += " -o";
 
 				// Give the CookerSync action a produced file that it doesn't write to, ensuring that it will always run.
 				OutputFile = FileItem.GetItemByPath("Dummy.txt");

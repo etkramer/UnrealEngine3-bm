@@ -4,7 +4,7 @@
  * 
  * We separate this out as more than likely each developer will want to have different setting and will not have to constantly be resolving.
  * 
- * Copyright 1998-2009 Epic Games, Inc. All Rights Reserved.
+ * Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
  */
 
 using System;
@@ -19,16 +19,6 @@ namespace UnrealBuildTool
         {
             switch( Platform )
             {
-                case UnrealTargetPlatform.PS3:
-                    switch( Configuration )
-                    {
-                        case UnrealTargetConfiguration.Debug: return true;
-                        case UnrealTargetConfiguration.Release: return true;
-                        case UnrealTargetConfiguration.Shipping: return true;
-                        case UnrealTargetConfiguration.ShippingDebugConsole: return true;
-                        default: return true;
-                    };
-
                 case UnrealTargetPlatform.Win32:
                     switch( Configuration )
                     {
