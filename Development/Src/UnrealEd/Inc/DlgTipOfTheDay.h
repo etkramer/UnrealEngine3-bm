@@ -32,6 +32,11 @@ public:
 	*/
 	UBOOL GetShowAtStartup() const
 	{
+#if BATMAN
+		// This is a bit annoying, so disable it.
+		return FALSE;
+#endif // BATMAN
+
 		return CheckStartupShow->GetValue();
 	}
 

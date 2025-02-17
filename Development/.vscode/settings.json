@@ -5,6 +5,8 @@
     "_UNICODE",
     "_WINDOWS",
     "GAMENAME=BMGAME",
-    "BATMAN=1"
-  ]
+    "BATMAN=1",
+    "_DEBUG"
+  ],
+  "C_Cpp.default.cppStandard": "c++14"
 }

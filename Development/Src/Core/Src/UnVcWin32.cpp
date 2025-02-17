@@ -331,7 +331,15 @@ void appDebugMessagef( const TCHAR* Fmt, ... )
 	}
 	else
 	{
+#if BATMAN
+		// Emulate current UE3 behavior of not showing popups for warnings/messages in the editor.
+		if (!GIsEditor)
+		{
+			MessageBox(NULL, TempStr, TEXT("appDebugMessagef"),MB_OK|MB_SYSTEMMODAL);
+		}
+#else
 		MessageBox(NULL, TempStr, TEXT("appDebugMessagef"),MB_OK|MB_SYSTEMMODAL);
+#endif
 	}
 }
 
@@ -364,6 +372,14 @@ VARARG_BODY( UBOOL, appMsgf, const TCHAR*, VARARG_EXTRA(EAppMsgType Type) )
 	}
 	else
 	{
+#if BATMAN
+		if (GIsEditor)
+		{
+			// Emulate current UE3 behavior of not showing popups for warnings/messages in the editor.
+			return 1;
+		}
+#endif
+
 		HWND ParentWindow = GWarn ? (HWND)GWarn->hWndEditorFrame : (HWND)NULL;
 		switch( Type )
 		{

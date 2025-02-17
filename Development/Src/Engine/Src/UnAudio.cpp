@@ -892,7 +892,11 @@ void UAudioDevice::SetSoundMode( FName NewSoundMode )
 	}
 	else
 	{
+#if BATMAN
+		// Likely caused by no connected audio device.
+#else
 		debugf( NAME_Warning, TEXT( "Could not find mode: %s" ), *NewSoundMode.ToString() );
+#endif // BATMAN
 	}
 }
 
