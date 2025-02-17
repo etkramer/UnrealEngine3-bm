@@ -857,6 +857,41 @@ FORCEINLINE INT GetObjectOuterHash(FName ObjName,PTRINT Outer)
 	return ((ObjName.GetIndex() ^ ObjName.GetNumber()) ^ Outer) & (OBJECT_HASH_BINS - 1);
 }
 
+// Reversed from BM2
+struct FObjectLinkerInfo
+{
+	/**
+	 * Linker that contains the FObjectExport resource corresponding to
+	 * this object.  NULL if this object is native only (i.e. never stored
+	 * in an Unreal package), or if this object has been detached from its
+	 * linker, for e.g. renaming operations, saving the package, etc.
+	 */
+  ULinkerLoad* _Linker;
+
+	/**
+	 * Index into the linker's ExportMap array for the FObjectExport resource
+	 * corresponding to this object.
+	 */
+  INT _LinkerIndex;
+};
+
+// Reversed from BM2
+// TODO: Make sure we call FObjectLinkerInfoManager::Shrink() where needed to avoid memory leaks.
+struct FObjectLinkerInfoManager
+{
+protected:
+  class TMap<UObject const *, FObjectLinkerInfo, FDefaultSetAllocator> ObjectLinkerInfo;
+
+public:
+	FORCEINLINE void Shrink() { ObjectLinkerInfo.Shrink(); }
+
+	ULinkerLoad* GetLinker(const UObject* InObject);
+	PTRINT GetLinkerIndex(const UObject* InObject);
+
+	void SetLinker(const UObject* InObject, ULinkerLoad* Linker);
+	void SetLinkerIndex(const UObject* InObject, PTRINT LinkerIndex);
+};
+
 //
 // The base class of all objects.
 //
@@ -901,20 +936,6 @@ private:
 	/** Main script execution stack. */
 	FStateFrame*					StateFrame;
 
-	/**
-	 * Linker that contains the FObjectExport resource corresponding to
-	 * this object.  NULL if this object is native only (i.e. never stored
-	 * in an Unreal package), or if this object has been detached from its
-	 * linker, for e.g. renaming operations, saving the package, etc.
-	 */
-	ULinkerLoad*					_Linker;
-
-	/**
-	 * Index into the linker's ExportMap array for the FObjectExport resource
-	 * corresponding to this object.
-	 */
-	PTRINT							_LinkerIndex;
-
 	/** index into Outermost's NetObjects array, used for replicating references to this object
 	 * INDEX_None means references to this object cannot be replicated
 	 */
@@ -937,6 +958,8 @@ private:
 	UObject*						ObjectArchetype;
 
 	// Private system wide variables.
+
+	static FObjectLinkerInfoManager GObjectLinkerInfoManager;
 
 	/** Whether initialized.												*/
 	static UBOOL					GObjInitialized;
@@ -2175,7 +2198,7 @@ public:
 	 */
 	FORCEINLINE ULinkerLoad* GetLinker() const
 	{
-		return _Linker;
+		return GObjectLinkerInfoManager.GetLinker(this);
 	}
 	/**
 	 * Returns this object's LinkerIndex.
@@ -2185,7 +2208,7 @@ public:
 	 */
 	FORCEINLINE INT GetLinkerIndex() const
 	{
-		return _LinkerIndex;
+		return GObjectLinkerInfoManager.GetLinkerIndex(this);
 	}
 	/**
 	 * Returns the version of the linker for this object.

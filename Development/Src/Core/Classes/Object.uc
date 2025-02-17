@@ -35,8 +35,6 @@ var		native private const			qword	ObjectFlags;			// This needs to be 8-byte alig
 var		native private const			pointer	HashNext;
 var		native private const			pointer	HashOuterNext;
 var		native private const			pointer	StateFrame;
-var		native private const noexport	Object	Linker;
-var		native private const noexport	pointer	LinkerIndex;
 var		native private const noexport 	int		NetIndex;
 var		native const					object	Outer;
 var()	native const editconst			name	Name;
