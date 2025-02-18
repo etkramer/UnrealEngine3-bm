@@ -10,7 +10,7 @@ class Texture2D extends Texture
  */
 struct native Texture2DMipMap
 {
-	var native TextureMipBulkData_Mirror Data{FTextureMipBulkData};	
+	var native UntypedBulkData_Mirror Data{FTextureMipBulkData};	
 	var native int SizeX;
 	var native int SizeY;
 

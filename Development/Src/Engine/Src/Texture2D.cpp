@@ -104,7 +104,7 @@ void* FTextureMipBulkData::GetBulkDataResourceMemory(UObject* Owner,INT MipIdx)
 	if( Result )
 	{
 		// if we're using the resource memory container then the bulk data should never free this memory
-		bShouldFreeOnEmtpy = FALSE;
+		bShouldFreeOnEmpty = FALSE;
 	}
 	return Result;
 }
@@ -112,9 +112,9 @@ void* FTextureMipBulkData::GetBulkDataResourceMemory(UObject* Owner,INT MipIdx)
 /** 
 * Constructor 
 */
-FTextureMipBulkData::FTextureMipBulkData() 
-:	bShouldFreeOnEmtpy(TRUE)
+FTextureMipBulkData::FTextureMipBulkData()
 {
+	this->bShouldFreeOnEmpty = TRUE;
 }
 
 /**
@@ -124,7 +124,7 @@ FTextureMipBulkData::FTextureMipBulkData()
 */
 UBOOL FTextureMipBulkData::ShouldFreeOnEmpty() const
 {
-	return bShouldFreeOnEmtpy;
+	return bShouldFreeOnEmpty;
 }
 
 /*-----------------------------------------------------------------------------

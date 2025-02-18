@@ -434,6 +434,10 @@ private:
 	DWORD				LockStatus;
 	/** Archive associated with bulk data for serialization																*/
 	FArchive*			AttachedAr;
+
+protected:
+	/** TRUE when data has been allocated internally by the bulk data and does not come from a preallocated resource */
+	UBOOL bShouldFreeOnEmpty;
 };
 
 
@@ -491,9 +495,6 @@ struct FTextureMipBulkData : public FByteBulkData
 	* @return TRUE if bulk data should free allocated memory
 	*/
 	virtual UBOOL ShouldFreeOnEmpty() const;
-
-	/** TRUE when data has been allocated internally by the bulk data and does not come from a preallocated resource */
-	UBOOL bShouldFreeOnEmtpy;
 };
 
 
