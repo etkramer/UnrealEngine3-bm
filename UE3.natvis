@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+
+  <!-- TArray visualizer -->
+  <Type Name="TArray&lt;*&gt;">
+    <DisplayString>{"$T1",sb}[{ArrayNum}]</DisplayString>
+    <Expand>
+      <ArrayItems>
+        <Size>ArrayNum</Size>
+        <ValuePointer>($T1*)AllocatorInstance.Data</ValuePointer>
+      </ArrayItems>
+    </Expand>
+  </Type>
+
+  <!-- FString visualizer -->
+  <Type Name="FString">
+    <DisplayString>"{AllocatorInstance.Data,sub}"</DisplayString>
+  </Type>
+
+  <!-- FName visualizer -->
+  <Type Name="FName">
+    <DisplayString>{((FNameEntry**)FName::Names.AllocatorInstance.Data)[Index]->AnsiName,s}</DisplayString>
+  </Type>
+
+  <!-- UObject visualizer -->
+  <Type Name="UObject">
+    <DisplayString>{Class->Name,sb} '{Name,sb}'</DisplayString>
+  </Type>
+
+</AutoVisualizer>

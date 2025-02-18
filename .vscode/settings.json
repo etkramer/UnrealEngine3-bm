@@ -18,12 +18,13 @@
     "**/*.csproj": true,
     "**/*.sln": true,
     "**/*.xml": true,
+    "**/*.sql": true,
   },
-  "C_Cpp.default.compilerPath": "C:/Program Files (x86)/Microsoft Visual Studio 8/VC/bin/cl.exe",
+  "C_Cpp.default.compilerPath": "${env:VS80COMNTOOLS}/../../VC/bin/cl.exe",
   "C_Cpp.default.intelliSenseMode": "windows-msvc-x86",
   "C_Cpp.default.includePath": [
-    "C:/Program Files (x86)/Microsoft Visual Studio 8/VC/include",
-    "C:/Program Files (x86)/Microsoft Visual Studio 8/VC/PlatformSDK/Include",
+    "${env:VS80COMNTOOLS}/../../VC/include",
+    "${env:VS80COMNTOOLS}/../../VC/PlatformSDK/Include",
     
     "Development/Src/**/",
     "Development/External/dxsdk_aug2007/include",
@@ -40,6 +41,8 @@
     "BATMAN=1",
     "_DEBUG",
 
+    "WIN32=1",
+    "_MSC_VER=1400",
     "_WIN32_WINDOWS=0x0500",
   ]
 }

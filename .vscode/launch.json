@@ -11,6 +11,7 @@
       "program": "${workspaceFolder}/Binaries/Debug-BmGame.exe",
       "args": ["editor"],
       "cwd": "${workspaceFolder}/Binaries",
+      "visualizerFile": "${workspaceFolder}/UE3.natvis",
       "environment": [
         {
           "name": "PATH",

@@ -557,13 +557,19 @@ void appGetEngineScriptPackageNames(TArray<FString>& PackageNames, UBOOL bCanInc
 #endif
 	PackageNames.AddItem(TEXT("Core"));
 	PackageNames.AddItem(TEXT("Engine"));
+#if BATMAN
+#else
 	PackageNames.AddItem(TEXT("GameFramework"));
+#endif
 	if( bCanIncludeEditorOnlyPackages )
 	{
 		PackageNames.AddItem(TEXT("Editor"));
 		PackageNames.AddItem(TEXT("UnrealEd"));
-	}	
+	}
+#if BATMAN
+#else
 	PackageNames.AddItem(TEXT("UnrealScriptTest"));
+#endif
 #if WITH_UE3_NETWORKING
 	PackageNames.AddItem(TEXT("IpDrv"));
 #endif	//#if WITH_UE3_NETWORKING
