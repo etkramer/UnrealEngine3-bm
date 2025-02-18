@@ -84,6 +84,7 @@
 #elif GAMENAME == BMGAME
 #include "BmGameClasses.h"
 #include "BmEditorClasses.h"
+#else
 #error Hook up your game name here
 #endif
 #include "EditorClasses.h"

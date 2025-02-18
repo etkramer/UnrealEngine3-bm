@@ -13,7 +13,7 @@ namespace UnrealBuildTool
 	{
 		public string GetGameName()
 		{
-			return "Bm";
+			return "BmGame";
 		}
 		
 		public FileItem GetXEXConfigFile()

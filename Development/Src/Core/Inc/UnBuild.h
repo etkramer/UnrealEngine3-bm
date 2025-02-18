@@ -91,7 +91,7 @@
  * @see CheckNativeClassSizes()
  **/
 #ifndef CHECK_NATIVE_CLASS_SIZES
-#define CHECK_NATIVE_CLASS_SIZES 0
+#define CHECK_NATIVE_CLASS_SIZES 1
 #endif
 
 
@@ -101,7 +101,7 @@
  * @see CompileFunctionDeclaration
  **/
 #ifndef CHECK_NATIVE_MATCH
-#define CHECK_NATIVE_MATCH 0
+#define CHECK_NATIVE_MATCH 1
 #endif
 
 
@@ -350,11 +350,7 @@
  * Enables SHA validation when loading signed files
  */
 #ifndef USE_HASHES_SHA
-	#if CONSOLE
 		#define USE_HASHES_SHA 0
-	#else
-		#define USE_HASHES_SHA SHIPPING_PC_GAME
-	#endif
 #endif
 
 //#if EPIC_INTERNAL && _XBOX

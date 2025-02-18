@@ -464,7 +464,6 @@ void appGetGameScriptPackageNames(TArray<FString>& PackageNames, UBOOL bCanInclu
 	}
 #elif GAMENAME == BMGAME
 	PackageNames.AddItem(TEXT("BmGame"));
-	PackageNames.AddItem(TEXT("BmGameContent"));
 	if (bCanIncludeEditorOnlyPackages)
 	{
 		PackageNames.AddItem(TEXT("BmEditor"));

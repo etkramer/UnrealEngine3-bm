@@ -56,4 +56,6 @@ void AutoGenerateNamesBmEditor()
 	#undef NAMES_ONLY
 }
 
+IMPLEMENT_CLASS(UUIContainerThumbnailRenderer);
+
 #endif

@@ -63,7 +63,9 @@ namespace UnrealBuildTool
 			ParseArguments(Arguments);
 
 			// Describe what's being built.
+#if false
 			if (BuildConfiguration.bPrintDebugInfo)
+#endif
 			{
 				Console.WriteLine("Building {0} - {1} - {2}", Game.GetGameName(), Platform, Configuration);
 			}

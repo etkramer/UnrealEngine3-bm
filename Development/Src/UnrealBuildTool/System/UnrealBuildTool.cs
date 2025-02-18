@@ -128,7 +128,9 @@ namespace UnrealBuildTool
 					List<Action> ActionsToExecute = GetActionsToExecute(TargetOutputItems);
 
 					// Display some stats to the user.
+#if false
 					if (BuildConfiguration.bPrintDebugInfo)
+#endif
 					{
 						Console.WriteLine(
 							"{0} actions, {1} outdated and requested actions",

@@ -1,0 +1,45 @@
+{
+  "editor.formatOnSave": false,
+  "search.exclude": {
+    ".vscode": true,
+    "Binaries": true,
+    "Engine": true,
+    "Development/Build": true,
+    "Development/Builder": true,
+    "Development/Documentation": true,
+    "Development/External": true,
+    "Development/Fonts": true,
+    "Development/Install": true,
+    "Development/Intermediate": true,
+    "Development/Tools": true,
+    "Development/Websites": true,
+    "**/CMakeLists.txt": true,
+    "**/*.vcproj": true,
+    "**/*.csproj": true,
+    "**/*.sln": true,
+    "**/*.xml": true,
+  },
+  "C_Cpp.default.compilerPath": "C:/Program Files (x86)/Microsoft Visual Studio 8/VC/bin/cl.exe",
+  "C_Cpp.default.intelliSenseMode": "windows-msvc-x86",
+  "C_Cpp.default.includePath": [
+    "C:/Program Files (x86)/Microsoft Visual Studio 8/VC/include",
+    "C:/Program Files (x86)/Microsoft Visual Studio 8/VC/PlatformSDK/Include",
+    
+    "Development/Src/**/",
+    "Development/External/dxsdk_aug2007/include",
+    "Development/External/wxWidgets/include",
+    "Development/External/OpenAL-1.1/include",
+    "Development/External/nvTextureTools2/src/src",
+    "Development/External/nvTextureTools2/src/project/vc8",
+  ],
+  "C_Cpp.default.defines": [
+    "UNICODE",
+    "_UNICODE",
+    "_WINDOWS",
+    "GAMENAME=BMGAME",
+    "BATMAN=1",
+    "_DEBUG",
+
+    "_WIN32_WINDOWS=0x0500",
+  ]
+}
