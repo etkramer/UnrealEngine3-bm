@@ -112,7 +112,11 @@ struct UntypedBulkData_Mirror
 	var native const pointer	BulkData;
 	var native const int		LockStatus;
 	var native const pointer	AttachedAr;
-	var native const int 		bShouldFreeOnEmpty;
+};
+
+struct TextureMipBulkData_Mirror extends UntypedBulkData_Mirror
+{
+	var native const int		bShouldFreeOnEmtpy;
 };
 
 struct RenderCommandFence_Mirror
