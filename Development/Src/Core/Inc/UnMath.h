@@ -1902,6 +1902,17 @@ public:
 	}
 };
 
+class FSimpleBox
+{
+public:
+	// Variables.
+	FVector Min;
+	FVector Max;
+
+	// Constructors.
+	FSimpleBox() {}
+};
+
 /**
  * An axis aligned bounding box and bounding sphere with the same origin. (28 bytes).
  */

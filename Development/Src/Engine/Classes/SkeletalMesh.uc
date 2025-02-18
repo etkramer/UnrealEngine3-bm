@@ -9,7 +9,15 @@ class SkeletalMesh extends Object
 	noexport
 	hidecategories(Object);
 
+struct native BoneBounds
+{
+    var int BoneIndex;
+    var SimpleBox Box;
+};
+
 var		const native			BoxSphereBounds			Bounds;
+var 	const native 			float 					ConservativeBounds;
+var		const native			array<BoneBounds>		PerBoneBounds;
 
 /** List of materials applied to this mesh. */
 var()	const native			array<MaterialInterface>	Materials;
@@ -90,6 +98,8 @@ var()	const bool	bForceCPUSkinning;
 
 /** If true, use 32 bit UVs. If false, use 16 bit UVs to save memory */
 var()	const bool	bUseFullPrecisionUVs;
+
+var() const bool ForceShadowVolumes;
 
 /** The FaceFX asset the skeletal mesh uses for FaceFX operations. */
 var() FaceFXAsset FaceFXAsset;
@@ -301,6 +311,12 @@ struct native SoftBodyTetraLink
 	var vector Bary;
 };
 
+var native const array<bool> GraphicsIndexIsCloth;
+var() editoronly string SourceFilePath;
+var() editoronly editconst string SourceFileTimestamp;
+var() editoronly string MaxFilePath;
+var() name SkeletonName;
+
 /** Mapping between each vertex of the simulated soft-body's surface-mesh and the graphics mesh. */ 
 var const array<int>											SoftBodySurfaceToGraphicsVertMap;
 
@@ -443,6 +459,22 @@ var const native transient int ReleaseResourcesFence;
 
 /** GUID for this SkeletalMeshm, used when linking meshes to AnimSets. */
 var const GUID SkelMeshGUID;
+
+struct native StretchDescription
+{
+    var() name Bone;
+    var() Vector Translation;
+    var() float Scale;
+
+    structdefaultproperties
+    {
+        Bone="None"
+        Translation=(X=0.0000000,Y=0.0000000,Z=0.0000000)
+        Scale=1.0000000
+    }
+};
+
+var() array<StretchDescription> Stretches;
 
 defaultproperties
 {

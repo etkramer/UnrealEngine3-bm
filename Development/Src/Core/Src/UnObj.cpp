@@ -874,24 +874,7 @@ INT UObject::GetLinkerLicenseeVersion() const
 /** sets the NetIndex associated with this object for network replication */
 void UObject::SetNetIndex(INT InNetIndex)
 {
-	if (InNetIndex != NetIndex)
-	{
-		UPackage* Package = GetOutermost();
-		// skip if package is not meant to be replicated
-		if (!(Package->PackageFlags & PKG_ServerSideOnly))
-		{
-			if (NetIndex != INDEX_NONE)
-			{
-				// remove from old
-				Package->RemoveNetObject(this);
-			}
-			NetIndex = InNetIndex;
-			if (NetIndex != INDEX_NONE)
-			{
-				Package->AddNetObject(this);
-			}
-		}
-	}
+	// Removed.
 }
 
 /**
@@ -1314,7 +1297,7 @@ void UObject::SerializeNetIndex(FArchive& Ar)
 	// do not serialize NetIndex when duplicating objects via serialization
 	if (!(Ar.GetPortFlags() & PPF_Duplicate))
 	{
-		INT InNetIndex = NetIndex;
+		INT InNetIndex = INDEX_NONE;
 		Ar << InNetIndex;
 		if (Ar.IsLoading())
 		{
@@ -3657,7 +3640,6 @@ void UObject::Register()
 	// Set object properties.
 	Outer        = CreatePackage(NULL,InOuter);
 	Name         = InName;
-	NetIndex = INDEX_NONE;
 
 	// Validate the object.
 	if( Outer==NULL )
@@ -7058,7 +7040,6 @@ UObject* UObject::StaticAllocateObject
 		LinkerIndex = Obj->GetLinkerIndex();
 		InFlags		|= Obj->GetMaskedFlags(RF_Keep);
 		Index		= Obj->Index;
-		OldNetIndex = Obj->NetIndex;
 
 		// if this is the class default object, it means that InClass is native and the CDO was created during static registration.
 		// Propagate the load flags but don't replace it - the CDO will be initialized by InitClassDefaultObject
@@ -7203,10 +7184,6 @@ UObject* UObject::StaticAllocateObject
 	}
 
 	Obj->SafeInitProperties( (BYTE*)Obj, InClass->GetPropertiesSize(), BaseClass, (BYTE*)ObjectArchetype, DefaultsCount, Obj->HasAnyFlags(RF_NeedLoad) ? NULL : Obj, SubobjectRoot, InstanceGraph );
-
-	// reset NetIndex after InitProperties so that the value from the template is ignored
-	Obj->NetIndex = INDEX_NONE;
-	Obj->SetNetIndex(OldNetIndex);
 
 	// Add to global table.
 	Obj->AddObject( Index );

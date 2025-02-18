@@ -936,11 +936,6 @@ private:
 	/** Main script execution stack. */
 	FStateFrame*					StateFrame;
 
-	/** index into Outermost's NetObjects array, used for replicating references to this object
-	 * INDEX_None means references to this object cannot be replicated
-	 */
-	INT								NetIndex;
-
 	/** Object this object resides in. */
 	UObject*						Outer;
 
@@ -1312,7 +1307,7 @@ public:
 	/** returns this object's NetIndex */
 	FORCEINLINE INT GetNetIndex()
 	{
-		return NetIndex;
+		return INDEX_NONE;
 	}
 
 	//==========================================

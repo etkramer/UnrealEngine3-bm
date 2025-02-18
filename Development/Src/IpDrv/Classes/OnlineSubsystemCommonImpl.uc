@@ -27,6 +27,8 @@ var config bool bIsUsingSpeechRecognition;
 /** The object that handles the game interface implementation across platforms */
 var OnlineGameInterfaceImpl GameInterfaceImpl;
 
+var native const Pointer InfocasterDownload;
+
 /**
  * Returns the name of the player for the specified index
  *

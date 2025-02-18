@@ -24,7 +24,17 @@
 
   <!-- UObject visualizer -->
   <Type Name="UObject">
-    <DisplayString>{Class->Name,sb} '{Name,sb}'</DisplayString>
+    <DisplayString>{((UObject*)Class)->Name,sb} '{Name,sb}'</DisplayString>
+  </Type>
+
+  <!-- ULinkerLoad visualizer -->
+  <Type Name="ULinkerLoad">
+    <DisplayString>{Loader}</DisplayString>
+  </Type>
+
+  <!-- FBufferReaderWithSHA visualizer -->
+  <Type Name="FBufferReaderWithSHA">
+    <DisplayString>{SourcePathname}</DisplayString>
   </Type>
 
 </AutoVisualizer>

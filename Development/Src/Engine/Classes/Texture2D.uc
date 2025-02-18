@@ -10,7 +10,7 @@ class Texture2D extends Texture
  */
 struct native Texture2DMipMap
 {
-	var native TextureMipBulkData_Mirror Data{FTextureMipBulkData};	
+	var native UntypedBulkData_Mirror Data{FTextureMipBulkData};	
 	var native int SizeX;
 	var native int SizeY;
 
@@ -45,6 +45,8 @@ var() TextureAddress AddressX;
 
 /** The addressing mode to use for the Y axis.								*/
 var() TextureAddress AddressY;
+
+var() bool XboxForcePWLCorrection;
 
 /** Whether the texture is currently streamable or not.						*/
 var transient const bool						bIsStreamable;

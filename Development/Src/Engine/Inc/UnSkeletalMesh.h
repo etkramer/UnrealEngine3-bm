@@ -1929,6 +1929,17 @@ struct FBoneVertInfo
 	TArray<FVector>	Normals;
 };
 
+struct FBoneBounds
+{
+	INT					BoneIndex;
+	FSimpleBox			Box;
+
+	friend FArchive& operator<<(FArchive& Ar, FBoneBounds& B)
+	{
+		return Ar << B.BoneIndex << B.Box.Min << B.Box.Max;
+	}
+};
+
 /** Struct containing information for a particular LOD level, such as materials and info for when to use it. */
 struct FSkeletalMeshLODInfo
 {
@@ -2024,6 +2035,13 @@ struct FSoftBodySpecialBoneInfo
 	TArray<INT> AttachedVertexIndices;
 };
 
+struct FStretchDescription
+{
+	FName			Bone;
+	FVector			Translation;
+	FLOAT			Scale;
+};
+
 /**
 * Skeletal mesh.
 */
@@ -2032,6 +2050,8 @@ class USkeletalMesh : public UObject
 	DECLARE_CLASS(USkeletalMesh, UObject, CLASS_SafeReplace | CLASS_NoExport, Engine)
 
 	FBoxSphereBounds				Bounds;
+	FLOAT 							ConservativeBounds;
+	TArray<FBoneBounds>				PerBoneBounds;
 	/** List of materials applied to this mesh. */
 	TArray<UMaterialInterface*>		Materials;	
 	/** Origin in original coordinate system */
@@ -2087,6 +2107,8 @@ class USkeletalMesh : public UObject
 
 	/** If true, use 32 bit UVs. If false, use 16 bit UVs to save memory */
 	BITFIELD						bUseFullPrecisionUVs:1;
+
+	BITFIELD						ForceShadowVolumes:1;
 
 	/** FaceFX animation asset */
 	UFaceFXAsset*					FaceFXAsset;
@@ -2266,6 +2288,12 @@ class USkeletalMesh : public UObject
  */
 	TMap<QWORD,INT>					ClothTornTriMap;
 
+	TArray<BOOL>					GraphicsIndexIsCloth;
+	FString							SourceFilePath;
+	FString							SourceFileTimestamp;
+	FString							MaxFilePath;
+	FName							SkeletonName;
+
 	/** Mapping between each vertex of the simulated soft-body's surface-mesh and the graphics mesh. */ 	
 	TArray<INT>								SoftBodySurfaceToGraphicsVertMap;
 
@@ -2325,6 +2353,8 @@ class USkeletalMesh : public UObject
 
 	/** GUID for this SkeletalMeshm, used when linking meshes to AnimSets. */
 	FGuid							SkelMeshGUID;
+
+	TArray<FStretchDescription>		Stretches;
 
 	/**
 	* Initialize the mesh's render resources.

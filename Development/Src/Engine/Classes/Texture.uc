@@ -101,19 +101,16 @@ enum TextureGroup
 var()	bool							SRGB;
 var		bool							RGBE;
 
-var()	float							UnpackMin[4],
-										UnpackMax[4];
-
-var native const UntypedBulkData_Mirror	SourceArt{FByteBulkData};
-
 var()	bool							CompressionNoAlpha;
 var		bool							CompressionNone;
 var		bool							CompressionNoMipmaps;
 var()	bool							CompressionFullDynamicRange;
 var()	bool							DeferCompression;
+var() 	bool 							ForceOldCompression;
 
 /** Allows artists to specify that a texture should never have its miplevels dropped which is useful for e.g. HUD and menu textures */
 var()	bool							NeverStream;
+var() 	bool 							NeverStreamPCOnceCooked;
 
 /** When TRUE, mip-maps are dithered for smooth transitions. */
 var()	bool							bDitherMipMapAlpha;
@@ -126,8 +123,15 @@ var()	bool							bPreserveBorderA;
 /** If TRUE, the RHI texture will be created using TexCreate_NoTiling */
 var		const bool						bNoTiling;
 
+var() 	bool 							bUsedOnDynamicAndStaticStreamFix;
+
 /** Whether the async resource release process has already been kicked off or not */
 var		transient const private bool	bAsyncResourceReleaseHasBeenStarted;
+
+var()	float							UnpackMin[4],
+										UnpackMax[4];
+
+var native const UntypedBulkData_Mirror	SourceArt{FByteBulkData};
 
 var()	TextureCompressionSettings		CompressionSettings;
 

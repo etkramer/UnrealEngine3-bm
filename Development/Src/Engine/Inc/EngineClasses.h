@@ -19530,13 +19530,16 @@ public:
     BITFIELD CompressionNoMipmaps:1;
     BITFIELD CompressionFullDynamicRange:1;
     BITFIELD DeferCompression:1;
+    BITFIELD ForceOldCompression:1;
     BITFIELD NeverStream:1;
+    BITFIELD NeverStreamPCOnceCooked:1;
     BITFIELD bDitherMipMapAlpha:1;
     BITFIELD bPreserveBorderR:1;
     BITFIELD bPreserveBorderG:1;
     BITFIELD bPreserveBorderB:1;
     BITFIELD bPreserveBorderA:1;
     BITFIELD bNoTiling:1;
+    BITFIELD bUsedOnDynamicAndStaticStreamFix:1;
     BITFIELD bAsyncResourceReleaseHasBeenStarted:1;
     FLOAT UnpackMin[4];
     FLOAT UnpackMax[4];
@@ -19657,7 +19660,8 @@ public:
     BYTE Format;
     BYTE AddressX;
     BYTE AddressY;
-    BITFIELD bIsStreamable:1 GCC_BITFIELD_MAGIC;
+    BITFIELD XboxForcePWLCorrection:1 GCC_BITFIELD_MAGIC;
+    BITFIELD bIsStreamable:1;
     BITFIELD bHasCancelationPending:1;
     BITFIELD bHasBeenLoadedFromPersistentArchive:1;
     BITFIELD bForceMiplevelsToBeResident:1;
@@ -23542,6 +23546,8 @@ VERIFY_CLASS_OFFSET_NODIE(U,ShadowMap2D,LightGuid)
 VERIFY_CLASS_SIZE_NODIE(UShadowMap2D)
 VERIFY_CLASS_SIZE_NODIE(UShadowMapTexture2D)
 VERIFY_CLASS_OFFSET_NODIE(U,SkeletalMesh,Bounds)
+VERIFY_CLASS_OFFSET_NODIE(U,SkeletalMesh,ConservativeBounds)
+VERIFY_CLASS_OFFSET_NODIE(U,SkeletalMesh,PerBoneBounds)
 VERIFY_CLASS_OFFSET_NODIE(U,SkeletalMesh,Materials)
 VERIFY_CLASS_OFFSET_NODIE(U,SkeletalMesh,Origin)
 VERIFY_CLASS_OFFSET_NODIE(U,SkeletalMesh,RotOrigin)
@@ -23592,6 +23598,11 @@ VERIFY_CLASS_OFFSET_NODIE(U,SkeletalMesh,ClothMetalMaxDeformationDistance)
 VERIFY_CLASS_OFFSET_NODIE(U,SkeletalMesh,ClothTearFactor)
 VERIFY_CLASS_OFFSET_NODIE(U,SkeletalMesh,ClothTearReserve)
 VERIFY_CLASS_OFFSET_NODIE(U,SkeletalMesh,ClothTornTriMap)
+VERIFY_CLASS_OFFSET_NODIE(U,SkeletalMesh,GraphicsIndexIsCloth)
+VERIFY_CLASS_OFFSET_NODIE(U,SkeletalMesh,SourceFilePath)
+VERIFY_CLASS_OFFSET_NODIE(U,SkeletalMesh,SourceFileTimestamp)
+VERIFY_CLASS_OFFSET_NODIE(U,SkeletalMesh,MaxFilePath)
+VERIFY_CLASS_OFFSET_NODIE(U,SkeletalMesh,SkeletonName)
 VERIFY_CLASS_OFFSET_NODIE(U,SkeletalMesh,SoftBodySurfaceToGraphicsVertMap)
 VERIFY_CLASS_OFFSET_NODIE(U,SkeletalMesh,SoftBodySurfaceIndices)
 VERIFY_CLASS_OFFSET_NODIE(U,SkeletalMesh,SoftBodyTetraVertsUnscaled)
@@ -23618,6 +23629,7 @@ VERIFY_CLASS_OFFSET_NODIE(U,SkeletalMesh,SoftBodyAttachmentThreshold)
 VERIFY_CLASS_OFFSET_NODIE(U,SkeletalMesh,SoftBodyAttachmentTearFactor)
 VERIFY_CLASS_OFFSET_NODIE(U,SkeletalMesh,ReleaseResourcesFence)
 VERIFY_CLASS_OFFSET_NODIE(U,SkeletalMesh,SkelMeshGUID)
+VERIFY_CLASS_OFFSET_NODIE(U,SkeletalMesh,Stretches)
 VERIFY_CLASS_SIZE_NODIE(USkeletalMesh)
 VERIFY_CLASS_OFFSET_NODIE(U,SkeletalMeshComponent,SkeletalMesh)
 VERIFY_CLASS_OFFSET_NODIE(U,SkeletalMeshComponent,AttachedToSkelComponent)

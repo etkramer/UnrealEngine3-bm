@@ -32,6 +32,8 @@
     "Development/External/OpenAL-1.1/include",
     "Development/External/nvTextureTools2/src/src",
     "Development/External/nvTextureTools2/src/project/vc8",
+    "Development/External/zlib/Inc",
+    "Development/External/FaceFx/**/Inc"
   ],
   "C_Cpp.default.defines": [
     "UNICODE",

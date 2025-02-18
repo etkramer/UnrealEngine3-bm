@@ -35,7 +35,6 @@ var		native private const			qword	ObjectFlags;			// This needs to be 8-byte alig
 var		native private const			pointer	HashNext;
 var		native private const			pointer	HashOuterNext;
 var		native private const			pointer	StateFrame;
-var		native private const noexport 	int		NetIndex;
 var		native const					object	Outer;
 var()	native const editconst			name	Name;
 var		native const					class	Class;
@@ -113,11 +112,7 @@ struct UntypedBulkData_Mirror
 	var native const pointer	BulkData;
 	var native const int		LockStatus;
 	var native const pointer	AttachedAr;
-};
-
-struct TextureMipBulkData_Mirror extends UntypedBulkData_Mirror
-{
-	var native const int		bShouldFreeOnEmtpy;
+	var native const int 		bShouldFreeOnEmpty;
 };
 
 struct RenderCommandFence_Mirror
@@ -267,6 +262,12 @@ struct immutable Box
 {
 	var() vector Min, Max;
 	var byte IsValid;
+};
+
+struct SimpleBox
+{
+    var Vector Min;
+    var Vector Max;
 };
 
 // A bounding box and bounding sphere with the same origin.

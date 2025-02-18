@@ -1354,6 +1354,7 @@ public:
     INT MaxRemoteTalkers;
     BITFIELD bIsUsingSpeechRecognition:1;
     class UOnlineGameInterfaceImpl* GameInterfaceImpl;
+    FPointer InfocasterDownload;
     //## END PROPS OnlineSubsystemCommonImpl
 
     struct FUniqueNetId eventGetPlayerUniqueNetIdFromIndex(INT UserIndex)
@@ -1535,7 +1536,7 @@ VERIFY_CLASS_OFFSET_NODIE(U,OnlineNewsInterfaceMcp,NewsItems)
 VERIFY_CLASS_OFFSET_NODIE(U,OnlineNewsInterfaceMcp,__OnReadNewsCompleted__Delegate)
 VERIFY_CLASS_SIZE_NODIE(UOnlineNewsInterfaceMcp)
 VERIFY_CLASS_OFFSET_NODIE(U,OnlineSubsystemCommonImpl,VoiceEngine)
-VERIFY_CLASS_OFFSET_NODIE(U,OnlineSubsystemCommonImpl,GameInterfaceImpl)
+VERIFY_CLASS_OFFSET_NODIE(U,OnlineSubsystemCommonImpl,InfocasterDownload)
 VERIFY_CLASS_SIZE_NODIE(UOnlineSubsystemCommonImpl)
 VERIFY_CLASS_OFFSET_NODIE(U,OnlineTitleFileDownloadMcp,ReadTitleFileCompleteDelegates)
 VERIFY_CLASS_OFFSET_NODIE(U,OnlineTitleFileDownloadMcp,__OnReadTitleFileComplete__Delegate)
