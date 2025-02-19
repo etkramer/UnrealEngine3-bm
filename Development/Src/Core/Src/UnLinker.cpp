@@ -3136,6 +3136,7 @@ UObject* ULinkerLoad::CreateExport( INT Index )
 
 #if BATMAN
 		// Don't load classes from cooked BM packages
+		// NOTE: Seemss like maybe this doesn't work.
 		if (LicenseeVer() >= VER_BATMAN1 && Export.ClassIndex == UCLASS_INDEX && (Export.PackageFlags & PKG_Cooked))
 		{
 			return NULL;

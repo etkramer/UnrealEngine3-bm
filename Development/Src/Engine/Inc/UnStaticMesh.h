@@ -340,6 +340,8 @@ public:
 	virtual FString GetFriendlyName() const { return TEXT("PositionOnly Static-mesh vertices"); }
 
 private:
+	// BM: Unused
+	BOOL bNeedsCPUAccess;
 
 	/** The vertex data storage type */
 	class FPositionVertexData* VertexData;

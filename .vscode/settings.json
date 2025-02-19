@@ -46,5 +46,9 @@
     "WIN32=1",
     "_MSC_VER=1400",
     "_WIN32_WINDOWS=0x0500",
-  ]
+  ],
+  "unrealscript.indexAllDocuments": true,
+  "unrealscript.generation": "3",
+  "unrealscript.checkTypes": false,
+  "unrealscript.analyzeDocuments": "None"
 }

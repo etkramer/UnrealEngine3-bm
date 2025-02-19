@@ -3164,10 +3164,14 @@ UBOOL FMapPackageFileCache::CachePackage( const TCHAR* InPathName, UBOOL InOverr
 			warnf( NAME_Error, TEXT("Ambiguous package name: Using \'%s\', not \'%s\'"), *FullExistingEntry, *FullFixedPathName);
 			CLEAR_WARN_COLOR();
 
+#if BATMAN
+			// Don't block the user with this pop-up, we expect it to happen during development.
+#else
 			if( GIsUnattended == FALSE )
 			{
 				appMsgf(AMT_OK,TEXT("Ambiguous package name: Using \'%s\', not \'%s\'"), *FullExistingEntry, *FullFixedPathName);
 			}
+#endif
 		}
 
 		return FALSE;
