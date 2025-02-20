@@ -128,10 +128,15 @@ struct IndirectArray_Mirror
 	var native const int		ArrayMax;
 };
 
+struct immutable GuidImplementation
+{
+	var int A, B, C, D;
+};
+
 // A globally unique identifier.
 struct immutable Guid
 {
-	var int A, B, C, D;
+	var int A;
 };
 
 // A point or direction vector in 3d space.

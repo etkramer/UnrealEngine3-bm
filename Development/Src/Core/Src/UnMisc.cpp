@@ -2099,14 +2099,11 @@ UBOOL Parse( const TCHAR* Stream, const TCHAR* Match, class FGuid& Guid )
 	if( !Parse( Stream, Match, Temp, ARRAY_COUNT(Temp) ) )
 		return 0;
 
-	Guid.A = Guid.B = Guid.C = Guid.D = 0;
+	Guid.SmallGuid = 0;
 	if( appStrlen(Temp)==32 )
 	{
 		TCHAR* End;
-		Guid.D = appStrtoi( Temp+24, &End, 16 ); Temp[24]=0;
-		Guid.C = appStrtoi( Temp+16, &End, 16 ); Temp[16]=0;
-		Guid.B = appStrtoi( Temp+8,  &End, 16 ); Temp[8 ]=0;
-		Guid.A = appStrtoi( Temp+0,  &End, 16 ); Temp[0 ]=0;
+		Guid.SmallGuid = appStrtoi( Temp+0,  &End, 16 ); Temp[0 ]=0;
 	}
 	return 1;
 }

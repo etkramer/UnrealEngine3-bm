@@ -64,6 +64,12 @@ struct FPropertyTag
 		if (Tag.Type == NAME_StructProperty)
 		{
 			Ar << Tag.StructName;
+
+			// Use full-size GUID for script structs.
+			if (Tag.StructName == NAME_Guid)
+			{
+				Tag.StructName = FName(TEXT("GuidImplementation"));
+			}
 		}
 		// only need to serialize this for bools
 		if (Tag.Type == NAME_BoolProperty)

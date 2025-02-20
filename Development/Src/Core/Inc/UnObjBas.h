@@ -414,20 +414,25 @@ extern FString PerfMemRunResultStrings[4];
 	Core types.
 ----------------------------------------------------------------------------*/
 
+struct FGuidImplementation
+{
+	DWORD A, B, C, D;
+};
+
 //
 // Globally unique identifier.
 //
 class FGuid
 {
 public:
-	DWORD A,B,C,D;
+	DWORD SmallGuid;
 	FGuid()
 	{}
 	FGuid( DWORD InA, DWORD InB, DWORD InC, DWORD InD )
-	: A(InA), B(InB), C(InC), D(InD)
+	: SmallGuid(InA ^ InB ^ InC ^ InD)
 	{}
 	explicit FORCEINLINE FGuid(EEventParm)
-	: A(0), B(0), C(0), D(0)
+	: SmallGuid(0)
     {
     }
 
@@ -438,58 +443,53 @@ public:
 	 */
 	UBOOL IsValid() const
 	{
-		return (A | B | C | D) != 0;
+		return SmallGuid != 0;
 	}
 
 	/** Invalidates the GUID. */
 	void Invalidate()
 	{
-		A = B = C = D = 0;
+		SmallGuid = 0;
 	}
 
 	friend UBOOL operator==(const FGuid& X, const FGuid& Y)
 	{
-		return ((X.A ^ Y.A) | (X.B ^ Y.B) | (X.C ^ Y.C) | (X.D ^ Y.D)) == 0;
+		return (X.SmallGuid ^ Y.SmallGuid) == 0;
 	}
 	friend UBOOL operator!=(const FGuid& X, const FGuid& Y)
 	{
-		return ((X.A ^ Y.A) | (X.B ^ Y.B) | (X.C ^ Y.C) | (X.D ^ Y.D)) != 0;
+		return (X.SmallGuid ^ Y.SmallGuid) != 0;
 	}
 	DWORD& operator[]( INT Index )
 	{
 		checkSlow(Index>=0);
 		checkSlow(Index<4);
-		switch(Index)
-		{
-		case 0: return A;
-		case 1: return B;
-		case 2: return C;
-		case 3: return D;
-		}
 
-		return A;
+		return SmallGuid;
 	}
 	const DWORD& operator[]( INT Index ) const
 	{
 		checkSlow(Index>=0);
 		checkSlow(Index<4);
-		switch(Index)
-		{
-		case 0: return A;
-		case 1: return B;
-		case 2: return C;
-		case 3: return D;
-		}
 
-		return A;
+		return SmallGuid;
 	}
 	friend FArchive& operator<<( FArchive& Ar, FGuid& G )
 	{
-		return Ar << G.A << G.B << G.C << G.D;
+		DWORD A = G.SmallGuid;
+		DWORD B = 0, C = 0, D = 0;
+		
+		Ar << A << B << C << D;
+		if (Ar.IsLoading())
+		{
+			G.SmallGuid = A;
+		}
+
+		return Ar;
 	}
 	FString String() const
 	{
-		return FString::Printf( TEXT("%08X%08X%08X%08X"), A, B, C, D );
+		return FString::Printf( TEXT("%08X"), SmallGuid );
 	}
 	friend DWORD GetTypeHash(const FGuid& Guid)
 	{

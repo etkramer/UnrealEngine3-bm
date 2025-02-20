@@ -17674,8 +17674,11 @@ public:
     //## BEGIN PROPS MaterialExpression
     INT EditorX;
     INT EditorY;
+    INT MaterialExpressionEditorX;
+    INT MaterialExpressionEditorY;
     BITFIELD bRealtimePreview:1;
     BITFIELD bIsParameterExpression:1;
+    BITFIELD bCollapsedInEditor:1;
     BITFIELD bShowOutputNameOnPin:1;
     BITFIELD bHidePreviewWindow:1;
     class UMaterialExpressionCompound* Compound;

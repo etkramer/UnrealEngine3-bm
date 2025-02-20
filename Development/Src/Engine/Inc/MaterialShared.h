@@ -1033,7 +1033,7 @@ public:
 
 	friend DWORD GetTypeHash(const FStaticParameterSet &Ref)
 	{
-		return Ref.BaseMaterialId.A;
+		return Ref.BaseMaterialId.SmallGuid;
 	}
 
 	/** 

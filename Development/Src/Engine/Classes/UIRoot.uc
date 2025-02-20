@@ -4964,11 +4964,7 @@ static final function string ConvertWidgetIDToString( UIObject SourceWidget )
 	if ( SourceWidget != None )
 	{
 		// the widget's ID is guaranteed to be unique
-		Result
-			= ToHex(SourceWidget.WidgetId.A)
-			$ ToHex(SourceWidget.WidgetId.B)
-			$ ToHex(SourceWidget.WidgetId.C)
-			$ ToHex(SourceWidget.WidgetId.D);
+		Result = ToHex(SourceWidget.WidgetId.A);
 	}
 
 	return Result;
