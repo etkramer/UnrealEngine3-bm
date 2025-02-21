@@ -2889,7 +2889,6 @@ defaultproperties
 {
 	 MaxSquadSize=2
 	 bRoamingSquad=true
-	 NetUpdateFrequency=1
 	 FormationSize=1100.0
 	 MaxSquadRoutes=5
 }

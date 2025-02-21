@@ -1588,28 +1588,10 @@ INT UWorld::ServerTickClients( FLOAT DeltaSeconds )
 	for( FNetRelevantActorIterator It; It; ++It )
 	{
 		AActor* Actor = *It;
-		if( (Actor->RemoteRole!=ROLE_None) && (Actor->bPendingNetUpdate || Actor->bForceNetUpdate || WorldInfo->TimeSeconds > Actor->NetUpdateTime) ) 
+		if( (Actor->RemoteRole!=ROLE_None) && (Actor->bForceNetUpdate) ) 
 		{
-			// if this actor isn't being considered due to a previous ServerTickClients() call where not all clients were able to replicate the actor
-			if (!Actor->bPendingNetUpdate)
-			{
-				//debugf(TEXT("actor %s requesting new net update, forced? %s, time: %2.3f"),*Actor->GetName(),Actor->bForceNetUpdate?TEXT("TRUE"):TEXT("FALSE"),WorldInfo->TimeSeconds);
-				// then set the next update time
-				Actor->NetUpdateTime = WorldInfo->TimeSeconds + appSRand() * ServerTickTime + 1.f/Actor->NetUpdateFrequency; // FIXME - cache 1/netupdatefreq
-				// and mark when the actor first requested an update
-				//@note: using NetDriver->Time because it's compared against UActorChannel.LastUpdateTime which also uses that value
-				Actor->LastNetUpdateTime = NetDriver->Time;
-			}
-			/*
-			else
-			{
-				debugf(TEXT("actor %s still pending update, time since update request: %2.3f"),*Actor->GetName(),WorldInfo->TimeSeconds-Actor->LastNetUpdateTime);
-			}
-			*/
 			// clear the forced update flag
 			Actor->bForceNetUpdate = FALSE;
-			// and clear the pending update flag assuming all clients will be able to consider it
-			Actor->bPendingNetUpdate = FALSE;
 		
 			// if this actor is always relevant, or relevant to any client
 			if ( Actor->bAlwaysRelevant || !Actor->bOnlyRelevantToOwner ) 
@@ -1667,15 +1649,6 @@ INT UWorld::ServerTickClients( FLOAT DeltaSeconds )
 				}
 			}
 		}
-		/*
-		else
-		{
-			if( Actor->GetAPawn() && (Actor->RemoteRole!=ROLE_None) && (GWorld->GetTimeSeconds() <= Actor->NetUpdateTime) ) 
-			{
-				debugfSuppressed(NAME_DevNetTraffic, TEXT("%s skipped in considerlist because of NetUpdateTime %f"), *Actor->GetName(), (GWorld->GetTimeSeconds() - Actor->NetUpdateTime) );
-			}
-		}
-		*/
 	}
 
 	for( INT i=0; i < NetDriver->ClientConnections.Num(); i++ )
@@ -1685,44 +1658,20 @@ INT UWorld::ServerTickClients( FLOAT DeltaSeconds )
 		// if this client shouldn't be ticked this frame
 		if (i >= NumClientsToTick)
 		{
-			//debugf(TEXT("skipping update to %s"),*Connection->GetName());
-			// then mark each considered actor as bPendingNetUpdate so that they will be considered again the next frame when the connection is actually ticked
-			for (INT ConsiderIdx = 0; ConsiderIdx < ConsiderListSize; ConsiderIdx++)
-			{
-				AActor *Actor = ConsiderList[ConsiderIdx];
-				// if the actor hasn't already been flagged by another connection,
-				if (Actor != NULL && !Actor->bPendingNetUpdate)
-				{
-					// find the channel
-					UActorChannel *Channel = Connection->ActorChannels.FindRef(Actor);
-					// and if the channel last update time doesn't match the last net update time for the actor
-					if (Channel != NULL && Channel->LastUpdateTime < Actor->LastNetUpdateTime)
-					{
-						//debugf(TEXT("flagging %s for a future update"),*Actor->GetName());
-						// flag it for a pending update
-						Actor->bPendingNetUpdate = TRUE;
-					}
-				}
-			}
 			// clear the time sensitive flag to avoid sending an extra packet to this connection
 			Connection->TimeSensitive = FALSE;
 		}
 		else
 		if (Connection->Viewer)
 		{
+			INT j;
+
 			// Get list of visible/relevant actors.
 			FLOAT PruneActors = 0.f;
 			CLOCK_CYCLES(PruneActors);
 			FMemMark RelevantActorMark(GMainThreadMemStack);
 			NetTag++;
 			Connection->TickCount++;
-
-			// Set up to skip all sent temporary actors.
-			INT j;
-			for( j=0; j<Connection->SentTemporaries.Num(); j++ )
-			{
-				Connection->SentTemporaries(j)->NetTag = NetTag;
-			}
 
 			// set the replication viewers to the current connection (and children) so that actors can determine who is currently being considered for relevancy checks
 			TArray<FNetViewer>& ConnectionViewers = WorldInfo->ReplicationViewers;
@@ -1750,60 +1699,10 @@ INT UWorld::ServerTickClients( FLOAT DeltaSeconds )
 				ConnectionViewers(j).InViewer->bWasSaturated = ConnectionViewers(j).InViewer->bWasSaturated && bLowNetBandwidth;
 			}
 
-			for( j=0; j<ConsiderListSize; j++ )
-			{
-				AActor* Actor = ConsiderList[j];
-				if( Actor->NetTag!=NetTag )
-				{
-					//debugf(TEXT("Consider %s alwaysrelevant %d frequency %f "),*Actor->GetName(), Actor->bAlwaysRelevant, Actor->NetUpdateFrequency);
-					UActorChannel* Channel = Connection->ActorChannels.FindRef(Actor);
-					if( Actor->bOnlyDirtyReplication 
-					&&	Channel 
-					&&	!Channel->ActorDirty 
-					&&	Channel->Recent.Num() 
-					&&	Channel->Dirty.Num() == 0 
-					)
-					{
-						Channel->RelevantTime = NetDriver->Time;
-					}
-					else
-					{
-						Actor->NetTag                 = NetTag;
-						PriorityList  [ConsiderCount] = FActorPriority(Connection, Channel, Actor, ConnectionViewers, bLowNetBandwidth);
-						PriorityActors[ConsiderCount] = PriorityList + ConsiderCount;
-						ConsiderCount++;
-					}
-				}
-			}
-
 			UNetConnection* NextConnection = Connection;
 			INT ChildIndex = 0;
 			while (NextConnection != NULL)
 			{
-				for (INT j = 0; j < NextConnection->OwnedConsiderListSize; j++)
-				{
-					AActor* Actor = NextConnection->OwnedConsiderList[j];
-					//debugf(TEXT("Consider owned %s always relevant %d frequency %f  "),Actor->GetName(), Actor->bAlwaysRelevant,Actor->NetUpdateFrequency);
-					if (Actor->NetTag != NetTag)
-					{
-						UActorChannel* Channel = Connection->ActorChannels.FindRef(Actor);
-						if( Actor->bOnlyDirtyReplication
-						&&	Channel
-						&&	!Channel->ActorDirty
-						&&	Channel->Recent.Num()
-						&&	Channel->Dirty.Num() == 0 )
-						{
-							Channel->RelevantTime = NetDriver->Time;
-						}
-						else
-						{
-							Actor->NetTag                 = NetTag;
-							PriorityList  [ConsiderCount] = FActorPriority(NextConnection, Channel, Actor, ConnectionViewers, bLowNetBandwidth);
-							PriorityActors[ConsiderCount] = PriorityList + ConsiderCount;
-							ConsiderCount++;
-						}
-					}
-				}
 				NextConnection->OwnedConsiderList = NULL;
 				NextConnection->OwnedConsiderListSize = 0;
 
@@ -1859,12 +1758,6 @@ INT UWorld::ServerTickClients( FLOAT DeltaSeconds )
 								{
 									Channel->SetChannelActor( Actor );
 								}
-							}
-							// if we couldn't replicate it for a reason that should be temporary, and this Actor is updated very infrequently, make sure we update it again soon
-							else if (Actor->NetUpdateFrequency < 1.0f)
-							{
-								//debugf(TEXT("Unable to replicate %s"),*Actor->GetName());
-								Actor->NetUpdateTime = WorldInfo->TimeSeconds + 0.2f * appFrand();
 							}
 						}
 
@@ -1939,28 +1832,6 @@ INT UWorld::ServerTickClients( FLOAT DeltaSeconds )
 				UActorChannel* Channel = PriorityActors[k]->Channel;
 				
 				debugfSuppressed(NAME_DevNetTraffic, TEXT("Saturated. %s"), *Actor->GetName());
-				if (Channel != NULL && NetDriver->Time - Channel->RelevantTime <= 1.f)
-				{
-					//debugfSuppressed(NAME_DevNetTraffic, TEXT(" Saturated. Mark %s NetUpdateTime to be checked for next tick"), *Actor->GetName());
-					//debugf(TEXT("- saturated, delaying %s"),*Actor->GetName());
-					Actor->bPendingNetUpdate = TRUE;
-				}
-				else
-				{
-					for (INT h = 0; h < ConnectionViewers.Num(); h++)
-					{
-						if (Actor->IsNetRelevantFor(ConnectionViewers(h).InViewer, ConnectionViewers(h).Viewer, ConnectionViewers(h).ViewLocation))
-						{
-							//debugfSuppressed(NAME_DevNetTraffic, TEXT(" Saturated. Mark %s NetUpdateTime to be checked for next tick"), *Actor->GetName());
-							Actor->bPendingNetUpdate = TRUE;
-							if (Channel != NULL)
-							{
-								Channel->RelevantTime = NetDriver->Time + 0.5f * appSRand();
-							}
-							break;
-						}
-					}
-				}
 			}
 			RelevantActorMark.Pop();
 			UNCLOCK_CYCLES(RelevantTime);

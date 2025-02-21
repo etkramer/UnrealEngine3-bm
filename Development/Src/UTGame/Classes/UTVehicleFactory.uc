@@ -451,7 +451,6 @@ defaultproperties
 	bNoDelete=True
 	TeamNum=255
 	RespawnRateModifier=1.0
-	NetUpdateFrequency=1.0
 
 	SupportedEvents.Add(class'UTSeqEvent_VehicleFactory')
 }

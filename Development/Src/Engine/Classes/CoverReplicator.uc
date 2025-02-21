@@ -790,5 +790,4 @@ defaultproperties
 	bOnlyRelevantToOwner=true
 	bAlwaysRelevant=false
 	bOnlyDirtyReplication=true
-	NetUpdateFrequency=0.1
 }

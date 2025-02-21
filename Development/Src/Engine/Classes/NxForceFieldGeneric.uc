@@ -1,5 +1,5 @@
 /**
- * Copyright © 1998-2008 Epic Games, Inc. All Rights Reserved.
+ * Copyright ï¿½ 1998-2008 Epic Games, Inc. All Rights Reserved.
  */
 
 class NxForceFieldGeneric extends NxForceField
@@ -88,7 +88,6 @@ defaultproperties
 	RemoteRole=ROLE_SimulatedProxy
 	bNoDelete=true
 	bAlwaysRelevant=true
-	NetUpdateFrequency=0.1
 	bOnlyDirtyReplication=true
 
 	CollideWithChannels={(

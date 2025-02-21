@@ -268,6 +268,5 @@ defaultproperties
 	TickGroup=TG_DuringAsyncWork
 
 	bEnabled=TRUE
-	NetUpdateFrequency=1.0
 	TeamIndex=255
 }

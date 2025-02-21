@@ -579,7 +579,6 @@ AActor* UActorFactoryEmitter::CreateActor( const FVector* const Location, const 
 		{
 			NewEmitter->RemoteRole = ROLE_SimulatedProxy;
 			NewEmitter->bAlwaysRelevant = TRUE;
-			NewEmitter->NetUpdateFrequency = 0.1f; // could also set bNetTemporary but LD might further trigger it or something
 			// call into gameplay code with template so it can set up replication
 			NewEmitter->eventSetTemplate(ParticleSystem, NewEmitter->bDestroyOnSystemFinish);
 		}
@@ -1275,7 +1274,6 @@ AActor* UActorFactoryLensFlare::CreateActor( const FVector* const Location, cons
 		// Change properties
 		NewLensFlare->RemoteRole = ROLE_None;
 		NewLensFlare->bAlwaysRelevant = FALSE;
-		NewLensFlare->NetUpdateFrequency = 0.0f; // could also set bNetTemporary but LD might further trigger it or something
 		NewLensFlare->SetTemplate(LensFlareObject);
 
 		// Init Component

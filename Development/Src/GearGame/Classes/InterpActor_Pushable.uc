@@ -48,7 +48,6 @@ defaultproperties
 
 	RemoteRole=ROLE_SimulatedProxy
 	bUpdateSimulatedPosition=true
-	NetUpdateFrequency=100.0
 	bReplicateRigidBodyLocation=true
 	bReplicateMovement=true
 	bOnlyDirtyReplication=false

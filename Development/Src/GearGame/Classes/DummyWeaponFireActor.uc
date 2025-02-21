@@ -78,6 +78,4 @@ defaultproperties
 	bUpdateSimulatedPosition=false
 	bOnlyDirtyReplication=true
 	RemoteRole=ROLE_SimulatedProxy
-	NetPriority=2.7
-	NetUpdateFrequency=1.0
 }

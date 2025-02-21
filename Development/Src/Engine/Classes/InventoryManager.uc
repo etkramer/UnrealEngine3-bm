@@ -885,7 +885,6 @@ defaultproperties
 	RemoteRole=ROLE_SimulatedProxy
 	bOnlyDirtyReplication=TRUE
 	bOnlyRelevantToOwner=TRUE
-	NetPriority=1.4
 	bHidden=TRUE
 	Physics=PHYS_None
 	bReplicateMovement=FALSE

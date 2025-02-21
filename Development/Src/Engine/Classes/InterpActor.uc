@@ -498,8 +498,6 @@ defaultproperties
 	bUpdateSimulatedPosition=false
 	bOnlyDirtyReplication=true
 	RemoteRole=ROLE_None
-	NetPriority=2.7
-	NetUpdateFrequency=1.0
 	bDestroyProjectilesOnEncroach=true
 	bStopOnEncroach=true
 	bContinueOnEncroachPhysicsObject=TRUE

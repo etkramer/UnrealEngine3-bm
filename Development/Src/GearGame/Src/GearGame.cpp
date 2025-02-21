@@ -1480,8 +1480,6 @@ public:
 					if (InterpAction->GetOutermost()->GetFName() == FName(TEXT("SP_Riftworm_3_S")))
 					{
 						InterpAction->ReplicatedActor->bForceNetUpdate = FALSE;
-						InterpAction->ReplicatedActor->bPendingNetUpdate = FALSE;
-						InterpAction->ReplicatedActor->NetUpdateTime = GWorld->GetTimeSeconds() + 3.0f;
 					}
 				}
 			}
@@ -3690,7 +3688,7 @@ FGuid* AGearPawn::GetGuid()
 		if (ControllerGuid != NULL)
 		{
 			MyGuid = *ControllerGuid;
-			MyGuid.A += 1;
+			MyGuid.SmallGuid += 1;
 		}
 	}
 

@@ -650,26 +650,6 @@ reliable server function ServerShortTimeout()
 				}
 			}
 		}
-		else if ( WorldInfo.Game.NumPlayers < 8 )
-		{
-			foreach AllActors(class'Actor', A)
-			{
-				if ( (A.NetUpdateFrequency < 1) && !A.bOnlyRelevantToOwner )
-				{
-					A.SetNetUpdateTime(FMin(A.NetUpdateTime, WorldInfo.TimeSeconds + 0.2 * FRand()));
-				}
-			}
-		}
-		else
-		{
-			foreach AllActors(class'Actor', A)
-			{
-				if ( (A.NetUpdateFrequency < 1) && !A.bOnlyRelevantToOwner )
-				{
-					A.SetNetUpdateTime(FMin(A.NetUpdateTime, WorldInfo.TimeSeconds + 0.5 * FRand()));
-				}
-			}
-		}
 	}
 }
 
@@ -1574,7 +1554,6 @@ reliable client function ClientSetHUD(class<HUD> newHUDType, class<Scoreboard> n
 
 function HandlePickup(Inventory Inv)
 {
-	ReceiveLocalizedMessage(Inv.MessageClass,,,,Inv.class);
 }
 
 /* epic ===============================================
@@ -8037,7 +8016,6 @@ defaultproperties
 
 	FOVAngle=85.000
 	bStasis=False
-	NetPriority=3
 	bIsPlayer=true
 	bCanDoSpecial=true
 	Physics=PHYS_None

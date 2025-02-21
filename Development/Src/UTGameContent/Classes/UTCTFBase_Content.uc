@@ -13,7 +13,6 @@ defaultproperties
 	bHidden=false
 
 	bAlwaysRelevant=true
-	NetUpdateFrequency=1
 	RemoteRole=ROLE_SimulatedProxy
 	BaseExitTime=+8.0
 	bHasSensor=true

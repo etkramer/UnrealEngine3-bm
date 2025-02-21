@@ -727,7 +727,6 @@ function Inventory SpawnCopyFor( Pawn Recipient )
 event Landed(vector HitNormal, actor FloorActor)
 {
 	bForceNetUpdate = TRUE;
-	NetUpdateFrequency = 3;
 
 	PlayCollisionSound();
 }

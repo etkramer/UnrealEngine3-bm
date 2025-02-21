@@ -104,6 +104,5 @@ defaultproperties
 
 	
 	RemoteRole=ROLE_None
-	NetUpdateFrequency=1.f
 	bNoDelete=TRUE
 }

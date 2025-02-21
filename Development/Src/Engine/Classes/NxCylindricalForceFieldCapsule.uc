@@ -1,5 +1,5 @@
 /**
- * Copyright © 1998-2007 Epic Games, Inc. All Rights Reserved.
+ * Copyright ï¿½ 1998-2007 Epic Games, Inc. All Rights Reserved.
  */
 
 class NxCylindricalForceFieldCapsule extends NxCylindricalForceField
@@ -49,6 +49,5 @@ defaultproperties
 	RemoteRole=ROLE_SimulatedProxy
 	bNoDelete=true
 	bAlwaysRelevant=true
-	NetUpdateFrequency=0.1
 	bOnlyDirtyReplication=true
 }

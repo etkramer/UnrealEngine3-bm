@@ -504,7 +504,6 @@ defaultproperties
 
 	RemoteRole=ROLE_SimulatedProxy
 	bAlwaysRelevant=true
-	NetUpdateFrequency=1.0
 
 	//debug
 	//bDebug=TRUE

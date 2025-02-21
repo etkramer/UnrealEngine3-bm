@@ -35,6 +35,217 @@ const TRACEFLAG_Blocking		= 8;
  */
 const REP_RBLOCATION_ERROR_TOLERANCE_SQ = 16.0f;
 
+/** The set of Directions an actor can be moving **/
+enum EMoveDir
+{
+	MD_Stationary,
+	MD_Forward,
+	MD_Backward,
+	MD_Left,
+	MD_Right,
+	MD_Up,
+	MD_Down
+};
+
+var(Advanced) bool bLoadIfPhysXLevel0;
+var(Advanced) bool bLoadIfPhysXLevel1;
+var(Advanced) bool bLoadIfPhysXLevel2;
+
+// Flags.
+var			  const bool	bStatic;			// Does not move or change over time. Don't let L.D.s change this - screws up net play
+
+/** If this is True, all PrimitiveComponents of the actor are hidden.  If this is false, only PrimitiveComponents with HiddenGame=True are hidden. */
+var(Display) const bool	bHidden;
+
+var			  const	bool	bNoDelete;			// Cannot be deleted during play.
+var			  const	bool	bDeleteMe;			// About to be deleted.
+var transient const bool	bTicked;			// Actor has been updated.
+var const				bool    bOnlyOwnerSee;		// Only owner can see this actor.
+
+/**
+ * This is an early out bool so we do do not have to even call call virtual function InStasis().  So if this is true then it means
+ * we will call InStasis to see if we should actually "be in stasis".
+ * InStatis checks for: physics == PHYS_None or PHYS_Rotating AND has not been rendered in last 5 seconds.
+ **/
+var					bool	bStasis;
+var			  const	bool	bExtraStasis;
+
+var					bool	bWorldGeometry;		// Collision and Physics treats this actor as static world geometry
+/** Ignore Unreal collisions between PHYS_RigidBody pawns (vehicles/ragdolls) and this actor (only relevant if bIgnoreEncroachers is false) */
+var					bool	bIgnoreRigidBodyPawns;
+var					bool	bOrientOnSlope;		// when landing, orient base on slope of floor
+var			  const	bool	bIgnoreEncroachers;	// Ignore collisions between movers and this actor
+/** whether encroachers can push this Actor (only relevant if bIgnoreEncroachers is false and not an encroacher ourselves)
+ * if false, the encroacher gets EncroachingOn() called immediately instead of trying to safely move this actor first
+ */
+var bool bPushedByEncroachers;
+/** If TRUE, when an InterpActor (Mover) encroaches or runs into this Actor, it is destroyed, and will not stop the mover. */
+var bool bDestroyedByInterpActor;
+
+/** Whether to route BeginPlay even if the actor is static. */
+var			  const bool	bRouteBeginPlayEvenIfStatic;
+/** Used to determine when we stop moving, so we can update PreviousLocalToWorld to stop motion blurring. */
+var			  const	bool	bIsMoving;
+/**
+ *	If true (and is an encroacher) will do the encroachment check inside MoveActor even if there is no movement.
+ *	This is useful for objects that may change bounding box but not actually move.
+ */
+var					bool	bAlwaysEncroachCheck;
+/** whether this Actor may return an alternate location from GetTargetLocation() when bRequestAlternateLoc is true
+ * (used as an early out when tracing to those locations, etc)
+ */
+var bool bHasAlternateTargetLocation;
+
+var(Collision) bool bCanStepUpOn;
+
+// Networking flags
+var			  const	bool	bNetTemporary;				// Tear-off simulation in network play.
+var			  const	bool	bOnlyRelevantToOwner;			// this actor is only relevant to its owner. If this flag is changed during play, all non-owner channels would need to be explicitly closed.
+var transient				bool	bNetDirty;				// set when any attribute is assigned a value in unrealscript, reset when the actor is replicated
+var					bool	bAlwaysRelevant;			// Always relevant for network.
+var					bool	bReplicateInstigator;		// Replicate instigator to client (used by bNetTemporary projectiles).
+var					bool	bReplicateMovement;			// if true, replicate movement/location related properties
+var					bool	bSkipActorPropertyReplication; // if true, don't replicate actor class variables for this actor
+var					bool	bUpdateSimulatedPosition;	// if true, update velocity/location after initialization for simulated proxies
+var					bool	bTearOff;					// if true, this actor is no longer replicated to new clients, and
+														// is "torn off" (becomes a ROLE_Authority) on clients to which it was being replicated.
+var					bool	bOnlyDirtyReplication;		// if true, only replicate actor if bNetDirty is true - useful if no C++ changed attributes (such as physics)
+														// bOnlyDirtyReplication only used with bAlwaysRelevant actors
+
+/** Whether this actor will interact with fluid surfaces or not. */
+var(Physics)		bool	bAllowFluidSurfaceInteraction;
+
+
+/** Demo recording variables */
+var transient				bool	bDemoRecording;	/** set when we are currently replicating this Actor into a demo */
+var					bool	bDemoOwner;					// Demo recording driver owns this actor.
+var bool bForceDemoRelevant; /** force Actor to be relevant for demos (only works on dynamic actors) */
+
+/** Should replicate initial rotation.  This property should never be changed during execution, as the client and server rely on the default value of this property always being the same. */
+var const           bool    bNetInitialRotation;
+
+var					bool	bReplicateRigidBodyLocation;	// replicate Location property even when in PHYS_RigidBody
+var					bool	bKillDuringLevelTransition;	// If set, actor and its components are marked as pending kill during seamless map transitions
+/** whether we already exchanged Role/RemoteRole on the client, as removing then readding a streaming level
+ * causes all initialization to be performed again even though the actor may not have actually been reloaded
+ */
+var const				bool	bExchangedRoles;
+
+/** If true, texture streaming code iterates over all StaticMeshComponents found on this actor when building texture streaming information. */
+var(Advanced)				bool	bConsiderAllStaticMeshComponentsForStreaming;
+
+//debug
+var(Debug)					bool	 bDebug;	// Used to toggle debug logging
+
+// HUD
+/** IF true, may call PostRenderFor() even when this actor is not visible */
+var							bool	bPostRenderIfNotVisible;
+
+/** When set to TRUE will force this actor to immediately be considered for replication, instead of waiting for NetUpdateTime */
+var transient bool bForceNetUpdate;
+
+var bool bAutomaticPerformPhysics;
+
+var(Attachment) const bool bHardAttach;		// Uses 'hard' attachment code. bBlockActor must also be false.
+											// This actor cannot then move relative to base (setlocation etc.).
+											// Dont set while currently based on something!
+
+var(Attachment) bool bSnapAttach;
+
+var(Attachment) bool bIgnoreBaseRotation;	/** If true, this actor ignores the effects of changes in its base's rotation on its location and rotation */
+
+/** If TRUE, BaseSkelComponent is used as the shadow parent for this actor. */
+var(Attachment) bool bShadowParented;
+
+/** Determines whether or not adhesion code should attempt to adhere to this actor. **/
+var bool bCanBeAdheredTo;
+
+/** Determines whether or not friction code should attempt to friction to this actor. **/
+var bool bCanBeFrictionedTo;
+
+
+//-----------------------------------------------------------------------------
+// Display properties.
+
+// Advanced.
+var			  bool		bHurtEntry;				// keep HurtRadius from being reentrant
+var			  bool		bGameRelevant;			// Always relevant for game
+var const     bool		bMovable;				// Actor can be moved.
+var			  bool		bDestroyInPainVolume;	// destroy this actor if it enters a pain volume
+var			  bool		bCanBeDamaged;			// can take damage
+var			  bool		bShouldBaseAtStartup;	// if true, find base for this actor at level startup, if collides with world and PHYS_None or PHYS_Rotating
+var			  bool		bPendingDelete;			// set when actor is about to be deleted (since endstate and other functions called
+												// during deletion process before bDeleteMe is set).
+var			  bool		bCanTeleport;			// This actor can be teleported.
+var			  const	bool	bAlwaysTick;		// Update even when paused
+/** indicates that this Actor can dynamically block AI paths */
+var(Navigation) bool bBlocksNavigation;
+
+/** mirrored copy of CollisionComponent's BlockRigidBody for the Actor property window for LDs (so it's next to CollisionType)
+ * purely for editing convenience and not used at all by the physics code
+ */
+var(Collision) const transient bool BlockRigidBody;
+
+// Collision flags.
+var 			bool		bCollideWhenPlacing;	// This actor collides with the world when placing.
+var const	bool		bCollideActors;			// Collides with other actors.
+var		bool		bCollideWorld;			// Collides with the world.
+var(Collision)			bool		bCollideComplex;		// Ignore Simple Collision on Static Meshes, and collide per Poly.
+var			bool		bBlockActors;			// Blocks other nonplayer actors.
+var						bool		bProjTarget;			// Projectiles should potentially target this actor.
+var						bool		bBlocksTeleport;
+
+var bool bForceZeroExtentCollision;
+var bool bPlayerMovementCheck;
+var bool bIgnoreDynamic;
+
+/**
+ *	For encroachers, don't do the overlap check when they move. You will not get touch events for this actor moving, but it is much faster.
+ *	This is an optimisation for large numbers of PHYS_RigidBody actors for example.
+ */
+var(Collision)			bool		bNoEncroachCheck;
+
+/** If true, do a zero-extent trace each frame from old to new Location when in PHYS_RigidBody. If it hits the world (ie might be tunneling), call FellOutOfWorld. */
+var(Collision)			bool		bPhysRigidBodyOutOfWorldCheck;
+
+/** Set TRUE if a component is ever attached which is outside the world. OutsideWorldBounds will be called in Tick in this case. */
+var	const transient		bool		bComponentOutsideWorld;
+
+//-----------------------------------------------------------------------------
+// Physics.
+
+// Options.
+var			  bool        bBounce;           // Bounces when hits ground fast.
+var			  const bool  bJustTeleported;   // Used by engine physics - not valid for scripts.
+
+//-----------------------------------------------------------------------------
+// Networking.
+
+// Symmetric network flags, valid during replication only.
+var const bool bNetInitial;       // Initial network update.
+var const bool bNetOwner;         // Player owns this actor.
+
+//Editing flags
+var(Advanced) const bool  bHiddenEd;     // Is hidden during editing.
+var(Advanced) const bool  bHiddenEdGroup;// Is hidden by the group brower.
+var const bool bHiddenEdCustom; // custom visibility flag for game-specific editor modes; not used by base editor functionality
+var(Advanced) bool        bEdShouldSnap; // Snap to grid in editor.
+var transient const bool  bTempEditor;   // Internal UnrealEd.
+var(Collision) bool		  bPathColliding;// this actor should collide (if bWorldGeometry && bBlockActors is true) during path building (ignored if bStatic is true, as actor will always collide during path building)
+var transient bool		  bPathTemp;	 // Internal/path building
+var	bool				  bScriptInitialized; // set to prevent re-initializing of actors spawned during level startup
+var(Advanced) bool        bLockLocation; // Prevent the actor from being moved in the editor.
+/** always allow Kismet to modify this Actor, even if it's static and not networked (e.g. for server side only stuff) */
+var const bool bForceAllowKismetModification;
+
+var bool bIsPointOfInterest;
+var const bool bDonePostBeginPlay;
+var(Collision) bool bBatmanCanClimb;
+var(Gadget) bool bValidLineLauncherTarget;
+var(Gadget) bool bValidGelTarget;
+var bool bCurrentInvestigateHightlighted;
+var bool CachedInvestigateSightCheck;
+
 /**
  * Actor components.
  * These are not exposed by default to level designers for several reasons.
@@ -90,18 +301,41 @@ var(Movement) const enum EPhysics
 	PHYS_Unused
 } Physics;
 
-/** The set of Directions an actor can be moving **/
-enum EMoveDir
+// Net variables.
+enum ENetRole
 {
-	MD_Stationary,
-	MD_Forward,
-	MD_Backward,
-	MD_Left,
-	MD_Right,
-	MD_Up,
-	MD_Down
+	ROLE_None,              // No role at all.
+	ROLE_SimulatedProxy,	// Locally simulated proxy of this actor.
+	ROLE_AutonomousProxy,	// Locally autonomous proxy of this actor.
+	ROLE_Authority,			// Authoritative control over the actor.
 };
+var ENetRole RemoteRole, Role;
 
+//-----------------------------------------------------------------------------
+// Collision.
+
+/** enum for LDs to select collision options - sets Actor flags and that of our CollisionComponent via PostEditChange() */
+var(Collision) const transient enum ECollisionType
+{
+	COLLIDE_CustomDefault, // custom programmer set collison (PostEditChange() will restore collision to defaults when this is selected)
+	COLLIDE_NoCollision, // doesn't collide
+	COLLIDE_BlockAll, // blocks everything
+	COLLIDE_BlockWeapons, // only blocks zero extent things (usually weapons)
+	COLLIDE_TouchAll, // touches (doesn't block) everything
+	COLLIDE_TouchWeapons, // touches (doesn't block) only zero extent things
+	COLLIDE_BlockAllButWeapons, // only blocks non-zero extent things (Pawns, etc)
+	COLLIDE_TouchAllButWeapons, // touches (doesn't block) only non-zero extent things
+	COLLIDE_BlockWeaponsKickable // Same as BlockWeapons, but enables flags to be kicked by player physics
+} CollisionType;
+/** used when collision is changed via Kismet "Change Collision" action to set component flags on the CollisionComponent
+ * will not modify replicated Actor flags regardless of setting
+ */
+var transient ECollisionType ReplicatedCollisionType;
+
+/** The ticking group this actor belongs to */
+var const ETickingGroup TickGroup;
+
+var byte FramesTillInvestigateSightCheck;
 
 // Owner.
 var const Actor	Owner;			// Owner actor.
@@ -116,126 +350,6 @@ struct native TimerData
 	var bool			bPaused;
 };
 var const array<TimerData>			Timers;			// list of currently active timers
-
-// Flags.
-var			  const bool	bStatic;			// Does not move or change over time. Don't let L.D.s change this - screws up net play
-
-/** If this is True, all PrimitiveComponents of the actor are hidden.  If this is false, only PrimitiveComponents with HiddenGame=True are hidden. */
-var(Display) const bool	bHidden;
-
-var			  const	bool	bNoDelete;			// Cannot be deleted during play.
-var			  const	bool	bDeleteMe;			// About to be deleted.
-var transient const bool	bTicked;			// Actor has been updated.
-var const				bool    bOnlyOwnerSee;		// Only owner can see this actor.
-
-/**
- * This is an early out bool so we do do not have to even call call virtual function InStasis().  So if this is true then it means
- * we will call InStasis to see if we should actually "be in stasis".
- * InStatis checks for: physics == PHYS_None or PHYS_Rotating AND has not been rendered in last 5 seconds.
- **/
-var					bool	bStasis;
-
-var					bool	bWorldGeometry;		// Collision and Physics treats this actor as static world geometry
-/** Ignore Unreal collisions between PHYS_RigidBody pawns (vehicles/ragdolls) and this actor (only relevant if bIgnoreEncroachers is false) */
-var					bool	bIgnoreRigidBodyPawns;
-var					bool	bOrientOnSlope;		// when landing, orient base on slope of floor
-var			  const	bool	bIgnoreEncroachers;	// Ignore collisions between movers and this actor
-/** whether encroachers can push this Actor (only relevant if bIgnoreEncroachers is false and not an encroacher ourselves)
- * if false, the encroacher gets EncroachingOn() called immediately instead of trying to safely move this actor first
- */
-var bool bPushedByEncroachers;
-/** If TRUE, when an InterpActor (Mover) encroaches or runs into this Actor, it is destroyed, and will not stop the mover. */
-var bool bDestroyedByInterpActor;
-
-/** Whether to route BeginPlay even if the actor is static. */
-var			  const bool	bRouteBeginPlayEvenIfStatic;
-/** Used to determine when we stop moving, so we can update PreviousLocalToWorld to stop motion blurring. */
-var			  const	bool	bIsMoving;
-/**
- *	If true (and is an encroacher) will do the encroachment check inside MoveActor even if there is no movement.
- *	This is useful for objects that may change bounding box but not actually move.
- */
-var					bool	bAlwaysEncroachCheck;
-/** whether this Actor may return an alternate location from GetTargetLocation() when bRequestAlternateLoc is true
- * (used as an early out when tracing to those locations, etc)
- */
-var bool bHasAlternateTargetLocation;
-
-// Networking flags
-var			  const	bool	bNetTemporary;				// Tear-off simulation in network play.
-var			  const	bool	bOnlyRelevantToOwner;			// this actor is only relevant to its owner. If this flag is changed during play, all non-owner channels would need to be explicitly closed.
-var transient				bool	bNetDirty;				// set when any attribute is assigned a value in unrealscript, reset when the actor is replicated
-var					bool	bAlwaysRelevant;			// Always relevant for network.
-var					bool	bReplicateInstigator;		// Replicate instigator to client (used by bNetTemporary projectiles).
-var					bool	bReplicateMovement;			// if true, replicate movement/location related properties
-var					bool	bSkipActorPropertyReplication; // if true, don't replicate actor class variables for this actor
-var					bool	bUpdateSimulatedPosition;	// if true, update velocity/location after initialization for simulated proxies
-var					bool	bTearOff;					// if true, this actor is no longer replicated to new clients, and
-														// is "torn off" (becomes a ROLE_Authority) on clients to which it was being replicated.
-var					bool	bOnlyDirtyReplication;		// if true, only replicate actor if bNetDirty is true - useful if no C++ changed attributes (such as physics)
-														// bOnlyDirtyReplication only used with bAlwaysRelevant actors
-
-/** Whether this actor will interact with fluid surfaces or not. */
-var(Physics)		bool	bAllowFluidSurfaceInteraction;
-
-
-/** Demo recording variables */
-var transient				bool	bDemoRecording;	/** set when we are currently replicating this Actor into a demo */
-var					bool	bDemoOwner;					// Demo recording driver owns this actor.
-var bool bForceDemoRelevant; /** force Actor to be relevant for demos (only works on dynamic actors) */
-
-/** Should replicate initial rotation.  This property should never be changed during execution, as the client and server rely on the default value of this property always being the same. */
-var const           bool    bNetInitialRotation;
-
-var					bool	bReplicateRigidBodyLocation;	// replicate Location property even when in PHYS_RigidBody
-var					bool	bKillDuringLevelTransition;	// If set, actor and its components are marked as pending kill during seamless map transitions
-/** whether we already exchanged Role/RemoteRole on the client, as removing then readding a streaming level
- * causes all initialization to be performed again even though the actor may not have actually been reloaded
- */
-var const				bool	bExchangedRoles;
-
-/** If true, texture streaming code iterates over all StaticMeshComponents found on this actor when building texture streaming information. */
-var(Advanced)				bool	bConsiderAllStaticMeshComponentsForStreaming;
-
-//debug
-var(Debug)					bool	 bDebug;	// Used to toggle debug logging
-
-// HUD
-/** IF true, may call PostRenderFor() even when this actor is not visible */
-var							bool	bPostRenderIfNotVisible;
-
-// Net variables.
-enum ENetRole
-{
-	ROLE_None,              // No role at all.
-	ROLE_SimulatedProxy,	// Locally simulated proxy of this actor.
-	ROLE_AutonomousProxy,	// Locally autonomous proxy of this actor.
-	ROLE_Authority,			// Authoritative control over the actor.
-};
-var ENetRole RemoteRole, Role;
-
-/** Internal - used by UWorld::ServerTickClients() */
-var const transient int		NetTag;
-
-/** Next time this actor will be considered for replication, set by SetNetUpdateTime() */
-var const float NetUpdateTime;
-
-/** How often (per second) this actor will be considered for replication, used to determine NetUpdateTime */
-var float NetUpdateFrequency;
-
-/** Priority for this actor when checking for replication in a low bandwidth or saturated situation, higher priority means it is more likely to replicate */
-var float NetPriority;
-
-/** When set to TRUE will force this actor to immediately be considered for replication, instead of waiting for NetUpdateTime */
-var transient bool bForceNetUpdate;
-
-/** Last time this actor was updated for replication via NetUpdateTime or bForceNetUpdate
- * @warning: internal net driver time, not related to WorldInfo.TimeSeconds
- */
-var const transient float LastNetUpdateTime;
-
-/** Is this actor still pending a full net update due to clients that weren't able to replicate the actor at the time of LastNetUpdateTime */
-var const transient bool bPendingNetUpdate;
 
 
 var Pawn                  Instigator;    // Pawn responsible for damage caused by this actor.
@@ -329,96 +443,10 @@ var const array<Actor>  Attached;			// array of actors attached to this actor.
 var const vector		RelativeLocation;	// location relative to base/bone (valid if base exists)
 var const rotator		RelativeRotation;	// rotation relative to base/bone (valid if base exists)
 
-var(Attachment) const bool bHardAttach;		// Uses 'hard' attachment code. bBlockActor must also be false.
-											// This actor cannot then move relative to base (setlocation etc.).
-											// Dont set while currently based on something!
-
-var(Attachment) bool bIgnoreBaseRotation;	/** If true, this actor ignores the effects of changes in its base's rotation on its location and rotation */
-
-/** If TRUE, BaseSkelComponent is used as the shadow parent for this actor. */
-var(Attachment) bool bShadowParented;
-
-/** Determines whether or not adhesion code should attempt to adhere to this actor. **/
-var bool bCanBeAdheredTo;
-
-/** Determines whether or not friction code should attempt to friction to this actor. **/
-var bool bCanBeFrictionedTo;
-
-
-//-----------------------------------------------------------------------------
-// Display properties.
-
-// Advanced.
-var			  bool		bHurtEntry;				// keep HurtRadius from being reentrant
-var			  bool		bGameRelevant;			// Always relevant for game
-var const     bool		bMovable;				// Actor can be moved.
-var			  bool		bDestroyInPainVolume;	// destroy this actor if it enters a pain volume
-var			  bool		bCanBeDamaged;			// can take damage
-var			  bool		bShouldBaseAtStartup;	// if true, find base for this actor at level startup, if collides with world and PHYS_None or PHYS_Rotating
-var			  bool		bPendingDelete;			// set when actor is about to be deleted (since endstate and other functions called
-												// during deletion process before bDeleteMe is set).
-var			  bool		bCanTeleport;			// This actor can be teleported.
-var			  const	bool	bAlwaysTick;		// Update even when paused
-/** indicates that this Actor can dynamically block AI paths */
-var(Navigation) bool bBlocksNavigation;
-
-//-----------------------------------------------------------------------------
-// Collision.
-
 // Collision primitive.
 var(Collision) editconst PrimitiveComponent CollisionComponent;
 
 var				native int	  		OverlapTag;
-
-/** enum for LDs to select collision options - sets Actor flags and that of our CollisionComponent via PostEditChange() */
-var(Collision) const transient enum ECollisionType
-{
-	COLLIDE_CustomDefault, // custom programmer set collison (PostEditChange() will restore collision to defaults when this is selected)
-	COLLIDE_NoCollision, // doesn't collide
-	COLLIDE_BlockAll, // blocks everything
-	COLLIDE_BlockWeapons, // only blocks zero extent things (usually weapons)
-	COLLIDE_TouchAll, // touches (doesn't block) everything
-	COLLIDE_TouchWeapons, // touches (doesn't block) only zero extent things
-	COLLIDE_BlockAllButWeapons, // only blocks non-zero extent things (Pawns, etc)
-	COLLIDE_TouchAllButWeapons, // touches (doesn't block) only non-zero extent things
-	COLLIDE_BlockWeaponsKickable // Same as BlockWeapons, but enables flags to be kicked by player physics
-} CollisionType;
-/** used when collision is changed via Kismet "Change Collision" action to set component flags on the CollisionComponent
- * will not modify replicated Actor flags regardless of setting
- */
-var transient ECollisionType ReplicatedCollisionType;
-/** mirrored copy of CollisionComponent's BlockRigidBody for the Actor property window for LDs (so it's next to CollisionType)
- * purely for editing convenience and not used at all by the physics code
- */
-var(Collision) const transient bool BlockRigidBody;
-
-// Collision flags.
-var 			bool		bCollideWhenPlacing;	// This actor collides with the world when placing.
-var const	bool		bCollideActors;			// Collides with other actors.
-var		bool		bCollideWorld;			// Collides with the world.
-var(Collision)			bool		bCollideComplex;		// Ignore Simple Collision on Static Meshes, and collide per Poly.
-var			bool		bBlockActors;			// Blocks other nonplayer actors.
-var						bool		bProjTarget;			// Projectiles should potentially target this actor.
-var						bool		bBlocksTeleport;
-
-/**
- *	For encroachers, don't do the overlap check when they move. You will not get touch events for this actor moving, but it is much faster.
- *	This is an optimisation for large numbers of PHYS_RigidBody actors for example.
- */
-var(Collision)			bool		bNoEncroachCheck;
-
-/** If true, do a zero-extent trace each frame from old to new Location when in PHYS_RigidBody. If it hits the world (ie might be tunneling), call FellOutOfWorld. */
-var(Collision)			bool		bPhysRigidBodyOutOfWorldCheck;
-
-/** Set TRUE if a component is ever attached which is outside the world. OutsideWorldBounds will be called in Tick in this case. */
-var	const transient		bool		bComponentOutsideWorld;
-
-//-----------------------------------------------------------------------------
-// Physics.
-
-// Options.
-var			  bool        bBounce;           // Bounces when hits ground fast.
-var			  const bool  bJustTeleported;   // Used by engine physics - not valid for scripts.
 
 // Physics properties.
 var(Movement) rotator	  RotationRate;		// Change in rotation per second.
@@ -496,28 +524,6 @@ struct native PhysEffectInfo
 // endif
 
 //-----------------------------------------------------------------------------
-// Networking.
-
-// Symmetric network flags, valid during replication only.
-var const bool bNetInitial;       // Initial network update.
-var const bool bNetOwner;         // Player owns this actor.
-
-//Editing flags
-var(Advanced) const bool  bHiddenEd;     // Is hidden during editing.
-var(Advanced) const bool  bHiddenEdGroup;// Is hidden by the group brower.
-var const bool bHiddenEdCustom; // custom visibility flag for game-specific editor modes; not used by base editor functionality
-var(Advanced) bool        bEdShouldSnap; // Snap to grid in editor.
-var transient const bool  bTempEditor;   // Internal UnrealEd.
-var(Collision) bool		  bPathColliding;// this actor should collide (if bWorldGeometry && bBlockActors is true) during path building (ignored if bStatic is true, as actor will always collide during path building)
-var transient bool		  bPathTemp;	 // Internal/path building
-var	bool				  bScriptInitialized; // set to prevent re-initializing of actors spawned during level startup
-var(Advanced) bool        bLockLocation; // Prevent the actor from being moved in the editor.
-/** always allow Kismet to modify this Actor, even if it's static and not networked (e.g. for server side only stuff) */
-var const bool bForceAllowKismetModification;
-
-var class<LocalMessage> MessageClass;
-
-//-----------------------------------------------------------------------------
 // Enums.
 
 // Traveling from server to server.
@@ -541,9 +547,6 @@ enum EDoubleClickDir
 	DCLICK_Done
 };
 
-/** The ticking group this actor belongs to */
-var const ETickingGroup TickGroup;
-
 //-----------------------------------------------------------------------------
 // Kismet
 
@@ -555,6 +558,19 @@ var const array<SequenceEvent> GeneratedEvents;
 
 /** List of all latent actions currently active on this actor */
 var array<SeqAct_Latent> LatentActions;
+
+struct native InvestigationData
+{
+    var() init string InvestigationInfoTitle;
+    var() init string InvestigationInfo;
+    var() SoundCue BatmanThought;
+    var() name GlobalFlagCheck;
+    var() bool bInvertFlag;
+    var() bool bWarningFlag;
+};
+
+var(Investigate) float InvestigationMaxDistance;
+var(Investigate) array<InvestigationData> InvestigationDataArray;
 
 /**
  * Struct used for cross level actor references
@@ -2679,7 +2695,6 @@ event ForceNetRelevant()
 	{
 		RemoteRole = ROLE_SimulatedProxy;
 		bAlwaysRelevant = true;
-		NetUpdateFrequency = 0.1;
 	}
 	bForceNetUpdate = TRUE;
 }
@@ -2718,9 +2733,6 @@ simulated event ShutDown()
 		SetForcedInitialReplicatedProperty(Property'Engine.Actor.Physics', (Physics == default.Physics));
 	}
 
-	// we can't set bTearOff here as that will prevent newly joining clients from receiving the state changes
-	// so we just set a really low NetUpdateFrequency
-	NetUpdateFrequency = 0.1;
 	// force immediate network update of these changes
 	bForceNetUpdate = TRUE;
 }
@@ -3363,11 +3375,8 @@ defaultproperties
 	bJustTeleported=true
 	Role=ROLE_Authority
 	RemoteRole=ROLE_None
-	NetPriority=+00001.000000
 	bMovable=true
 	InitialState=None
-	NetUpdateFrequency=100
-	MessageClass=class'LocalMessage'
 	bHiddenEdGroup=false
 	bReplicateMovement=true
 	bRouteBeginPlayEvenIfStatic=TRUE

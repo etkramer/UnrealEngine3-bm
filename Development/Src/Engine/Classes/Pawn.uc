@@ -989,8 +989,6 @@ simulated function NotifyTeamChanged();
 function PossessedBy(Controller C, bool bVehicleTransition)
 {
 	Controller			= C;
-	NetPriority			= 3;
-	NetUpdateFrequency	= 100;
 	bForceNetUpdate = TRUE;
 
 	if ( C.PlayerReplicationInfo != None )
@@ -1042,8 +1040,6 @@ function UpdateControllerOnPossess(bool bVehicleTransition)
 function UnPossessed()
 {
 	bForceNetUpdate = TRUE;
-	if ( DrivenVehicle != None )
-		NetUpdateFrequency = 5;
 
 	PlayerReplicationInfo = None;
 	SetOwner(None);
@@ -2322,7 +2318,6 @@ function bool Died(Controller Killer, class<DamageType> DamageType, vector HitLo
 	{
 		PlayerController(Controller).ForceDeathUpdate();
 	}
-	NetUpdateFrequency = Default.NetUpdateFrequency;
 	PlayDying(DamageType, HitLocation);
 	return TRUE;
 }
@@ -3294,7 +3289,6 @@ defaultproperties
 
 	// Network
 	RemoteRole=ROLE_SimulatedProxy
-	NetPriority=+00002.000000
 	bUpdateSimulatedPosition=true
 	bStasis=false
 

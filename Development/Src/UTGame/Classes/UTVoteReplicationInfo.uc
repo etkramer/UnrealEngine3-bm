@@ -273,7 +273,6 @@ defaultproperties
  	TickGroup=TG_DuringAsyncWork
 	RemoteRole=ROLE_SimulatedProxy
 	bAlwaysRelevant=True
-    NetUpdateFrequency=1
 
     MyCurrnetVoteID=-1
 

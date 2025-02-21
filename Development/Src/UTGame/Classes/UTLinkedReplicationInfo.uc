@@ -22,5 +22,4 @@ replication
 
 defaultproperties
 {
-	NetUpdateFrequency=1
 }

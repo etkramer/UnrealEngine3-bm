@@ -557,7 +557,6 @@ State Disabled
 defaultproperties
 {
 	//PickupSound=Sound'NewWeaponSounds.WeaponsLocker_01'
-	NetUpdateFrequency=1
 
 	//MessageClass=class'UTPickupMessage'
 	bRotatingPickup=false

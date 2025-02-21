@@ -14978,12 +14978,7 @@ reliable server event ServerNotifyClientLoadedCheckpoint()
 			{
 				if (A.RemoteRole != ROLE_None)
 				{
-					if (A.NetUpdateFrequency < 1.0)
-					{
-						A.bForceNetUpdate = true;
-					}
-					// force a full update for matinees
-					else if (A.IsA('MatineeActor'))
+					if (A.IsA('MatineeActor'))
 					{
 						A.bNetDirty = true;
 					}
@@ -15740,15 +15735,6 @@ reliable server function ServerCheckpointResetComplete()
 
 	if (!IsLocalPlayerController())
 	{
-		// force networking update
-		foreach AllActors(class'Actor', A)
-		{
-			if (A.NetUpdateFrequency < 1.0 && !A.bOnlyRelevantToOwner)
-			{
-				A.SetNetUpdateTime(FMin(A.NetUpdateTime, WorldInfo.TimeSeconds + 0.2 * FRand()));
-			}
-		}
-
 		//@HACK: reselect weapon if it's not in the persistent level, since the replication might have failed
 		//	due to client not having the level loaded yet
 		//	need to make selecting initial weapon not rely on RPCs...

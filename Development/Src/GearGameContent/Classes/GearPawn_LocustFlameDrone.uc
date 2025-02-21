@@ -91,7 +91,6 @@ simulated protected function InitMICPawnMaterial()
 	{
 		// Attach flame tanks
 		FlameTanks = Spawn(class'GDO_FlameDroneTank',self,,Location,,,true);
-		FlameTanks.NetPriority = NetPriority;
 		FlameTanks.Init(self);
 		FlameTanks.SetHardAttach(true);
 		FlameTanks.SetBase(self,,Mesh,'Flametanks');

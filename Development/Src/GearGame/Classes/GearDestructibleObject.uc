@@ -703,7 +703,6 @@ defaultproperties
 	bSkipActorPropertyReplication=false
 	bUpdateSimulatedPosition=true
 	bReplicateMovement=true
-	NetUpdateFrequency=1
 
 	bCollideActors=true
 	bNoEncroachCheck=true

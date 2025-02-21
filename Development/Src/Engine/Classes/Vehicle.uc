@@ -360,8 +360,6 @@ function PossessedBy(Controller C, bool bVehicleTransition)
 	super.PossessedBy( C, bVehicleTransition );
 
 	EntryAnnouncement(C);
-	NetPriority = 3;
-	NetUpdateFrequency = 100;
 	ThrottleTime = WorldInfo.TimeSeconds;
 	OnlySteeringStartTime = WorldInfo.TimeSeconds;
 }
@@ -656,9 +654,7 @@ function bool TryExitPos(Pawn ExitingDriver, vector ExitPos, bool bMustFindGroun
 
 function UnPossessed()
 {
-	NetPriority = default.NetPriority;		// restore original netpriority changed when possessing
 	bForceNetUpdate = TRUE;
-	NetUpdateFrequency	= 8;
 
 	super.UnPossessed();
 }

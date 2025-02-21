@@ -436,7 +436,6 @@ defaultproperties
 
 	bAlwaysRelevant=TRUE
 	bReplicateMovement=TRUE
-    NetUpdateFrequency=1
 
 	bStatic=FALSE
 	bMovable=TRUE

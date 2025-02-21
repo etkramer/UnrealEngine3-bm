@@ -1908,7 +1908,6 @@ function Killed( Controller Killer, Controller KilledPlayer, Pawn KilledPawn, cl
     if( KilledPlayer != None && KilledPlayer.bIsPlayer )
 	{
 		KilledPlayer.PlayerReplicationInfo.IncrementDeaths();
-		KilledPlayer.PlayerReplicationInfo.SetNetUpdateTime(FMin(KilledPlayer.PlayerReplicationInfo.NetUpdateTime, WorldInfo.TimeSeconds + 0.3 * FRand()));
 		BroadcastDeathMessage(Killer, KilledPlayer, damageType);
 	}
 

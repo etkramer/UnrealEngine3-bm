@@ -759,36 +759,7 @@ static BYTE					SavedReplicatedCollisionType;
 */
 FLOAT AActor::GetNetPriority(const FVector& ViewPos, const FVector& ViewDir, APlayerController* Viewer, UActorChannel* InChannel, FLOAT Time, UBOOL bLowBandwidth)
 {
-	if ( Instigator && (Instigator == Viewer->Pawn) )
-		Time *= 4.f; 
-	else if ( !bHidden )
-	{
-		FVector Dir = Location - ViewPos;
-		FLOAT DistSq = Dir.SizeSquared();
-		if ( bLowBandwidth )
-		{
-			if ( (ViewDir | Dir) < 0.f )
-			{
-				if ( DistSq > NEARSIGHTTHRESHOLDSQUARED )
-					Time *= 0.2f;
-				else if ( DistSq > CLOSEPROXIMITYSQUARED )
-					Time *= 0.5f;
-			}
-			if ( DistSq > MEDSIGHTTHRESHOLDSQUARED )
-				Time *= 0.35f;
-			else if ( Base && (Base == Viewer->Pawn) )
-				Time *= 3.f;
-		}
-		else if ( (ViewDir | Dir) < 0.f )
-		{
-			if ( DistSq > NEARSIGHTTHRESHOLDSQUARED )
-				Time *= 0.3f;
-			else if ( DistSq > CLOSEPROXIMITYSQUARED )
-				Time *= 0.5f;
-		}
-	}
-
-	return NetPriority * Time;
+	return 1;
 }
 
 //
@@ -3485,7 +3456,6 @@ UBOOL AActor::IsRelevancyOwnerFor(AActor* ReplicatedActor, AActor* ActorOwner)
 
 void AActor::SetNetUpdateTime(FLOAT NewUpdateTime)
 {
-	NetUpdateTime = NewUpdateTime;
 }
 
 /** adds/removes a property from a list of properties that will always be replicated when this Actor is bNetInitial, even if the code thinks

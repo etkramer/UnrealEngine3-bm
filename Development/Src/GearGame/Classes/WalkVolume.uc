@@ -51,6 +51,5 @@ defaultproperties
 {
 	bActive=TRUE
 	RemoteRole=ROLE_SimulatedProxy
-	NetUpdateFrequency=1.0
 	bAlwaysRelevant=true
 }

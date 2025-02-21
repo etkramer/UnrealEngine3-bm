@@ -433,7 +433,6 @@ defaultproperties
 {
 	bHome=True
 	bStatic=False
-	NetPriority=+00003.000000
 	bCollideActors=true
 	bUseTeamColorForIcon=true
 

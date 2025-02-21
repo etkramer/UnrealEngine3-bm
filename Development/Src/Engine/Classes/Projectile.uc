@@ -311,7 +311,6 @@ defaultproperties
 	bReplicateInstigator=true
 	Physics=PHYS_Projectile
 	LifeSpan=+0014.000000
-	NetPriority=+00002.500000
 	MyDamageType=class'DamageType'
 	RemoteRole=ROLE_SimulatedProxy
 	NetCullDistanceSquared=+400000000.0

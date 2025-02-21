@@ -27,9 +27,7 @@ IMPLEMENT_CLASS(UCheatManager);
 */
 FLOAT APlayerController::GetNetPriority(const FVector& ViewPos, const FVector& ViewDir, APlayerController* Viewer, UActorChannel* InChannel, FLOAT Time, UBOOL bLowBandwidth)
 {
-	if ( Viewer == this )
-		Time *= 4.f;
-	return NetPriority * Time;
+	return 1;
 }
 
 /**

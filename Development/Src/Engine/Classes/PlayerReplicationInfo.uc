@@ -849,7 +849,6 @@ defaultproperties
 
 	RemoteRole=ROLE_SimulatedProxy
 	bAlwaysRelevant=True
-    NetUpdateFrequency=1
 	GameMessageClass=class'GameMessage'
 	SplitscreenIndex=INDEX_NONE
 

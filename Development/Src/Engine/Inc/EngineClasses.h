@@ -56,17 +56,6 @@ enum ENetRole
     ROLE_Authority          =3,
     ROLE_MAX                =4,
 };
-enum EMoveDir
-{
-    MD_Stationary           =0,
-    MD_Forward              =1,
-    MD_Backward             =2,
-    MD_Left                 =3,
-    MD_Right                =4,
-    MD_Up                   =5,
-    MD_Down                 =6,
-    MD_MAX                  =7,
-};
 enum EPhysics
 {
     PHYS_None               =0,
@@ -83,6 +72,17 @@ enum EPhysics
     PHYS_SoftBody           =11,
     PHYS_Unused             =12,
     PHYS_MAX                =13,
+};
+enum EMoveDir
+{
+    MD_Stationary           =0,
+    MD_Forward              =1,
+    MD_Backward             =2,
+    MD_Left                 =3,
+    MD_Right                =4,
+    MD_Up                   =5,
+    MD_Down                 =6,
+    MD_MAX                  =7,
 };
 enum ECsgOper
 {
@@ -1170,6 +1170,23 @@ struct FPhysEffectInfo
     }
 };
 
+struct FInvestigationData
+{
+    FString InvestigationInfoTitle;
+    FString InvestigationInfo;
+    class USoundCue* BatmanThought;
+    FName GlobalFlagCheck;
+    BITFIELD bInvertFlag:1;
+    BITFIELD bWarningFlag:1;
+
+    /** Constructors */
+    FInvestigationData() {}
+    FInvestigationData(EEventParm)
+    {
+        appMemzero(this, sizeof(FInvestigationData));
+    }
+};
+
 struct FActorReference
 {
     class AActor* Actor;
@@ -1782,24 +1799,9 @@ class AActor : public UObject
 {
 public:
     //## BEGIN PROPS Actor
-    TArrayNoInit<class UActorComponent*> Components;
-    TArrayNoInit<class UActorComponent*> AllComponents;
-    FVector Location;
-    FRotator Rotation;
-    FLOAT DrawScale;
-    FVector DrawScale3D;
-    FVector PrePivot;
-    FRenderCommandFence DetachFence;
-    FLOAT CustomTimeDilation;
-    BYTE Physics;
-    BYTE RemoteRole;
-    BYTE Role;
-    BYTE CollisionType;
-    BYTE ReplicatedCollisionType;
-    BYTE TickGroup;
-    class AActor* Owner;
-    class AActor* Base;
-    TArrayNoInit<struct FTimerData> Timers;
+    BITFIELD bLoadIfPhysXLevel0:1;
+    BITFIELD bLoadIfPhysXLevel1:1;
+    BITFIELD bLoadIfPhysXLevel2:1;
     BITFIELD bStatic:1;
     BITFIELD bHidden:1;
     BITFIELD bNoDelete:1;
@@ -1807,6 +1809,7 @@ public:
     BITFIELD bTicked:1;
     BITFIELD bOnlyOwnerSee:1;
     BITFIELD bStasis:1;
+    BITFIELD bExtraStasis:1;
     BITFIELD bWorldGeometry:1;
     BITFIELD bIgnoreRigidBodyPawns:1;
     BITFIELD bOrientOnSlope:1;
@@ -1817,6 +1820,7 @@ public:
     BITFIELD bIsMoving:1;
     BITFIELD bAlwaysEncroachCheck:1;
     BITFIELD bHasAlternateTargetLocation:1;
+    BITFIELD bCanStepUpOn:1;
     BITFIELD bNetTemporary:1;
     BITFIELD bOnlyRelevantToOwner:1;
     BITFIELD bNetDirty:1;
@@ -1839,8 +1843,9 @@ public:
     BITFIELD bDebug:1;
     BITFIELD bPostRenderIfNotVisible:1;
     BITFIELD bForceNetUpdate:1;
-    BITFIELD bPendingNetUpdate:1;
+    BITFIELD bAutomaticPerformPhysics:1;
     BITFIELD bHardAttach:1;
+    BITFIELD bSnapAttach:1;
     BITFIELD bIgnoreBaseRotation:1;
     BITFIELD bShadowParented:1;
     BITFIELD bCanBeAdheredTo:1;
@@ -1863,6 +1868,9 @@ public:
     BITFIELD bBlockActors:1;
     BITFIELD bProjTarget:1;
     BITFIELD bBlocksTeleport:1;
+    BITFIELD bForceZeroExtentCollision:1;
+    BITFIELD bPlayerMovementCheck:1;
+    BITFIELD bIgnoreDynamic:1;
     BITFIELD bNoEncroachCheck:1;
     BITFIELD bPhysRigidBodyOutOfWorldCheck:1;
     BITFIELD bComponentOutsideWorld:1;
@@ -1880,11 +1888,32 @@ public:
     BITFIELD bScriptInitialized:1;
     BITFIELD bLockLocation:1;
     BITFIELD bForceAllowKismetModification:1;
-    INT NetTag;
-    FLOAT NetUpdateTime;
-    FLOAT NetUpdateFrequency;
-    FLOAT NetPriority;
-    FLOAT LastNetUpdateTime;
+    BITFIELD bIsPointOfInterest:1;
+    BITFIELD bDonePostBeginPlay:1;
+    BITFIELD bBatmanCanClimb:1;
+    BITFIELD bValidLineLauncherTarget:1;
+    BITFIELD bValidGelTarget:1;
+    BITFIELD bCurrentInvestigateHightlighted:1;
+    BITFIELD CachedInvestigateSightCheck:1;
+    TArrayNoInit<class UActorComponent*> Components;
+    TArrayNoInit<class UActorComponent*> AllComponents;
+    FVector Location;
+    FRotator Rotation;
+    FLOAT DrawScale;
+    FVector DrawScale3D;
+    FVector PrePivot;
+    FRenderCommandFence DetachFence;
+    FLOAT CustomTimeDilation;
+    BYTE Physics;
+    BYTE RemoteRole;
+    BYTE Role;
+    BYTE CollisionType;
+    BYTE ReplicatedCollisionType;
+    BYTE TickGroup;
+    BYTE FramesTillInvestigateSightCheck;
+    class AActor* Owner;
+    class AActor* Base;
+    TArrayNoInit<struct FTimerData> Timers;
     class APawn* Instigator;
     class AWorldInfo* WorldInfo;
     FLOAT LifeSpan;
@@ -1911,10 +1940,11 @@ public:
     FRotator RotationRate;
     FRotator DesiredRotation;
     class AActor* PendingTouch;
-    class UClass* MessageClass;
     TArrayNoInit<class UClass*> SupportedEvents;
     TArrayNoInit<class USequenceEvent*> GeneratedEvents;
     TArrayNoInit<class USeqAct_Latent*> LatentActions;
+    FLOAT InvestigationMaxDistance;
+    TArrayNoInit<struct FInvestigationData> InvestigationDataArray;
     //## END PROPS Actor
 
     virtual void ForceUpdateComponents(UBOOL bCollisionUpdate=FALSE,UBOOL bTransformOnly=TRUE);
@@ -22910,7 +22940,7 @@ IMPLEMENT_NATIVE_HANDLER(Engine,AWorldInfo);
 
 #ifdef VERIFY_CLASS_SIZES
 VERIFY_CLASS_OFFSET_NODIE(A,Actor,Components)
-VERIFY_CLASS_OFFSET_NODIE(A,Actor,LatentActions)
+VERIFY_CLASS_OFFSET_NODIE(A,Actor,InvestigationDataArray)
 VERIFY_CLASS_SIZE_NODIE(AActor)
 VERIFY_CLASS_OFFSET_NODIE(U,ActorComponent,Scene)
 VERIFY_CLASS_OFFSET_NODIE(U,ActorComponent,Owner)

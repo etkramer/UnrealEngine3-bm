@@ -656,7 +656,6 @@ defaultproperties
 	bOnlyDirtyReplication=true
 	bMustBeReachable=true
 	bFirstObjective=true
-	NetUpdateFrequency=1
 	DefenderTeamIndex=2
 
 	ControlColor(0)=(R=1,G=0,B=0,A=1)

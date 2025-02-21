@@ -105,8 +105,6 @@ event Landed(Vector HitNormal, Actor FloorActor)
 	// force full net update
 	bForceNetUpdate = TRUE;
 	bNetDirty = true;
-	// reduce frequency since the pickup isn't moving anymore
-	NetUpdateFrequency = 3;
 
 	AddToNavigation();
 }
@@ -249,10 +247,8 @@ defaultproperties
 
 
 	bOnlyDirtyReplication=true
-	NetUpdateFrequency=8
 	RemoteRole=ROLE_SimulatedProxy
 	bHidden=false
-	NetPriority=+1.4
 	bCollideActors=true
 	bCollideWorld=true
 	RotationRate=(Yaw=5000)

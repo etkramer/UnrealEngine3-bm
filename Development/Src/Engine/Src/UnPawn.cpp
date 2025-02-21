@@ -2694,48 +2694,7 @@ UBOOL APawn::Pick3DWallAdjust(FVector WallHitNormal, AActor* HitActor)
 */
 FLOAT APawn::GetNetPriority(const FVector& ViewPos, const FVector& ViewDir, APlayerController* Viewer, UActorChannel* InChannel, FLOAT Time, UBOOL bLowBandwidth)
 {
-	if ( this == Viewer->Pawn )
-		Time *= 4.f;
-	else if ( !bHidden )
-	{
-		FVector Dir = Location - ViewPos;
-		FLOAT DistSq = Dir.SizeSquared();
-		if ( bLowBandwidth )
-		{
-			UBOOL bIsBehindViewer = false;
-			// prioritize projectiles and pawns in actual view more 
-			if ( (ViewDir | Dir) < 0.f )
-			{
-				bIsBehindViewer = true;
-				if ( DistSq > NEARSIGHTTHRESHOLDSQUARED )
-					Time *= 0.2f;
-				else if ( DistSq > CLOSEPROXIMITYSQUARED )
-					Time *= 0.5f;
-			}
-			if ( !bIsBehindViewer )
-			{
-				Dir = Dir.SafeNormal();
-				if ( (ViewDir | Dir) > 0.7f )
-					Time *= 2.5f;
-			}
-			else if ( DrivenVehicle && (DrivenVehicle->Controller == Viewer) )
-			{
-				Time *= 2.5f;
-			}
-			if (DistSq > MEDSIGHTTHRESHOLDSQUARED)
-			{
-				Time *= 0.5f;
-			}
-		}
-		else if ( (ViewDir | Dir) < 0.f )
-		{
-			if ( DistSq > NEARSIGHTTHRESHOLDSQUARED )
-				Time *= 0.3f;
-			else if ( DistSq > CLOSEPROXIMITYSQUARED )
-				Time *= 0.5f;
-		}
-	}
-	return NetPriority * Time;
+	return 1;
 }
 
 /** GetNetPriority()
@@ -2746,42 +2705,7 @@ FLOAT APawn::GetNetPriority(const FVector& ViewPos, const FVector& ViewDir, APla
 */
 FLOAT AProjectile::GetNetPriority(const FVector& ViewPos, const FVector& ViewDir, APlayerController* Viewer, UActorChannel* InChannel, FLOAT Time, UBOOL bLowBandwidth)
 {
-	if ( Instigator && (Instigator == Viewer->Pawn) )
-		Time *= 4.f; 
-	else if ( !bHidden )
-	{
-		FVector Dir = Location - ViewPos;
-		FLOAT DistSq = Dir.SizeSquared();
-		if ( bLowBandwidth )
-		{
-			UBOOL bIsBehindViewer = false;
-			if ( (ViewDir | Dir) < 0.f )
-			{
-				bIsBehindViewer = true;
-				if ( DistSq > NEARSIGHTTHRESHOLDSQUARED )
-					Time *= 0.2f;
-				else if ( DistSq > CLOSEPROXIMITYSQUARED )
-					Time *= 0.5f;
-			}
-			if ( !bIsBehindViewer )
-			{
-				Dir = Dir.SafeNormal();
-				if ( (ViewDir | Dir) > 0.7f )
-					Time *= 2.5f;
-			}
-			if ( DistSq > MEDSIGHTTHRESHOLDSQUARED )
-				Time *= 0.2f;
-		}
-		else if ( (ViewDir | Dir) < 0.f )
-		{
-			if ( DistSq > NEARSIGHTTHRESHOLDSQUARED )
-				Time *= 0.3f;
-			else if ( DistSq > CLOSEPROXIMITYSQUARED )
-				Time *= 0.5f;
-		}
-	}
-
-	return NetPriority * Time;
+	return 1;
 }
 
 UBOOL APawn::SharingVehicleWith(APawn *P)

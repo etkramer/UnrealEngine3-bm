@@ -461,6 +461,5 @@ defaultproperties
 	bBlockActors=false
 	bIgnoreEncroachers=true
 	bHidden=false
-	NetUpdateFrequency=1.0
 	SupportedEvents.Add(class'SeqEvent_PickupStatusChange')
 }

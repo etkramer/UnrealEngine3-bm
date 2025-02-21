@@ -82,7 +82,6 @@ defaultproperties
 	bUpdateSimulatedPosition=false
 	bReplicateMovement=false
 	bSkipActorPropertyReplication=true
-	NetUpdateFrequency=0.1
 	bAlwaysRelevant=true
 	bNoDelete=true
 }

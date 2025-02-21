@@ -98,7 +98,6 @@ simulated function PostBeginPlay()
 				Driver.SetHardAttach(TRUE);
 				Driver.SetBase(Self,, Mesh, 'Driver');
 				Driver.bCollideWorld = FALSE;
-				Driver.NetPriority -= 0.1; // try to get us replicated first to minimize ordering issues
 
 				DoDriverAttachment(Driver);
 

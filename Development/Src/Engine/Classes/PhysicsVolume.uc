@@ -254,7 +254,6 @@ defaultproperties
 	bAlwaysRelevant=true
 	bOnlyDirtyReplication=true
     GroundFriction=+00008.000000
-	NetUpdateFrequency=0.1
 	bSkipActorPropertyReplication=true
 	DamageType=class'Engine.DamageType'
 	bEntryPain=true

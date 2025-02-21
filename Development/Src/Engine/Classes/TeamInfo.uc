@@ -167,6 +167,5 @@ defaultproperties
 	TickGroup=TG_DuringAsyncWork
 
 	TeamIndex=-1					// can't be zero, otherwise the property will not be replicated and the notify will not fire
-	NetUpdateFrequency=2
 	TeamColor=(r=255,g=64,b=64,a=255)
 }

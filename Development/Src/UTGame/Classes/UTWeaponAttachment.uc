@@ -729,7 +729,6 @@ defaultproperties
 	Mesh=SkeletalMeshComponent0
 
 	TickGroup=TG_DuringAsyncWork
-	NetUpdateFrequency=10
 	RemoteRole=ROLE_None
 	bReplicateInstigator=true
 	MaxImpactEffectDistance=4000.0
