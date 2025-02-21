@@ -18616,22 +18616,50 @@ struct FSoundNodeEditorData
     }
 };
 
+struct FAnimTriggerFaceFXTag
+{
+    FName TagName;
+    TArrayNoInit<FString> TagParams;
+    class UAnimSet* TagAnimSet;
+    FLOAT AtTime;
+
+    /** Constructors */
+    FAnimTriggerFaceFXTag() {}
+    FAnimTriggerFaceFXTag(EEventParm)
+    {
+        appMemzero(this, sizeof(FAnimTriggerFaceFXTag));
+    }
+};
+
 class USoundCue : public UObject
 {
 public:
     //## BEGIN PROPS SoundCue
-    FName SoundGroup;
+    FStringNoInit FMODCategory;
     class USoundNode* FirstNode;
     TMap< USoundNode*,FSoundNodeEditorData > EditorData;
-    FLOAT MaxAudibleDistance;
     FLOAT VolumeMultiplier;
     FLOAT PitchMultiplier;
     FLOAT Duration;
+    BITFIELD IgnorePitch:1;
+    BITFIELD FMODGeneratedCue:1;
+    BITFIELD FMODValidCue:1;
+    BITFIELD FMODIgnoreOcclusion:1;
+    BITFIELD FMODRetryFail:1;
+    BITFIELD FMODLooping:1;
+    BITFIELD bSlowOcclusion:1;
+    FLOAT OcclusionValue;
+    FLOAT FMODOriginalVolume;
+    FLOAT FMODOriginalWetVolume;
+    FLOAT FMODOriginalDryVolume;
+    FLOAT FMODOriginalMinDistance;
+    FLOAT FMODOriginalMaxDistance;
+    INT FMODStatusFlag;
     class UFaceFXAnimSet* FaceFXAnimSetRef;
     FStringNoInit FaceFXGroupName;
     FStringNoInit FaceFXAnimName;
-    INT MaxConcurrentPlayCount;
-    INT CurrentPlayCount;
+    TArrayNoInit<struct FAnimTriggerFaceFXTag> AnimTriggers;
+    INT FMODResourceID;
     //## END PROPS SoundCue
 
     virtual FLOAT GetCueDuration();
@@ -23769,8 +23797,8 @@ VERIFY_CLASS_SIZE_NODIE(USkyLightComponent)
 VERIFY_CLASS_SIZE_NODIE(ASkyLightToggleable)
 VERIFY_CLASS_OFFSET_NODIE(U,SlotToSlotReachSpec,SpecDirection)
 VERIFY_CLASS_SIZE_NODIE(USlotToSlotReachSpec)
-VERIFY_CLASS_OFFSET_NODIE(U,SoundCue,SoundGroup)
-VERIFY_CLASS_OFFSET_NODIE(U,SoundCue,CurrentPlayCount)
+VERIFY_CLASS_OFFSET_NODIE(U,SoundCue,FMODCategory)
+VERIFY_CLASS_OFFSET_NODIE(U,SoundCue,FMODResourceID)
 VERIFY_CLASS_SIZE_NODIE(USoundCue)
 VERIFY_CLASS_OFFSET_NODIE(U,SpeechRecognition,Language)
 VERIFY_CLASS_OFFSET_NODIE(U,SpeechRecognition,FnxVoiceData)

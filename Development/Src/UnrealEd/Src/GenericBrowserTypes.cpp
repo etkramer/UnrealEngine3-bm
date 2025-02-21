@@ -1664,9 +1664,6 @@ void UGenericBrowserType_Sounds::InvokeCustomCommand( INT InCommand, UObject* In
 			SoundClassName = SoundClassNames->GetEnum( SoundClassIndex );
 		}
 
-		// Set sound group.
-		SoundCue->SoundGroup = SoundClassName;
-
 		// Refresh the main display
 		GCallbackEvent->Send( CALLBACK_RefreshEditor_GenericBrowser );
 	}

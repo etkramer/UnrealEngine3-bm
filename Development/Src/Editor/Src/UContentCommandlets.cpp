@@ -4696,27 +4696,19 @@ INT USoundGroupInfoCommandlet::Main( const FString& Params )
 						{
 							INT Index;
 
-							if( UniqueGroups.FindItem( Cue->SoundGroup, Index ) )
+							if( UniqueGroups.FindItem(FName(TEXT("Ungrouped")), Index ) )
 							{
 								UniqueGroupCounts( Index )++;
 							}
 							else
 							{
-								UniqueGroups.AddItem( Cue->SoundGroup );
+								UniqueGroups.AddItem( FName(TEXT("Ungrouped")) );
 								UniqueGroupCounts.AddItem( 0 );
 							}
 
-							if( Cue->SoundGroup == FName( TEXT( "None" ) ) )
+							if( FName(TEXT("Ungrouped")) == FName( TEXT( "None" ) ) )
 							{
 								UngroupedSoundCues.AddUniqueItem( Cue->GetFullName() );
-							}
-							else if( Cue->SoundGroup == FName( TEXT( "Ambient" ) ) )
-							{
-								FString PackageName = Cue->GetOutermost()->GetName();
-								if( PackageName.InStr( TEXT( "Ambient_Loop" ) ) < 0 && PackageName.InStr( TEXT( "Ambient_NonLoop" ) ) < 0 )
-								{
-									MisplacedAmbientSoundCues.AddUniqueItem( Cue->GetFullName() );
-								}
 							}
 						}
 					}

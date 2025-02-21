@@ -64,7 +64,6 @@ defaultproperties
 	SoundNodeInstance=SoundNodeAmbient0
 
 	Begin Object Class=SoundCue Name=SoundCue0
-		SoundGroup=Ambient
 	End Object
 	SoundCueInstance=SoundCue0
 }

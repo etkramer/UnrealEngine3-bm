@@ -1294,6 +1294,7 @@ EExprToken UStruct::SerializeExpr( INT& iCode, FArchive& Ar )
 			break;
 		}
 		case EX_ClassContext:
+		case EX_RSSContext:
 		case EX_Context:
 		{
 			SerializeExpr( iCode, Ar ); // Object expression.
@@ -2345,6 +2346,15 @@ void UClass::Serialize( FArchive& Ar )
 	if ( (GCookingTarget & UE3::PLATFORM_Console)==0 || (!Ar.IsSaving() || Ar.GetLinker() == NULL) )
 	{
 		Ar << HideCategories << AutoExpandCategories << AutoCollapseCategories;
+	}
+#endif
+
+#if BATMAN
+	// https://github.com/EliotVU/Unreal-Library/blob/f7e45802bf69b89ce979af7c2dd8011f8ac6f4a8/src/Core/Classes/UClass.cs#L470
+	if (Ar.Ver() > 575 && Ar.Ver() < 673)
+	{
+		INT Unk = 0;
+		Ar << Unk;
 	}
 #endif
 

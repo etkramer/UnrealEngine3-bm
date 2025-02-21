@@ -6099,12 +6099,6 @@ void WxGBLeftContainer::OnBatchProcess( wxCommandEvent& InEvent )
 					break;
 				}
 			}
-
-			// Set the group to the specified one if we're part of a selected package.
-			if( bIsInSelectedPackage )
-			{
-				SoundCue->SoundGroup = GroupName;
-			}
 		}
 	}
 	else if( EventId >= IDMN_PackageContext_BatchProcess_TextureGroups_START && EventId < IDMN_PackageContext_BatchProcess_TextureGroups_END )

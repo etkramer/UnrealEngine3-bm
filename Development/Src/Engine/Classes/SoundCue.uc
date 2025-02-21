@@ -11,27 +11,48 @@ struct native export SoundNodeEditorData
 	var native const int NodePosY;
 };
 
+struct native AnimTriggerFaceFXTag
+{
+    var() editconst name TagName;
+    var() editconst array<editconst string> TagParams;
+    var() editconst AnimSet TagAnimSet;
+    var() editconst float AtTime;
+};
+
+var 						string 									FMODCategory;
+
 /** Sound group this sound cue belongs to */
-var() editconst				Name									SoundGroup;
 var							SoundNode								FirstNode;
 var		const native		Map{USoundNode*,FSoundNodeEditorData}	EditorData;
-var		transient			float									MaxAudibleDistance;
 var()						float									VolumeMultiplier;
 var()						float									PitchMultiplier;
 var							float									Duration;
 
+var() 						bool 									IgnorePitch;
+var 						bool 									FMODGeneratedCue;
+var 						bool 									FMODValidCue;
+var() 						bool 									FMODIgnoreOcclusion;
+var 						bool 									FMODRetryFail;
+var 						bool 									FMODLooping;
+var 						bool 									bSlowOcclusion;
+// var 						RFMODSound 								FMODSound;
+var 						float 									OcclusionValue;
+var 						float 									FMODOriginalVolume;
+var 						float 									FMODOriginalWetVolume;
+var 						float 									FMODOriginalDryVolume;
+var 						float 									FMODOriginalMinDistance;
+var 						float 									FMODOriginalMaxDistance;
+var 						int 									FMODStatusFlag;
+
 /** Reference to FaceFX AnimSet package the animation is in */
-//var() editoronly notforconsole FaceFXAnimSet						FaceFXAnimSetRef;
-var()						FaceFXAnimSet						FaceFXAnimSetRef;
+var()						FaceFXAnimSet							FaceFXAnimSetRef;
 /** Name of the FaceFX Group the animation is in */
 var()						string									FaceFXGroupName;
 /** Name of the FaceFX Animation */
 var()						string									FaceFXAnimName;
 
-/** Maximum number of times this cue can be played concurrently. */
-var()						int										MaxConcurrentPlayCount;
-/** Number of times this cue is currently being played. */
-var	const transient duplicatetransient int							CurrentPlayCount;
+var() 						array<AnimTriggerFaceFXTag> 			AnimTriggers;
+var 		const transient int 									FMODResourceID;
 
 cpptext
 {
@@ -115,7 +136,6 @@ native function float GetCueDuration();
 
 defaultproperties
 {
-	VolumeMultiplier=0.75
+	VolumeMultiplier=1
 	PitchMultiplier=1
-	MaxConcurrentPlayCount=16
 }

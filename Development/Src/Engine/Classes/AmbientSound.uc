@@ -8,11 +8,11 @@ class AmbientSound extends Keypoint
 /** Should the audio component automatically play on load? */
 var() bool bAutoPlay;
 
-/** Audio component to play */
-var(Audio) editconst const AudioComponent AudioComponent;
-
 /** Is the audio component currently playing? */
 var private bool bIsPlaying;
+
+/** Audio component to play */
+var(Audio) editconst const AudioComponent AudioComponent;
 
 cpptext
 {

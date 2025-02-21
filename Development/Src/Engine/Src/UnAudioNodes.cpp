@@ -83,7 +83,7 @@ FString USoundCue::GetDesc( void )
 
 	// Display group
 	Description += TEXT( " [" );
-	Description += *SoundGroup.ToString();
+	Description += TEXT("Ungrouped");
 	Description += TEXT( "]" );
 
 	return Description;
@@ -98,7 +98,7 @@ FString USoundCue::GetDetailedDescription( INT InIndex )
 	switch( InIndex )
 	{
 	case 0:
-		Description = *SoundGroup.ToString();
+		Description = TEXT("Ungrouped");
 		break;
 	case 3:
 		if( GetCueDuration() < INDEFINITELY_LOOPING_DURATION )
@@ -2206,21 +2206,6 @@ IMPLEMENT_CLASS(USoundNodeConcatenator);
  */
 void USoundCue::CalculateMaxAudibleDistance( void )
 {
-	if( ( MaxAudibleDistance < SMALL_NUMBER ) && ( FirstNode != NULL ) )
-	{
-		// initialize AudibleDistance
-		TArray<USoundNode*> SoundNodes;
-
-		FirstNode->GetAllNodes( SoundNodes );
-		for( INT i = 0; i < SoundNodes.Num(); i++ )
-		{
-			MaxAudibleDistance = SoundNodes( i )->MaxAudibleDistance( MaxAudibleDistance );
-		}
-		if( MaxAudibleDistance == 0.0f )
-		{
-			MaxAudibleDistance = WORLD_MAX;
-		}
-	}
 }
 
 UBOOL USoundCue::IsAudible( const FVector &SourceLocation, const FVector &ListenerLocation, AActor* SourceActor, INT& bIsOccluded, UBOOL bCheckOcclusion )
@@ -2232,30 +2217,23 @@ UBOOL USoundCue::IsAudible( const FVector &SourceLocation, const FVector &Listen
 	// Account for any portals
 	FVector ModifiedSourceLocation = GWorld->GetWorldInfo()->RemapLocationThroughPortals( SourceLocation, ListenerLocation );
 
-	if (MaxAudibleDistance * MaxAudibleDistance >= (ListenerLocation - ModifiedSourceLocation).SizeSquared())
+	// Can't line check through portals
+	if( bCheckOcclusion && ( ModifiedSourceLocation == SourceLocation ) )
 	{
-		// Can't line check through portals
-		if( bCheckOcclusion && ( MaxAudibleDistance != WORLD_MAX ) && ( ModifiedSourceLocation == SourceLocation ) )
+		// simple trace occlusion check - reduce max audible distance if occluded
+		FCheckResult Hit( 1.0f );
+		GWorld->SingleLineCheck( Hit, SourceActor, ListenerLocation, ModifiedSourceLocation, TRACE_World | TRACE_StopAtAnyHit );
+		if( Hit.Time < 1.0f )
 		{
-			// simple trace occlusion check - reduce max audible distance if occluded
-			FCheckResult Hit( 1.0f );
-			GWorld->SingleLineCheck( Hit, SourceActor, ListenerLocation, ModifiedSourceLocation, TRACE_World | TRACE_StopAtAnyHit );
-			if( Hit.Time < 1.0f )
-			{
-				bIsOccluded = 1;
-			}
-			else
-			{
-				bIsOccluded = 0;
-			}
+			bIsOccluded = 1;
 		}
+		else
+		{
+			bIsOccluded = 0;
+		}
+	}
 
-		return TRUE;
-	}
-	else
-	{
-		return FALSE;
-	}
+	return TRUE;
 }
 
 UBOOL USoundCue::IsAudibleSimple( FVector* Location )
@@ -2282,7 +2260,7 @@ UBOOL USoundCue::IsAudibleSimple( FVector* Location )
 	CalculateMaxAudibleDistance();
 
 	// Is this SourceActor within the MaxAudibleDistance of any of the listeners?
-	UBOOL IsAudible = GEngine->Client->GetAudioDevice()->LocationIsAudible( *Location, MaxAudibleDistance );
+	UBOOL IsAudible = GEngine->Client->GetAudioDevice()->LocationIsAudible( *Location, WORLD_MAX );
 
 	return( IsAudible );
 }

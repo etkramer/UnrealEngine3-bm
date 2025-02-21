@@ -177,8 +177,10 @@ enum EExprToken
 	EX_EmptyParmValue		= 0x4A,	// unspecified value for optional function parameter
 	EX_InstanceDelegate		= 0x4B,	// const reference to a delegate or normal function object
 
-
-
+#if BATMAN
+	// https://github.com/EliotVU/Unreal-Library/blob/f7e45802bf69b89ce979af7c2dd8011f8ac6f4a8/src/Branch/UE3/RSS/EngineBranch.RSS.cs#L17
+	EX_RSSContext			= 0x50,
+#endif
 
 	EX_InterfaceContext		= 0x51,	// Call a function through a native interface variable
 	EX_InterfaceCast		= 0x52,	// Converting an object reference to native interface variable

@@ -154,7 +154,7 @@ void UAudioDevice::GetSoundGroupInfo( TMap<FName, FAudioGroupInfo>& AudioGroupIn
 		for( INT WaveIndex = 0; WaveIndex < Waves.Num(); ++WaveIndex )
 		{
 			// Presume one group per sound node wave
-			SoundNodeWaveGroups.Set( Waves( WaveIndex ), SoundCue->SoundGroup ); 
+			SoundNodeWaveGroups.Set( Waves( WaveIndex ), UngroupedFName ); 
 		}
 	}
 
@@ -1336,8 +1336,7 @@ UAudioComponent* UAudioDevice::CreateComponent( USoundCue* SoundCue, FSceneInter
 {
 	UAudioComponent* AudioComponent = NULL;
 
-	if( SoundCue 
-	 && ( !SoundCue->MaxConcurrentPlayCount || ( SoundCue->CurrentPlayCount < SoundCue->MaxConcurrentPlayCount ) ) 
+	if( SoundCue
 	 && GEngine 
 	 && GEngine->bUseSound )
 	{
@@ -1878,13 +1877,6 @@ void UAudioComponent::Cleanup( void )
 {
 	if( bWasPlaying && !GExitPurge )
 	{
-		// @see UAudioComponent::Stop()  we set this to null there.  so if we bypass stop and just call 
-		// ::Cleanup (for things like emitters which are destroyed) we need to decrement CurrentPlayCount
-		if( CueFirstNode && SoundCue )
-		{		
-			SoundCue->CurrentPlayCount = Max( SoundCue->CurrentPlayCount - 1, 0 );
-		}
-
 		// Removes component from the audio device's component list, implicitly also stopping the sound.
 		UAudioDevice* AudioDevice = GEngine && GEngine->Client ? GEngine->Client->GetAudioDevice() : NULL;
 		if( AudioDevice )
@@ -2001,11 +1993,6 @@ void UAudioComponent::Play( void )
 		FadeOutStopTime = -1.0f;
 		FadeOutTargetVolume = 1.0f;
 	}
-	// Increase the cue's current play count if we're starting up.
-	else if( SoundCue )
-	{
-		SoundCue->CurrentPlayCount++;
-	}
 
 	PlaybackTime = 0.0f;
 	bFinished = FALSE;
@@ -2026,12 +2013,6 @@ void UAudioComponent::Play( void )
 void UAudioComponent::Stop( void )
 {
 	debugfSuppressed( NAME_DevAudioVerbose, TEXT( "%g: Stopping AudioComponent : '%s' with Sound Cue: '%s'" ), GWorld ? GWorld->GetTimeSeconds() : 0.0f, *GetName(), SoundCue ? *SoundCue->GetName() : TEXT( "NULL" ) );
-
-	// Decrease the cue's current play count on the first call to Stop.
-	if( CueFirstNode && SoundCue )
-	{
-		SoundCue->CurrentPlayCount = Max( SoundCue->CurrentPlayCount - 1, 0 );
-	}
 
 	// For safety, clear out the cached root sound node pointer.
 	CueFirstNode = NULL;
@@ -2102,7 +2083,7 @@ void UAudioComponent::PostEditChange( UProperty* PropertyThatChanged )
 
 void UAudioComponent::CheckOcclusion( const FVector& ListenerLocation )
 {
-	if( OcclusionCheckInterval > 0.0f && GWorld->GetTimeSeconds() - LastOcclusionCheckTime > OcclusionCheckInterval && SoundCue->MaxAudibleDistance != WORLD_MAX )
+	if( OcclusionCheckInterval > 0.0f && GWorld->GetTimeSeconds() - LastOcclusionCheckTime > OcclusionCheckInterval )
 	{
 		LastOcclusionCheckTime = GWorld->GetTimeSeconds();
 		FCheckResult Hit( 1.0f );
@@ -2185,7 +2166,7 @@ void UAudioComponent::UpdateWaveInstances( UAudioDevice* AudioDevice, TArray<FWa
 	CurrentPitchMultiplier = PitchMultiplier * SoundCue->PitchMultiplier;
 
 	// Set multipliers to allow propagation of sound group properties to wave instances.
-	FSoundGroupProperties* SoundGroupProperties = AudioDevice->GetSoundGroupProperties( SoundCue->SoundGroup );
+	FSoundGroupProperties* SoundGroupProperties = AudioDevice->GetSoundGroupProperties( UngroupedFName );
 	if( SoundGroupProperties )
 	{
 		// Use values from "parsed/ propagated" sound group properties
