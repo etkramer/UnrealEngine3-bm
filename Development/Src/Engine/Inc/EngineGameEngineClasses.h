@@ -158,16 +158,26 @@ public:
     BITFIELD bSubtitlesEnabled:1;
     BITFIELD bSubtitlesForcedOff:1;
     BITFIELD bForceStaticTerrain:1;
+    BITFIELD bUseInvertedLeftStick:1;
     BITFIELD bForceCPUSkinning:1;
     BITFIELD bUsePostProcessEffects:1;
     BITFIELD bOnScreenKismetWarnings:1;
     BITFIELD bEnableKismetLogging:1;
     BITFIELD bAllowMatureLanguage:1;
     BITFIELD bRenderTerrainCollisionAsOverlay:1;
-    BITFIELD bDisablePhysXHardwareSupport:1;
+    BITFIELD bPhysXuseGRB:1;
     BITFIELD bPauseOnLossOfFocus:1;
     BITFIELD bCheckParticleRenderSize:1;
+    BITFIELD bDisplayDebugAudio:1;
+    BITFIELD bDisplayDebugAI:1;
+    BITFIELD bDisplayDebugAnim:1;
+    BITFIELD bDisplayDebugPlayer:1;
+    BITFIELD bDisplayDebugEngine:1;
+    BITFIELD bDisplayDebugBoss:1;
+    BITFIELD bEnablePerfMemDump:1;
     BITFIELD bEnableColorClear:1;
+    BITFIELD bUnboundActiveController:1;
+    BITFIELD bPausedCheck:1;
     FLOAT MaxPixelShaderAdditiveComplexityCount;
     FLOAT MaxPixelShaderOpaqueComplexityCount;
     FLOAT MaxVertexShaderComplexityCount;
@@ -208,6 +218,7 @@ public:
     FStringNoInit RandomNormalTextureName;
     class UTexture* WeightMapPlaceholderTexture;
     FStringNoInit WeightMapPlaceholderTextureName;
+    class UTextureFlipBook* LoadingIconTexture;
     class USoundNodeWave* DefaultSound;
     FStringNoInit DefaultSoundName;
     FLOAT TimeBetweenPurgingPendingKillObjects;
@@ -243,6 +254,8 @@ public:
     FLOAT PrimitiveProbablyVisibleTime;
     FLOAT PercentUnoccludedRequeries;
     FLOAT MaxOcclusionPixelsFraction;
+    INT PhysXLevel;
+    FLOAT PhysXgrbSpacing;
     INT MaxFluidNumVerts;
     FLOAT FluidSimulationTimeLimit;
     INT MaxParticleResize;
@@ -258,6 +271,8 @@ public:
     FLOAT NetClientTicksPerSecond;
     FLOAT LensFlareMaxOcclusionIncrement;
     FLOAT LensFlareOcclusionStepSize;
+    class UDirectionalLightComponent* TempCollisionLight;
+    class UDirectionalLightComponent* TempCollisionBackLight;
     //## END PROPS Engine
 
     class AWorldInfo* GetCurrentWorldInfo();
@@ -956,7 +971,7 @@ IMPLEMENT_NATIVE_HANDLER(Engine,UGameEngine);
 
 #ifdef VERIFY_CLASS_SIZES
 VERIFY_CLASS_OFFSET_NODIE(U,Engine,TinyFont)
-VERIFY_CLASS_OFFSET_NODIE(U,Engine,LensFlareOcclusionStepSize)
+VERIFY_CLASS_OFFSET_NODIE(U,Engine,TempCollisionBackLight)
 VERIFY_CLASS_SIZE_NODIE(UEngine)
 VERIFY_CLASS_OFFSET_NODIE(U,GameEngine,GPendingLevel)
 VERIFY_CLASS_OFFSET_NODIE(U,GameEngine,NamedNetDrivers)

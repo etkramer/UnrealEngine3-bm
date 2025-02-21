@@ -40,11 +40,6 @@ var globalconfig string GameViewportClientClassName;
 var	class<DataStoreClient> DataStoreClientClass;
 var	globalconfig string DataStoreClientClassName;
 
-`if(`isdefined(STORAGE_MANAGER_IMPLEMENTED))
-var	class<StorageDeviceManager> StorageDeviceManagerClass;
-var	globalconfig string	StorageDeviceManagerClassName;
-`endif
-
 /** The class to use for local players. */
 var class<LocalPlayer> LocalPlayerClass;
 var config string LocalPlayerClassName;
@@ -123,6 +118,70 @@ var globalconfig bool bUsePixelShaderComplexity;
 * Has no effect if bUsePixelShaderComplexity is false
 */
 var globalconfig bool bUseAdditiveComplexity;
+
+var(Settings) config bool bUseSound;
+
+/** Whether to use texture streaming. */
+var(Settings) config bool bUseTextureStreaming;
+
+/** Whether to allow background level streaming. */
+var(Settings) config bool bUseBackgroundLevelStreaming;
+
+/** Flag for completely disabling subtitles for localized sounds. */
+var(Settings) config bool bSubtitlesEnabled;
+
+/** Flag for forcibly disabling subtitles even if you try to turn them back on they will be off */
+var(Settings) config bool bSubtitlesForcedOff;
+
+/**
+ *	Flag for forcing terrain to be 'static' (MinTessellationLevel = MaxTesselationLevel)
+ *	Game time only...
+ */
+var(Settings) config bool bForceStaticTerrain;
+
+var globalconfig bool bUseInvertedLeftStick;
+
+/** Force to CPU skinning only for skeletal mesh rendering */
+var	config		bool					bForceCPUSkinning;
+/** Whether to use post processing effects or not */
+var	config		bool					bUsePostProcessEffects;
+/** whether to send Kismet warning messages to the screen (via PlayerController::ClientMessage()) */
+var config bool bOnScreenKismetWarnings;
+/** whether kismet logging is enabled. */
+var config bool bEnableKismetLogging;
+/** whether mature language is allowed **/
+var config bool bAllowMatureLanguage;
+
+/** Terrain collision viewing - If TRUE, overlay collion level else render it and overlay terrain. */
+var config bool bRenderTerrainCollisionAsOverlay;
+
+/** Do not use Ageia PhysX hardware */
+var globalconfig bool bPhysXuseGRB;
+
+/** Whether to pause the game if focus is lost. */
+var config bool bPauseOnLossOfFocus;
+
+/**
+ *	If TRUE, then perform particle size checks in non FINAL_RELEASE builds.
+ */
+var globalconfig bool bCheckParticleRenderSize;
+
+var config bool bDisplayDebugAudio;
+var config bool bDisplayDebugAI;
+var config bool bDisplayDebugAnim;
+var config bool bDisplayDebugPlayer;
+var config bool bDisplayDebugEngine;
+var config bool bDisplayDebugBoss;
+var config bool bEnablePerfMemDump;
+
+/**
+ * By default, each frame's initial scene color clear is disabled.
+ * This flag can be toggled at runtime to enable clearing for development.
+ */
+var globalconfig const bool			bEnableColorClear;
+
+var transient bool bUnboundActiveController;
+var transient bool bPausedCheck;
 
 /**
 * Complexity limits for the various complexity viewmode combinations.
@@ -221,6 +280,8 @@ var globalconfig string RandomNormalTextureName;
 var Texture	WeightMapPlaceholderTexture;
 var globalconfig string WeightMapPlaceholderTextureName;
 
+var TextureFlipBook LoadingIconTexture;
+
 /** White noise sound */
 var SoundNodeWave DefaultSound;
 var globalconfig string DefaultSoundName;
@@ -243,25 +304,6 @@ var const GameViewportClient				GameViewport;
 var init array<string>	DeferredCommands;
 
 var int TickCycles, GameCycles, ClientCycles;
-var(Settings) config bool bUseSound;
-
-/** Whether to use texture streaming. */
-var(Settings) config bool bUseTextureStreaming;
-
-/** Whether to allow background level streaming. */
-var(Settings) config bool bUseBackgroundLevelStreaming;
-
-/** Flag for completely disabling subtitles for localized sounds. */
-var(Settings) config bool bSubtitlesEnabled;
-
-/** Flag for forcibly disabling subtitles even if you try to turn them back on they will be off */
-var(Settings) config bool bSubtitlesForcedOff;
-
-/**
- *	Flag for forcing terrain to be 'static' (MinTessellationLevel = MaxTesselationLevel)
- *	Game time only...
- */
-var(Settings) config bool bForceStaticTerrain;
 
 /** Global debug manager helper object that stores configuration and state used during development */
 var const DebugManager			DebugManager;
@@ -314,16 +356,7 @@ var string TransitionGameType;
 
 /** Level of detail range control for meshes */
 var config		float					MeshLODRange;
-/** Force to CPU skinning only for skeletal mesh rendering */
-var	config		bool					bForceCPUSkinning;
-/** Whether to use post processing effects or not */
-var	config		bool					bUsePostProcessEffects;
-/** whether to send Kismet warning messages to the screen (via PlayerController::ClientMessage()) */
-var config bool bOnScreenKismetWarnings;
-/** whether kismet logging is enabled. */
-var config bool bEnableKismetLogging;
-/** whether mature language is allowed **/
-var config bool bAllowMatureLanguage;
+
 /** camera rotation (deg) beyond which occlusion queries are ignored from previous frame (because they are likely not valid) */
 var config float CameraRotationThreshold;
 /** camera movement beyond which occlusion queries are ignored from previous frame (because they are likely not valid) */
@@ -335,14 +368,8 @@ var config float PercentUnoccludedRequeries;
 /** Max screen pixel fraction where retesting when unoccluded is worth the GPU time. */
 var config float MaxOcclusionPixelsFraction;
 
-/** Terrain collision viewing - If TRUE, overlay collion level else render it and overlay terrain. */
-var config bool bRenderTerrainCollisionAsOverlay;
-
-/** Do not use Ageia PhysX hardware */
-var config bool bDisablePhysXHardwareSupport;
-
-/** Whether to pause the game if focus is lost. */
-var config bool bPauseOnLossOfFocus;
+var globalconfig int PhysXLevel;
+var globalconfig float PhysXgrbSpacing;
 
 /** The most vertices a fluid surface can have.  The number of verts is clamped to avoid running out of memory and exposing driver bugs. */
 var config int MaxFluidNumVerts;
@@ -362,10 +389,7 @@ var config int MaxParticleResize;
 *	If the resize request is larger than this, spew out a warning to the log
 */
 var config int MaxParticleResizeWarn;
-/**
- *	If TRUE, then perform particle size checks in non FINAL_RELEASE builds.
- */
-var globalconfig bool bCheckParticleRenderSize;
+
 /** The maximum amount of memory any single emitter is allowed to take for its vertices */
 var config int MaxParticleVertexMemory;
 var transient int MaxParticleSpriteCount;
@@ -395,12 +419,6 @@ var transient array<DropNoteInfo>	PendingDroppedNotes;
 /** Overridable class for cover mesh rendering in-game, used to get around the editoronly restrictions needed by the base CoverMeshComponent */
 var globalconfig string DynamicCoverMeshComponentName;
 
-/**
- * By default, each frame's initial scene color clear is disabled.
- * This flag can be toggled at runtime to enable clearing for development.
- */
-var globalconfig const bool			bEnableColorClear;
-
 /** Number of times to tick each client per second */
 var globalconfig float				NetClientTicksPerSecond;
 
@@ -413,6 +431,9 @@ var globalconfig float				LensFlareMaxOcclusionIncrement;
  *	The incremental step size for the above.
  */
 var globalconfig float				LensFlareOcclusionStepSize;
+
+var export editinline transient DirectionalLightComponent TempCollisionLight;
+var export editinline transient DirectionalLightComponent TempCollisionBackLight;
 
 cpptext
 {

@@ -13,14 +13,7 @@
 /** Util for seeing if PhysX hardware is present in this computer. */
 UBOOL IsPhysXHardwarePresent()
 {
-	if(GEngine->bDisablePhysXHardwareSupport)
-	{
-		return FALSE;
-	}
-	else
-	{
-		return GNovodexSDK->getHWVersion() != NX_HW_VERSION_NONE;
-	}
+	return GNovodexSDK->getHWVersion() != NX_HW_VERSION_NONE;
 }
 
 
