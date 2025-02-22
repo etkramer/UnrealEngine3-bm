@@ -44,17 +44,6 @@ var	editfixedsize editinline export	array<AnimBlendChild>		Children;
 /** Whether children connectors (ie elements of the Children array) may be added/removed. */
 var						bool						bFixNumChildren;
 
-/** Various ways to blend animations together. */
-enum AnimBlendType
-{	
-	ABT_Linear,
-	ABT_Cubic,
-	ABT_Sinusoidal,
-	ABT_EaseInOutExponent2,
-	ABT_EaseInOutExponent3,
-	ABT_EaseInOutExponent4,
-	ABT_EaseInOutExponent5,
-};
 var()	AnimBlendType	BlendType;
 
 cpptext

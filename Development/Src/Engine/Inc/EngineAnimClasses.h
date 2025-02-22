@@ -29,12 +29,6 @@ enum ECrowdAttractorMode
     ECAM_Repulsor           =1,
     ECAM_MAX                =2,
 };
-enum ESliderType
-{
-    ST_1D                   =0,
-    ST_2D                   =1,
-    ST_MAX                  =2,
-};
 enum AnimBlendType
 {
     ABT_Linear              =0,
@@ -45,6 +39,12 @@ enum AnimBlendType
     ABT_EaseInOutExponent4  =5,
     ABT_EaseInOutExponent5  =6,
     ABT_MAX                 =7,
+};
+enum ESliderType
+{
+    ST_1D                   =0,
+    ST_2D                   =1,
+    ST_MAX                  =2,
 };
 enum EAimID
 {
@@ -713,6 +713,159 @@ protected:
 	virtual void DoReduction(class UAnimSequence* AnimSeq, class USkeletalMesh* SkelMesh, const TArray<class FBoneData>& BoneData);
 };
 
+struct FNotifierInfo
+{
+    class USkeletalMeshComponent* SkelComponent;
+    BITFIELD AnimMirrored:1;
+
+    /** Constructors */
+    FNotifierInfo() {}
+    FNotifierInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FNotifierInfo));
+    }
+};
+
+class UAnimNotify : public UObject
+{
+public:
+    //## BEGIN PROPS AnimNotify
+    //## END PROPS AnimNotify
+
+    DECLARE_ABSTRACT_CLASS(UAnimNotify,UObject,0,Engine)
+	// AnimNotify interface.
+	virtual void Notify( class USkeletalMeshComponent* SkelComponent ) {};
+};
+
+class UAnimNotify_CameraEffect : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS AnimNotify_CameraEffect
+    class UClass* CameraLensEffect;
+    //## END PROPS AnimNotify_CameraEffect
+
+    DECLARE_CLASS(UAnimNotify_CameraEffect,UAnimNotify,0,Engine)
+	// AnimNotify interface.
+	virtual void Notify( class USkeletalMeshComponent* SkelComponent );
+};
+
+class UAnimNotify_Footstep : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS AnimNotify_Footstep
+    INT FootDown;
+    //## END PROPS AnimNotify_Footstep
+
+    DECLARE_CLASS(UAnimNotify_Footstep,UAnimNotify,0,Engine)
+	// AnimNotify interface.
+	virtual void Notify( class USkeletalMeshComponent* SkelComponent );
+};
+
+class UAnimNotify_PlayParticleEffect : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS AnimNotify_PlayParticleEffect
+    class UParticleSystem* PSTemplate;
+    BITFIELD bIsExtremeContent:1;
+    BITFIELD bAttach:1;
+    FName SocketName;
+    FName BoneName;
+    //## END PROPS AnimNotify_PlayParticleEffect
+
+    DECLARE_CLASS(UAnimNotify_PlayParticleEffect,UAnimNotify,0,Engine)
+	// AnimNotify interface.
+	virtual void Notify( class USkeletalMeshComponent* SkelComponent );
+};
+
+class UAnimNotify_Rumble : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS AnimNotify_Rumble
+    class UClass* PredefinedWaveForm;
+    class UForceFeedbackWaveform* WaveForm;
+    //## END PROPS AnimNotify_Rumble
+
+    DECLARE_CLASS(UAnimNotify_Rumble,UAnimNotify,0,Engine)
+	// AnimNotify interface.
+	virtual void Notify( class USkeletalMeshComponent* SkelComponent );
+};
+
+class UAnimNotify_Script : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS AnimNotify_Script
+    FName NotifyName;
+    //## END PROPS AnimNotify_Script
+
+    DECLARE_CLASS(UAnimNotify_Script,UAnimNotify,0,Engine)
+	// AnimNotify interface.
+	virtual void Notify( class USkeletalMeshComponent* SkelComponent );
+};
+
+struct AnimNotify_Scripted_eventNotify_Parms
+{
+    class AActor* Owner;
+    class USkeletalMeshComponent* AnimSeqInstigator;
+    AnimNotify_Scripted_eventNotify_Parms(EEventParm)
+    {
+    }
+};
+class UAnimNotify_Scripted : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS AnimNotify_Scripted
+    //## END PROPS AnimNotify_Scripted
+
+    void eventNotify(class AActor* Owner,class USkeletalMeshComponent* AnimSeqInstigator)
+    {
+        AnimNotify_Scripted_eventNotify_Parms Parms(EC_EventParm);
+        Parms.Owner=Owner;
+        Parms.AnimSeqInstigator=AnimSeqInstigator;
+        ProcessEvent(FindFunctionChecked(ENGINE_Notify),&Parms);
+    }
+    DECLARE_ABSTRACT_CLASS(UAnimNotify_Scripted,UAnimNotify,0,Engine)
+	// AnimNotify interface.
+	virtual void Notify( class USkeletalMeshComponent* SkelComponent );
+};
+
+class UAnimNotify_Sound : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS AnimNotify_Sound
+    class USoundCue* SoundCue;
+    BITFIELD bFollowActor:1;
+    BITFIELD bIgnoreIfActorHidden:1;
+    FName BoneName;
+    //## END PROPS AnimNotify_Sound
+
+    DECLARE_CLASS(UAnimNotify_Sound,UAnimNotify,0,Engine)
+	// AnimNotify interface.
+	virtual void Notify( class USkeletalMeshComponent* SkelComponent );
+};
+
+class UAnimObject : public UObject
+{
+public:
+    //## BEGIN PROPS AnimObject
+    INT DrawWidth;
+    INT DrawHeight;
+    INT NodePosX;
+    INT NodePosY;
+    INT OutDrawY;
+    FStringNoInit CategoryDesc;
+    class USkeletalMeshComponent* SkelComponent;
+    //## END PROPS AnimObject
+
+    DECLARE_ABSTRACT_CLASS(UAnimObject,UObject,0,Engine)
+	virtual UAnimNode * GetAnimNode() { return NULL;}
+	virtual UMorphNodeBase * GetMorphNodeBase() { return NULL;}
+	virtual USkelControlBase * GetSkelControlBase() { return NULL; }
+
+	virtual void DrawNode(FCanvas* Canvas, UBOOL bSelected, UBOOL bShowWeight, UBOOL bCurves) {}
+	/** Called after (copy/)pasted - reset values or re-link if needed**/
+	virtual void OnPaste() {};
+};
+
 struct AnimNode_eventOnCeaseRelevant_Parms
 {
     AnimNode_eventOnCeaseRelevant_Parms(EEventParm)
@@ -731,7 +884,7 @@ struct AnimNode_eventOnInit_Parms
     {
     }
 };
-class UAnimNode : public UObject
+class UAnimNode : public UAnimObject
 {
 public:
     //## BEGIN PROPS AnimNode
@@ -743,17 +896,11 @@ public:
     INT NodeCachedAtomsTag;
     FLOAT NodeTotalWeight;
     FLOAT TotalWeightAccumulator;
-    class USkeletalMeshComponent* SkelComponent;
     TArrayNoInit<class UAnimNodeBlendBase*> ParentNodes;
     FName NodeName;
     TArrayNoInit<FBoneAtom> CachedBoneAtoms;
     FBoneAtom CachedRootMotionDelta;
     INT bCachedHasRootMotion;
-    INT DrawWidth;
-    INT DrawHeight;
-    INT NodePosX;
-    INT NodePosY;
-    INT OutDrawY;
     INT InstanceVersionNumber;
 protected:
     INT SearchTag;
@@ -794,7 +941,7 @@ public:
     {
         ProcessEvent(FindFunctionChecked(ENGINE_OnInit),NULL);
     }
-    DECLARE_ABSTRACT_CLASS(UAnimNode,UObject,0,Engine)
+    DECLARE_ABSTRACT_CLASS(UAnimNode,UAnimObject,0,Engine)
 	// UAnimNode interface
 
 	/** Do any initialisation, and then call InitAnim on all children. Should not discard any existing anim state though. */
@@ -2194,123 +2341,6 @@ public:
 	virtual void DrawAnimNode(FCanvas* Canvas, UBOOL bSelected, UBOOL bShowWeight, UBOOL bCurves);
 };
 
-class UAnimNotify : public UObject
-{
-public:
-    //## BEGIN PROPS AnimNotify
-    //## END PROPS AnimNotify
-
-    DECLARE_ABSTRACT_CLASS(UAnimNotify,UObject,0,Engine)
-	// AnimNotify interface.
-	virtual void Notify( class UAnimNodeSequence* NodeSeq ) {};
-};
-
-class UAnimNotify_CameraEffect : public UAnimNotify
-{
-public:
-    //## BEGIN PROPS AnimNotify_CameraEffect
-    class UClass* CameraLensEffect;
-    //## END PROPS AnimNotify_CameraEffect
-
-    DECLARE_CLASS(UAnimNotify_CameraEffect,UAnimNotify,0,Engine)
-	// AnimNotify interface.
-	virtual void Notify( class UAnimNodeSequence* NodeSeq );
-};
-
-class UAnimNotify_Footstep : public UAnimNotify
-{
-public:
-    //## BEGIN PROPS AnimNotify_Footstep
-    INT FootDown;
-    //## END PROPS AnimNotify_Footstep
-
-    DECLARE_CLASS(UAnimNotify_Footstep,UAnimNotify,0,Engine)
-	// AnimNotify interface.
-	virtual void Notify( class UAnimNodeSequence* NodeSeq );
-};
-
-class UAnimNotify_PlayParticleEffect : public UAnimNotify
-{
-public:
-    //## BEGIN PROPS AnimNotify_PlayParticleEffect
-    class UParticleSystem* PSTemplate;
-    BITFIELD bIsExtremeContent:1;
-    BITFIELD bAttach:1;
-    FName SocketName;
-    FName BoneName;
-    //## END PROPS AnimNotify_PlayParticleEffect
-
-    DECLARE_CLASS(UAnimNotify_PlayParticleEffect,UAnimNotify,0,Engine)
-	// AnimNotify interface.
-	virtual void Notify( class UAnimNodeSequence* NodeSeq );
-};
-
-class UAnimNotify_Rumble : public UAnimNotify
-{
-public:
-    //## BEGIN PROPS AnimNotify_Rumble
-    class UClass* PredefinedWaveForm;
-    class UForceFeedbackWaveform* WaveForm;
-    //## END PROPS AnimNotify_Rumble
-
-    DECLARE_CLASS(UAnimNotify_Rumble,UAnimNotify,0,Engine)
-	// AnimNotify interface.
-	virtual void Notify( class UAnimNodeSequence* NodeSeq );
-};
-
-class UAnimNotify_Script : public UAnimNotify
-{
-public:
-    //## BEGIN PROPS AnimNotify_Script
-    FName NotifyName;
-    //## END PROPS AnimNotify_Script
-
-    DECLARE_CLASS(UAnimNotify_Script,UAnimNotify,0,Engine)
-	// AnimNotify interface.
-	virtual void Notify( class UAnimNodeSequence* NodeSeq );
-};
-
-struct AnimNotify_Scripted_eventNotify_Parms
-{
-    class AActor* Owner;
-    class UAnimNodeSequence* AnimSeqInstigator;
-    AnimNotify_Scripted_eventNotify_Parms(EEventParm)
-    {
-    }
-};
-class UAnimNotify_Scripted : public UAnimNotify
-{
-public:
-    //## BEGIN PROPS AnimNotify_Scripted
-    //## END PROPS AnimNotify_Scripted
-
-    void eventNotify(class AActor* Owner,class UAnimNodeSequence* AnimSeqInstigator)
-    {
-        AnimNotify_Scripted_eventNotify_Parms Parms(EC_EventParm);
-        Parms.Owner=Owner;
-        Parms.AnimSeqInstigator=AnimSeqInstigator;
-        ProcessEvent(FindFunctionChecked(ENGINE_Notify),&Parms);
-    }
-    DECLARE_ABSTRACT_CLASS(UAnimNotify_Scripted,UAnimNotify,0,Engine)
-	// AnimNotify interface.
-	virtual void Notify( class UAnimNodeSequence* NodeSeq );
-};
-
-class UAnimNotify_Sound : public UAnimNotify
-{
-public:
-    //## BEGIN PROPS AnimNotify_Sound
-    class USoundCue* SoundCue;
-    BITFIELD bFollowActor:1;
-    BITFIELD bIgnoreIfActorHidden:1;
-    FName BoneName;
-    //## END PROPS AnimNotify_Sound
-
-    DECLARE_CLASS(UAnimNotify_Sound,UAnimNotify,0,Engine)
-	// AnimNotify interface.
-	virtual void Notify( class UAnimNodeSequence* NodeSeq );
-};
-
 struct FAnimNotifyEvent
 {
     FLOAT Time;
@@ -3299,6 +3329,7 @@ DECLARE_NATIVE_TYPE(Engine,UAnimNotify_Rumble);
 DECLARE_NATIVE_TYPE(Engine,UAnimNotify_Script);
 DECLARE_NATIVE_TYPE(Engine,UAnimNotify_Scripted);
 DECLARE_NATIVE_TYPE(Engine,UAnimNotify_Sound);
+DECLARE_NATIVE_TYPE(Engine,UAnimObject);
 DECLARE_NATIVE_TYPE(Engine,UAnimSequence);
 DECLARE_NATIVE_TYPE(Engine,UAnimSet);
 DECLARE_NATIVE_TYPE(Engine,UAnimTree);
@@ -3373,6 +3404,7 @@ DECLARE_NATIVE_TYPE(Engine,ASkeletalMeshActorMAT);
 	UAnimNotify_Script::StaticClass(); \
 	UAnimNotify_Scripted::StaticClass(); \
 	UAnimNotify_Sound::StaticClass(); \
+	UAnimObject::StaticClass(); \
 	UAnimSequence::StaticClass(); \
 	UAnimSet::StaticClass(); \
 	UAnimTree::StaticClass(); \
@@ -3690,6 +3722,9 @@ VERIFY_CLASS_SIZE_NODIE(UAnimNotify_Scripted)
 VERIFY_CLASS_OFFSET_NODIE(U,AnimNotify_Sound,SoundCue)
 VERIFY_CLASS_OFFSET_NODIE(U,AnimNotify_Sound,BoneName)
 VERIFY_CLASS_SIZE_NODIE(UAnimNotify_Sound)
+VERIFY_CLASS_OFFSET_NODIE(U,AnimObject,DrawWidth)
+VERIFY_CLASS_OFFSET_NODIE(U,AnimObject,SkelComponent)
+VERIFY_CLASS_SIZE_NODIE(UAnimObject)
 VERIFY_CLASS_OFFSET_NODIE(U,AnimSequence,SequenceName)
 VERIFY_CLASS_OFFSET_NODIE(U,AnimSequence,EncodingPkgVersion)
 VERIFY_CLASS_SIZE_NODIE(UAnimSequence)

@@ -14,12 +14,12 @@ var	protected	bool	bDisabled;
 /* This modifier is still being applied and will disable itself */
 var				bool	bPendingDisable;
 
+//debug
+var(Debug) bool bDebug;
+
 /** Camera this object is attached to */
 var Camera	CameraOwner;
 
-
-//debug
-var(Debug) bool bDebug;
 
 /** Allow anything to happen right after creation */
 function Init();

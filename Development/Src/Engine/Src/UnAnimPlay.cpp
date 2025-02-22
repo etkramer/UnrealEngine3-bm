@@ -1061,7 +1061,7 @@ void UAnimNodeSequence::IssueNotifies(FLOAT DeltaTime)
 		if( AnimNotify )
 		{
 			// Call Notify function
-			AnimNotify->Notify( this );
+			AnimNotify->Notify( this->SkelComponent );
 		}
 		
 		// Then find the next one.

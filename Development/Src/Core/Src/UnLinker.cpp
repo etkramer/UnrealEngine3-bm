@@ -3017,12 +3017,7 @@ void ULinkerLoad::Preload( UObject* Object )
 				// Make sure we serialized the right amount of stuff.
 				if( Tell()-Export.SerialOffset != Export.SerialSize )
 				{
-#if BATMAN
-					// Keep an eye on this, so far seems non-critical.
-					warnf(NAME_Error, LocalizeSecure(LocalizeError(TEXT("SerialSize"), TEXT("Core")), *Object->GetFullName(), Tell() - Export.SerialOffset, Export.SerialSize));
-#else
 					appErrorf( LocalizeSecure(LocalizeError(TEXT("SerialSize"),TEXT("Core")), *Object->GetFullName(), Tell()-Export.SerialOffset, Export.SerialSize) );
-#endif // BATMAN
 				}
 
 				Loader->Seek( SavedPos );

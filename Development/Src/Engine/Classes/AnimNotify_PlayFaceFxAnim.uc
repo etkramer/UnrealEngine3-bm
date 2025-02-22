@@ -19,7 +19,7 @@ var() bool		bOverridePlayingAnim;
 /** Chance to play. 0 - 1.f */
 var() float		PlayFrequency;
 
-event Notify(Actor Owner, AnimNodeSequence AnimSeqInstigator)
+event Notify(Actor Owner, SkeletalMeshComponent AnimSeqInstigator)
 {
 
 	// If this animation doesn't play all the time
@@ -33,7 +33,7 @@ event Notify(Actor Owner, AnimNodeSequence AnimSeqInstigator)
 	}
 	else if( PlayFrequency > 1.f )
 	{
-		`log("Play FaceFX animation from notify" @ AnimSeqInstigator.AnimSeqName @ "for" @ Owner @ "GroupName:" @ GroupName @ "AnimName:" @ AnimName);
+		`log("Play FaceFX animation from notify for" @ Owner @ "GroupName:" @ GroupName @ "AnimName:" @ AnimName);
 		`log(" PlayFrequency > 1.0 is useless. Chance to play valid range is from 0.0 to 1.0.");
 	}
 

@@ -2349,15 +2349,6 @@ void UClass::Serialize( FArchive& Ar )
 	}
 #endif
 
-#if BATMAN
-	// https://github.com/EliotVU/Unreal-Library/blob/f7e45802bf69b89ce979af7c2dd8011f8ac6f4a8/src/Core/Classes/UClass.cs#L470
-	if (Ar.Ver() > 575 && Ar.Ver() < 673)
-	{
-		INT Unk = 0;
-		Ar << Unk;
-	}
-#endif
-
 	// Defaults.
 
 	// mark the archive as serializing defaults

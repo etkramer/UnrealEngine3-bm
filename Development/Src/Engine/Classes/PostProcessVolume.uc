@@ -22,6 +22,17 @@ struct native PostProcessSettings
 	/** Whether to allow ambient occlusion.															*/
 	var()	bool			bAllowAmbientOcclusion;
 
+	// BM1
+	var() bool bAllowAtmospheric;
+    var() Color Atmospheric_ForegroundColour;
+    var() interp float Atmospheric_ForegroundStrength;
+    var() Color Atmospheric_BackgroundColour;
+    var() interp float Atmospheric_BackgroundStrength;
+    var() interp float Atmospheric_ForegroundMaxDistance;
+    var() interp float Atmospheric_ForegroundWidth;
+    var() interp float Atmospheric_BackgroundMaxDistance;
+    var() interp float Atmospheric_BackgroundWidth;
+
 	/** Scale for the blooming.																		*/
 	var()	interp float	Bloom_Scale;
 	/** Duration over which to interpolate values to.												*/

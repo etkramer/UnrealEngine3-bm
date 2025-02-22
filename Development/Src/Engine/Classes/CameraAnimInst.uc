@@ -22,14 +22,15 @@ var transient bool				bFinished;
 /** True if it's ok for the system to auto-release this instance upon completion. */
 var transient bool				bAutoReleaseWhenFinished;
 
-/** Time to interpolate in from zero, for smooth starts. */
-var protected float				BlendInTime;
-/** Time to interpolate out to zero, for smooth finishes. */
-var protected float				BlendOutTime;
 /** True if currently blending in. */
 var protected transient bool	bBlendingIn;
 /** True if currently blending out. */
 var protected transient bool	bBlendingOut;
+
+/** Time to interpolate in from zero, for smooth starts. */
+var protected float				BlendInTime;
+/** Time to interpolate out to zero, for smooth finishes. */
+var protected float				BlendOutTime;
 /** Current time for the blend-in.  I.e. how long we have been blending. */
 var protected transient float	CurBlendInTime;
 /** Current time for the blend-out.  I.e. how long we have been blending. */

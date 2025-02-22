@@ -6,6 +6,7 @@
 #include "EnginePrivate.h"
 #include "EngineAnimClasses.h"
 
+IMPLEMENT_CLASS(UAnimObject);
 IMPLEMENT_CLASS(UAnimNode);
 
 IMPLEMENT_CLASS(UAnimNodeBlendBase);

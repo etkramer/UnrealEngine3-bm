@@ -5,10 +5,10 @@ class AnimNotify_Scripted extends AnimNotify
 	native(Anim)
 	abstract;
 
-event Notify( Actor Owner, AnimNodeSequence AnimSeqInstigator );
+event Notify( Actor Owner, SkeletalMeshComponent AnimSeqInstigator );
 
 cpptext
 {
 	// AnimNotify interface.
-	virtual void Notify( class UAnimNodeSequence* NodeSeq );
+	virtual void Notify( class USkeletalMeshComponent* SkelComponent );
 }

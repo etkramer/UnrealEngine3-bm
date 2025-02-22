@@ -1913,9 +1913,8 @@ void UAnimSet::ClearAllAnimSetLinkupCaches()
 //
 // UAnimNotify_Sound
 //
-void UAnimNotify_Sound::Notify( UAnimNodeSequence* NodeSeq )
+void UAnimNotify_Sound::Notify( USkeletalMeshComponent* SkelComp )
 {
-	USkeletalMeshComponent* SkelComp = NodeSeq->SkelComponent;
 	check( SkelComp );
 
 	AActor* Owner = SkelComp->GetOwner();
@@ -1950,9 +1949,9 @@ IMPLEMENT_CLASS(UAnimNotify_Sound);
 //
 // UAnimNotify_Script
 //
-void UAnimNotify_Script::Notify( UAnimNodeSequence* NodeSeq )
+void UAnimNotify_Script::Notify( USkeletalMeshComponent* SkelComp )
 {
-	AActor* Owner = NodeSeq->SkelComponent->GetOwner();
+	AActor* Owner = SkelComp->GetOwner();
 	if( Owner && NotifyName != NAME_None )
 	{
 		if( !GWorld->HasBegunPlay() )
@@ -1984,9 +1983,9 @@ IMPLEMENT_CLASS(UAnimNotify_Script);
 //
 // UAnimNotify_Scripted
 //
-void UAnimNotify_Scripted::Notify( UAnimNodeSequence* NodeSeq )
+void UAnimNotify_Scripted::Notify( USkeletalMeshComponent* SkelComp )
 {
-	AActor* Owner = NodeSeq->SkelComponent->GetOwner();
+	AActor* Owner = SkelComp->GetOwner();
 	if( Owner )
 	{
 		if( !GWorld->HasBegunPlay() )
@@ -1995,7 +1994,7 @@ void UAnimNotify_Scripted::Notify( UAnimNodeSequence* NodeSeq )
 		}
 		else
 		{
-			eventNotify( Owner, NodeSeq );
+			eventNotify( Owner, SkelComp );
 		}
 	}
 }
@@ -2004,9 +2003,9 @@ IMPLEMENT_CLASS(UAnimNotify_Scripted);
 //
 // UAnimNotify_Footstep
 //
-void UAnimNotify_Footstep::Notify( UAnimNodeSequence* NodeSeq )
+void UAnimNotify_Footstep::Notify( USkeletalMeshComponent* SkelComp )
 {
-	AActor* Owner = (NodeSeq && NodeSeq->SkelComponent) ? NodeSeq->SkelComponent->GetOwner() : NULL;
+	AActor* Owner = (SkelComp) ? SkelComp->GetOwner() : NULL;
 
 	if( !Owner )
 	{
@@ -2033,9 +2032,9 @@ IMPLEMENT_CLASS(UAnimNotify_Footstep);
 //
 // AnimNotify_CameraEffect
 //
-void UAnimNotify_CameraEffect::Notify( UAnimNodeSequence* NodeSeq )
+void UAnimNotify_CameraEffect::Notify( USkeletalMeshComponent* SkelComp )
 {
-	AActor* Owner = NodeSeq->SkelComponent->GetOwner();
+	AActor* Owner = SkelComp->GetOwner();
 	if( Owner )
 	{
 		if( !GWorld->HasBegunPlay() )
@@ -2059,9 +2058,9 @@ IMPLEMENT_CLASS(UAnimNotify_CameraEffect);
 //
 // AnimNotify_PlayParticleEffect
 //
-void UAnimNotify_PlayParticleEffect::Notify( UAnimNodeSequence* NodeSeq )
+void UAnimNotify_PlayParticleEffect::Notify( USkeletalMeshComponent* SkelComp )
 {
-	AActor* Owner = NodeSeq->SkelComponent->GetOwner();
+	AActor* Owner = SkelComp->GetOwner();
 
 	// try owner first
 	if( Owner )
@@ -2077,7 +2076,7 @@ void UAnimNotify_PlayParticleEffect::Notify( UAnimNodeSequence* NodeSeq )
 	}
 	
     // go ahead and send to the mesh now also
-	if( NodeSeq->SkelComponent != NULL )
+	if( SkelComp != NULL )
 	{
 		if( !GWorld->HasBegunPlay() )
 		{
@@ -2085,7 +2084,7 @@ void UAnimNotify_PlayParticleEffect::Notify( UAnimNodeSequence* NodeSeq )
 		}
 		else
 		{
-			NodeSeq->SkelComponent->eventPlayParticleEffect( this );
+			SkelComp->eventPlayParticleEffect( this );
 		}
 	}
 }
@@ -2095,9 +2094,9 @@ IMPLEMENT_CLASS(UAnimNotify_PlayParticleEffect);
 //
 // AnimNotify_Rumble
 //
-void UAnimNotify_Rumble::Notify( UAnimNodeSequence* NodeSeq )
+void UAnimNotify_Rumble::Notify( USkeletalMeshComponent* SkelComp )
 {
-	AActor* Owner = NodeSeq->SkelComponent->GetOwner();
+	AActor* Owner = SkelComp->GetOwner();
 	if( Owner )
 	{
 		if( !GWorld->HasBegunPlay() )

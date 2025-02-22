@@ -160,9 +160,6 @@ namespace UnrealBuildTool
 		{
 			string Result = "";
 
-			// Disable incremental linking; this may no longer be necessary, but it used to cause problems.
-			Result += " /INCREMENTAL:NO";
-
 			// Don't create a side-by-side manifest file for the executable.
 			Result += " /MANIFEST:NO";
 

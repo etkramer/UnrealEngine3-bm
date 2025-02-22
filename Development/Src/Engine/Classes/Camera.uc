@@ -15,35 +15,38 @@ var		Name 	CameraStyle;
 var		float	DefaultFOV;
 /** true if FOV is locked to a constant value*/
 var		bool	bLockedFOV;
-/** value FOV is locked at */
-var		float	LockedFOV;
 
 /** If we should insert black areas when rendering the scene to ensure an aspect ratio of ConstrainedAspectRatio */
 var		bool	bConstrainAspectRatio;
+/** If we should apply FadeColor/FadeAmount to the screen. */
+var		bool	bEnableFading;
+
+var bool bEnableAudioFading;
+
+/** Indicates if CamPostProcessSettings should be used when using this Camera to view through. */
+var		bool	bCamOverridePostProcess;
+/** Turn on scaling of color channels in final image using ColorScale property. */
+var		bool	bEnableColorScaling;
+/** Should interpolate color scale values */
+var		bool	bEnableColorScaleInterp;
+/** value FOV is locked at */
+var		float	LockedFOV;
+
 /** If bConstrainAspectRatio is true, add black regions to ensure aspect ratio is this. Ratio is horizontal/vertical. */
 var		float	ConstrainedAspectRatio;
 /** Default aspect ratio */
 var		float	DefaultAspectRatio;
 
-/** If we should apply FadeColor/FadeAmount to the screen. */
-var		bool	bEnableFading;
 /** Color to fade to. */
 var		color	FadeColor;
 /** Amount of fading to apply. */
 var		float	FadeAmount;
 
-/** Indicates if CamPostProcessSettings should be used when using this Camera to view through. */
-var		bool				bCamOverridePostProcess;
-
 /** Post-process settings to use if bCamOverridePostProcess is TRUE. */
 var		PostProcessSettings	CamPostProcessSettings;
 
-/** Turn on scaling of color channels in final image using ColorScale property. */
-var		bool	bEnableColorScaling;
 /** Allows control over scaling individual color channels in the final image. */
 var		vector	ColorScale;
-/** Should interpolate color scale values */
-var		bool	bEnableColorScaleInterp;
 /** Desired color scale which ColorScale will interpolate to */
 var		vector	DesiredColorScale;
 /** Color scale value at start of interpolation */
@@ -52,6 +55,10 @@ var		vector	OriginalColorScale;
 var		float	ColorScaleInterpDuration;
 /** Time at which interpolation started */
 var		float	ColorScaleInterpStartTime;
+
+// BM1
+var float SoundFadeAmount;
+var float FarCullDistance;
 
 /** The actors which the camera shouldn't see. Used to hide actors which the camera penetrates. */
 //var array<Actor> HiddenActors;
@@ -117,10 +124,17 @@ struct native ViewTargetTransitionParams
 	/** Exponent, used by certain blend functions to control the shape of the curve. */
 	var() float						BlendExp;
 
+    var() bool bResetCameraBehindPlayer;
+    var() bool bKeepBatmanOnScreen;
+    var() bool bDisableCamerCollisionDuringBlend;
+
 	structdefaultproperties
 	{
 		BlendFunction=VTBlend_Cubic
 		BlendExp=2.f
+        bResetCameraBehindPlayer=true
+        bKeepBatmanOnScreen=false
+        bDisableCamerCollisionDuringBlend=false
 	}
 
 	// providing the constructor by hand here, because we pass this as an optional parameter
@@ -130,7 +144,7 @@ struct native ViewTargetTransitionParams
 		FViewTargetTransitionParams()
 		{}
 		FViewTargetTransitionParams(EEventParm)
-		: BlendTime(0.f), BlendFunction(VTBlend_Cubic), BlendExp(2.f)
+		: BlendTime(0.f), BlendFunction(VTBlend_Cubic), BlendExp(2.f), bResetCameraBehindPlayer(TRUE), bKeepBatmanOnScreen(FALSE), bDisableCamerCollisionDuringBlend(FALSE)
 		{}
 	}
 };

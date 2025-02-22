@@ -9,5 +9,5 @@ var() name NotifyName;
 cpptext
 {
 	// AnimNotify interface.
-	virtual void Notify( class UAnimNodeSequence* NodeSeq );
+	virtual void Notify( class USkeletalMeshComponent* SkelComponent );
 }

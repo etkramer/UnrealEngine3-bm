@@ -277,7 +277,6 @@ defaultproperties
 
 	bOnlyDirtyReplication=true
 	bOnlyRelevantToOwner=true
-	NetPriority=1.4
 	bHidden=true
 	Physics=PHYS_None
 	bReplicateMovement=false

@@ -4212,6 +4212,15 @@ struct FPostProcessSettings
     BITFIELD bEnableMotionBlur:1;
     BITFIELD bEnableSceneEffect:1;
     BITFIELD bAllowAmbientOcclusion:1;
+    BITFIELD bAllowAtmospheric:1;
+    FColor Atmospheric_ForegroundColour;
+    FLOAT Atmospheric_ForegroundStrength;
+    FColor Atmospheric_BackgroundColour;
+    FLOAT Atmospheric_BackgroundStrength;
+    FLOAT Atmospheric_ForegroundMaxDistance;
+    FLOAT Atmospheric_ForegroundWidth;
+    FLOAT Atmospheric_BackgroundMaxDistance;
+    FLOAT Atmospheric_BackgroundWidth;
     FLOAT Bloom_Scale;
     FLOAT Bloom_InterpolationDuration;
     FLOAT DOF_FalloffExponent;
@@ -4410,11 +4419,14 @@ struct FViewTargetTransitionParams
     FLOAT BlendTime;
     BYTE BlendFunction;
     FLOAT BlendExp;
+    BITFIELD bResetCameraBehindPlayer:1;
+    BITFIELD bKeepBatmanOnScreen:1;
+    BITFIELD bDisableCamerCollisionDuringBlend:1;
 
 		FViewTargetTransitionParams()
 		{}
 		FViewTargetTransitionParams(EEventParm)
-		: BlendTime(0.f), BlendFunction(VTBlend_Cubic), BlendExp(2.f)
+		: BlendTime(0.f), BlendFunction(VTBlend_Cubic), BlendExp(2.f), bResetCameraBehindPlayer(TRUE), bKeepBatmanOnScreen(FALSE), bDisableCamerCollisionDuringBlend(FALSE)
 		{}
 	
 };
@@ -4436,6 +4448,7 @@ public:
     BITFIELD bLockedFOV:1;
     BITFIELD bConstrainAspectRatio:1;
     BITFIELD bEnableFading:1;
+    BITFIELD bEnableAudioFading:1;
     BITFIELD bCamOverridePostProcess:1;
     BITFIELD bEnableColorScaling:1;
     BITFIELD bEnableColorScaleInterp:1;
@@ -4450,6 +4463,8 @@ public:
     FVector OriginalColorScale;
     FLOAT ColorScaleInterpDuration;
     FLOAT ColorScaleInterpStartTime;
+    FLOAT SoundFadeAmount;
+    FLOAT FarCullDistance;
     struct FTCameraCache CameraCache;
     struct FTViewTarget ViewTarget;
     struct FTViewTarget PendingViewTarget;

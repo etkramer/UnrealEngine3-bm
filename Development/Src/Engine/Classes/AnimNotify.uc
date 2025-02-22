@@ -8,8 +8,14 @@ class AnimNotify extends Object
 	hidecategories(Object)
 	collapsecategories;
 
+struct native NotifierInfo
+{
+    var export editinline SkeletalMeshComponent SkelComponent;
+    var bool AnimMirrored;
+};
+
 cpptext
 {
 	// AnimNotify interface.
-	virtual void Notify( class UAnimNodeSequence* NodeSeq ) {};
+	virtual void Notify( class USkeletalMeshComponent* SkelComponent ) {};
 }

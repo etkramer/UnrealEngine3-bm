@@ -3,7 +3,7 @@
  * Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
  */
 
-class AnimNode extends Object
+class AnimNode extends AnimObject
 	native(Anim)
 	hidecategories(Object)
 	abstract;
@@ -44,10 +44,6 @@ var	const float							NodeTotalWeight;
 /** internal. Accumulator to calculate NodeTotalWeight */
 var const transient	float				TotalWeightAccumulator;
 
-
-/** SkeletalMeshComponent that this animation blend tree is feeding. */
-var transient SkeletalMeshComponent		SkelComponent;
-
 /** Parent node of this AnimNode in the blend tree. */
 var transient array<AnimNodeBlendBase>	ParentNodes;
 
@@ -62,21 +58,6 @@ var transient BoneAtom					CachedRootMotionDelta;
 
 /** Cached bool indicating if node supplies root motion, to avoid recalculating (see above). */
 var transient int						bCachedHasRootMotion;
-
-/** For editor use. */
-var	int									DrawWidth;
-
-/** For editor use  */
-var int									DrawHeight;
-
-/** For editor use. */
-var	int									NodePosX;
-
-/** For editor use. */
-var int									NodePosY;
-
-/** For editor use. */
-var int									OutDrawY;
 
 /** Obsolete. Remove me sometime after VER_AIMOFFSET_ROT2QUAT has been long distributed. */
 var	const INT							InstanceVersionNumber;

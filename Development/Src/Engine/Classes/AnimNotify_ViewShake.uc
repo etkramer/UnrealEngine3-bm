@@ -25,7 +25,7 @@ var()	bool	bUseBoneLocation;
 /** if so, bone name to use */
 var()	name	BoneName;
 
-event Notify( Actor Owner, AnimNodeSequence AnimSeqInstigator )
+event Notify( Actor Owner, SkeletalMeshComponent SkelComponent )
 {
 	local PlayerController PC;
 	local float			Pct, DistToOrigin;
@@ -34,10 +34,9 @@ event Notify( Actor Owner, AnimNodeSequence AnimSeqInstigator )
 
 	// Figure out world origin of view shake
 	if( bUseBoneLocation &&
-		AnimSeqInstigator != None &&
-		AnimSeqInstigator.SkelComponent != None )
+		SkelComponent != None )
 	{
-		ViewShakeOrigin = AnimSeqInstigator.SkelComponent.GetBoneLocation( BoneName );
+		ViewShakeOrigin = SkelComponent.GetBoneLocation(BoneName);
 	}
 	else
 	{

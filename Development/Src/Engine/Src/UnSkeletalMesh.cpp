@@ -837,6 +837,15 @@ void USkeletalMesh::Serialize( FArchive& Ar )
 
 	Ar << NameIndexMap;
 	Ar << PerPolyBoneKDOPs;
+
+#if BATMAN
+	if (Ar.LicenseeVer() >= VER_BATMAN1)
+	{
+		// Not sure what this is. Keep an eye on it.
+		INT Unk = 0;
+		Ar << Unk;
+	}
+#endif
 	
 #if !CONSOLE
 	// Strip away loaded Editor-only data if we're a client and never care about saving.
