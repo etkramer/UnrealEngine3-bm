@@ -434,6 +434,11 @@ var() bool bLooped;
 var() bool bPlayerOnly;
 /** This cover is dynamic */
 var	  bool bDynamicCover;
+
+var(Debug)	bool bDebug_FireLinks;
+var(Debug)	bool bDebug_ExposedLinks;
+var(Debug)	bool bDebug_DangerLinks;
+
 /** Distance link must move to invalidate it's info */
 var() float	InvalidateDistance;
 /** Max trace dist for fire links to check */
@@ -467,10 +472,6 @@ var() float DangerScale;
 
 /** Used for the WorldInfo.CoverList linked list */
 var const CoverLink NextCoverLink;
-
-var(Debug)	bool bDebug_FireLinks;
-var(Debug)	bool bDebug_ExposedLinks;
-var(Debug)	bool bDebug_DangerLinks;
 
 /** Description for the entire CoverLink.  Can be overridden per-slot. */
 var() const ECoverLocationDescription	LocationDescription;
@@ -954,35 +955,6 @@ function OnToggle(SeqAct_Toggle inAction)
 		if( Slots[SlotIdx].SlotMarker != None )
 		{
 			Slots[SlotIdx].SlotMarker.OnToggle( inAction );
-		}
-	}
-
-	CoverReplicator = WorldInfo.Game.GetCoverReplicator();
-	if (CoverReplicator != None)
-	{
-		CoverReplicator.NotifyLinkDisabledStateChange(self);
-	}
-}
-
-function CreateCheckpointRecord(out CheckpointRecord Record)
-{
-	Super.CreateCheckpointRecord(Record);
-	Record.bDisabled = bDisabled;
-}
-
-function ApplyCheckpointRecord(const out CheckpointRecord Record)
-{
-	local CoverReplicator CoverReplicator;
-	local int i;
-
-	Super.ApplyCheckpointRecord(Record);
-
-	bDisabled = Record.bDisabled;
-	for (i = 0; i < Slots.length; i++)
-	{
-		if (Slots[i].SlotMarker != None)
-		{
-			Slots[i].SlotMarker.bBlocked = bBlocked;
 		}
 	}
 

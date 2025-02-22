@@ -2708,14 +2708,6 @@ void AActor::ProcessDemoRecFunction( UFunction* Function, void* Parms, FFrame* S
 void AGameInfo::DoNavFearCostFallOff()
 {
 	INT TotalFear = 0;
-	for( ANavigationPoint* Nav = GWorld->GetWorldInfo()->NavigationPointList; Nav != NULL; Nav = Nav->nextNavigationPoint )
-	{
-		if( Nav->FearCost > 0 )
-		{
-			Nav->FearCost = appTrunc(FLOAT(Nav->FearCost) * FearCostFallOff);
-			TotalFear += Nav->FearCost;
-		}
-	}
 	bDoFearCostFallOff = (TotalFear > 0);
 }
 

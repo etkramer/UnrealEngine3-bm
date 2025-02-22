@@ -95,24 +95,6 @@ simulated function OnToggle(SeqAct_Toggle Action)
 	ForceNetRelevant();
 }
 
-function CreateCheckpointRecord(out CheckpointRecord Record)
-{
-	Record.bCurrentlyPlaying = bCurrentlyPlaying;
-}
-
-function ApplyCheckpointRecord(const out CheckpointRecord Record)
-{
-	bCurrentlyPlaying = Record.bCurrentlyPlaying;
-	if (bCurrentlyPlaying)
-	{
-		StartPlaying();
-	}
-	else
-	{
-		StopPlaying();
-	}
-}
-
 defaultproperties
 {
 	bAutoPlay=FALSE

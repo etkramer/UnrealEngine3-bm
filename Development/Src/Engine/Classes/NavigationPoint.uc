@@ -80,13 +80,11 @@ struct native NavigationOctreeObject
 
 		void Serialize(FArchive& Ar);
 	}
-};
-var native transient const NavigationOctreeObject NavOctreeObject;
+};;
 
 var() bool bBlocked;			// this node is currently unuseable
 var() bool bOneWayPath;			// reachspecs from this path only in the direction the path is facing (180 degrees)
 var	bool bNeverUseStrafing;	// shouldn't use bAdvancedTactics going to this point
-var bool bAlwaysUseStrafing;	// shouldn't use bAdvancedTactics going to this point
 var const bool bForceNoStrafing;// override any LD changes to bNeverUseStrafing
 var const bool bAutoBuilt;		// placed during execution of "PATHS BUILD"
 var	bool bSpecialMove;			// if true, pawn will call SuggestMovePreparation() when moving toward this node
@@ -116,6 +114,13 @@ var(VehicleUsage) bool bPreferredVehiclePath;
 /** Use this path for crowds */
 var(Crowd) bool	bCrowdPath;
 
+/** Does this nav point point to others in separate levels? */
+var const bool bHasCrossLevelPaths;
+
+var const bool bCanBeUsedForRoaming;
+
+var native transient const NavigationOctreeObject NavOctreeObject;
+
 var() editinline const editconst duplicatetransient array<ReachSpec> PathList; //index of reachspecs (used by C++ Navigation code)
 /** List of navigation points to prevent paths being built to */
 var editoronly duplicatetransient array<ActorReference> EditorProscribedPaths;
@@ -123,7 +128,6 @@ var editoronly duplicatetransient array<ActorReference> EditorProscribedPaths;
 var editoronly duplicatetransient array<ActorReference> EditorForcedPaths;
 /** List of volumes containing this navigation point relevant for gameplay */
 var() const editconst  array<ActorReference>	Volumes;
-var() deprecated const editconst  array<Volume>	VolumeList;
 var int visitedWeight;
 var const int bestPathWeight;
 var const private NavigationPoint nextNavigationPoint;
@@ -133,7 +137,6 @@ var const NavigationPoint previousPath;
 var int Cost;					// added cost to visit this pathnode
 var() int ExtraCost;			// Extra weight added by level designer
 var transient int TransientCost;	// added right before a path finding attempt, cleared afterward.
-var	transient int FearCost;		// extra weight diminishing over time (used for example, to mark path where bot died)
 
 /** Mapping of Cost/Description for costs of this node */
 struct native DebugNavCost
@@ -163,9 +166,6 @@ var const float LastDetourWeight;
 
 var	CylinderComponent		CylinderComponent;
 
-var Objective NearestObjective; // FIXMESTEVE - determine in path building
-var float ObjectiveDistance;
-
 /** path size of the largest ReachSpec in this node's PathList */
 var() editconst const Cylinder MaxPathSize;
 
@@ -177,9 +177,6 @@ var const SpriteComponent GoodSprite;
 /** Used to draw bad collision intersection in editor */
 var const SpriteComponent BadSprite;
 
-/** Does this nav point point to others in separate levels? */
-var const bool bHasCrossLevelPaths;
-
 /** Which navigation network does this navigation point connect to? */
 var() editconst const int NetworkID;
 
@@ -188,8 +185,9 @@ var transient Pawn AnchoredPawn;
 /** Last time a pawn was anchored to this navigation point - set when Pawn chooses a new anchor */
 var transient float LastAnchoredPawnTime;
 
-/** whether we need to save this in checkpoints because it has been modified by Kismet */
-var transient bool bShouldSaveForCheckpoint;
+var() name PathGroupID;
+var transient Actor BlockingActor;
+var class<ReachSpec> DefaultReachSpecClass;
 
 struct CheckpointRecord
 {
@@ -200,7 +198,7 @@ struct CheckpointRecord
 cpptext
 {
 	virtual void	addReachSpecs(class AScout *Scout, UBOOL bOnlyChanged=0);
-	virtual UClass* GetReachSpecClass( ANavigationPoint* Nav, UClass* DefaultReachSpecClass ) { return DefaultReachSpecClass; }
+	virtual UClass* GetReachSpecClass( ANavigationPoint* Nav ) { return DefaultReachSpecClass; }
 
 	virtual void InitForPathFinding() {};
 	virtual void ClearPaths();
@@ -441,8 +439,6 @@ function OnToggle(SeqAct_Toggle inAction)
 	}
 
 	WorldInfo.Game.NotifyNavigationChanged(self);
-
-	bShouldSaveForCheckpoint = true;
 }
 
 simulated event ShutDown()
@@ -451,24 +447,6 @@ simulated event ShutDown()
 
 	bBlocked = TRUE;
 	WorldInfo.Game.NotifyNavigationChanged(self);
-
-	bShouldSaveForCheckpoint = true;
-}
-
-function bool ShouldSaveForCheckpoint()
-{
-	return bShouldSaveForCheckpoint;
-}
-
-function CreateCheckpointRecord(out CheckpointRecord Record)
-{
-	Record.bBlocked = bBlocked;
-}
-
-function ApplyCheckpointRecord(const out CheckpointRecord Record)
-{
-	bBlocked = Record.bBlocked;
-	bShouldSaveForCheckpoint = true;
 }
 
 /** @return Debug abbrev for hud printing */
@@ -536,6 +514,9 @@ defaultproperties
 
 	// default to no network id
 	NetworkID=-1
+
+	DefaultReachSpecClass=Class'ReachSpec'
+
 	// NavigationPoints are generally server side only so we don't need to worry about client simulation
 	bForceAllowKismetModification=true
 }

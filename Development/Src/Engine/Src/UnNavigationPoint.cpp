@@ -757,7 +757,7 @@ void ANavigationPoint::addReachSpecs(AScout *Scout, UBOOL bOnlyChanged)
 				}
 				if( !bForcedPath && !bDestinationOnly && CanConnectTo( Nav, TRUE ) )
 				{
-					UClass*		ReachSpecClass  = GetReachSpecClass( Nav, Scout->GetDefaultReachSpecClass() );
+					UClass*		ReachSpecClass  = GetReachSpecClass( Nav );
 					UReachSpec *newSpec			= ConstructObject<UReachSpec>(ReachSpecClass,GetOuter(),NAME_None);
 					if( newSpec->defineFor( this, Nav, Scout ) )
 					{
@@ -1009,13 +1009,11 @@ void ANavigationPoint::ClearForPathFinding()
 
 	// Figure out total cost of movement to this node
 	Cost =	ExtraCost + 
-			TransientCost + 
-			FearCost;
+			TransientCost;
 
 	CostArray.Empty();
 	DEBUGREGISTERCOST( this, TEXT("Extra"), ExtraCost );
 	DEBUGREGISTERCOST( this, TEXT("Transient"), TransientCost );
-	DEBUGREGISTERCOST( this, TEXT("Fear"), FearCost );
 	
 	TransientCost = 0;
 	bAlreadyVisited = FALSE;

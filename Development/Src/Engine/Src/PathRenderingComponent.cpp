@@ -41,10 +41,6 @@ public:
 			{
 				new(Stars) FWireStar(Nav->Location + FVector(0,0,40), FColor(255,0,0), 5);
 			}
-			if( Nav->FearCost > 0 )
-			{
-				new(Stars) FWireStar(Nav->Location + FVector(0,0,60), FColor(255,128,255), 5);
-			}
 
 			// draw cylinder
 			if (Nav->IsSelected() && Nav->CylinderComponent != NULL)

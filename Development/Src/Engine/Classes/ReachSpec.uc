@@ -99,13 +99,18 @@ var bool bCanCutCorners;
 var bool bCheckForObstructions;
 /** Prune paths should skip trying to prune along these */
 var const bool	bSkipPrune;
+
+/** Reachspec has been disabled/blocked by kismet */
+var() editconst bool  bDisabled;
+
 /** Can always prune against these types of specs (even though class doesn't match) */
 var const array< class<ReachSpec> > PruneSpecList;
 
 /** Actor that is blocking this ReachSpec, making it temporarily unusable */
 var Actor BlockedBy;
-/** Reachspec has been disabled/blocked by kismet */
-var() editconst bool  bDisabled;
+
+var Vector RealStartPos;
+var Vector RealEndPos;
 
 /** CostFor()
 Returns the "cost" in unreal units

@@ -9430,6 +9430,8 @@ public:
     BITFIELD bDisabled:1;
     TArrayNoInit<class UClass*> PruneSpecList;
     class AActor* BlockedBy;
+    FVector RealStartPos;
+    FVector RealEndPos;
     //## END PROPS ReachSpec
 
     DECLARE_FUNCTION(execCostFor);
@@ -9786,7 +9788,6 @@ public:
     BITFIELD bBlocked:1;
     BITFIELD bOneWayPath:1;
     BITFIELD bNeverUseStrafing:1;
-    BITFIELD bAlwaysUseStrafing:1;
     BITFIELD bForceNoStrafing:1;
     BITFIELD bAutoBuilt:1;
     BITFIELD bSpecialMove:1;
@@ -9810,13 +9811,12 @@ public:
     BITFIELD bPreferredVehiclePath:1;
     BITFIELD bCrowdPath:1;
     BITFIELD bHasCrossLevelPaths:1;
-    BITFIELD bShouldSaveForCheckpoint:1;
+    BITFIELD bCanBeUsedForRoaming:1;
     struct FNavigationOctreeObject NavOctreeObject;
     TArrayNoInit<class UReachSpec*> PathList;
     TArrayNoInit<struct FActorReference> EditorProscribedPaths;
     TArrayNoInit<struct FActorReference> EditorForcedPaths;
     TArrayNoInit<struct FActorReference> Volumes;
-    TArrayNoInit<class AVolume*> VolumeList;
     INT visitedWeight;
     INT bestPathWeight;
     class ANavigationPoint* nextNavigationPoint;
@@ -9826,14 +9826,11 @@ public:
     INT Cost;
     INT ExtraCost;
     INT TransientCost;
-    INT FearCost;
     TArrayNoInit<struct FDebugNavCost> CostArray;
     class ADroppedPickup* InventoryCache;
     FLOAT InventoryDist;
     FLOAT LastDetourWeight;
     class UCylinderComponent* CylinderComponent;
-    class AObjective* NearestObjective;
-    FLOAT ObjectiveDistance;
     FCylinder MaxPathSize;
     FGuid NavGuid;
     class USpriteComponent* GoodSprite;
@@ -9841,6 +9838,9 @@ public:
     INT NetworkID;
     class APawn* AnchoredPawn;
     FLOAT LastAnchoredPawnTime;
+    FName PathGroupID;
+    class AActor* BlockingActor;
+    class UClass* DefaultReachSpecClass;
     //## END PROPS NavigationPoint
 
     virtual void GetBoundingCylinder(FLOAT& CollisionRadius,FLOAT& CollisionHeight) const;
@@ -9929,7 +9929,7 @@ public:
     }
     DECLARE_CLASS(ANavigationPoint,AActor,0,Engine)
 	virtual void	addReachSpecs(class AScout *Scout, UBOOL bOnlyChanged=0);
-	virtual UClass* GetReachSpecClass( ANavigationPoint* Nav, UClass* DefaultReachSpecClass ) { return DefaultReachSpecClass; }
+	virtual UClass* GetReachSpecClass( ANavigationPoint* Nav ) { return DefaultReachSpecClass; }
 
 	virtual void InitForPathFinding() {};
 	virtual void ClearPaths();
@@ -23446,7 +23446,7 @@ VERIFY_CLASS_OFFSET_NODIE(A,Mutator,NextMutator)
 VERIFY_CLASS_OFFSET_NODIE(A,Mutator,GroupNames)
 VERIFY_CLASS_SIZE_NODIE(AMutator)
 VERIFY_CLASS_OFFSET_NODIE(A,NavigationPoint,NavOctreeObject)
-VERIFY_CLASS_OFFSET_NODIE(A,NavigationPoint,LastAnchoredPawnTime)
+VERIFY_CLASS_OFFSET_NODIE(A,NavigationPoint,DefaultReachSpecClass)
 VERIFY_CLASS_SIZE_NODIE(ANavigationPoint)
 VERIFY_CLASS_OFFSET_NODIE(A,Note,Text)
 VERIFY_CLASS_SIZE_NODIE(ANote)
@@ -23566,7 +23566,7 @@ VERIFY_CLASS_OFFSET_NODIE(A,Projectile,CylinderComponent)
 VERIFY_CLASS_SIZE_NODIE(AProjectile)
 VERIFY_CLASS_SIZE_NODIE(UProscribedReachSpec)
 VERIFY_CLASS_OFFSET_NODIE(U,ReachSpec,NavOctreeObject)
-VERIFY_CLASS_OFFSET_NODIE(U,ReachSpec,BlockedBy)
+VERIFY_CLASS_OFFSET_NODIE(U,ReachSpec,RealEndPos)
 VERIFY_CLASS_SIZE_NODIE(UReachSpec)
 VERIFY_CLASS_SIZE_NODIE(AReplicationInfo)
 VERIFY_CLASS_OFFSET_NODIE(A,ReverbVolume,Priority)
