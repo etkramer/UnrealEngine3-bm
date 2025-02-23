@@ -414,92 +414,11 @@ extern FString PerfMemRunResultStrings[4];
 	Core types.
 ----------------------------------------------------------------------------*/
 
-//
-// Globally unique identifier.
-//
-class FGuid
-{
-public:
-	DWORD SmallGuid;
-	FGuid()
-	{}
-	FGuid( DWORD InA, DWORD InB, DWORD InC, DWORD InD )
-	: SmallGuid(InA ^ InB ^ InC ^ InD)
-	{}
-	explicit FORCEINLINE FGuid(EEventParm)
-	: SmallGuid(0)
-    {
-    }
-
-	/**
-	 * Returns whether this GUID is valid or not. We reserve an all 0 GUID to represent "invalid".
-	 *
-	 * @return TRUE if valid, FALSE otherwise
-	 */
-	UBOOL IsValid() const
-	{
-		return SmallGuid != 0;
-	}
-
-	/** Invalidates the GUID. */
-	void Invalidate()
-	{
-		SmallGuid = 0;
-	}
-
-	friend UBOOL operator==(const FGuid& X, const FGuid& Y)
-	{
-		return (X.SmallGuid ^ Y.SmallGuid) == 0;
-	}
-	friend UBOOL operator!=(const FGuid& X, const FGuid& Y)
-	{
-		return (X.SmallGuid ^ Y.SmallGuid) != 0;
-	}
-	DWORD& operator[]( INT Index )
-	{
-		checkSlow(Index>=0);
-		checkSlow(Index<4);
-
-		return SmallGuid;
-	}
-	const DWORD& operator[]( INT Index ) const
-	{
-		checkSlow(Index>=0);
-		checkSlow(Index<4);
-
-		return SmallGuid;
-	}
-	friend FArchive& operator<<( FArchive& Ar, FGuid& G )
-	{
-		DWORD A = G.SmallGuid;
-		DWORD B = 0, C = 0, D = 0;
-		
-		Ar << A << B << C << D;
-		if (Ar.IsLoading())
-		{
-			G.SmallGuid = A;
-		}
-
-		return Ar;
-	}
-	FString String() const
-	{
-		return FString::Printf( TEXT("%08X"), SmallGuid );
-	}
-	friend DWORD GetTypeHash(const FGuid& Guid)
-	{
-		return appMemCrc(&Guid,sizeof(FGuid));
-	}
-};
-
 class FGuidImplementation
 {
 public:
 	DWORD A,B,C,D;
 	FGuidImplementation()
-	{}
-	FGuidImplementation( FGuid Guid )
-	: A(Guid[0]), B(Guid[1]), C(Guid[2]), D(Guid[3])
 	{}
 	FGuidImplementation( DWORD InA, DWORD InB, DWORD InC, DWORD InD )
 	: A(InA), B(InB), C(InC), D(InD)
@@ -572,6 +491,89 @@ public:
 	friend DWORD GetTypeHash(const FGuidImplementation& Guid)
 	{
 		return appMemCrc(&Guid,sizeof(FGuidImplementation));
+	}
+};
+
+//
+// Globally unique identifier.
+//
+class FGuid
+{
+public:
+	DWORD SmallGuid;
+	FGuid()
+	{}
+	FGuid(FGuidImplementation InGuid)
+	: SmallGuid(InGuid.A)
+	{}
+	FGuid( DWORD InA, DWORD InB, DWORD InC, DWORD InD )
+	: SmallGuid(InA ^ InB ^ InC ^ InD)
+	{}
+	explicit FORCEINLINE FGuid(EEventParm)
+	: SmallGuid(0)
+    {
+    }
+
+	/**
+	 * Returns whether this GUID is valid or not. We reserve an all 0 GUID to represent "invalid".
+	 *
+	 * @return TRUE if valid, FALSE otherwise
+	 */
+	UBOOL IsValid() const
+	{
+		return SmallGuid != 0;
+	}
+
+	/** Invalidates the GUID. */
+	void Invalidate()
+	{
+		SmallGuid = 0;
+	}
+
+	friend UBOOL operator==(const FGuid& X, const FGuid& Y)
+	{
+		return (X.SmallGuid ^ Y.SmallGuid) == 0;
+	}
+	friend UBOOL operator!=(const FGuid& X, const FGuid& Y)
+	{
+		return (X.SmallGuid ^ Y.SmallGuid) != 0;
+	}
+	DWORD& operator[]( INT Index )
+	{
+		checkSlow(Index>=0);
+		checkSlow(Index<4);
+
+		return SmallGuid;
+	}
+	const DWORD& operator[]( INT Index ) const
+	{
+		checkSlow(Index>=0);
+		checkSlow(Index<4);
+
+		return SmallGuid;
+	}
+	friend FArchive& operator<<( FArchive& Ar, FGuid& G )
+	{
+		FGuidImplementation Impl(G.SmallGuid,0,0,0);
+		if ( Ar.IsLoading() || Ar.IsSaving() )
+		{
+			Ar << Impl;
+			G.SmallGuid = Impl.A;
+		}
+		else if ( Ar.IsCountingMemory() )
+		{
+			Ar.CountBytes(4, 4);
+		}
+
+		return Ar;
+	}
+	FString String() const
+	{
+		return FString::Printf( TEXT("%08X"), SmallGuid );
+	}
+	friend DWORD GetTypeHash(const FGuid& Guid)
+	{
+		return appMemCrc(&Guid,sizeof(FGuid));
 	}
 };
 

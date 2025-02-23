@@ -13,6 +13,9 @@
 /Development/Src/**/Debug/**
 /Development/Src/**/Release/**
 
+[Bb]in/
+[Oo]bj/
+
 # Compiled Object files
 *.slo
 *.lo

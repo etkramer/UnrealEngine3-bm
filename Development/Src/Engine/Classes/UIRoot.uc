@@ -489,9 +489,9 @@ structcpptext
 	: FGuidImplementation(0,0,0,0)
 	{}
 
-	FWIDGET_ID( const FGuid& Other )
-	: FGuidImplementation(Other)
-	{ }
+	FWIDGET_ID( const FGuid& Other)
+	: FGuidImplementation(Other.SmallGuid,0,0,0)
+	{}
 }
 };
 
@@ -510,9 +510,9 @@ structcpptext
 	: FGuidImplementation(0,0,0,0)
 	{}
 
-	FSTYLE_ID( const FGuid& Other )
-	: FGuidImplementation(Other)
-	{ }
+	FSTYLE_ID( const FGuid& Other)
+	: FGuidImplementation(Other.SmallGuid,0,0,0)
+	{}
 }
 };
 

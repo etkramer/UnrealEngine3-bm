@@ -40,7 +40,8 @@
         "request": "launch",
         "program": "${workspaceFolder}/Binaries/Debug-BmGame.exe",
         "args": [
-          "editor"
+          "editor",
+          "-nopauseonsuccess"
           // "-cookededitor"
         ],
         "cwd": "${workspaceFolder}/Binaries",

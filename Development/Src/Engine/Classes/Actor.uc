@@ -578,7 +578,7 @@ var(Investigate) array<InvestigationData> InvestigationDataArray;
 struct immutablewhencooked native ActorReference
 {
 	var() Actor	Actor;
-	var() editconst const guid Guid;
+	var() editconst const Guid Guid;
 
 	structcpptext
 	{

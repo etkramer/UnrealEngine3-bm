@@ -32,4 +32,9 @@
     <DisplayString>{SourcePathname}</DisplayString>
   </Type>
 
+  <!-- FArchiveFileReaderWindows visualizer -->
+  <Type Name="FArchiveFileReaderWindows">
+    <DisplayString>{Filename}</DisplayString>
+  </Type>
+
 </AutoVisualizer>

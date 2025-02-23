@@ -3755,8 +3755,6 @@ void UStructProperty::Link( FArchive& Ar, UProperty* Prev )
 	
 	if( Struct->ConstructorLink && !(PropertyFlags & CPF_Native) )
 		PropertyFlags |= CPF_NeedCtorLink;
-
-	warnf(TEXT("Struct '%s' has PropertiesSize %d"), *Struct->GetName(), Struct->PropertiesSize);
 }
 UBOOL UStructProperty::Identical( const void* A, const void* B, DWORD PortFlags ) const
 {
@@ -3771,6 +3769,15 @@ void UStructProperty::SerializeItem( FArchive& Ar, void* Value, INT MaxReadBytes
 								|| (Ar.GetPortFlags() & PPF_ForceBinarySerialization)
 									// when the min package version is bumped, the remainder of this check can be removed
 									&&	(Struct->GetFName() != NAME_FontCharacter || Ar.Ver() >= VER_FIXED_FONTS_SERIALIZATION));
+
+#if BATMAN
+	if ( Struct->GetFName() == NAME_Guid )
+	{
+		// GUIDs are 32 bits in memory, 128-bits on disk so they need special handling.
+		Ar << *((FGuid*)(BYTE*)Value);
+		return;
+	}
+#endif
 
 	// Preload struct before serialization tracking to not double count time.
 	if ( bUseBinarySerialization == TRUE )

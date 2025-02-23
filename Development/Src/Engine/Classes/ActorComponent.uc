@@ -17,6 +17,9 @@ var	transient	const	bool			bNeedsReattach;
 /** Is this component's transform in need of an update? */
 var	transient	const	bool			bNeedsUpdateTransform;
 
+var native transient bool bDisableTick;
+var native transient bool bEnableUpdateChildComponents;
+
 /** The ticking group this component belongs to */
 var const ETickingGroup TickGroup;
 

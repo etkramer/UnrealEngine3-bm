@@ -660,14 +660,16 @@ void appCleanFileCache()
 	Guids.
 -----------------------------------------------------------------------------*/
 
+DWORD CurrentGuid = 1;
+
 //
 // Create a new globally unique identifier.
 //
 FGuid appCreateGuid()
 {
-	FGuidImplementation Result(0, 0, 0, 0);
-	verify( CoCreateGuid( (GUID*)&Result )==S_OK );
-	return *(FGuid*)&Result;
+	FGuid Result;
+	Result.SmallGuid = CurrentGuid++;
+	return Result;
 }
 
 /*-----------------------------------------------------------------------------

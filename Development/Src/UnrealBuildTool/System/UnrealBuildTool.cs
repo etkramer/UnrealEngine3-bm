@@ -63,11 +63,7 @@ namespace UnrealBuildTool
 			if (ActionsToExecute.Count > 0)
 			{
                 // Display some stats to the user.
-                Console.WriteLine(
-                    "{0} actions, {1} outdated and requested actions",
-                    AllActions.Count,
-                    ActionsToExecute.Count
-                );
+                Console.WriteLine("Compiling and linking {0} file(s)", ActionsToExecute.Count - 1);
 
 				if (BuildConfiguration.bAllowXGE)
 				{

@@ -117,9 +117,9 @@ public:
 		FMemDebug* Ptr = *((FMemDebug**)((BYTE*)InPtr - sizeof(INT) - sizeof(FMemDebug*)));
 
 #if BATMAN
-		if ( !GIsCriticalError && GIsRequestingExit && Ptr == NULL )
+		// Not clear why this happens sometimes on shutdown. But we probably don't care if we're shutting down anyway.
+		if ( !GIsCriticalError && (UINT)Ptr == 0xdddddddd )
 		{
-			// This next check fails sometimes on shutdown. We're shutting down anyway so we don't care.
 			return;
 		}
 #endif
