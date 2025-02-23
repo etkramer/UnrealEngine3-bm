@@ -665,7 +665,7 @@ void appCleanFileCache()
 //
 FGuid appCreateGuid()
 {
-	FGuidImplementation Result = { 0,0,0,0 };
+	FGuidImplementation Result(0, 0, 0, 0);
 	verify( CoCreateGuid( (GUID*)&Result )==S_OK );
 	return *(FGuid*)&Result;
 }

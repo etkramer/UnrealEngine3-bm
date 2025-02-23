@@ -239,36 +239,36 @@ AUTOGENERATE_NAME(PlayerInput)
 #ifndef INCLUDED_ENGINE_USERINTERFACE_CLASSES
 #define INCLUDED_ENGINE_USERINTERFACE_CLASSES 1
 
-struct FWIDGET_ID : public FGuid
+struct FWIDGET_ID : public FGuidImplementation
 {
 
 	FWIDGET_ID()
-	: FGuid()
+	: FGuidImplementation()
 	{ }
 
 	FWIDGET_ID(EEventParm)
-	: FGuid(0,0,0,0)
+	: FGuidImplementation(0,0,0,0)
 	{}
 
 	FWIDGET_ID( const FGuid& Other )
-	: FGuid(Other)
+	: FGuidImplementation(Other)
 	{ }
 
 };
 
-struct FSTYLE_ID : public FGuid
+struct FSTYLE_ID : public FGuidImplementation
 {
 
 	FSTYLE_ID()
-	: FGuid()
+	: FGuidImplementation()
 	{ }
 
 	FSTYLE_ID(EEventParm)
-	: FGuid(0,0,0,0)
+	: FGuidImplementation(0,0,0,0)
 	{}
 
 	FSTYLE_ID( const FGuid& Other )
-	: FGuid(Other)
+	: FGuidImplementation(Other)
 	{ }
 
 };

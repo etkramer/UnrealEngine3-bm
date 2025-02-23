@@ -414,11 +414,6 @@ extern FString PerfMemRunResultStrings[4];
 	Core types.
 ----------------------------------------------------------------------------*/
 
-struct FGuidImplementation
-{
-	DWORD A, B, C, D;
-};
-
 //
 // Globally unique identifier.
 //
@@ -494,6 +489,89 @@ public:
 	friend DWORD GetTypeHash(const FGuid& Guid)
 	{
 		return appMemCrc(&Guid,sizeof(FGuid));
+	}
+};
+
+class FGuidImplementation
+{
+public:
+	DWORD A,B,C,D;
+	FGuidImplementation()
+	{}
+	FGuidImplementation( FGuid Guid )
+	: A(Guid[0]), B(Guid[1]), C(Guid[2]), D(Guid[3])
+	{}
+	FGuidImplementation( DWORD InA, DWORD InB, DWORD InC, DWORD InD )
+	: A(InA), B(InB), C(InC), D(InD)
+	{}
+	explicit FORCEINLINE FGuidImplementation(EEventParm)
+	: A(0), B(0), C(0), D(0)
+    {
+    }
+
+	/**
+	 * Returns whether this GUID is valid or not. We reserve an all 0 GUID to represent "invalid".
+	 *
+	 * @return TRUE if valid, FALSE otherwise
+	 */
+	UBOOL IsValid() const
+	{
+		return (A | B | C | D) != 0;
+	}
+
+	/** Invalidates the GUID. */
+	void Invalidate()
+	{
+		A = B = C = D = 0;
+	}
+
+	friend UBOOL operator==(const FGuidImplementation& X, const FGuidImplementation& Y)
+	{
+		return ((X.A ^ Y.A) | (X.B ^ Y.B) | (X.C ^ Y.C) | (X.D ^ Y.D)) == 0;
+	}
+	friend UBOOL operator!=(const FGuidImplementation& X, const FGuidImplementation& Y)
+	{
+		return ((X.A ^ Y.A) | (X.B ^ Y.B) | (X.C ^ Y.C) | (X.D ^ Y.D)) != 0;
+	}
+	DWORD& operator[]( INT Index )
+	{
+		checkSlow(Index>=0);
+		checkSlow(Index<4);
+		switch(Index)
+		{
+		case 0: return A;
+		case 1: return B;
+		case 2: return C;
+		case 3: return D;
+		}
+
+		return A;
+	}
+	const DWORD& operator[]( INT Index ) const
+	{
+		checkSlow(Index>=0);
+		checkSlow(Index<4);
+		switch(Index)
+		{
+		case 0: return A;
+		case 1: return B;
+		case 2: return C;
+		case 3: return D;
+		}
+
+		return A;
+	}
+	friend FArchive& operator<<( FArchive& Ar, FGuidImplementation& G )
+	{
+		return Ar << G.A << G.B << G.C << G.D;
+	}
+	FString String() const
+	{
+		return FString::Printf( TEXT("%08X%08X%08X%08X"), A, B, C, D );
+	}
+	friend DWORD GetTypeHash(const FGuidImplementation& Guid)
+	{
+		return appMemCrc(&Guid,sizeof(FGuidImplementation));
 	}
 };
 

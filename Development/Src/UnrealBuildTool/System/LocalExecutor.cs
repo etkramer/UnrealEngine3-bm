@@ -34,8 +34,10 @@ namespace UnrealBuildTool
 		 */
 		public static bool ExecuteActions(List<Action> Actions)
 		{
+            bool bForceExit = false;
+
 			Dictionary<Action,Process> ActionProcessDictionary = new Dictionary<Action,Process>();
-			while(true)
+            while (!bForceExit)
 			{
 				// Count the number of unexecuted and still executing actions.
 				int NumUnexecutedActions = 0;
@@ -66,6 +68,11 @@ namespace UnrealBuildTool
 				// prerequisites.
 				foreach (Action Action in Actions)
 				{
+                    if (bForceExit)
+                    {
+                        break;
+                    }
+
 					Process ActionProcess = null;
 					ActionProcessDictionary.TryGetValue(Action, out ActionProcess);
 					if (ActionProcess == null)
@@ -91,16 +98,42 @@ namespace UnrealBuildTool
 							if (!bHasOutdatedPrerequisites)
 							{
 								// Create the action's process.
-								ProcessStartInfo ActionStartInfo = new ProcessStartInfo();
-								ActionStartInfo.WorkingDirectory = ExpandEnvironmentVariables(Action.WorkingDirectory);
-								ActionStartInfo.FileName = ExpandEnvironmentVariables(Action.CommandPath);
-								ActionStartInfo.Arguments = ExpandEnvironmentVariables(Action.CommandArguments);
-								ActionStartInfo.UseShellExecute = false;
+                                ProcessStartInfo ActionStartInfo = new ProcessStartInfo();
+                                ActionStartInfo.WorkingDirectory = ExpandEnvironmentVariables(Action.WorkingDirectory);
+                                ActionStartInfo.FileName = ExpandEnvironmentVariables(Action.CommandPath);
+                                ActionStartInfo.Arguments = ExpandEnvironmentVariables(Action.CommandArguments);
+                                ActionStartInfo.UseShellExecute = false;
+                                ActionStartInfo.RedirectStandardOutput = true;
 
 								// Try to launch the action's process, and produce a friendly error message if it fails.
 								try
 								{
-									ActionProcess = Process.Start(ActionStartInfo);
+                                    ActionProcess = Process.Start(ActionStartInfo);
+                                    ActionProcess.BeginOutputReadLine();
+                                    ActionProcess.OutputDataReceived += delegate(object sender, DataReceivedEventArgs e)
+                                    {
+                                        // '/Gm' flag causes annoying output for skipped files
+                                        if (!string.IsNullOrEmpty(e.Data) && e.Data != "Skipping... (no relevant changes detected)")
+                                        {
+                                            Console.WriteLine(e.Data);
+                                        }
+                                    };
+
+                                    ActionProcess.Exited += delegate(object sender, EventArgs e)
+                                    {
+                                        if (ActionProcess.ExitCode != 0)
+                                        {
+                                            foreach (Process proc in ActionProcessDictionary.Values)
+                                            {
+                                                if (!proc.HasExited)
+                                                {
+                                                    proc.Kill();
+                                                }
+                                            }
+
+                                            bForceExit = true;
+                                        }
+                                    };
 								}
 								catch (Exception)
 								{

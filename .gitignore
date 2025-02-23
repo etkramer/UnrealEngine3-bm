@@ -6,9 +6,7 @@
 /Development/External/GFx/*
 !**/MISSING_FILES.txt
 
-# Visual Studio 2015 user specific files
-.vs/
-
+# Visual Studio user specific files
 /Development/Src/**/*.user
 /Development/Src/**/*.suo
 /Development/Src/**/*.idb

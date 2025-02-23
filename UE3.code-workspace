@@ -1,0 +1,160 @@
+{
+  "folders": [
+    {
+      "name": "UE3 (575)",
+      "path": "."
+    }
+  ],
+  // Tasks
+  "tasks": {
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "build",
+        "type": "shell",
+        "command": "${workspaceFolder}/Development/Build-Win11.cmd",
+        "options": {
+          "cwd": "${workspaceFolder}/Development"
+        },
+        "args": ["BmGame", "Debug"],
+        "presentation": {
+          "echo": false,
+          "clear": true,
+          "showReuseMessage": false
+        },
+        "group": {
+          "kind": "build",
+          "isDefault": true
+        },
+        "problemMatcher": "$msCompile"
+      }
+    ]
+  },
+  // Launch configurations
+  "launch": {
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "name": "Debug Editor",
+        "type": "cppvsdbg",
+        "request": "launch",
+        "program": "${workspaceFolder}/Binaries/Debug-BmGame.exe",
+        "args": [
+          "editor"
+          // "-cookededitor"
+        ],
+        "cwd": "${workspaceFolder}/Binaries",
+        "environment": [
+          {
+            "name": "PATH",
+            "value": "${workspaceFolder}/Development/External/Developer Runtime/x86;${env:PATH}"
+          }
+        ],
+        "visualizerFile": "${workspaceFolder}/UE3.natvis",
+        "preLaunchTask": "build",
+        "internalConsoleOptions": "openOnSessionStart",
+        "logging": { "moduleLoad": false, "exceptions": false }
+      }
+    ]
+  },
+  "settings": {
+    // Exclude non-code stuff from workspace.
+    "files.exclude": {
+      // Exclude generated IDE files.
+      "**/*.suo": true,
+      "**/*.user": true,
+      "**/*.ncb": true,
+      "**/*.vspscc": true,
+      "**/*.vb": true,
+
+      // Exclude unused build files.
+      "**/*.cmake": true,
+      "**/CMakeLists.txt": true,
+      "**/makefile": true,
+      "**/makefile-inc": true
+    },
+
+    // Exclude non-code stuff from search.
+    "search.useIgnoreFiles": false,
+    "search.exclude": {
+      "Binaries/": true,
+      "Development/Build": true,
+      "Development/Builder": true,
+      "Development/Documentation": true,
+      "Development/Install": true,
+      "Development/Intermediate": true,
+      "Development/External": true,
+      "Development/Tools": true,
+      "Development/Websites": true,
+      "Engine/ArtTools": true,
+      "Engine/Stats": true,
+
+      ".gitignore": true,
+      "**/*.log": true,
+      "**/*.xml": true,
+      "**/*.vcproj": true,
+      "**/*.csproj": true,
+
+      // Exclude per-user settings from search.
+      "BmGame/Config/Bm*.ini": true,
+
+      // Exclude non-INT localizations from search.
+      "Engine/Localization/CHT": true,
+      "Engine/Localization/CZE": true,
+      "Engine/Localization/DEU": true,
+      "Engine/Localization/ESM": true,
+      "Engine/Localization/ESN": true,
+      "Engine/Localization/FRA": true,
+      "Engine/Localization/HUN": true,
+      "Engine/Localization/ITA": true,
+      "Engine/Localization/JPN": true,
+      "Engine/Localization/KOR": true,
+      "Engine/Localization/POL": true,
+      "Engine/Localization/RUS": true,
+      "Engine/Localization/SLO": true
+    },
+
+    // UnrealScript files
+    "unrealscript.indexAllDocuments": true,
+    "unrealscript.checkTypes": false,
+    "unrealscript.generation": "3",
+    "unrealscript.analyzeDocuments": "None",
+
+    // UnrealBuildTool as main C# project
+    "dotnet.preferCSharpExtension": true,
+    "dotnet.defaultSolution": "Development/Src/UnrealBuildTool/UnrealBuildTool.sln",
+
+    // C++ IntelliSense (pretend to be VS2005)
+    "editor.formatOnSave": false,
+    "C_Cpp.default.compilerPath": "${env:VS80COMNTOOLS}/../../VC/bin/cl.exe",
+    "C_Cpp.default.intelliSenseMode": "windows-msvc-x86",
+    "C_Cpp.default.includePath": [
+      "${env:VS80COMNTOOLS}/../../VC/include",
+      "${env:VS80COMNTOOLS}/../../VC/PlatformSDK/Include",
+
+      "Development/Src/**/",
+      "Development/External/dxsdk_aug2007/include",
+      "Development/External/wxWidgets/include",
+      "Development/External/OpenAL-1.1/include",
+      "Development/External/nvTextureTools2/src/src",
+      "Development/External/nvTextureTools2/src/project/vc8",
+      "Development/External/zlib/Inc",
+      "Development/External/FaceFx/**/Inc",
+      "Development/External/PhysX/**/include",
+      "Development/External/PhysX/**/Include"
+    ],
+    "C_Cpp.default.defines": [
+      "UNICODE",
+      "_UNICODE",
+      "_WINDOWS",
+      "GAMENAME=BMGAME",
+      "BATMAN=1",
+      "_DEBUG",
+
+      "WIN32=1",
+      "_MSC_VER=1400",
+      "_WIN32_WINDOWS=0x0500"
+    ],
+    "dotnet.backgroundAnalysis.analyzerDiagnosticsScope": "none"
+  }
+}

@@ -3755,6 +3755,8 @@ void UStructProperty::Link( FArchive& Ar, UProperty* Prev )
 	
 	if( Struct->ConstructorLink && !(PropertyFlags & CPF_Native) )
 		PropertyFlags |= CPF_NeedCtorLink;
+
+	warnf(TEXT("Struct '%s' has PropertiesSize %d"), *Struct->GetName(), Struct->PropertiesSize);
 }
 UBOOL UStructProperty::Identical( const void* A, const void* B, DWORD PortFlags ) const
 {

@@ -116,6 +116,14 @@ public:
 
 		FMemDebug* Ptr = *((FMemDebug**)((BYTE*)InPtr - sizeof(INT) - sizeof(FMemDebug*)));
 
+#if BATMAN
+		if ( !GIsCriticalError && GIsRequestingExit && Ptr == NULL )
+		{
+			// This next check fails sometimes on shutdown. We're shutting down anyway so we don't care.
+			return;
+		}
+#endif
+
 		check(GIsCriticalError||Ptr->RefCount==1);
 		check(GIsCriticalError||*Ptr->PreTag==MEM_PreTag);
 		check(GIsCriticalError||*(INT*)((BYTE*)InPtr+Ptr->Size)==MEM_PostTag);

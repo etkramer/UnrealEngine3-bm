@@ -163,7 +163,7 @@ void UUISkin::InitializeLookupTables( TMap<FSTYLE_ID,UUIStyle*>& out_StyleIdMap,
 FSTYLE_ID UUISkin::FindStyleID( FName StyleName ) const
 {
 	FSTYLE_ID Result;
-	Result.SmallGuid = 0;
+	Result.A = Result.B = Result.C = Result.D = 0;
 
 	UUIStyle* Style = FindStyle(StyleName);
 	if ( Style != NULL )

@@ -62,6 +62,13 @@ namespace UnrealBuildTool
 		{
 			if (ActionsToExecute.Count > 0)
 			{
+                // Display some stats to the user.
+                Console.WriteLine(
+                    "{0} actions, {1} outdated and requested actions",
+                    AllActions.Count,
+                    ActionsToExecute.Count
+                );
+
 				if (BuildConfiguration.bAllowXGE)
 				{
 					// Write the actions to execute to a XGE task file.
@@ -127,20 +134,13 @@ namespace UnrealBuildTool
 					// Plan the actions to execute for the build.
 					List<Action> ActionsToExecute = GetActionsToExecute(TargetOutputItems);
 
-					// Display some stats to the user.
-#if false
-					if (BuildConfiguration.bPrintDebugInfo)
-#endif
-					{
-						Console.WriteLine(
-							"{0} actions, {1} outdated and requested actions",
-							AllActions.Count,
-							ActionsToExecute.Count
-							);
-					}
-
 					// Execute the actions.
 					bSuccess = ExecuteActions(ActionsToExecute);
+
+                    if (bSuccess && ActionsToExecute.Count > 0)
+                    {
+                        Console.WriteLine("{0} actions completed", ActionsToExecute.Count);
+                    }
 				}
 				catch (Exception Exception)
 				{

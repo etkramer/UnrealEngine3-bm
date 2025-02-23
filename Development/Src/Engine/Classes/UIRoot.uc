@@ -477,20 +477,20 @@ enum EUIPostProcessGroup
 /**
  * A unique identifier assigned to a widget.
  */
-struct native WIDGET_ID extends GUID
+struct native WIDGET_ID extends GuidImplementation
 {
 structcpptext
 {
 	FWIDGET_ID()
-	: FGuid()
+	: FGuidImplementation()
 	{ }
 
 	FWIDGET_ID(EEventParm)
-	: FGuid(0,0,0,0)
+	: FGuidImplementation(0,0,0,0)
 	{}
 
 	FWIDGET_ID( const FGuid& Other )
-	: FGuid(Other)
+	: FGuidImplementation(Other)
 	{ }
 }
 };
@@ -498,20 +498,20 @@ structcpptext
 /**
  * A unique ID number for a resource located in a UI skin package.  Used to lookup materials in skin files.
  */
-struct native STYLE_ID extends GUID
+struct native STYLE_ID extends GuidImplementation
 {
 structcpptext
 {
 	FSTYLE_ID()
-	: FGuid()
+	: FGuidImplementation()
 	{ }
 
 	FSTYLE_ID(EEventParm)
-	: FGuid(0,0,0,0)
+	: FGuidImplementation(0,0,0,0)
 	{}
 
 	FSTYLE_ID( const FGuid& Other )
-	: FGuid(Other)
+	: FGuidImplementation(Other)
 	{ }
 }
 };

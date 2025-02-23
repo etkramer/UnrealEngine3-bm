@@ -23,7 +23,7 @@ namespace UnrealBuildTool
         public static bool bCheckSystemHeadersForModification = GetEnvironmentVariable("ue3.bCheckSystemHeadersForModification", false);
 
 		/** Whether PDB files should be used for Visual C++ builds. */
-        public static bool bUsePDBFiles = GetEnvironmentVariable("ue3.bUsePDBFiles", false);
+        public static bool bUsePDBFiles = GetEnvironmentVariable("ue3.bUsePDBFiles", true);
  
 		/** Whether PCH files should be used. */
         public static bool bUsePCHFiles = false;//GetEnvironmentVariable("ue3.bUsePCHFiles", true);
@@ -47,7 +47,7 @@ namespace UnrealBuildTool
 		public static string BaseTargetsPath = "Targets";
 
         /** Whether or not to delete outdated produced items. */
-        public static bool bShouldDeleteAllOutdatedProducedItems = GetEnvironmentVariable("ue3.bShouldDeleteAllOutdatedProducedItems", true);
+        public static bool bShouldDeleteAllOutdatedProducedItems = GetEnvironmentVariable("ue3.bShouldDeleteAllOutdatedProducedItems", false);
 
         /// <summary>
         /// Reads the specified environment variable

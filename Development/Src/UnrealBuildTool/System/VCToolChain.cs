@@ -104,6 +104,12 @@ namespace UnrealBuildTool
 			// Disable compiler optimization.
 			Result += " /Od";
 
+			if (BuildConfiguration.bUsePDBFiles)
+			{
+				// Allow minimal rebuild.
+				Result += " /Gm";
+			}
+
 			return Result;
 		}
 
@@ -179,6 +185,9 @@ namespace UnrealBuildTool
 		{
 			string Result = "";
 
+			// Disable incremental linking; this may no longer be necessary, but it used to cause problems.
+			Result += " /INCREMENTAL:NO";
+
 			// Link for win32.
 			Result += " /SUBSYSTEM:WINDOWS";
 
@@ -196,10 +205,6 @@ namespace UnrealBuildTool
 
 			// Set the default stack size.
 			Result += " /STACK:5000000,5000000";
-
-			// Generates a table of Safe Exception Handlers.  Documentation isn't clear whether they actually mean
-			// Structured Exception Handlers.
-			Result += " /SAFESEH";
 
 			return Result;
 		}
@@ -226,12 +231,6 @@ namespace UnrealBuildTool
 
 			// Disable identical COMDAT folding.
 			Result += " /OPT:NOICF";
-
-			if (BuildConfiguration.bUsePDBFiles)
-			{
-				// Allow minimal rebuild.
-				Result += " /Gm";
-			}
 
 			return Result;
 		}
@@ -451,6 +450,7 @@ namespace UnrealBuildTool
 				// Also, distributing compiles that use precompiled headers doesn't work for an unknown reason.
 				CompileAction.bCanExecuteRemotely = CompileEnvironment.PrecompiledHeaderAction == PrecompiledHeaderAction.None;
 			}
+
 			return Result;
 		}
 

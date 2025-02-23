@@ -8,6 +8,8 @@
 #ifndef _INC_CORE
 #define _INC_CORE
 
+#define BATMAN (GAMENAME == BMGAME)
+
 // phantom definitions to help VAX parse our VARARG_* macros (VAX build 1440)
 #ifdef VISUAL_ASSIST_HACK
 	#define VARARG_DECL( FuncRet, StaticFuncRet, Return, FuncName, Pure, FmtType, ExtraDecl, ExtraCall ) FuncRet FuncName( ExtraDecl FmtType Fmt, ... )
