@@ -84,6 +84,18 @@ var			byte			TravelType;
  */
 var const transient bool bWorldWasLoadedThisTick;
 
+/** If TRUE, commit map change the next frame.																	*/
+var const	bool			bShouldCommitPendingMapChange;
+
+/** Whether to enable framerate smoothing.																		*/
+var config	bool			bSmoothFrameRate;
+
+/**
+ *	If true - clear all AnimSet LinkupCaches during map load.
+ *	You need to do this is the set of skeletal meshes that you are playing anims on is not bounded.
+ */
+var config	bool			bClearAnimSetLinkupCachesOnLoadMap;
+
 /** The singleton online interface for all game code to use */
 var OnlineSubsystem OnlineSubsystem;
 
@@ -92,29 +104,20 @@ var OnlineSubsystem OnlineSubsystem;
  * going to be made a fake persistent one by using ULevelStreamingPersistent.
  */
 var const	array<name>		LevelsToLoadForPendingMapChange;
+
+// BM1
+var const	array<name>		LevelsToNotMakeVisibleOnMapChange;
+
 /** Array of already loaded levels. The ordering is arbitrary and depends on what is already loaded and such.	*/
 var	const	array<level>	LoadedLevelsForPendingMapChange;
 /** Human readable error string for any failure during a map change request. Empty if there were no failures.	*/
 var const	string			PendingMapChangeFailureDescription;
-/** If TRUE, commit map change the next frame.																	*/
-var const	bool			bShouldCommitPendingMapChange;
-/** Whether to skip triggering the level startup event on the next map commit.									*/
-var const	bool			bShouldSkipLevelStartupEventOnMapCommit;
-/** Whether to skip triggering the level begin event on the next map commit.									*/
-var const	bool			bShouldSkipLevelBeginningEventOnMapCommit;
-/** Whether to enable framerate smoothing.																		*/
-var config	bool			bSmoothFrameRate;
 /** Maximum framerate to smooth. Code will try to not go over via waiting.										*/
 var config	float			MaxSmoothedFrameRate;
 /** Minimum framerate smoothing will kick in.																	*/
 var config	float			MinSmoothedFrameRate;
 /** Maximium delta time the engine uses to populate GDeltaTime. If 0, unbound.									*/
 var config	float			MaxDeltaTime;
-/**
- *	If true - clear all AnimSet LinkupCaches during map load.
- *	You need to do this is the set of skeletal meshes that you are playing anims on is not bounded.
- */
-var config	bool			bClearAnimSetLinkupCachesOnLoadMap;
 
 /** level streaming updates that should be applied immediately after committing the map change */
 struct native LevelStreamingStatus

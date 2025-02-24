@@ -523,8 +523,6 @@ UBOOL UGameEngine::Exec( const TCHAR* Cmd, FOutputDevice& Ar )
 				PrepareMapChange(LevelNames);
 
 				bShouldCommitPendingMapChange				= TRUE;
-				bShouldSkipLevelStartupEventOnMapCommit		= FALSE;
-				bShouldSkipLevelBeginningEventOnMapCommit	= FALSE;
 				ConditionalCommitMapChange();
 			}
 			else
@@ -2679,7 +2677,7 @@ void UGameEngine::ConditionalCommitMapChange()
 		}
 		
 		// Perform map change.
-		if( !CommitMapChange(bShouldSkipLevelStartupEventOnMapCommit, bShouldSkipLevelBeginningEventOnMapCommit) )
+		if( !CommitMapChange(FALSE, FALSE) )
 		{
 			debugf(NAME_Warning, TEXT("Committing map change via %s was not successful: %s"), *GetFullName(), *GetMapChangeFailureDescription());
 		}

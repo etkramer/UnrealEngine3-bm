@@ -4225,8 +4225,6 @@ void AWorldInfo::CommitMapChange(UBOOL bShouldSkipLevelStartupEvent, UBOOL bShou
 		if( IsPreparingMapChange() )
 		{
 			GameEngine->bShouldCommitPendingMapChange				= TRUE;
-			GameEngine->bShouldSkipLevelStartupEventOnMapCommit		= bShouldSkipLevelStartupEvent;
-			GameEngine->bShouldSkipLevelBeginningEventOnMapCommit	= bShouldSkipLevelBeginningEvent;
 		}
 		else
 		{

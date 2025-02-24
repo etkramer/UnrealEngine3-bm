@@ -773,12 +773,11 @@ public:
     BYTE TravelType;
     BITFIELD bWorldWasLoadedThisTick:1 GCC_BITFIELD_MAGIC;
     BITFIELD bShouldCommitPendingMapChange:1;
-    BITFIELD bShouldSkipLevelStartupEventOnMapCommit:1;
-    BITFIELD bShouldSkipLevelBeginningEventOnMapCommit:1;
     BITFIELD bSmoothFrameRate:1;
     BITFIELD bClearAnimSetLinkupCachesOnLoadMap:1;
     class UOnlineSubsystem* OnlineSubsystem;
     TArrayNoInit<FName> LevelsToLoadForPendingMapChange;
+    TArrayNoInit<FName> LevelsToNotMakeVisibleOnMapChange;
     TArrayNoInit<class ULevel*> LoadedLevelsForPendingMapChange;
     FStringNoInit PendingMapChangeFailureDescription;
     FLOAT MaxSmoothedFrameRate;
