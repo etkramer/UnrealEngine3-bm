@@ -121,7 +121,6 @@ defaultproperties
 
 	Begin Object class=StaticMeshComponent Name=TankMesh0
 		StaticMesh=StaticMesh'COG_Outpost_Walls.SM.Mesh.S_Outpost_Tank01Body_SM'
-		bAcceptsDecals=TRUE
 		bCastDynamicShadow=FALSE
 		bUsePrecomputedShadows=TRUE
 		LightingChannels=(bInitialized=True,Dynamic=True,CompositeDynamic=TRUE)
@@ -131,7 +130,6 @@ defaultproperties
 
 	Begin Object class=StaticMeshComponent Name=glassmesh
 		StaticMesh=StaticMesh'COG_Outpost_Walls.SM.Mesh.S_Outpost_Tank01_Glass_nothick'
-		bAcceptsDecals=TRUE
 		bCastDynamicShadow=FALSE
 		bUsePrecomputedShadows=TRUE
 		LightingChannels=(bInitialized=True,Dynamic=True,CompositeDynamic=TRUE)
@@ -141,7 +139,6 @@ defaultproperties
 
 	Begin Object class=StaticMeshComponent Name=brokenglassmesh0
 		StaticMesh=StaticMesh'COG_Outpost_Walls.SM.Mesh.S_Outpost_Tank01Glass_Shatter_Section_SM_LOW'
-		bAcceptsDecals=TRUE
 		bCastDynamicShadow=FALSE
 		bUsePrecomputedShadows=TRUE
 		LightingChannels=(bInitialized=True,Dynamic=True,CompositeDynamic=TRUE)

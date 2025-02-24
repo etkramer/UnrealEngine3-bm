@@ -249,7 +249,7 @@ public:
 	/** @return TRUE if the primitive is in different DPGs depending on view. */
 	UBOOL HasViewDependentDPG() const
 	{
-		return bUseViewOwnerDepthPriorityGroup;
+		return FALSE;
 	}
 
 	/**
@@ -270,9 +270,7 @@ public:
 	 */
 	BYTE GetDepthPriorityGroup(const FSceneView* View) const
 	{
-		return (bUseViewOwnerDepthPriorityGroup && IsOwnedBy(View->ViewActor)) ?
-			ViewOwnerDepthPriorityGroup :
-			StaticDepthPriorityGroup;
+		return StaticDepthPriorityGroup;
 	}
 
 	/** @return The local to world transform of the primitive. */
@@ -323,9 +321,6 @@ protected:
 	BITFIELD bOnlyOwnerSee : 1;
 	BITFIELD bOwnerNoSee : 1;
 	BITFIELD bMovable : 1;
-
-	/** TRUE if ViewOwnerDepthPriorityGroup should be used. */
-	BITFIELD bUseViewOwnerDepthPriorityGroup : 1;
 
 	/** DPG this prim belongs to. */
 	BITFIELD StaticDepthPriorityGroup : UCONST_SDPG_NumBits;
@@ -421,11 +416,13 @@ public:
 	/** The primitive's scene info. */
 	class FPrimitiveSceneInfo* SceneInfo;
 
+	FMatrix LocalToWorld;
+	FMatrix CachedParentToWorld;
+
 	/** A fence to track when the primitive is detached from the scene in the rendering thread. */
 	FRenderCommandFence DetachFence;
 
 	FLOAT LocalToWorldDeterminant;
-	FMatrix LocalToWorld;
 	INT MotionBlurInfoIndex;
 
 	/** Current list of active decals attached to the primitive */
@@ -468,25 +465,50 @@ public:
 	 */
 	FLOAT CachedMaxDrawDistance;
 
-	/** Legacy, renamed to LDMaxDrawDistance */
-	FLOAT LDCullDistance;
-	/** Legacy, renamed to CachedMaxDrawDistance */
-	FLOAT CachedCullDistance;
+	FLOAT CullArea;
+	FLOAT CullAreaMultiplier;
 
-	/** The scene depth priority group to draw the primitive in. */
-	BYTE DepthPriorityGroup;
-
-	/** The scene depth priority group to draw the primitive in, if it's being viewed by its owner. */
-	BYTE ViewOwnerDepthPriorityGroup;
-
-	/** If detail mode is >= system detail mode, primitive won't be rendered. */
-	BYTE DetailMode;
-	
 	/** Scalar controlling the amount of motion blur to be applied when object moves */
 	FLOAT	MotionBlurScale;
 
-	/** True if the primitive should be rendered using ViewOwnerDepthPriorityGroup if viewed by its owner. */
-	BITFIELD	bUseViewOwnerDepthPriorityGroup:1 GCC_BITFIELD_MAGIC;
+	FLOAT SortBias;
+	
+	/** 
+	* Translucent objects with a lower sort priority draw before objects with a higher priority.
+	* Translucent objects with the same priority are rendered from back-to-front based on their bounds origin.
+	*
+	* Ignored if the object is not translucent.
+	* The default priority is zero. 
+	**/
+	INT TranslucencySortPriority;
+
+	TArrayNoInit<class FOctreeNode*>	OctreeNodes;
+	
+	class UPhysicalMaterial*	PhysMaterialOverride;
+	class URB_BodyInstance*		BodyInstance;
+
+	// Copied from TransformComponent
+	FVector		Translation;
+	FRotator	Rotation;
+	FLOAT		Scale;
+	FVector		Scale3D;
+
+	/** Last time the component was submitted for rendering (called FScene::AddPrimitive). */
+	FLOAT		LastSubmitTime;
+
+	/** Last render time in seconds since level started play. Updated to WorldInfo->TimeSeconds so float is sufficient. */
+	FLOAT		LastRenderTime;
+
+	/** if > 0, the script RigidBodyCollision() event will be called on our Owner when a physics collision involving
+	 * this PrimitiveComponent occurs and the relative velocity is greater than or equal to this
+	 */
+	FLOAT ScriptRigidBodyCollisionThreshold;
+
+	/** Lighting channels controlling light/ primitive interaction. Only allows interaction if at least one channel is shared */
+	FLightingChannelContainer	LightingChannels;
+
+	/** Types of objects that this physics objects will collide with. */
+	FRBCollisionChannelContainer RBCollideWithChannels;
 
 	/** Whether to accept cull distance volumes to modify cached cull distance. */
 	BITFIELD	bAllowCullDistanceVolume:1;
@@ -500,11 +522,20 @@ public:
 	/** If this is True, this component will only be visible when the view actor is the component's owner, directly or indirectly. */
 	BITFIELD	bOnlyOwnerSee:1;
 
+	BITFIELD	bXrayNoSee:1;
+	BITFIELD	bOnlyXraySee:1;
+	BITFIELD	DontDrawThisFrame:1;
+	BITFIELD	bDisableXboxMSAA:1;
+	BITFIELD	bLevelHidden:1;
+
 	/** If true, bHidden on the Owner of this component will be ignored. */
 	BITFIELD	bIgnoreOwnerHidden : 1;
 
 	/** If this is True, this primitive will be used to occlusion cull other primitives. */
 	BITFIELD	bUseAsOccluder:1;
+
+	BITFIELD	bUseAsOccluderAutomatic:1;
+	BITFIELD	bAllowOcclusionTesting:1;
 
 	/** If this is True, this component doesn't need exact occlusion info. */
 	BITFIELD	bAllowApproximateOcclusion:1;
@@ -515,20 +546,11 @@ public:
 	/** If True, this component will still be queried for occlusion even when it intersects the near plane. */
 	BITFIELD	bIgnoreNearPlaneIntersection:1;
 
-	/** Forces the primitive to always pass renderer visibility tests. */
-	BITFIELD	bAlwaysVisible:1;
-
 	/** If this is True, this component can be selected in the editor. */
 	BITFIELD	bSelectable:1;
 
 	/** If TRUE, forces mips for textures used by this component to be resident when this component's level is loaded. */
 	BITFIELD     bForceMipStreaming:1;
-
-	/** deprecated */
-	BITFIELD	bAcceptsDecals:1;
-
-	/** deprecated */
-	BITFIELD	bAcceptsDecalsDuringGameplay:1;
 
 	/** If TRUE, this primitive accepts static level placed decals in the editor. */
 	BITFIELD	bAcceptsStaticDecals:1;
@@ -543,14 +565,7 @@ public:
 	/** If TRUE, this primitive accepts foliage. */
 	BITFIELD	bAcceptsFoliage:1;
 
-	/** 
-	* Translucent objects with a lower sort priority draw before objects with a higher priority.
-	* Translucent objects with the same priority are rendered from back-to-front based on their bounds origin.
-	*
-	* Ignored if the object is not translucent.
-	* The default priority is zero. 
-	**/
-	INT TranslucencySortPriority;
+	BITFIELD	bContributesToLightEnvironmentBounds:1;
 
 	// Lighting flags
 
@@ -570,9 +585,6 @@ public:
 	
 	/** Whether this primitives accepts dynamic lights */
 	BITFIELD	bAcceptsDynamicLights:1;
-
-	/** Lighting channels controlling light/ primitive interaction. Only allows interaction if at least one channel is shared */
-	FLightingChannelContainer	LightingChannels;
 
 	/** Whether the primitive supports/ allows static shadowing */
 	BITFIELD	bUsePrecomputedShadows:1;
@@ -604,17 +616,7 @@ public:
 	BITFIELD	CanBlockCamera:1;
 	BITFIELD	BlockRigidBody:1;
 
-	/** 
-	 *	Disables collision between any rigid body physics in this Component and pawn bodies. 
-	 *	DEPRECATED! Use RBChannel/RBCollideWithChannels instead now
-	 */
-	BITFIELD	RigidBodyIgnorePawns:1;
-
-	/** Enum indicating what type of object this should be considered for rigid body collision. */
-	BYTE		RBChannel GCC_BITFIELD_MAGIC;
-
-	/** Types of objects that this physics objects will collide with. */
-	FRBCollisionChannelContainer RBCollideWithChannels;
+	BITFIELD	BlockRigidBodyPhysX:1;
 
 	/** Never create any physics engine representation for this body. */
 	BITFIELD	bDisableAllRigidBody:1;
@@ -624,6 +626,8 @@ public:
 
 	/** Flag that indicates if OnRigidBodyCollision function should be called for physics collisions involving this PrimitiveComponent. */
 	BITFIELD	bNotifyRigidBodyCollision:1;
+
+	BITFIELD	bEnableContactModificationCallback:1;
 
 	// Novodex fluids
 	BITFIELD	bFluidDrain:1;
@@ -645,11 +649,19 @@ public:
 
 	BITFIELD	bIgnoreHiddenActorsMembership:1;
 
-	BITFIELD							bWasSNFiltered:1;
-	TArrayNoInit<class FOctreeNode*>	OctreeNodes;
-	
-	class UPhysicalMaterial*	PhysMaterialOverride;
-	class URB_BodyInstance*		BodyInstance;
+	BITFIELD	bWasSNFiltered:1;
+	BITFIELD	AbsoluteTranslation:1;
+	BITFIELD	AbsoluteRotation:1;
+	BITFIELD	AbsoluteScale:1;
+
+	/** Enum indicating what type of object this should be considered for rigid body collision. */
+	BYTE		RBChannel GCC_BITFIELD_MAGIC;
+
+	/** The scene depth priority group to draw the primitive in. */
+	BYTE DepthPriorityGroup;
+
+	/** If detail mode is >= system detail mode, primitive won't be rendered. */
+	BYTE DetailMode;
 
 	/** 
 	 *	Used for creating one-way physics interactions (via constraints or contacts) 
@@ -657,26 +669,7 @@ public:
 	 */
 	BYTE		RBDominanceGroup;
 
-	// Copied from TransformComponent
-	FMatrix CachedParentToWorld;
-	FVector		Translation;
-	FRotator	Rotation;
-	FLOAT		Scale;
-	FVector		Scale3D;
-	BITFIELD	AbsoluteTranslation:1;
-	BITFIELD	AbsoluteRotation:1;
-	BITFIELD	AbsoluteScale:1;
-
-	/** Last time the component was submitted for rendering (called FScene::AddPrimitive). */
-	FLOAT		LastSubmitTime;
-
-	/** Last render time in seconds since level started play. Updated to WorldInfo->TimeSeconds so float is sufficient. */
-	FLOAT		LastRenderTime;
-
-	/** if > 0, the script RigidBodyCollision() event will be called on our Owner when a physics collision involving
-	 * this PrimitiveComponent occurs and the relative velocity is greater than or equal to this
-	 */
-	FLOAT ScriptRigidBodyCollisionThreshold;
+	FLOAT		MaxNearlyStillSpeed;
 
 	/**
 	* Check if this primitive needs to be rendered for masking modulated shadows

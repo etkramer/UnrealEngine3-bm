@@ -1132,6 +1132,7 @@ class URB_BodyInstance : public UObject
 public:
     //## BEGIN PROPS RB_BodyInstance
     class UPrimitiveComponent* OwnerComponent;
+    class URPhysOnContactHandler* OnContactHandler;
     INT BodyIndex;
     FVector Velocity;
     FVector PreviousVelocity;
@@ -1149,15 +1150,22 @@ public:
     BITFIELD bOnlyCollideWithPawns:1;
     BITFIELD bEnableCollisionResponse:1;
     BITFIELD bPushBody:1;
+    BITFIELD bUseSecondaryPhysicsWeight:1;
+    BITFIELD bPawnCollisionOnly:1;
+    BITFIELD bNoPawnCollision:1;
     FLOAT BoneLinearSpring;
     FLOAT BoneLinearDamping;
     FLOAT BoneAngularSpring;
     FLOAT BoneAngularDamping;
+    FLOAT WindResponse;
     FLOAT OverextensionThreshold;
     FLOAT CustomGravityFactor;
     FLOAT LastEffectPlayedTime;
     class UPhysicalMaterial* PhysMaterialOverride;
     FLOAT ContactReportForceThreshold;
+    FLOAT InstanceMassScale;
+    FLOAT InstanceDampingScale;
+    FLOAT DampingRampupProportion;
     //## END PROPS RB_BodyInstance
 
     void SetFixed(UBOOL bNewFixed);
@@ -1939,7 +1947,7 @@ VERIFY_CLASS_SIZE_NODIE(UPhysicsLODVerticalDestructible)
 VERIFY_CLASS_OFFSET_NODIE(U,PhysicsLODVerticalEmitter,ParticlePercentage)
 VERIFY_CLASS_SIZE_NODIE(UPhysicsLODVerticalEmitter)
 VERIFY_CLASS_OFFSET_NODIE(U,RB_BodyInstance,OwnerComponent)
-VERIFY_CLASS_OFFSET_NODIE(U,RB_BodyInstance,ContactReportForceThreshold)
+VERIFY_CLASS_OFFSET_NODIE(U,RB_BodyInstance,DampingRampupProportion)
 VERIFY_CLASS_SIZE_NODIE(URB_BodyInstance)
 VERIFY_CLASS_OFFSET_NODIE(U,RB_BodySetup,SleepFamily)
 VERIFY_CLASS_OFFSET_NODIE(U,RB_BodySetup,PreCachedPhysDataVersion)

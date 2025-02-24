@@ -1886,7 +1886,7 @@ void UFracturedSkinnedMeshComponent::Attach()
 
 	// Don't allow cull distance volumes to affect this component
 	// This is also enforced by bAllowCullDistanceVolume=FALSE but legacy content will have CachedCullDistance set incorrectly
-	CachedMaxDrawDistance = LDCullDistance;
+	CachedMaxDrawDistance = CullArea * CullAreaMultiplier;
 
 	Super::Attach();
 

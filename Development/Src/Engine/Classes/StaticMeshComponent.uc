@@ -74,7 +74,6 @@ defaultproperties
 	BlockRigidBody=True
 	WireframeColor=(R=0,G=255,B=255,A=255)
 	bAcceptsStaticDecals=TRUE
-	bAcceptsDecals=TRUE
 	bOverrideLightMapResolution=TRUE
 	bUsePrecomputedShadows=FALSE
 	SubDivisionStepSize=16

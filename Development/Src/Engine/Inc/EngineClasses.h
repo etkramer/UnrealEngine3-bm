@@ -18548,6 +18548,28 @@ public:
 	virtual UPrimitiveComponent* CreatePrimitiveComponent(UObject* InOuter);
 };
 
+class URPhysOnContactHandler : public UObject
+{
+public:
+    //## BEGIN PROPS RPhysOnContactHandler
+    class UObject* OwnerObject;
+    BITFIELD bEnableCapeSpam:1;
+    //## END PROPS RPhysOnContactHandler
+
+    virtual void OnContact(class URB_BodyInstance* BodyInst0,class URB_BodyInstance* BodyInst1,FVector SumNormalForce,FVector SumFrictionForce);
+    DECLARE_FUNCTION(execOnContact)
+    {
+        P_GET_OBJECT(URB_BodyInstance,BodyInst0);
+        P_GET_OBJECT(URB_BodyInstance,BodyInst1);
+        P_GET_STRUCT(FVector,SumNormalForce);
+        P_GET_STRUCT(FVector,SumFrictionForce);
+        P_FINISH;
+        OnContact(BodyInst0,BodyInst1,SumNormalForce,SumFrictionForce);
+    }
+    DECLARE_CLASS(URPhysOnContactHandler,UObject,0,Engine)
+    NO_DEFAULT_CONSTRUCTOR(URPhysOnContactHandler)
+};
+
 class USavedMove : public UObject
 {
 public:
@@ -21103,6 +21125,7 @@ AUTOGENERATE_FUNCTION(UReachSpec,-1,execGetEnd);
 AUTOGENERATE_FUNCTION(UReachSpec,-1,execCostFor);
 AUTOGENERATE_FUNCTION(ARoute,-1,execMoveOntoRoutePath);
 AUTOGENERATE_FUNCTION(ARoute,-1,execResolveRouteIndex);
+AUTOGENERATE_FUNCTION(URPhysOnContactHandler,-1,execOnContact);
 AUTOGENERATE_FUNCTION(USceneCapture2DComponent,-1,execSetView);
 AUTOGENERATE_FUNCTION(USceneCapture2DComponent,-1,execSetCaptureParameters);
 AUTOGENERATE_FUNCTION(USceneCaptureComponent,-1,execSetFrameRate);
@@ -21415,6 +21438,7 @@ DECLARE_NATIVE_TYPE(Engine,UReachSpec);
 DECLARE_NATIVE_TYPE(Engine,AReplicationInfo);
 DECLARE_NATIVE_TYPE(Engine,AReverbVolume);
 DECLARE_NATIVE_TYPE(Engine,ARoute);
+DECLARE_NATIVE_TYPE(Engine,URPhysOnContactHandler);
 DECLARE_NATIVE_TYPE(Engine,USavedMove);
 DECLARE_NATIVE_TYPE(Engine,USaveGameSummary);
 DECLARE_NATIVE_TYPE(Engine,ASceneCapture2DActor);
@@ -21756,6 +21780,8 @@ DECLARE_NATIVE_TYPE(Engine,AZoneInfo);
 	AReverbVolume::StaticClass(); \
 	ARoute::StaticClass(); \
 	GNativeLookupFuncs[Lookup++] = &FindEngineARouteNative; \
+	URPhysOnContactHandler::StaticClass(); \
+	GNativeLookupFuncs[Lookup++] = &FindEngineURPhysOnContactHandlerNative; \
 	USavedMove::StaticClass(); \
 	USaveGameSummary::StaticClass(); \
 	ASceneCapture2DActor::StaticClass(); \
@@ -22633,6 +22659,13 @@ NATIVE_INFO(ARoute) GEngineARouteNatives[] =
 	{NULL,NULL}
 };
 IMPLEMENT_NATIVE_HANDLER(Engine,ARoute);
+
+NATIVE_INFO(URPhysOnContactHandler) GEngineURPhysOnContactHandlerNatives[] = 
+{ 
+	MAP_NATIVE(URPhysOnContactHandler,execOnContact)
+	{NULL,NULL}
+};
+IMPLEMENT_NATIVE_HANDLER(Engine,URPhysOnContactHandler);
 
 NATIVE_INFO(USceneCapture2DComponent) GEngineUSceneCapture2DComponentNatives[] = 
 { 
@@ -23524,9 +23557,10 @@ VERIFY_CLASS_OFFSET_NODIE(A,PostProcessVolume,NextLowerPriorityVolume)
 VERIFY_CLASS_SIZE_NODIE(APostProcessVolume)
 VERIFY_CLASS_SIZE_NODIE(APotentialClimbWatcher)
 VERIFY_CLASS_OFFSET_NODIE(U,PrimitiveComponent,SceneInfo)
+VERIFY_CLASS_OFFSET_NODIE(U,PrimitiveComponent,LocalToWorld)
+VERIFY_CLASS_OFFSET_NODIE(U,PrimitiveComponent,CachedParentToWorld)
 VERIFY_CLASS_OFFSET_NODIE(U,PrimitiveComponent,DetachFence)
 VERIFY_CLASS_OFFSET_NODIE(U,PrimitiveComponent,LocalToWorldDeterminant)
-VERIFY_CLASS_OFFSET_NODIE(U,PrimitiveComponent,LocalToWorld)
 VERIFY_CLASS_OFFSET_NODIE(U,PrimitiveComponent,MotionBlurInfoIndex)
 VERIFY_CLASS_OFFSET_NODIE(U,PrimitiveComponent,DecalList)
 VERIFY_CLASS_OFFSET_NODIE(U,PrimitiveComponent,DecalsToReattach)
@@ -23538,20 +23572,14 @@ VERIFY_CLASS_OFFSET_NODIE(U,PrimitiveComponent,LightEnvironment)
 VERIFY_CLASS_OFFSET_NODIE(U,PrimitiveComponent,PreviousLightEnvironment)
 VERIFY_CLASS_OFFSET_NODIE(U,PrimitiveComponent,MinDrawDistance)
 VERIFY_CLASS_OFFSET_NODIE(U,PrimitiveComponent,CachedMaxDrawDistance)
-VERIFY_CLASS_OFFSET_NODIE(U,PrimitiveComponent,CachedCullDistance)
-VERIFY_CLASS_OFFSET_NODIE(U,PrimitiveComponent,DepthPriorityGroup)
-VERIFY_CLASS_OFFSET_NODIE(U,PrimitiveComponent,ViewOwnerDepthPriorityGroup)
-VERIFY_CLASS_OFFSET_NODIE(U,PrimitiveComponent,DetailMode)
+VERIFY_CLASS_OFFSET_NODIE(U,PrimitiveComponent,CullArea)
+VERIFY_CLASS_OFFSET_NODIE(U,PrimitiveComponent,CullAreaMultiplier)
 VERIFY_CLASS_OFFSET_NODIE(U,PrimitiveComponent,MotionBlurScale)
+VERIFY_CLASS_OFFSET_NODIE(U,PrimitiveComponent,SortBias)
 VERIFY_CLASS_OFFSET_NODIE(U,PrimitiveComponent,TranslucencySortPriority)
-VERIFY_CLASS_OFFSET_NODIE(U,PrimitiveComponent,LightingChannels)
-VERIFY_CLASS_OFFSET_NODIE(U,PrimitiveComponent,RBChannel)
-VERIFY_CLASS_OFFSET_NODIE(U,PrimitiveComponent,RBCollideWithChannels)
 VERIFY_CLASS_OFFSET_NODIE(U,PrimitiveComponent,OctreeNodes)
 VERIFY_CLASS_OFFSET_NODIE(U,PrimitiveComponent,PhysMaterialOverride)
 VERIFY_CLASS_OFFSET_NODIE(U,PrimitiveComponent,BodyInstance)
-VERIFY_CLASS_OFFSET_NODIE(U,PrimitiveComponent,RBDominanceGroup)
-VERIFY_CLASS_OFFSET_NODIE(U,PrimitiveComponent,CachedParentToWorld)
 VERIFY_CLASS_OFFSET_NODIE(U,PrimitiveComponent,Translation)
 VERIFY_CLASS_OFFSET_NODIE(U,PrimitiveComponent,Rotation)
 VERIFY_CLASS_OFFSET_NODIE(U,PrimitiveComponent,Scale)
@@ -23559,6 +23587,13 @@ VERIFY_CLASS_OFFSET_NODIE(U,PrimitiveComponent,Scale3D)
 VERIFY_CLASS_OFFSET_NODIE(U,PrimitiveComponent,LastSubmitTime)
 VERIFY_CLASS_OFFSET_NODIE(U,PrimitiveComponent,LastRenderTime)
 VERIFY_CLASS_OFFSET_NODIE(U,PrimitiveComponent,ScriptRigidBodyCollisionThreshold)
+VERIFY_CLASS_OFFSET_NODIE(U,PrimitiveComponent,LightingChannels)
+VERIFY_CLASS_OFFSET_NODIE(U,PrimitiveComponent,RBCollideWithChannels)
+VERIFY_CLASS_OFFSET_NODIE(U,PrimitiveComponent,RBChannel)
+VERIFY_CLASS_OFFSET_NODIE(U,PrimitiveComponent,DepthPriorityGroup)
+VERIFY_CLASS_OFFSET_NODIE(U,PrimitiveComponent,DetailMode)
+VERIFY_CLASS_OFFSET_NODIE(U,PrimitiveComponent,RBDominanceGroup)
+VERIFY_CLASS_OFFSET_NODIE(U,PrimitiveComponent,MaxNearlyStillSpeed)
 VERIFY_CLASS_SIZE_NODIE(UPrimitiveComponent)
 VERIFY_CLASS_SIZE_NODIE(UPrimitiveComponentFactory)
 VERIFY_CLASS_OFFSET_NODIE(A,Projectile,Speed)
@@ -23575,6 +23610,8 @@ VERIFY_CLASS_SIZE_NODIE(AReverbVolume)
 VERIFY_CLASS_OFFSET_NODIE(A,Route,RouteType)
 VERIFY_CLASS_OFFSET_NODIE(A,Route,FudgeFactor)
 VERIFY_CLASS_SIZE_NODIE(ARoute)
+VERIFY_CLASS_OFFSET_NODIE(U,RPhysOnContactHandler,OwnerObject)
+VERIFY_CLASS_SIZE_NODIE(URPhysOnContactHandler)
 VERIFY_CLASS_OFFSET_NODIE(U,SavedMove,NextMove)
 VERIFY_CLASS_OFFSET_NODIE(U,SavedMove,AccelDotThreshold)
 VERIFY_CLASS_SIZE_NODIE(USavedMove)

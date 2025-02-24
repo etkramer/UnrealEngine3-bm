@@ -75,7 +75,6 @@ defaultproperties
 	BlockRigidBody=TRUE
 	CastShadow=TRUE
 	bAcceptsLights=TRUE
-	bAcceptsDecals=TRUE
 	bAcceptsStaticDecals=TRUE
 	bUsePrecomputedShadows=TRUE
 	bUseAsOccluder=TRUE

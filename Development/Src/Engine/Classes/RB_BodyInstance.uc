@@ -35,6 +35,8 @@ cpptext
  */
 var const transient PrimitiveComponent		OwnerComponent;
 
+var const transient RPhysOnContactHandler OnContactHandler;
+
 /** Index of this BodyInstance within the PhysicsAssetInstance/PhysicsAsset. */
 var const int								BodyIndex;
 
@@ -89,6 +91,22 @@ var(BoneSpring)	bool						bUseKinActorForBoneSpring;
  */
 var(BoneSpring) bool						bMakeSpringToBaseCollisionComponent;
 
+/** 
+ *	This body should only collide with other bodies with their components marked bConsiderPawnForRBCollision.
+ *	Useful for flappy bits you do not want to collide with the world.
+ */
+var(Physics)	const bool					bOnlyCollideWithPawns;
+
+/** Enables physics response for this body (on by default).  If FALSE, contacts are still generated and reported. Useful for "sensor" bodies. */
+var(Physics)	const bool					bEnableCollisionResponse;
+
+/** Denotes body as a "push" body.  Also disables collision response, by definition. */
+var(Physics)	const bool					bPushBody;
+
+var bool bUseSecondaryPhysicsWeight;
+var transient bool bPawnCollisionOnly;
+var transient bool bNoPawnCollision;
+
 /** Strength of linear spring to animated bone. */
 var(BoneSpring) const float					BoneLinearSpring;
 
@@ -101,6 +119,8 @@ var(BoneSpring) const float					BoneAngularSpring;
 /** Damping on angular spring to animated bone. */
 var(BoneSpring) const float					BoneAngularDamping;
 
+var(BoneSpring) float WindResponse;
+
 /** If bDisableOnOverextension is on, the bone spring will be disabled if it stretches more than this amount. */
 var(BoneSpring)	float						OverextensionThreshold;
 
@@ -110,20 +130,8 @@ var(BoneSpring)	float						OverextensionThreshold;
  */
 var()			float						CustomGravityFactor;
 
-/** 
- *	This body should only collide with other bodies with their components marked bConsiderPawnForRBCollision.
- *	Useful for flappy bits you do not want to collide with the world.
- */
-var(Physics)	const bool					bOnlyCollideWithPawns;
-
 /** For per-bodyinstance effects this keeps track of the last time one played. Could be used for items like gib effects. */
 var				transient	float			LastEffectPlayedTime;
-
-/** Enables physics response for this body (on by default).  If FALSE, contacts are still generated and reported. Useful for "sensor" bodies. */
-var(Physics)	const bool					bEnableCollisionResponse;
-
-/** Denotes body as a "push" body.  Also disables collision response, by definition. */
-var(Physics)	const bool					bPushBody;
 
 /** 
  *	Allows you to override the PhysicalMaterial to use for this body. 
@@ -138,6 +146,10 @@ var(Physics)	const PhysicalMaterial		PhysMaterialOverride;
  *	To disable this feature, set the threshold to a negative number.
  */
 var(Physics)	float						ContactReportForceThreshold;
+
+var(Physics) float InstanceMassScale;
+var(Physics) float InstanceDampingScale;
+var transient float DampingRampupProportion;
 
 /** Force this body to be fixed (kinematic) or not. Overrides the BodySetup for this body. */
 final native function				SetFixed(bool bNewFixed);
@@ -189,12 +201,13 @@ final native function				SetContactReportForceThreshold( FLOAT Threshold );
 
 defaultproperties
 {
+	bEnableCollisionResponse=TRUE
 	BoneLinearSpring=10.0
 	BoneLinearDamping=0.1
 	BoneAngularSpring=1.0
 	BoneAngularDamping=0.1
 	CustomGravityFactor=1.0
-	LastEffectPlayedTime = 0.0
-	bEnableCollisionResponse=TRUE
 	ContactReportForceThreshold=-1.0f
+	InstanceMassScale=1.0
+    InstanceDampingScale=1.0
 }

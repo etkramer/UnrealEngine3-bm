@@ -21,13 +21,17 @@ struct MaterialViewRelevance
 /** The primitive's scene info. */
 var private native transient const pointer SceneInfo{FPrimitiveSceneInfo};
 
+var native transient const matrix LocalToWorld;
+
+// Properties moved from TransformComponent
+var native transient const matrix CachedParentToWorld; //@todo please remove me if possible
+
 /** A fence to track when the primitive is detached from the scene in the rendering thread. */
 var private native const int DetachFence;
 
 // Scene data.
 
 var native transient const float LocalToWorldDeterminant;
-var native transient const matrix LocalToWorld;
 /**
  *	The index for the primitive component in the MotionBlurInfo array of the scene.
  *	Render-thread usage only.
@@ -81,25 +85,89 @@ var(Rendering) const private noexport float MaxDrawDistance;
  */
 var(Rendering) editconst float CachedMaxDrawDistance;
 
-/** Legacy, renamed to MaxDrawDistance */
-var const private deprecated noexport float CullDistance;
-/** Legacy, renamed to CachedMaxDrawDistance */
-var editconst deprecated float CachedCullDistance;
-
-/** The scene depth priority group to draw the primitive in. */
-var(Rendering) const ESceneDepthPriorityGroup DepthPriorityGroup;
-
-/** The scene depth priority group to draw the primitive in, if it's being viewed by its owner. */
-var const ESceneDepthPriorityGroup ViewOwnerDepthPriorityGroup;
-
-/** If detail mode is >= system detail mode, primitive won't be rendered. */
-var(Rendering) const EDetailMode DetailMode;
+var const float CullArea;
+var(Rendering) const float CullAreaMultiplier;
 
 /** Scalar controlling the amount of motion blur to be applied when object moves */
 var(Rendering) float		MotionBlurScale;
 
-/** True if the primitive should be rendered using ViewOwnerDepthPriorityGroup if viewed by its owner. */
-var const bool bUseViewOwnerDepthPriorityGroup;
+var(Rendering) float SortBias;
+
+/**
+ * Translucent objects with a lower sort priority draw before objects with a higher priority.
+ * Translucent objects with the same priority are rendered from back-to-front based on their bounds origin.
+ *
+ * Ignored if the object is not translucent.
+ * The default priority is zero.
+ **/
+var(Rendering) int TranslucencySortPriority;
+
+var const native transient array<int> OctreeNodes;
+
+// Internal physics engine data.
+
+/** Allows you to override the PhysicalMaterial to use for this PrimitiveComponent. */
+var(Physics)	const PhysicalMaterial			PhysMaterialOverride;
+
+var				const native RB_BodyInstance	BodyInstance;
+
+var() const vector			Translation;
+var() const rotator			Rotation;
+var() const float			Scale;
+var() const vector			Scale3D;
+
+/** Last time the component was submitted for rendering (called FScene::AddPrimitive). */
+var const transient float	LastSubmitTime;
+
+/**
+ * The value of WorldInfo->TimeSeconds for the frame when this actor was last rendered.  This is written
+ * from the render thread, which is up to a frame behind the game thread, so you should allow this time to
+ * be at least a frame behind the game thread's world time before you consider the actor non-visible.
+ * There's an equivalent variable in PrimitiveComponent.
+ */
+var transient float	LastRenderTime;
+
+//=============================================================================
+// Physics.
+
+/** if > 0, the script RigidBodyCollision() event will be called on our Owner when a physics collision involving
+ * this PrimitiveComponent occurs and the relative velocity is greater than or equal to this
+ */
+var float ScriptRigidBodyCollisionThreshold;
+
+/**
+ * Lighting channels controlling light/ primitive interaction. Only allows interaction if at least one channel is shared
+ *
+ **/
+var(Lighting)	const LightingChannelContainer	LightingChannels;
+
+/**
+ *	Container for indicating a set of collision channel that this object will collide with.
+ *	Mirrored manually in UnPhysPublic.h
+ */
+struct RBCollisionChannelContainer
+{
+	var()	const bool	Default;
+	var		const bool	Nothing; // This is reserved to allow an object to opt-out of all collisions, and should not be set.
+	var()	const bool	Pawn;
+	var()	const bool	Vehicle;
+	var()	const bool	Water;
+	var()	const bool	GameplayPhysics;
+	var()	const bool	EffectPhysics;
+	var()	const bool	Untitled1;
+	var()	const bool	Untitled2;
+	var()	const bool	Untitled3;
+	var()	const bool	Untitled4;
+	var()	const bool	Cloth;
+	var()	const bool	FluidDrain;
+	var()	const bool	SoftBody;
+	var()	const bool	FracturedMeshPart;
+	var()	const bool	BlockingVolume;
+	var()	const bool	DeadPawn;
+};
+
+/** Types of objects that this physics objects will collide with. */
+var(Collision) const RBCollisionChannelContainer	RBCollideWithChannels;
 
 /** Whether to accept cull distance volumes to modify cached cull distance. */
 var(Rendering) const bool	bAllowCullDistanceVolume;
@@ -113,11 +181,20 @@ var(Rendering) const bool bOwnerNoSee;
 /** If this is True, this component will only be visible when the view actor is the component's owner, directly or indirectly. */
 var(Rendering) const bool bOnlyOwnerSee;
 
+var const bool bXrayNoSee;
+var const bool bOnlyXraySee;
+var const transient bool DontDrawThisFrame;
+var(Rendering) const bool bDisableXboxMSAA;
+var const bool bLevelHidden;
+
 /** If true, bHidden on the Owner of this component will be ignored. */
 var(Rendering) const bool bIgnoreOwnerHidden;
 
 /** If this is True, this primitive will be used to occlusion cull other primitives. */
 var(Rendering) bool bUseAsOccluder;
+
+var(Rendering) bool bUseAsOccluderAutomatic;
+var(Rendering) bool bAllowOcclusionTesting;
 
 /** If this is True, this component doesn't need exact occlusion info. */
 var(Rendering) bool bAllowApproximateOcclusion;
@@ -128,18 +205,11 @@ var bool bFirstFrameOcclusion;
 /** If True, this component will still be queried for occlusion even when it intersects the near plane. */
 var bool bIgnoreNearPlaneIntersection;
 
-/** Forces the primitive to always pass renderer visibility tests. */
-var bool bAlwaysVisible;
-
 /** If this is True, this component can be selected in the editor. */
 var bool bSelectable;
 
 /** If TRUE, forces mips for textures used by this component to be resident when this component's level is loaded. */
 var(Rendering) const bool bForceMipStreaming;
-
-/** replaced with bAcceptsStaticDecals,bAcceptsDynamicDecals */
-var deprecated const bool bAcceptsDecals;
-var deprecated const bool bAcceptsDecalsDuringGameplay;
 
 /** If TRUE, this primitive accepts static level placed decals in the editor. */
 var(Rendering) const bool bAcceptsStaticDecals;
@@ -154,14 +224,7 @@ var native transient bool bAllowDecalAutomaticReAttach;
 /** If TRUE, this primitive accepts foliage. */
 var(Rendering) const bool bAcceptsFoliage;
 
-/**
- * Translucent objects with a lower sort priority draw before objects with a higher priority.
- * Translucent objects with the same priority are rendered from back-to-front based on their bounds origin.
- *
- * Ignored if the object is not translucent.
- * The default priority is zero.
- **/
-var(Rendering) int TranslucencySortPriority;
+var(Rendering) bool bContributesToLightEnvironmentBounds;
 
 // Lighting flags
 
@@ -215,12 +278,6 @@ var(Lighting)	const bool	bAcceptsLights;
  **/
 var(Lighting)	const bool	bAcceptsDynamicLights;
 
-/**
- * Lighting channels controlling light/ primitive interaction. Only allows interaction if at least one channel is shared
- *
- **/
-var(Lighting)	const LightingChannelContainer	LightingChannels;
-
 /** Whether the primitive supports/ allows static shadowing */
 var(Lighting)	const bool	bUsePrecomputedShadows;
 
@@ -255,8 +312,62 @@ var	const bool	BlockNonZeroExtent;
 var(Collision)	const bool	CanBlockCamera;
 var(Collision)	const bool	BlockRigidBody;
 
-/** DEPRECATED! Use RBChannel/RBCollideWithChannels instead now */
-var	const bool	RigidBodyIgnorePawns;
+var(Collision) const bool BlockRigidBodyPhysX;
+
+/** Never create any physics engine representation for this body. */
+var(Physics) const bool bDisableAllRigidBody;
+
+/** When creating rigid body, will skip normal geometry creation step, and will rely on ModifyNxActorDesc to fill in geometry. */
+var(Physics) const bool	bSkipRBGeomCreation;
+
+/**
+ *	Flag that indicates if OnRigidBodyCollision function should be called for physics collisions involving this PrimitiveComponent.
+ */
+var(Physics) const bool	bNotifyRigidBodyCollision;
+
+var(Physics) const bool	bEnableContactModificationCallback;
+
+// Novodex fluids
+
+/** Whether this object should act as a 'drain' for fluid, and destroy fluid particles when they contact it. */
+var(Physics) const bool	bFluidDrain;
+
+/** Indicates that fluid interaction with this object should be 'two-way' - that is, force should be applied to both fluid and object. */
+var(Physics) const bool	bFluidTwoWay;
+
+// Physics
+
+/** Will ignore radial impulses applied to this component. */
+var(Physics)	bool		bIgnoreRadialImpulse;
+
+/** Will ignore radial forces applied to this component. */
+var(Physics)	bool		bIgnoreRadialForce;
+
+/** Will ignore force field applied to this component. */
+var(Physics)	bool		bIgnoreForceField;
+
+/** Place into a NxCompartment that will run in parallel with the primary scene's physics with potentially different simulation parameters.
+ *  If double buffering is enabled in the WorldInfo then physics will run in parallel with the entire game for this component. */
+var(Physics)	const bool		bUseCompartment;
+
+/** If this is True, this component must always be loaded on clients, even if HiddenGame && !CollideActors. */
+var private const bool AlwaysLoadOnClient;
+
+/** If this is True, this component must always be loaded on servers, even if !CollideActors. */
+var private const bool AlwaysLoadOnServer;
+
+/**
+* @fixme JF, Hack for gears ship to allow certain components to render even if the parent actor
+* is part of the camera's HiddenActors array.  Potentially worth cleaning up and integrating
+* back to mainline, but I'm not really caring about that right now. :)
+*/
+var() bool bIgnoreHiddenActorsMembership;
+
+var const native transient bool bWasSNFiltered;
+
+var() const bool			AbsoluteTranslation;
+var() const bool			AbsoluteRotation;
+var() const bool			AbsoluteScale;
 
 /** Enum indicating different type of objects for rigid-body collision purposes. */
 enum ERBCollisionChannel
@@ -283,94 +394,15 @@ enum ERBCollisionChannel
 /** Enum indicating what type of object this should be considered for rigid body collision. */
 var(Collision)	const ERBCollisionChannel	RBChannel;
 
-/**
- *	Container for indicating a set of collision channel that this object will collide with.
- *	Mirrored manually in UnPhysPublic.h
- */
-struct RBCollisionChannelContainer
-{
-	var()	const bool	Default;
-	var		const bool	Nothing; // This is reserved to allow an object to opt-out of all collisions, and should not be set.
-	var()	const bool	Pawn;
-	var()	const bool	Vehicle;
-	var()	const bool	Water;
-	var()	const bool	GameplayPhysics;
-	var()	const bool	EffectPhysics;
-	var()	const bool	Untitled1;
-	var()	const bool	Untitled2;
-	var()	const bool	Untitled3;
-	var()	const bool	Untitled4;
-	var()	const bool	Cloth;
-	var()	const bool	FluidDrain;
-	var()	const bool	SoftBody;
-	var()	const bool	FracturedMeshPart;
-	var()	const bool	BlockingVolume;
-	var()	const bool	DeadPawn;
-};
+/** The scene depth priority group to draw the primitive in. */
+var(Rendering) const ESceneDepthPriorityGroup DepthPriorityGroup;
 
-/** Types of objects that this physics objects will collide with. */
-var(Collision) const RBCollisionChannelContainer	RBCollideWithChannels;
-
-/** Never create any physics engine representation for this body. */
-var(Physics) const bool bDisableAllRigidBody;
-
-/** When creating rigid body, will skip normal geometry creation step, and will rely on ModifyNxActorDesc to fill in geometry. */
-var(Physics) const bool	bSkipRBGeomCreation;
-
-/**
- *	Flag that indicates if OnRigidBodyCollision function should be called for physics collisions involving this PrimitiveComponent.
- */
-var(Physics) const bool	bNotifyRigidBodyCollision;
-
-// Novodex fluids
-
-/** Whether this object should act as a 'drain' for fluid, and destroy fluid particles when they contact it. */
-var(Physics) const bool	bFluidDrain;
-
-/** Indicates that fluid interaction with this object should be 'two-way' - that is, force should be applied to both fluid and object. */
-var(Physics) const bool	bFluidTwoWay;
-
-// Physics
-
-/** Will ignore radial impulses applied to this component. */
-var(Physics)	bool		bIgnoreRadialImpulse;
-
-/** Will ignore radial forces applied to this component. */
-var(Physics)	bool		bIgnoreRadialForce;
-
-/** Will ignore force field applied to this component. */
-var(Physics)	bool		bIgnoreForceField;
-
-/** Place into a NxCompartment that will run in parallel with the primary scene's physics with potentially different simulation parameters.
- *  If double buffering is enabled in the WorldInfo then physics will run in parallel with the entire game for this component. */
-var(Physics)	const bool		bUseCompartment;
+/** If detail mode is >= system detail mode, primitive won't be rendered. */
+var(Rendering) const EDetailMode DetailMode;
 
 // General flags.
 
-/** If this is True, this component must always be loaded on clients, even if HiddenGame && !CollideActors. */
-var private const bool AlwaysLoadOnClient;
-
-/** If this is True, this component must always be loaded on servers, even if !CollideActors. */
-var private const bool AlwaysLoadOnServer;
-
-/**
-* @fixme JF, Hack for gears ship to allow certain components to render even if the parent actor
-* is part of the camera's HiddenActors array.  Potentially worth cleaning up and integrating
-* back to mainline, but I'm not really caring about that right now. :)
-*/
-var() bool bIgnoreHiddenActorsMembership;
-
 // Internal scene data.
-
-var const native transient bool bWasSNFiltered;
-var const native transient array<int> OctreeNodes;
-
-// Internal physics engine data.
-
-/** Allows you to override the PhysicalMaterial to use for this PrimitiveComponent. */
-var(Physics)	const PhysicalMaterial			PhysMaterialOverride;
-
-var				const native RB_BodyInstance	BodyInstance;
 
 /**
  *	Used for creating one-way physics interactions (via constraints or contacts)
@@ -378,36 +410,7 @@ var				const native RB_BodyInstance	BodyInstance;
  */
 var(Physics)	byte		RBDominanceGroup;
 
-// Properties moved from TransformComponent
-var native transient const matrix CachedParentToWorld; //@todo please remove me if possible
-
-var() const vector			Translation;
-var() const rotator			Rotation;
-var() const float			Scale;
-var() const vector			Scale3D;
-
-var() const bool			AbsoluteTranslation;
-var() const bool			AbsoluteRotation;
-var() const bool			AbsoluteScale;
-
-/** Last time the component was submitted for rendering (called FScene::AddPrimitive). */
-var const transient float	LastSubmitTime;
-
-/**
- * The value of WorldInfo->TimeSeconds for the frame when this actor was last rendered.  This is written
- * from the render thread, which is up to a frame behind the game thread, so you should allow this time to
- * be at least a frame behind the game thread's world time before you consider the actor non-visible.
- * There's an equivalent variable in PrimitiveComponent.
- */
-var transient float	LastRenderTime;
-
-//=============================================================================
-// Physics.
-
-/** if > 0, the script RigidBodyCollision() event will be called on our Owner when a physics collision involving
- * this PrimitiveComponent occurs and the relative velocity is greater than or equal to this
- */
-var float ScriptRigidBodyCollisionThreshold;
+var float MaxNearlyStillSpeed;
 
 /** Enum for controlling the falloff of strength of a radial impulse as a function of distance from Origin. */
 enum ERadialImpulseFalloff
@@ -678,12 +681,10 @@ defaultproperties
 	bCastDynamicShadow=TRUE
 	bAcceptsLights=FALSE
 	bAcceptsDynamicLights=TRUE
-	bAlwaysVisible=FALSE
 	bSelectable=TRUE
 	bAcceptsStaticDecals=FALSE
 	bAcceptsDynamicDecals=TRUE
 	bAllowDecalAutomaticReAttach=TRUE
-	bAcceptsDecalsDuringGameplay=TRUE
 	bAcceptsFoliage=TRUE
 	AlwaysLoadOnClient=TRUE
 	AlwaysLoadOnServer=TRUE
@@ -693,4 +694,6 @@ defaultproperties
 	bCullModulatedShadowOnEmissive=FALSE
 	bAllowAmbientOcclusion=TRUE
 	CanBlockCamera=TRUE
+    CullArea=10000000000000
+    CullAreaMultiplier=1.0
 }

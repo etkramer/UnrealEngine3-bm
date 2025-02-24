@@ -97,7 +97,7 @@ FPrimitiveSceneInfo::FPrimitiveSceneInfo(UPrimitiveComponent* InComponent,FPrimi
 	bAllowApproximateOcclusion(InComponent->bAllowApproximateOcclusion),
 	bFirstFrameOcclusion(InComponent->bFirstFrameOcclusion),
 	bIgnoreNearPlaneIntersection(InComponent->bIgnoreNearPlaneIntersection),
-	bAlwaysVisible(InComponent->bAlwaysVisible),
+	bAlwaysVisible(FALSE),
 	bSelectable(InComponent->bSelectable),
 	bNeedsStaticMeshUpdate(FALSE),
 	bCullModulatedShadowOnBackfaces(InComponent->bCullModulatedShadowOnBackfaces),

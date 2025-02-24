@@ -15,7 +15,6 @@ IMPLEMENT_CLASS(URB_BodyInstance);
 IMPLEMENT_CLASS(UPhysicalMaterial);
 IMPLEMENT_CLASS(UPhysicalMaterialPropertyBase);
 
-
 #if WITH_NOVODEX
 	#include "UnNovodexSupport.h"
 
@@ -27,6 +26,15 @@ extern DOUBLE TotalCreateActorTime;
 #define SHOW_SLOW_RELEASE_TIMES_AMOUNT 0.1f
 
 #endif // WITH_NOVODEX
+
+#if BATMAN
+IMPLEMENT_CLASS(URPhysOnContactHandler);
+
+void URPhysOnContactHandler::OnContact(class URB_BodyInstance* BodyInst0,class URB_BodyInstance* BodyInst1,FVector SumNormalForce,FVector SumFrictionForce)
+{
+	// TODO
+}
+#endif
 
 
 ///////////////////////////////////////	

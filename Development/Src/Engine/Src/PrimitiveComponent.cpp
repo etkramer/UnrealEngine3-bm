@@ -33,9 +33,7 @@ FPrimitiveSceneProxy::FPrimitiveSceneProxy(const UPrimitiveComponent* InComponen
 	bOnlyOwnerSee(InComponent->bOnlyOwnerSee),
 	bOwnerNoSee(InComponent->bOwnerNoSee),
 	bMovable(FALSE),
-	bUseViewOwnerDepthPriorityGroup(InComponent->bUseViewOwnerDepthPriorityGroup),
 	StaticDepthPriorityGroup(InComponent->GetStaticDepthPriorityGroup()),
-	ViewOwnerDepthPriorityGroup(InComponent->ViewOwnerDepthPriorityGroup),
 	MaxDrawDistance(InComponent->CachedMaxDrawDistance > 0 ? InComponent->CachedMaxDrawDistance : FLT_MAX)
 {
 	// If the primitive is in an invalid DPG, move it to the world DPG.
@@ -58,7 +56,7 @@ FPrimitiveSceneProxy::FPrimitiveSceneProxy(const UPrimitiveComponent* InComponen
 		bOnlyOwnerSee |= InComponent->GetOwner()->bOnlyOwnerSee;
 		bMovable = !InComponent->GetOwner()->bStatic && InComponent->GetOwner()->bMovable;
 
-		if(bOnlyOwnerSee || bOwnerNoSee || bUseViewOwnerDepthPriorityGroup)
+		if(bOnlyOwnerSee || bOwnerNoSee)
 		{
 			// Make a list of the actors which directly or indirectly own the component.
 			for(const AActor* Owner = InComponent->GetOwner();Owner;Owner = Owner->Owner)
@@ -797,18 +795,6 @@ void UPrimitiveComponent::Serialize(FArchive& Ar)
 	{
 		Ar << BodyInstance;
 	}
-
-	if( Ar.Ver() < VER_UPDATED_DECAL_USAGE_FLAGS )
-	{
-		bAcceptsStaticDecals = bAcceptsDecals;
-		bAcceptsDynamicDecals = bAcceptsDecalsDuringGameplay;
-	}
-
-	if (Ar.Ver() < VER_RENAMED_CULLDISTANCE)
-	{
-		LDMaxDrawDistance = LDCullDistance;
-		CachedMaxDrawDistance = CachedCullDistance;
-	}
 }
 
 //
@@ -1177,8 +1163,6 @@ void UPrimitiveComponent::SetViewOwnerDepthPriorityGroup(
 	ESceneDepthPriorityGroup NewViewOwnerDepthPriorityGroup
 	)
 {
-	bUseViewOwnerDepthPriorityGroup = bNewUseViewOwnerDepthPriorityGroup;
-	ViewOwnerDepthPriorityGroup = NewViewOwnerDepthPriorityGroup;
 	BeginDeferredReattach();
 }
 

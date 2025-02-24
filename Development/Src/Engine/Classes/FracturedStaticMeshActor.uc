@@ -574,7 +574,6 @@ defaultproperties
 		BlockRigidBody=TRUE
 		bAcceptsStaticDecals=FALSE
 		bAcceptsDynamicDecals=TRUE
-		bAcceptsDecalsDuringGameplay=FALSE
 		bUseDynamicIndexBuffer=TRUE
 		bUseDynamicIBWithHiddenFragments=TRUE
 	End Object
