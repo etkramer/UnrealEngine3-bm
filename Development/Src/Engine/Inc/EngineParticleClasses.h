@@ -444,6 +444,7 @@ struct FParticleSysParam
     FColor Color;
     class AActor* Actor;
     class UMaterialInterface* Material;
+    FPointer VectorArray;
 
     /** Constructors */
     FParticleSysParam() {}
@@ -554,9 +555,11 @@ public:
     BITFIELD bForcedInActive:1;
     BITFIELD bIsWarmingUp:1;
     BITFIELD bIsViewRelevanceDirty:1;
+    BITFIELD bAudioComponentBurst:1;
     BITFIELD bRecacheViewRelevance:1;
     BITFIELD bLODUpdatePending:1;
     BITFIELD bSkipSpawnCountCheck:1;
+    FVector DynamicLocalSpawnLocation;
     TArrayNoInit<struct FParticleSysParam> InstanceParameters;
     FVector OldPosition;
     FVector PartSysVelocity;
@@ -568,6 +571,17 @@ public:
     BYTE LODMethod;
     BYTE ReplayState;
     TArrayNoInit<FMaterialViewRelevance> CachedViewRelevanceFlags;
+    class UAudioComponent* AudioComponentOnSpawn;
+    class UAudioComponent* AudioComponentBurst;
+    FLOAT fAudioComponentOnSpawnDistance;
+    FLOAT fAudioComponentBurstDistance;
+    FLOAT fAudioComponentOnSpawnDistanceRecheckTimer;
+    FLOAT fAudioComponentBurstDistanceRecheckTimer;
+    FLinearColor OpacityShadowsTint;
+    FColor OpacityShadowsExtAmbient;
+    FColor OpacityShadowsSelfAmbient;
+    FLOAT OpacityShadowsOpacityMultiplier;
+    class ALight* OpacityShadowsLightSource;
     TArrayNoInit<class UParticleSystemReplay*> ReplayClips;
     INT ReplayClipIDNumber;
     INT ReplayFrameIndex;

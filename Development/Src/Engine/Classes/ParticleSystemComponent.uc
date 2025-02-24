@@ -44,43 +44,7 @@ var							bool									bJustAttached;
  */
 var	transient				bool									bIsActive;
 
-/** Enum for specifying type of a name instance parameter. */
-enum EParticleSysParamType
-{
-	PSPT_None,
-	PSPT_Scalar,
-	PSPT_Vector,
-	PSPT_Color,
-	PSPT_Actor,
-	PSPT_Material
-};
-
-/** Struct used for a particular named instance parameter for this ParticleSystemComponent. */
-struct native ParticleSysParam
-{
-	var()	name					Name;
-	var()	EParticleSysParamType	ParamType;
-
-	var()	float					Scalar;
-	var()	vector					Vector;
-	var()	color					Color;
-	var()	actor					Actor;
-	var()	MaterialInterface		Material;
-};
-
-/**
- *	Array holding name instance parameters for this ParticleSystemComponent.
- *	Parameters can be used in Cascade using DistributionFloat/VectorParticleParameters.
- */
-var()	editinline array<ParticleSysParam>		InstanceParameters;
-
-var		vector									OldPosition;
-var		vector									PartSysVelocity;
-
-var		float									WarmupTime;
 var 	bool 									bWarmingUp;
-var		int										LODLevel;
-
 
 /**
  * bCanBeCachedInPool
@@ -97,26 +61,8 @@ var		int										LODLevel;
 
 var  	bool									bIsCachedInPool;
 
-
-/**
- * Number of seconds of emitter not being rendered that need to pass before it
- * no longer gets ticked/ becomes inactive.
- */
-var()	float									SecondsBeforeInactive;
-
-
-/**
- *	INTERNAL. Used by the editor to set the LODLevel
- */
-var		int										EditorLODLevel;
-
-/** Used to accumulate total tick time to determine whether system can be skipped ticking if not visible. */
-var	transient	float							AccumTickTime;
-
 /** indicates that the component's LODMethod overrides the Template's */
 var(LOD) bool bOverrideLODMethod;
-/** The method of LOD level determination to utilize for this particle system */
-var(LOD) ParticleSystemLODMethod LODMethod;
 
 /**
  *	Flag indicating that dynamic updating of render data should NOT occur during Tick.
@@ -140,19 +86,79 @@ var transient bool bForcedInActive;
 /** This is set when the particle system component is warming up */
 var transient bool bIsWarmingUp;
 
-/** The view relevance flags for each LODLevel. */
-var		transient	const	array<MaterialViewRelevance>	CachedViewRelevanceFlags;
-
 /** If TRUE, the ViewRelevanceFlags are dirty and should be recached */
 var		transient			bool							bIsViewRelevanceDirty;
+
+// BM1
+var protected bool bAudioComponentBurst;
 
 /** If TRUE, the VRF were updated and should be passed to the proxy. */
 var		transient			bool							bRecacheViewRelevance;
 
+var transient bool bLODUpdatePending;
+
+/** Check the spawn count and govern if needed */
+var	transient bool bSkipSpawnCountCheck;
+
+// BM1
+var Vector DynamicLocalSpawnLocation;
+
+/** Enum for specifying type of a name instance parameter. */
+enum EParticleSysParamType
+{
+	PSPT_None,
+	PSPT_Scalar,
+	PSPT_Vector,
+	PSPT_Color,
+	PSPT_Actor,
+	PSPT_Material
+};
+
+/** Struct used for a particular named instance parameter for this ParticleSystemComponent. */
+struct native ParticleSysParam
+{
+	var()	name					Name;
+	var()	EParticleSysParamType	ParamType;
+
+	var()	float					Scalar;
+	var()	vector					Vector;
+	var()	color					Color;
+	var()	actor					Actor;
+	var()	MaterialInterface		Material;
+
+	// BM1
+	var() native Pointer VectorArray;
+};
+
+/**
+ *	Array holding name instance parameters for this ParticleSystemComponent.
+ *	Parameters can be used in Cascade using DistributionFloat/VectorParticleParameters.
+ */
+var()	editinline array<ParticleSysParam>		InstanceParameters;
+
+var		vector									OldPosition;
+var		vector									PartSysVelocity;
+
+var		float									WarmupTime;
+var		int										LODLevel;
+
+/**
+ * Number of seconds of emitter not being rendered that need to pass before it
+ * no longer gets ticked/ becomes inactive.
+ */
+var()	float									SecondsBeforeInactive;
 
 
-/** Array of replay clips for this particle system component.  These are serialized to disk.  You really should never add anything to this in the editor.  It's exposed so that you can delete clips if you need to, but be careful when doing so! */
-var() const editinline array<ParticleSystemReplay> ReplayClips;
+/**
+ *	INTERNAL. Used by the editor to set the LODLevel
+ */
+var		int										EditorLODLevel;
+
+/** Used to accumulate total tick time to determine whether system can be skipped ticking if not visible. */
+var	transient	float							AccumTickTime;
+
+/** The method of LOD level determination to utilize for this particle system */
+var(LOD) ParticleSystemLODMethod LODMethod;
 
 /** Particle system replay state */
 enum ParticleReplayState
@@ -172,6 +178,27 @@ enum ParticleReplayState
 /** Current particle 'replay state'.  This setting controls whether we're currently simulating/rendering particles normally, or whether we should capture or playback particle replay data instead. */
 var transient const ParticleReplayState ReplayState;
 
+/** The view relevance flags for each LODLevel. */
+var		transient	const	array<MaterialViewRelevance>	CachedViewRelevanceFlags;
+
+// BM1
+var protected export editinline AudioComponent AudioComponentOnSpawn;
+var protected export editinline AudioComponent AudioComponentBurst;
+var protected float fAudioComponentOnSpawnDistance;
+var protected float fAudioComponentBurstDistance;
+var protected float fAudioComponentOnSpawnDistanceRecheckTimer;
+var protected float fAudioComponentBurstDistanceRecheckTimer;
+
+// BM1
+var() LinearColor OpacityShadowsTint;
+var() Color OpacityShadowsExtAmbient;
+var() Color OpacityShadowsSelfAmbient;
+var() float OpacityShadowsOpacityMultiplier;
+var() Light OpacityShadowsLightSource;
+
+/** Array of replay clips for this particle system component.  These are serialized to disk.  You really should never add anything to this in the editor.  It's exposed so that you can delete clips if you need to, but be careful when doing so! */
+var() const editinline array<ParticleSystemReplay> ReplayClips;
+
 /** Clip ID number we're either playing back or capturing to, depending on the value of ReplayState. */
 var transient const int ReplayClipIDNumber;
 
@@ -180,10 +207,6 @@ var transient const int ReplayFrameIndex;
 
 /** LOD updating... */
 var transient float AccumLODDistanceCheckTime;
-var transient bool bLODUpdatePending;
-
-/** Check the spawn count and govern if needed */
-var	transient bool bSkipSpawnCountCheck;
 
 /** 
  *	Event type
