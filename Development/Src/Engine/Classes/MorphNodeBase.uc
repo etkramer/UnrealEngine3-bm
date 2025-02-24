@@ -1,7 +1,7 @@
 /**
  * Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
  */
-class MorphNodeBase extends Object
+class MorphNodeBase extends AnimObject
 	native(Anim)
 	hidecategories(Object)
 	abstract;
@@ -48,22 +48,3 @@ var()	name					NodeName;
 
 /**	If true, draw a slider for this node in the AnimSetViewer. */
 var		bool					bDrawSlider;
-
-/** Keep a pointer to the SkeletalMeshComponent to which this MorphNode is attached. */
-var		SkeletalMeshComponent	SkelComponent;
-
-
-/** Used by editor. */
-var				int				NodePosX;
-
-/** Used by editor. */
-var				int				NodePosY;
-
-/** Used by editor. */
-var				int				DrawWidth;
-
-/** For editor use  */
-var				int				DrawHeight;
-
-/** For editor use. */
-var				int				OutDrawY;

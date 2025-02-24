@@ -26,6 +26,9 @@ var const			vector							OldOffset;
 /** Whether the level is currently visible/ associated with the world														*/
 var const transient bool							bIsVisible;
 
+// BM1
+var const transient bool bIsLevelHidden;
+
 /** Whether we currently have a load request pending.																		*/
 var const transient	bool							bHasLoadRequestPending;
 
@@ -50,8 +53,26 @@ var	const transient bool bShouldBeLoaded;
 /** Whether the level should be visible if it is loaded																		*/
 var const transient bool bShouldBeVisible;
 
+// BM1
+var const transient bool bShouldBeLevelHidden;
+
 /** Whether we want to force a blocking load																				*/
 var transient		bool							bShouldBlockOnLoad;
+
+// BM1
+var transient bool bShouldBeVisibleInLevelBrowser;
+var transient bool bExpandedInLevelBrowser;
+var transient bool bIsParent;
+var transient bool bIsChild;
+
+/** Whether this level streaming object's level should be unloaded and the object be removed from the level list.			*/
+var const transient bool							bIsRequestingUnloadAndRemoval;
+
+// BM1
+var(Rocksteady) bool bExcludeFromPathBuilding;
+var transient bool bExcludeFromPathBuilding_Old_bShouldBeVisibleInEditor;
+var(Rocksteady) bool bLightPerRoom;
+var(Rocksteady) bool ForceShadowVolumes;
 
 /** The level's color; used to make the level easily identifiable in the level browser, for actor level visulization, etc.	*/
 var() const			color							DrawColor;
@@ -65,8 +86,11 @@ var() float											MinTimeBetweenVolumeUnloadRequests;
 /** Time of last volume unload request.  Used in preventing spurious unload requests.										*/
 var const transient float							LastVolumeUnloadRequestTime;
 
-/** Whether this level streaming object's level should be unloaded and the object be removed from the level list.			*/
-var const transient bool							bIsRequestingUnloadAndRemoval;
+// BM1
+var(Rocksteady) name AlternativeMapLevel;
+var(Rocksteady) string PersonResponsible;
+var(Rocksteady) name ConditionalStartFlag;
+var(Rocksteady) name ConditionalLoadFlag;
 
 cpptext
 {

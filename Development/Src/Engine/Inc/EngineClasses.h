@@ -17561,6 +17561,7 @@ public:
     FVector Offset;
     FVector OldOffset;
     BITFIELD bIsVisible:1;
+    BITFIELD bIsLevelHidden:1;
     BITFIELD bHasLoadRequestPending:1;
     BITFIELD bHasUnloadRequestPending:1;
     BITFIELD bShouldBeVisibleInEditor:1;
@@ -17569,12 +17570,25 @@ public:
     BITFIELD bIsFullyStatic:1;
     BITFIELD bShouldBeLoaded:1;
     BITFIELD bShouldBeVisible:1;
+    BITFIELD bShouldBeLevelHidden:1;
     BITFIELD bShouldBlockOnLoad:1;
+    BITFIELD bShouldBeVisibleInLevelBrowser:1;
+    BITFIELD bExpandedInLevelBrowser:1;
+    BITFIELD bIsParent:1;
+    BITFIELD bIsChild:1;
     BITFIELD bIsRequestingUnloadAndRemoval:1;
+    BITFIELD bExcludeFromPathBuilding:1;
+    BITFIELD bExcludeFromPathBuilding_Old_bShouldBeVisibleInEditor:1;
+    BITFIELD bLightPerRoom:1;
+    BITFIELD ForceShadowVolumes:1;
     FColor DrawColor;
     TArrayNoInit<class ALevelStreamingVolume*> EditorStreamingVolumes;
     FLOAT MinTimeBetweenVolumeUnloadRequests;
     FLOAT LastVolumeUnloadRequestTime;
+    FName AlternativeMapLevel;
+    FStringNoInit PersonResponsible;
+    FName ConditionalStartFlag;
+    FName ConditionalLoadFlag;
     //## END PROPS LevelStreaming
 
     DECLARE_ABSTRACT_CLASS(ULevelStreaming,UObject,0,Engine)
@@ -23386,7 +23400,7 @@ VERIFY_CLASS_OFFSET_NODIE(A,LadderVolume,WallDir)
 VERIFY_CLASS_OFFSET_NODIE(A,LadderVolume,PendingClimber)
 VERIFY_CLASS_SIZE_NODIE(ALadderVolume)
 VERIFY_CLASS_OFFSET_NODIE(U,LevelStreaming,PackageName)
-VERIFY_CLASS_OFFSET_NODIE(U,LevelStreaming,LastVolumeUnloadRequestTime)
+VERIFY_CLASS_OFFSET_NODIE(U,LevelStreaming,ConditionalLoadFlag)
 VERIFY_CLASS_SIZE_NODIE(ULevelStreaming)
 VERIFY_CLASS_OFFSET_NODIE(U,LevelStreamingDistance,Origin)
 VERIFY_CLASS_OFFSET_NODIE(U,LevelStreamingDistance,MaxDistance)
