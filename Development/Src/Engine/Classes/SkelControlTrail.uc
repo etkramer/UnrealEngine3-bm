@@ -26,6 +26,12 @@ var(Trail)		bool	bInvertChainBoneAxis;
 /** Limit the amount that a bone can stretch from its ref-pose length. */
 var(Trail)		bool	bLimitStretch;
 
+/** Whether 'fake' velocity should be applied in actor or world space. */
+var(Trail)		bool	bActorSpaceFakeVel;
+
+/** Did we have a non-zero ControlStrength last frame. */
+var				bool	bHadValidStrength;
+
 /** How quickly we 'relax' the bones to their animated positions. */
 var(Trail)		float	TrailRelaxation;
 
@@ -35,14 +41,8 @@ var(Trail)		float	StretchLimit;
 /** 'Fake' velocity applied to bones. */
 var(Trail)		vector	FakeVelocity;
 
-/** Whether 'fake' velocity should be applied in actor or world space. */
-var(Trail)		bool	bActorSpaceFakeVel;
-
 /** Internal use - we need the timestep to do the relaxation in CalculateNewBoneTransforms. */
 var				float	ThisTimstep;
-
-/** Did we have a non-zero ControlStrength last frame. */
-var				bool			bHadValidStrength;
 
 /** Component-space locations of the bones from last frame. Each frame these are moved towards their 'animated' locations. */
 var				transient array<vector>	TrailBoneLocations;

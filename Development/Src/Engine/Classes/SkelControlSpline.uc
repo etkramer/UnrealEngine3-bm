@@ -20,15 +20,6 @@ var(Spline)		int		SplineLength;
 /** Axis of the controlled bone (ie the end of the spline) to use as the direction for the curve. */
 var(Spline)		EAxis	SplineBoneAxis;
 
-/** Invert the direction we get for the start of the spline. */
-var(Spline)		bool	bInvertSplineBoneAxis;
-
-/** Strength of tangent at the controlled bone. */
-var(Spline)		float	EndSplineTension;
-
-/** Strength of tangent at the start of the chain. */
-var(Spline)		float	StartSplineTension;
-
 enum ESplineControlRotMode
 {
 	/** Do not modify rotation of bones along the spline. */
@@ -42,7 +33,16 @@ enum ESplineControlRotMode
 };
 
 /** Controls how the rotation of each bone along the length of the spline is modified. */
-var(Spline)		ESplineControlRotMode	BoneRotMode;
+var(Spline) SkelControlSpline.ESplineControlRotMode BoneRotMode;
+
+/** Invert the direction we get for the start of the spline. */
+var(Spline)		bool	bInvertSplineBoneAxis;
+
+/** Strength of tangent at the controlled bone. */
+var(Spline)		float	EndSplineTension;
+
+/** Strength of tangent at the start of the chain. */
+var(Spline)		float	StartSplineTension;
 
 defaultproperties
 {

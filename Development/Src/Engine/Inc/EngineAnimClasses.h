@@ -100,23 +100,6 @@ enum EBaseBlendType
     BBT_ByActorClass        =1,
     BBT_MAX                 =2,
 };
-enum AnimationKeyFormat
-{
-    AKF_ConstantKeyLerp     =0,
-    AKF_VariableKeyLerp     =1,
-    AKF_MAX                 =2,
-};
-enum AnimationCompressionFormat
-{
-    ACF_None                =0,
-    ACF_Float96NoW          =1,
-    ACF_Fixed48NoW          =2,
-    ACF_IntervalFixed32NoW  =3,
-    ACF_Fixed32NoW          =4,
-    ACF_Float32NoW          =5,
-    ACF_Fixed48Max          =6,
-    ACF_MAX                 =7,
-};
 enum EBoneControlSpace
 {
     BCS_WorldSpace          =0,
@@ -133,6 +116,23 @@ enum ESplineControlRotMode
     SCR_AlongSpline         =1,
     SCR_Interpolate         =2,
     SCR_MAX                 =3,
+};
+enum AnimationKeyFormat
+{
+    AKF_ConstantKeyLerp     =0,
+    AKF_VariableKeyLerp     =1,
+    AKF_MAX                 =2,
+};
+enum AnimationCompressionFormat
+{
+    ACF_None                =0,
+    ACF_Float96NoW          =1,
+    ACF_Fixed48NoW          =2,
+    ACF_IntervalFixed32NoW  =3,
+    ACF_Fixed32NoW          =4,
+    ACF_Float32NoW          =5,
+    ACF_Fixed48Max          =6,
+    ACF_MAX                 =7,
 };
 
 #endif // !INCLUDED_ENGINE_ANIM_ENUMS
@@ -2341,6 +2341,503 @@ public:
 	virtual void DrawAnimNode(FCanvas* Canvas, UBOOL bSelected, UBOOL bShowWeight, UBOOL bCurves);
 };
 
+class UMorphNodeBase : public UAnimObject
+{
+public:
+    //## BEGIN PROPS MorphNodeBase
+    FName NodeName;
+    BITFIELD bDrawSlider:1;
+    //## END PROPS MorphNodeBase
+
+    DECLARE_ABSTRACT_CLASS(UMorphNodeBase,UAnimObject,0,Engine)
+	/** Add to array all the active morphs below this one, including their weight. */
+	virtual void GetActiveMorphs(TArray<FActiveMorph>& OutMorphs) {}
+	
+	/** Do any initialisation necessary for this MorphNode. */
+	virtual void InitMorphNode(USkeletalMeshComponent* InSkelComp);
+
+	/** Add all nodes at or below this one to the output array. */
+	virtual void GetNodes(TArray<UMorphNodeBase*>& OutNodes);
+
+	// EDITOR	
+	
+	/** 
+	 * Draws this morph node in the AnimTreeEditor.
+	 *
+	 * @param	Canvas			The canvas to use.
+	 * @param	bSelected		TRUE if this node is selected.
+	 * @param	bCurves			If TRUE, render links as splines; if FALSE, render links as straight lines.
+	 */
+	virtual void DrawMorphNode(FCanvas* Canvas, UBOOL bSelected, UBOOL bCurves) {}
+
+	/** Get location of a connection of a particular type. */
+	virtual FIntPoint GetConnectionLocation(INT ConnType, INT ConnIndex);	
+	
+	/** Return current position of slider for this node in the AnimTreeEditor. Return value should be within 0.0 to 1.0 range. */
+	virtual FLOAT GetSliderPosition() { return 0.f; }
+
+	/** Called when slider is moved in the AnimTreeEditor. NewSliderValue is in range 0.0 to 1.0. */
+	virtual void HandleSliderMove(FLOAT NewSliderValue) {}	
+
+	/** Render on 3d viewport when node is selected. */
+	virtual void Render(const FSceneView* View, FPrimitiveDrawInterface* PDI) {}
+	/** Draw on 3d viewport canvas when node is selected */
+	virtual void Draw(FViewport* Viewport, FCanvas* Canvas, const FSceneView* View) {}
+};
+
+class UMorphNodePose : public UMorphNodeBase
+{
+public:
+    //## BEGIN PROPS MorphNodePose
+    class UMorphTarget* Target;
+    FName MorphName;
+    FLOAT Weight;
+    //## END PROPS MorphNodePose
+
+    void SetMorphTarget(FName MorphTargetName);
+    DECLARE_FUNCTION(execSetMorphTarget)
+    {
+        P_GET_NAME(MorphTargetName);
+        P_FINISH;
+        SetMorphTarget(MorphTargetName);
+    }
+    DECLARE_CLASS(UMorphNodePose,UMorphNodeBase,0,Engine)
+	// UObject interface
+	virtual void PostEditChange(UProperty* PropertyThatChanged);
+
+	// MorphNodeBase interface
+	virtual void GetActiveMorphs(TArray<FActiveMorph>& OutMorphs);
+	virtual void InitMorphNode(USkeletalMeshComponent* InSkelComp);
+
+	/** 
+	 * Draws this morph node in the AnimTreeEditor.
+	 *
+	 * @param	Canvas			The canvas to use.
+	 * @param	bSelected		TRUE if this node is selected.
+	 * @param	bCurves			If TRUE, render links as splines; if FALSE, render links as straight lines.
+	 */	
+	virtual void DrawMorphNode(FCanvas* Canvas, UBOOL bSelected, UBOOL bCurves);
+};
+
+struct FMorphNodeConn
+{
+    TArrayNoInit<class UMorphNodeBase*> ChildNodes;
+    FName ConnName;
+    INT DrawY;
+
+    /** Constructors */
+    FMorphNodeConn() {}
+    FMorphNodeConn(EEventParm)
+    {
+        appMemzero(this, sizeof(FMorphNodeConn));
+    }
+};
+
+class UMorphNodeWeightBase : public UMorphNodeBase
+{
+public:
+    //## BEGIN PROPS MorphNodeWeightBase
+    TArrayNoInit<struct FMorphNodeConn> NodeConns;
+    //## END PROPS MorphNodeWeightBase
+
+    DECLARE_ABSTRACT_CLASS(UMorphNodeWeightBase,UMorphNodeBase,0,Engine)
+	virtual void GetNodes(TArray<UMorphNodeBase*>& OutNodes);
+
+	/** 
+	 * Draws this morph node in the AnimTreeEditor.
+	 *
+	 * @param	Canvas			The canvas to use.
+	 * @param	bSelected		TRUE if this node is selected.
+	 * @param	bCurves			If TRUE, render links as splines; if FALSE, render links as straight lines.
+	 */	
+	virtual void DrawMorphNode(FCanvas* Canvas, UBOOL bSelected, UBOOL bCurves);
+
+	virtual FIntPoint GetConnectionLocation(INT ConnType, INT ConnIndex);
+};
+
+class UMorphNodeWeight : public UMorphNodeWeightBase
+{
+public:
+    //## BEGIN PROPS MorphNodeWeight
+    FLOAT NodeWeight;
+    //## END PROPS MorphNodeWeight
+
+    virtual void SetNodeWeight(FLOAT NewWeight);
+    DECLARE_FUNCTION(execSetNodeWeight)
+    {
+        P_GET_FLOAT(NewWeight);
+        P_FINISH;
+        SetNodeWeight(NewWeight);
+    }
+    DECLARE_CLASS(UMorphNodeWeight,UMorphNodeWeightBase,0,Engine)
+	virtual void GetActiveMorphs(TArray<FActiveMorph>& OutMorphs);
+	
+	virtual FLOAT GetSliderPosition();
+	virtual void HandleSliderMove(FLOAT NewSliderValue);
+};
+
+class USkelControlBase : public UAnimObject
+{
+public:
+    //## BEGIN PROPS SkelControlBase
+    FName ControlName;
+    FLOAT ControlStrength;
+    FLOAT BlendInTime;
+    FLOAT BlendOutTime;
+    BYTE BlendType;
+    FLOAT StrengthTarget;
+    FLOAT BlendTimeToGo;
+    BITFIELD bSetStrengthFromAnimNode:1;
+    BITFIELD bInitializedCachedNodeList:1;
+    BITFIELD bPropagateSetActive:1;
+    BITFIELD bIgnoreWhenNotRendered:1;
+    BITFIELD bEnableEaseInOut:1;
+    TArrayNoInit<FName> StrengthAnimNodeNameList;
+    TArrayNoInit<class UAnimNode*> CachedNodeList;
+    FLOAT BoneScale;
+    INT ControlTickTag;
+    INT IgnoreAtOrAboveLOD;
+    class USkelControlBase* NextControl;
+    INT ControlPosX;
+    INT ControlPosY;
+    //## END PROPS SkelControlBase
+
+    void SetSkelControlActive(UBOOL bInActive);
+    void SetSkelControlStrength(FLOAT NewStrength,FLOAT InBlendTime);
+    DECLARE_FUNCTION(execSetSkelControlActive)
+    {
+        P_GET_UBOOL(bInActive);
+        P_FINISH;
+        SetSkelControlActive(bInActive);
+    }
+    DECLARE_FUNCTION(execSetSkelControlStrength)
+    {
+        P_GET_FLOAT(NewStrength);
+        P_GET_FLOAT(InBlendTime);
+        P_FINISH;
+        SetSkelControlStrength(NewStrength,InBlendTime);
+    }
+    DECLARE_ABSTRACT_CLASS(USkelControlBase,UAnimObject,0,Engine)
+	/**
+	*	Called from the SkeletalMeshComponent Tick function, to allow SkelControls to do any time-based update,
+	*	such as adjusting their current blend amount.
+	*/
+	virtual void TickSkelControl(FLOAT DeltaSeconds, USkeletalMeshComponent* SkelComp);
+
+	/**
+	*	Get the array of bones that this controller affects. Must be in hierarchy order, that is, parents before children.
+	*/
+	virtual void GetAffectedBones(INT BoneIndex, USkeletalMeshComponent* SkelComp, TArray<INT>& OutBoneIndices) {}
+
+	/**
+	*	Calculate the new component-space transforms for the affected bones.
+	*	The output array OutBoneTransforms must correspond to the OutBoneIndices array returned above (be in the same order etc).
+	*/
+	virtual void CalculateNewBoneTransforms(INT BoneIndex, USkeletalMeshComponent* SkelComp, TArray<FMatrix>& OutBoneTransforms) {}
+
+	/**
+	*	Allows you to modify the scaling of all affected bones.
+	*	The output array OutBoneScales must correspond to the OutBoneIndices array returned above (be in the same order etc).
+	*/
+	virtual void CalculateNewBoneScales(INT BoneIndex, USkeletalMeshComponent* SkelComp, TArray<FLOAT>& OutBoneScales) {}
+
+	/** Allows you to modify the scaling of the controller bone. */
+	virtual FLOAT GetBoneScale(INT BoneIndex, USkeletalMeshComponent* SkelComp) { return BoneScale; }
+
+	// UObject functions
+	virtual void PostLoad();
+
+	// UTILS
+
+	/** Utility function for turning axis indicator enum into direction vector, possibly inverted. */
+	static FVector GetAxisDirVector(BYTE InAxis, UBOOL bInvert);
+
+	/**
+	*	Create a matrix given two arbitrary rows of it.
+	*	We generate the missing row using another cross product, but we have to get the order right to avoid changing handedness.
+	*/
+	static FMatrix BuildMatrixFromVectors(BYTE Vec1Axis, const FVector& Vec1, BYTE Vec2Axis, const FVector& Vec2);
+
+	/** Given two unit direction vectors, find the axis and angle between them. */
+	static void FindAxisAndAngle(const FVector& A, const FVector& B, FVector& OutAxis, FLOAT& OutAngle);
+
+	// ANIMTREE EDITOR SUPPORT
+
+	/**
+	* Draw this SkelControl in the AnimTreeEditor.
+	*
+	* @param	Canvas			The canvas to use.
+	* @param	bSelected		TRUE if this node is selected.
+	* @param	bCurves			If TRUE, render links as splines; if FALSE, render links as straight lines.
+	*/
+	virtual void DrawSkelControl(FCanvas* Canvas, UBOOL bSelected, UBOOL bCurves);
+
+	/** For editor use. */
+	FIntPoint GetConnectionLocation(INT ConnType);
+
+	/** If we should draw manipulation widget in 3D viewport. */
+	virtual INT GetWidgetCount() { return 0; }
+
+	/** The transform to use when drawing the widget, in world space. */
+	virtual FMatrix GetWidgetTM(INT WidgetIndex, USkeletalMeshComponent* SkelComp, INT BoneIndex) { return FMatrix::Identity; }
+
+	/** Update properties of this controller based on the widget being manipulated in the 3D viewport. */
+	virtual void HandleWidgetDrag(INT WidgetIndex, const FVector& DragVec) {}
+
+	/** Extra function for drawing special debug info in the 3D viewport if desired. */
+	virtual void DrawSkelControl3D(const FSceneView* View, FPrimitiveDrawInterface* PDI, USkeletalMeshComponent* SkelComp, INT BoneIndex) {}
+
+	/** Called when slider is moved in the AnimTreeEditor. NewSliderValue is in range 0.0 to 1.0. */
+	void HandleControlSliderMove(FLOAT NewSliderValue);
+
+	/**
+	* Get Alpha for this control. By default it is ControlStrength.
+	* 0.f means no effect, 1.f means full effect.
+	* ControlStrength controls whether or not CalculateNewBoneTransforms() is called.
+	* By modifying GetControlAlpha() you can still get CalculateNewBoneTransforms() called
+	* but not have the controller's effect applied on the mesh.
+	* This is useful for cases where you need to have the skeleton built in mesh space
+	* for testing, which is not available in TickSkelControl().
+	*/
+	virtual FLOAT	GetControlAlpha();
+
+	/* Returns Final Blend Control Alpha based on Blend Type*/
+	FORCEINLINE FLOAT GetBlendControlAlpha(FLOAT ControlAlpha);
+
+	/** Used by high level systems to assign a 'target' for a generic control. One example is the ControlTargets array in SkeletalMeshActor. */
+	virtual void SetControlTargetLocation(const FVector& TargetLocation) {}
+};
+
+class USkelControlLimb : public USkelControlBase
+{
+public:
+    //## BEGIN PROPS SkelControlLimb
+    FVector EffectorLocation;
+    BYTE EffectorLocationSpace;
+    BYTE JointTargetLocationSpace;
+    BYTE BoneAxis;
+    BYTE JointAxis;
+    FName EffectorSpaceBoneName;
+    FVector JointTargetLocation;
+    FName JointTargetSpaceBoneName;
+    BITFIELD bInvertBoneAxis:1;
+    BITFIELD bInvertJointAxis:1;
+    BITFIELD bMaintainEffectorRelRot:1;
+    BITFIELD bTakeRotationFromEffectorSpace:1;
+    BITFIELD bAllowStretching:1;
+    FVector2D StretchLimits;
+    FName StretchRollBoneName;
+    //## END PROPS SkelControlLimb
+
+    DECLARE_CLASS(USkelControlLimb,USkelControlBase,0,Engine)
+	// USkelControlBase interface
+	virtual void GetAffectedBones(INT BoneIndex, USkeletalMeshComponent* SkelComp, TArray<INT>& OutBoneIndices);
+	virtual void CalculateNewBoneTransforms(INT BoneIndex, USkeletalMeshComponent* SkelComp, TArray<FMatrix>& OutBoneTransforms);	
+
+	virtual INT GetWidgetCount();
+	virtual FMatrix GetWidgetTM(INT WidgetIndex, USkeletalMeshComponent* SkelComp, INT BoneIndex);
+	virtual void HandleWidgetDrag(INT WidgetIndex, const FVector& DragVec);
+	virtual void DrawSkelControl3D(const FSceneView* View, FPrimitiveDrawInterface* PDI, USkeletalMeshComponent* SkelComp, INT BoneIndex);
+};
+
+class USkelControlFootPlacement : public USkelControlLimb
+{
+public:
+    //## BEGIN PROPS SkelControlFootPlacement
+    FLOAT FootOffset;
+    BYTE FootUpAxis;
+    FRotator FootRotOffset;
+    BITFIELD bInvertFootUpAxis:1;
+    BITFIELD bOrientFootToGround:1;
+    BITFIELD bOnlyEnableForUpAdjustment:1;
+    FLOAT MaxUpAdjustment;
+    FLOAT MaxDownAdjustment;
+    FLOAT MaxFootOrientAdjust;
+    //## END PROPS SkelControlFootPlacement
+
+    DECLARE_CLASS(USkelControlFootPlacement,USkelControlLimb,0,Engine)
+	// USkelControlBase interface
+	virtual void CalculateNewBoneTransforms(INT BoneIndex, USkeletalMeshComponent* SkelComp, TArray<FMatrix>& OutBoneTransforms);	
+};
+
+class USkelControlLookAt : public USkelControlBase
+{
+public:
+    //## BEGIN PROPS SkelControlLookAt
+    FVector TargetLocation;
+    BYTE TargetLocationSpace;
+    BYTE LookAtAxis;
+    BYTE UpAxis;
+    BYTE AllowRotationSpace;
+    FName TargetSpaceBoneName;
+    BITFIELD bInvertLookAtAxis:1;
+    BITFIELD bDefineUpAxis:1;
+    BITFIELD bInvertUpAxis:1;
+    BITFIELD bEnableLimit:1;
+    BITFIELD bLimitBasedOnRefPose:1;
+    BITFIELD bDisableBeyondLimit:1;
+    BITFIELD bNotifyBeyondLimit:1;
+    BITFIELD bShowLimit:1;
+    BITFIELD bAllowRotationX:1;
+    BITFIELD bAllowRotationY:1;
+    BITFIELD bAllowRotationZ:1;
+    FLOAT TargetLocationInterpSpeed;
+    FVector DesiredTargetLocation;
+    FLOAT MaxAngle;
+    FLOAT OuterMaxAngle;
+    FLOAT DeadZoneAngle;
+    FName AllowRotationOtherBoneName;
+    FLOAT LookAtAlpha;
+    FLOAT LookAtAlphaTarget;
+    FLOAT LookAtAlphaBlendTimeToGo;
+    FVector LimitLookDir;
+    FVector BaseLookDir;
+    FVector BaseBonePos;
+    FLOAT LastCalcTime;
+    //## END PROPS SkelControlLookAt
+
+    void SetTargetLocation(FVector NewTargetLocation);
+    void InterpolateTargetLocation(FLOAT DeltaTime);
+    void SetLookAtAlpha(FLOAT DesiredAlpha,FLOAT DesiredBlendTime);
+    UBOOL CanLookAtPoint(FVector PointLoc,UBOOL bDrawDebugInfo=FALSE,UBOOL bDebugUsePersistentLines=FALSE,UBOOL bDebugFlushLinesFirst=FALSE);
+    DECLARE_FUNCTION(execSetTargetLocation)
+    {
+        P_GET_STRUCT(FVector,NewTargetLocation);
+        P_FINISH;
+        SetTargetLocation(NewTargetLocation);
+    }
+    DECLARE_FUNCTION(execInterpolateTargetLocation)
+    {
+        P_GET_FLOAT(DeltaTime);
+        P_FINISH;
+        InterpolateTargetLocation(DeltaTime);
+    }
+    DECLARE_FUNCTION(execSetLookAtAlpha)
+    {
+        P_GET_FLOAT(DesiredAlpha);
+        P_GET_FLOAT(DesiredBlendTime);
+        P_FINISH;
+        SetLookAtAlpha(DesiredAlpha,DesiredBlendTime);
+    }
+    DECLARE_FUNCTION(execCanLookAtPoint)
+    {
+        P_GET_STRUCT(FVector,PointLoc);
+        P_GET_UBOOL_OPTX(bDrawDebugInfo,FALSE);
+        P_GET_UBOOL_OPTX(bDebugUsePersistentLines,FALSE);
+        P_GET_UBOOL_OPTX(bDebugFlushLinesFirst,FALSE);
+        P_FINISH;
+        *(UBOOL*)Result=CanLookAtPoint(PointLoc,bDrawDebugInfo,bDebugUsePersistentLines,bDebugFlushLinesFirst);
+    }
+    DECLARE_CLASS(USkelControlLookAt,USkelControlBase,0,Engine)
+	// USkelControlBase interface
+	/** LookAtAlpha allows to cancel head look when going beyond boundaries */
+	virtual	FLOAT	GetControlAlpha();
+	virtual void	TickSkelControl(FLOAT DeltaSeconds, USkeletalMeshComponent* SkelComp);
+	virtual void	GetAffectedBones(INT BoneIndex, USkeletalMeshComponent* SkelComp, TArray<INT>& OutBoneIndices);
+	virtual void	CalculateNewBoneTransforms(INT BoneIndex, USkeletalMeshComponent* SkelComp, TArray<FMatrix>& OutBoneTransforms);	
+	
+	virtual INT		GetWidgetCount() { return 1; }
+	virtual FMatrix GetWidgetTM(INT WidgetIndex, USkeletalMeshComponent* SkelComp, INT BoneIndex);
+	virtual void	HandleWidgetDrag(INT WidgetIndex, const FVector& DragVec);
+	virtual void	DrawSkelControl3D(const FSceneView* View, FPrimitiveDrawInterface* PDI, USkeletalMeshComponent* SkelComp, INT BoneIndex);
+
+	virtual void SetControlTargetLocation(const FVector& InTargetLocation);
+
+protected:
+	virtual UBOOL	ApplyLookDirectionLimits(FVector& DesiredLookDir, const FVector &CurrentLookDir, INT BoneIndex, USkeletalMeshComponent* SkelComp);
+
+public:
+};
+
+class USkelControlSingleBone : public USkelControlBase
+{
+public:
+    //## BEGIN PROPS SkelControlSingleBone
+    BITFIELD bApplyTranslation:1;
+    BITFIELD bAddTranslation:1;
+    BITFIELD bApplyRotation:1;
+    BITFIELD bAddRotation:1;
+    FVector BoneTranslation;
+    BYTE BoneTranslationSpace;
+    BYTE BoneRotationSpace;
+    FName TranslationSpaceBoneName;
+    FRotator BoneRotation;
+    FName RotationSpaceBoneName;
+    //## END PROPS SkelControlSingleBone
+
+    DECLARE_CLASS(USkelControlSingleBone,USkelControlBase,0,Engine)
+	// USkelControlBase interface
+	virtual void GetAffectedBones(INT BoneIndex, USkeletalMeshComponent* SkelComp, TArray<INT>& OutBoneIndices);
+	virtual void CalculateNewBoneTransforms(INT BoneIndex, USkeletalMeshComponent* SkelComp, TArray<FMatrix>& OutBoneTransforms);	
+
+	virtual INT GetWidgetCount();
+	virtual FMatrix GetWidgetTM(INT WidgetIndex, USkeletalMeshComponent* SkelComp, INT BoneIndex);
+	virtual void HandleWidgetDrag(INT WidgetIndex, const FVector& DragVec);
+};
+
+class USkelControlWheel : public USkelControlSingleBone
+{
+public:
+    //## BEGIN PROPS SkelControlWheel
+    FLOAT WheelDisplacement;
+    FLOAT WheelMaxRenderDisplacement;
+    FLOAT WheelRoll;
+    BYTE WheelRollAxis;
+    BYTE WheelSteeringAxis;
+    FLOAT WheelSteering;
+    BITFIELD bInvertWheelRoll:1;
+    BITFIELD bInvertWheelSteering:1;
+    //## END PROPS SkelControlWheel
+
+    DECLARE_CLASS(USkelControlWheel,USkelControlSingleBone,0,Engine)
+	// SkelControlWheel interface
+	void UpdateWheelControl( FLOAT InDisplacement, FLOAT InRoll, FLOAT InSteering );
+	void CalculateNewBoneTransforms(INT BoneIndex, USkeletalMeshComponent* SkelComp, TArray<FMatrix>& OutBoneTransforms);
+};
+
+class USkelControlSpline : public USkelControlBase
+{
+public:
+    //## BEGIN PROPS SkelControlSpline
+    INT SplineLength;
+    BYTE SplineBoneAxis;
+    BYTE BoneRotMode;
+    BITFIELD bInvertSplineBoneAxis:1 GCC_BITFIELD_MAGIC;
+    FLOAT EndSplineTension;
+    FLOAT StartSplineTension;
+    //## END PROPS SkelControlSpline
+
+    DECLARE_CLASS(USkelControlSpline,USkelControlBase,0,Engine)
+	// USkelControlBase interface
+	virtual void GetAffectedBones(INT BoneIndex, USkeletalMeshComponent* SkelComp, TArray<INT>& OutBoneIndices);
+	virtual void CalculateNewBoneTransforms(INT BoneIndex, USkeletalMeshComponent* SkelComp, TArray<FMatrix>& OutBoneTransforms);	
+};
+
+class USkelControlTrail : public USkelControlBase
+{
+public:
+    //## BEGIN PROPS SkelControlTrail
+    INT ChainLength;
+    BYTE ChainBoneAxis;
+    BITFIELD bInvertChainBoneAxis:1 GCC_BITFIELD_MAGIC;
+    BITFIELD bLimitStretch:1;
+    BITFIELD bActorSpaceFakeVel:1;
+    BITFIELD bHadValidStrength:1;
+    FLOAT TrailRelaxation;
+    FLOAT StretchLimit;
+    FVector FakeVelocity;
+    FLOAT ThisTimstep;
+    TArrayNoInit<FVector> TrailBoneLocations;
+    FMatrix OldLocalToWorld;
+    //## END PROPS SkelControlTrail
+
+    DECLARE_CLASS(USkelControlTrail,USkelControlBase,0,Engine)
+	// USkelControlBase interface
+	virtual void TickSkelControl(FLOAT DeltaSeconds, USkeletalMeshComponent* SkelComp);
+	virtual void GetAffectedBones(INT BoneIndex, USkeletalMeshComponent* SkelComp, TArray<INT>& OutBoneIndices);
+	virtual void CalculateNewBoneTransforms(INT BoneIndex, USkeletalMeshComponent* SkelComp, TArray<FMatrix>& OutBoneTransforms);	
+};
+
 struct FAnimNotifyEvent
 {
     FLOAT Time;
@@ -2662,147 +3159,6 @@ public:
 	static void ClearAllAnimSetLinkupCaches();
 };
 
-class UMorphNodeBase : public UObject
-{
-public:
-    //## BEGIN PROPS MorphNodeBase
-    FName NodeName;
-    BITFIELD bDrawSlider:1;
-    class USkeletalMeshComponent* SkelComponent;
-    INT NodePosX;
-    INT NodePosY;
-    INT DrawWidth;
-    INT DrawHeight;
-    INT OutDrawY;
-    //## END PROPS MorphNodeBase
-
-    DECLARE_ABSTRACT_CLASS(UMorphNodeBase,UObject,0,Engine)
-	/** Add to array all the active morphs below this one, including their weight. */
-	virtual void GetActiveMorphs(TArray<FActiveMorph>& OutMorphs) {}
-	
-	/** Do any initialisation necessary for this MorphNode. */
-	virtual void InitMorphNode(USkeletalMeshComponent* InSkelComp);
-
-	/** Add all nodes at or below this one to the output array. */
-	virtual void GetNodes(TArray<UMorphNodeBase*>& OutNodes);
-
-	// EDITOR	
-	
-	/** 
-	 * Draws this morph node in the AnimTreeEditor.
-	 *
-	 * @param	Canvas			The canvas to use.
-	 * @param	bSelected		TRUE if this node is selected.
-	 * @param	bCurves			If TRUE, render links as splines; if FALSE, render links as straight lines.
-	 */
-	virtual void DrawMorphNode(FCanvas* Canvas, UBOOL bSelected, UBOOL bCurves) {}
-
-	/** Get location of a connection of a particular type. */
-	virtual FIntPoint GetConnectionLocation(INT ConnType, INT ConnIndex);	
-	
-	/** Return current position of slider for this node in the AnimTreeEditor. Return value should be within 0.0 to 1.0 range. */
-	virtual FLOAT GetSliderPosition() { return 0.f; }
-
-	/** Called when slider is moved in the AnimTreeEditor. NewSliderValue is in range 0.0 to 1.0. */
-	virtual void HandleSliderMove(FLOAT NewSliderValue) {}	
-
-	/** Render on 3d viewport when node is selected. */
-	virtual void Render(const FSceneView* View, FPrimitiveDrawInterface* PDI) {}
-	/** Draw on 3d viewport canvas when node is selected */
-	virtual void Draw(FViewport* Viewport, FCanvas* Canvas, const FSceneView* View) {}
-};
-
-class UMorphNodePose : public UMorphNodeBase
-{
-public:
-    //## BEGIN PROPS MorphNodePose
-    class UMorphTarget* Target;
-    FName MorphName;
-    FLOAT Weight;
-    //## END PROPS MorphNodePose
-
-    void SetMorphTarget(FName MorphTargetName);
-    DECLARE_FUNCTION(execSetMorphTarget)
-    {
-        P_GET_NAME(MorphTargetName);
-        P_FINISH;
-        SetMorphTarget(MorphTargetName);
-    }
-    DECLARE_CLASS(UMorphNodePose,UMorphNodeBase,0,Engine)
-	// UObject interface
-	virtual void PostEditChange(UProperty* PropertyThatChanged);
-
-	// MorphNodeBase interface
-	virtual void GetActiveMorphs(TArray<FActiveMorph>& OutMorphs);
-	virtual void InitMorphNode(USkeletalMeshComponent* InSkelComp);
-
-	/** 
-	 * Draws this morph node in the AnimTreeEditor.
-	 *
-	 * @param	Canvas			The canvas to use.
-	 * @param	bSelected		TRUE if this node is selected.
-	 * @param	bCurves			If TRUE, render links as splines; if FALSE, render links as straight lines.
-	 */	
-	virtual void DrawMorphNode(FCanvas* Canvas, UBOOL bSelected, UBOOL bCurves);
-};
-
-struct FMorphNodeConn
-{
-    TArrayNoInit<class UMorphNodeBase*> ChildNodes;
-    FName ConnName;
-    INT DrawY;
-
-    /** Constructors */
-    FMorphNodeConn() {}
-    FMorphNodeConn(EEventParm)
-    {
-        appMemzero(this, sizeof(FMorphNodeConn));
-    }
-};
-
-class UMorphNodeWeightBase : public UMorphNodeBase
-{
-public:
-    //## BEGIN PROPS MorphNodeWeightBase
-    TArrayNoInit<struct FMorphNodeConn> NodeConns;
-    //## END PROPS MorphNodeWeightBase
-
-    DECLARE_ABSTRACT_CLASS(UMorphNodeWeightBase,UMorphNodeBase,0,Engine)
-	virtual void GetNodes(TArray<UMorphNodeBase*>& OutNodes);
-
-	/** 
-	 * Draws this morph node in the AnimTreeEditor.
-	 *
-	 * @param	Canvas			The canvas to use.
-	 * @param	bSelected		TRUE if this node is selected.
-	 * @param	bCurves			If TRUE, render links as splines; if FALSE, render links as straight lines.
-	 */	
-	virtual void DrawMorphNode(FCanvas* Canvas, UBOOL bSelected, UBOOL bCurves);
-
-	virtual FIntPoint GetConnectionLocation(INT ConnType, INT ConnIndex);
-};
-
-class UMorphNodeWeight : public UMorphNodeWeightBase
-{
-public:
-    //## BEGIN PROPS MorphNodeWeight
-    FLOAT NodeWeight;
-    //## END PROPS MorphNodeWeight
-
-    virtual void SetNodeWeight(FLOAT NewWeight);
-    DECLARE_FUNCTION(execSetNodeWeight)
-    {
-        P_GET_FLOAT(NewWeight);
-        P_FINISH;
-        SetNodeWeight(NewWeight);
-    }
-    DECLARE_CLASS(UMorphNodeWeight,UMorphNodeWeightBase,0,Engine)
-	virtual void GetActiveMorphs(TArray<FActiveMorph>& OutMorphs);
-	
-	virtual FLOAT GetSliderPosition();
-	virtual void HandleSliderMove(FLOAT NewSliderValue);
-};
-
 class UMorphTargetSet : public UObject
 {
 public:
@@ -2843,370 +3199,6 @@ public:
 	 * Returns a one line description of an object for viewing in the thumbnail view of the generic browser
 	 */
 	virtual FString GetDesc();
-};
-
-class USkelControlBase : public UObject
-{
-public:
-    //## BEGIN PROPS SkelControlBase
-    class USkeletalMeshComponent* SkelComponent;
-    FName ControlName;
-    FLOAT ControlStrength;
-    FLOAT BlendInTime;
-    FLOAT BlendOutTime;
-    BYTE BlendType;
-    FLOAT StrengthTarget;
-    FLOAT BlendTimeToGo;
-    BITFIELD bSetStrengthFromAnimNode:1;
-    BITFIELD bInitializedCachedNodeList:1;
-    BITFIELD bPropagateSetActive:1;
-    BITFIELD bIgnoreWhenNotRendered:1;
-    BITFIELD bEnableEaseInOut:1;
-    TArrayNoInit<FName> StrengthAnimNodeNameList;
-    TArrayNoInit<class UAnimNode*> CachedNodeList;
-    FLOAT BoneScale;
-    INT ControlTickTag;
-    INT IgnoreAtOrAboveLOD;
-    class USkelControlBase* NextControl;
-    INT ControlPosX;
-    INT ControlPosY;
-    INT DrawWidth;
-    //## END PROPS SkelControlBase
-
-    void SetSkelControlActive(UBOOL bInActive);
-    void SetSkelControlStrength(FLOAT NewStrength,FLOAT InBlendTime);
-    DECLARE_FUNCTION(execSetSkelControlActive)
-    {
-        P_GET_UBOOL(bInActive);
-        P_FINISH;
-        SetSkelControlActive(bInActive);
-    }
-    DECLARE_FUNCTION(execSetSkelControlStrength)
-    {
-        P_GET_FLOAT(NewStrength);
-        P_GET_FLOAT(InBlendTime);
-        P_FINISH;
-        SetSkelControlStrength(NewStrength,InBlendTime);
-    }
-    DECLARE_ABSTRACT_CLASS(USkelControlBase,UObject,0,Engine)
-	/**
-	*	Called from the SkeletalMeshComponent Tick function, to allow SkelControls to do any time-based update,
-	*	such as adjusting their current blend amount.
-	*/
-	virtual void TickSkelControl(FLOAT DeltaSeconds, USkeletalMeshComponent* SkelComp);
-
-	/**
-	*	Get the array of bones that this controller affects. Must be in hierarchy order, that is, parents before children.
-	*/
-	virtual void GetAffectedBones(INT BoneIndex, USkeletalMeshComponent* SkelComp, TArray<INT>& OutBoneIndices) {}
-
-	/**
-	*	Calculate the new component-space transforms for the affected bones.
-	*	The output array OutBoneTransforms must correspond to the OutBoneIndices array returned above (be in the same order etc).
-	*/
-	virtual void CalculateNewBoneTransforms(INT BoneIndex, USkeletalMeshComponent* SkelComp, TArray<FMatrix>& OutBoneTransforms) {}
-
-	/**
-	*	Allows you to modify the scaling of all affected bones.
-	*	The output array OutBoneScales must correspond to the OutBoneIndices array returned above (be in the same order etc).
-	*/
-	virtual void CalculateNewBoneScales(INT BoneIndex, USkeletalMeshComponent* SkelComp, TArray<FLOAT>& OutBoneScales) {}
-
-	/** Allows you to modify the scaling of the controller bone. */
-	virtual FLOAT GetBoneScale(INT BoneIndex, USkeletalMeshComponent* SkelComp) { return BoneScale; }
-
-	// UObject functions
-	virtual void PostLoad();
-
-	// UTILS
-
-	/** Utility function for turning axis indicator enum into direction vector, possibly inverted. */
-	static FVector GetAxisDirVector(BYTE InAxis, UBOOL bInvert);
-
-	/**
-	*	Create a matrix given two arbitrary rows of it.
-	*	We generate the missing row using another cross product, but we have to get the order right to avoid changing handedness.
-	*/
-	static FMatrix BuildMatrixFromVectors(BYTE Vec1Axis, const FVector& Vec1, BYTE Vec2Axis, const FVector& Vec2);
-
-	/** Given two unit direction vectors, find the axis and angle between them. */
-	static void FindAxisAndAngle(const FVector& A, const FVector& B, FVector& OutAxis, FLOAT& OutAngle);
-
-	// ANIMTREE EDITOR SUPPORT
-
-	/**
-	* Draw this SkelControl in the AnimTreeEditor.
-	*
-	* @param	Canvas			The canvas to use.
-	* @param	bSelected		TRUE if this node is selected.
-	* @param	bCurves			If TRUE, render links as splines; if FALSE, render links as straight lines.
-	*/
-	virtual void DrawSkelControl(FCanvas* Canvas, UBOOL bSelected, UBOOL bCurves);
-
-	/** For editor use. */
-	FIntPoint GetConnectionLocation(INT ConnType);
-
-	/** If we should draw manipulation widget in 3D viewport. */
-	virtual INT GetWidgetCount() { return 0; }
-
-	/** The transform to use when drawing the widget, in world space. */
-	virtual FMatrix GetWidgetTM(INT WidgetIndex, USkeletalMeshComponent* SkelComp, INT BoneIndex) { return FMatrix::Identity; }
-
-	/** Update properties of this controller based on the widget being manipulated in the 3D viewport. */
-	virtual void HandleWidgetDrag(INT WidgetIndex, const FVector& DragVec) {}
-
-	/** Extra function for drawing special debug info in the 3D viewport if desired. */
-	virtual void DrawSkelControl3D(const FSceneView* View, FPrimitiveDrawInterface* PDI, USkeletalMeshComponent* SkelComp, INT BoneIndex) {}
-
-	/** Called when slider is moved in the AnimTreeEditor. NewSliderValue is in range 0.0 to 1.0. */
-	void HandleControlSliderMove(FLOAT NewSliderValue);
-
-	/**
-	* Get Alpha for this control. By default it is ControlStrength.
-	* 0.f means no effect, 1.f means full effect.
-	* ControlStrength controls whether or not CalculateNewBoneTransforms() is called.
-	* By modifying GetControlAlpha() you can still get CalculateNewBoneTransforms() called
-	* but not have the controller's effect applied on the mesh.
-	* This is useful for cases where you need to have the skeleton built in mesh space
-	* for testing, which is not available in TickSkelControl().
-	*/
-	virtual FLOAT	GetControlAlpha();
-
-	/* Returns Final Blend Control Alpha based on Blend Type*/
-	FORCEINLINE FLOAT GetBlendControlAlpha(FLOAT ControlAlpha);
-
-	/** Used by high level systems to assign a 'target' for a generic control. One example is the ControlTargets array in SkeletalMeshActor. */
-	virtual void SetControlTargetLocation(const FVector& TargetLocation) {}
-};
-
-class USkelControlLimb : public USkelControlBase
-{
-public:
-    //## BEGIN PROPS SkelControlLimb
-    FVector EffectorLocation;
-    BYTE EffectorLocationSpace;
-    BYTE JointTargetLocationSpace;
-    BYTE BoneAxis;
-    BYTE JointAxis;
-    FName EffectorSpaceBoneName;
-    FVector JointTargetLocation;
-    FName JointTargetSpaceBoneName;
-    BITFIELD bInvertBoneAxis:1;
-    BITFIELD bInvertJointAxis:1;
-    BITFIELD bMaintainEffectorRelRot:1;
-    BITFIELD bTakeRotationFromEffectorSpace:1;
-    BITFIELD bAllowStretching:1;
-    FVector2D StretchLimits;
-    FName StretchRollBoneName;
-    //## END PROPS SkelControlLimb
-
-    DECLARE_CLASS(USkelControlLimb,USkelControlBase,0,Engine)
-	// USkelControlBase interface
-	virtual void GetAffectedBones(INT BoneIndex, USkeletalMeshComponent* SkelComp, TArray<INT>& OutBoneIndices);
-	virtual void CalculateNewBoneTransforms(INT BoneIndex, USkeletalMeshComponent* SkelComp, TArray<FMatrix>& OutBoneTransforms);	
-
-	virtual INT GetWidgetCount();
-	virtual FMatrix GetWidgetTM(INT WidgetIndex, USkeletalMeshComponent* SkelComp, INT BoneIndex);
-	virtual void HandleWidgetDrag(INT WidgetIndex, const FVector& DragVec);
-	virtual void DrawSkelControl3D(const FSceneView* View, FPrimitiveDrawInterface* PDI, USkeletalMeshComponent* SkelComp, INT BoneIndex);
-};
-
-class USkelControlFootPlacement : public USkelControlLimb
-{
-public:
-    //## BEGIN PROPS SkelControlFootPlacement
-    FLOAT FootOffset;
-    BYTE FootUpAxis;
-    FRotator FootRotOffset;
-    BITFIELD bInvertFootUpAxis:1;
-    BITFIELD bOrientFootToGround:1;
-    BITFIELD bOnlyEnableForUpAdjustment:1;
-    FLOAT MaxUpAdjustment;
-    FLOAT MaxDownAdjustment;
-    FLOAT MaxFootOrientAdjust;
-    //## END PROPS SkelControlFootPlacement
-
-    DECLARE_CLASS(USkelControlFootPlacement,USkelControlLimb,0,Engine)
-	// USkelControlBase interface
-	virtual void CalculateNewBoneTransforms(INT BoneIndex, USkeletalMeshComponent* SkelComp, TArray<FMatrix>& OutBoneTransforms);	
-};
-
-class USkelControlLookAt : public USkelControlBase
-{
-public:
-    //## BEGIN PROPS SkelControlLookAt
-    FVector TargetLocation;
-    BYTE TargetLocationSpace;
-    BYTE LookAtAxis;
-    BYTE UpAxis;
-    BYTE AllowRotationSpace;
-    FName TargetSpaceBoneName;
-    BITFIELD bInvertLookAtAxis:1;
-    BITFIELD bDefineUpAxis:1;
-    BITFIELD bInvertUpAxis:1;
-    BITFIELD bEnableLimit:1;
-    BITFIELD bLimitBasedOnRefPose:1;
-    BITFIELD bDisableBeyondLimit:1;
-    BITFIELD bNotifyBeyondLimit:1;
-    BITFIELD bShowLimit:1;
-    BITFIELD bAllowRotationX:1;
-    BITFIELD bAllowRotationY:1;
-    BITFIELD bAllowRotationZ:1;
-    FLOAT TargetLocationInterpSpeed;
-    FVector DesiredTargetLocation;
-    FLOAT MaxAngle;
-    FLOAT OuterMaxAngle;
-    FLOAT DeadZoneAngle;
-    FName AllowRotationOtherBoneName;
-    FLOAT LookAtAlpha;
-    FLOAT LookAtAlphaTarget;
-    FLOAT LookAtAlphaBlendTimeToGo;
-    FVector LimitLookDir;
-    FVector BaseLookDir;
-    FVector BaseBonePos;
-    FLOAT LastCalcTime;
-    //## END PROPS SkelControlLookAt
-
-    void SetTargetLocation(FVector NewTargetLocation);
-    void InterpolateTargetLocation(FLOAT DeltaTime);
-    void SetLookAtAlpha(FLOAT DesiredAlpha,FLOAT DesiredBlendTime);
-    UBOOL CanLookAtPoint(FVector PointLoc,UBOOL bDrawDebugInfo=FALSE,UBOOL bDebugUsePersistentLines=FALSE,UBOOL bDebugFlushLinesFirst=FALSE);
-    DECLARE_FUNCTION(execSetTargetLocation)
-    {
-        P_GET_STRUCT(FVector,NewTargetLocation);
-        P_FINISH;
-        SetTargetLocation(NewTargetLocation);
-    }
-    DECLARE_FUNCTION(execInterpolateTargetLocation)
-    {
-        P_GET_FLOAT(DeltaTime);
-        P_FINISH;
-        InterpolateTargetLocation(DeltaTime);
-    }
-    DECLARE_FUNCTION(execSetLookAtAlpha)
-    {
-        P_GET_FLOAT(DesiredAlpha);
-        P_GET_FLOAT(DesiredBlendTime);
-        P_FINISH;
-        SetLookAtAlpha(DesiredAlpha,DesiredBlendTime);
-    }
-    DECLARE_FUNCTION(execCanLookAtPoint)
-    {
-        P_GET_STRUCT(FVector,PointLoc);
-        P_GET_UBOOL_OPTX(bDrawDebugInfo,FALSE);
-        P_GET_UBOOL_OPTX(bDebugUsePersistentLines,FALSE);
-        P_GET_UBOOL_OPTX(bDebugFlushLinesFirst,FALSE);
-        P_FINISH;
-        *(UBOOL*)Result=CanLookAtPoint(PointLoc,bDrawDebugInfo,bDebugUsePersistentLines,bDebugFlushLinesFirst);
-    }
-    DECLARE_CLASS(USkelControlLookAt,USkelControlBase,0,Engine)
-	// USkelControlBase interface
-	/** LookAtAlpha allows to cancel head look when going beyond boundaries */
-	virtual	FLOAT	GetControlAlpha();
-	virtual void	TickSkelControl(FLOAT DeltaSeconds, USkeletalMeshComponent* SkelComp);
-	virtual void	GetAffectedBones(INT BoneIndex, USkeletalMeshComponent* SkelComp, TArray<INT>& OutBoneIndices);
-	virtual void	CalculateNewBoneTransforms(INT BoneIndex, USkeletalMeshComponent* SkelComp, TArray<FMatrix>& OutBoneTransforms);	
-	
-	virtual INT		GetWidgetCount() { return 1; }
-	virtual FMatrix GetWidgetTM(INT WidgetIndex, USkeletalMeshComponent* SkelComp, INT BoneIndex);
-	virtual void	HandleWidgetDrag(INT WidgetIndex, const FVector& DragVec);
-	virtual void	DrawSkelControl3D(const FSceneView* View, FPrimitiveDrawInterface* PDI, USkeletalMeshComponent* SkelComp, INT BoneIndex);
-
-	virtual void SetControlTargetLocation(const FVector& InTargetLocation);
-
-protected:
-	virtual UBOOL	ApplyLookDirectionLimits(FVector& DesiredLookDir, const FVector &CurrentLookDir, INT BoneIndex, USkeletalMeshComponent* SkelComp);
-
-public:
-};
-
-class USkelControlSingleBone : public USkelControlBase
-{
-public:
-    //## BEGIN PROPS SkelControlSingleBone
-    BITFIELD bApplyTranslation:1;
-    BITFIELD bAddTranslation:1;
-    BITFIELD bApplyRotation:1;
-    BITFIELD bAddRotation:1;
-    FVector BoneTranslation;
-    BYTE BoneTranslationSpace;
-    BYTE BoneRotationSpace;
-    FName TranslationSpaceBoneName;
-    FRotator BoneRotation;
-    FName RotationSpaceBoneName;
-    //## END PROPS SkelControlSingleBone
-
-    DECLARE_CLASS(USkelControlSingleBone,USkelControlBase,0,Engine)
-	// USkelControlBase interface
-	virtual void GetAffectedBones(INT BoneIndex, USkeletalMeshComponent* SkelComp, TArray<INT>& OutBoneIndices);
-	virtual void CalculateNewBoneTransforms(INT BoneIndex, USkeletalMeshComponent* SkelComp, TArray<FMatrix>& OutBoneTransforms);	
-
-	virtual INT GetWidgetCount();
-	virtual FMatrix GetWidgetTM(INT WidgetIndex, USkeletalMeshComponent* SkelComp, INT BoneIndex);
-	virtual void HandleWidgetDrag(INT WidgetIndex, const FVector& DragVec);
-};
-
-class USkelControlWheel : public USkelControlSingleBone
-{
-public:
-    //## BEGIN PROPS SkelControlWheel
-    FLOAT WheelDisplacement;
-    FLOAT WheelMaxRenderDisplacement;
-    FLOAT WheelRoll;
-    BYTE WheelRollAxis;
-    BYTE WheelSteeringAxis;
-    FLOAT WheelSteering;
-    BITFIELD bInvertWheelRoll:1;
-    BITFIELD bInvertWheelSteering:1;
-    //## END PROPS SkelControlWheel
-
-    DECLARE_CLASS(USkelControlWheel,USkelControlSingleBone,0,Engine)
-	// SkelControlWheel interface
-	void UpdateWheelControl( FLOAT InDisplacement, FLOAT InRoll, FLOAT InSteering );
-	void CalculateNewBoneTransforms(INT BoneIndex, USkeletalMeshComponent* SkelComp, TArray<FMatrix>& OutBoneTransforms);
-};
-
-class USkelControlSpline : public USkelControlBase
-{
-public:
-    //## BEGIN PROPS SkelControlSpline
-    INT SplineLength;
-    BYTE SplineBoneAxis;
-    BYTE BoneRotMode;
-    BITFIELD bInvertSplineBoneAxis:1 GCC_BITFIELD_MAGIC;
-    FLOAT EndSplineTension;
-    FLOAT StartSplineTension;
-    //## END PROPS SkelControlSpline
-
-    DECLARE_CLASS(USkelControlSpline,USkelControlBase,0,Engine)
-	// USkelControlBase interface
-	virtual void GetAffectedBones(INT BoneIndex, USkeletalMeshComponent* SkelComp, TArray<INT>& OutBoneIndices);
-	virtual void CalculateNewBoneTransforms(INT BoneIndex, USkeletalMeshComponent* SkelComp, TArray<FMatrix>& OutBoneTransforms);	
-};
-
-class USkelControlTrail : public USkelControlBase
-{
-public:
-    //## BEGIN PROPS SkelControlTrail
-    INT ChainLength;
-    BYTE ChainBoneAxis;
-    BITFIELD bInvertChainBoneAxis:1 GCC_BITFIELD_MAGIC;
-    BITFIELD bLimitStretch:1;
-    BITFIELD bActorSpaceFakeVel:1;
-    BITFIELD bHadValidStrength:1;
-    FLOAT TrailRelaxation;
-    FLOAT StretchLimit;
-    FVector FakeVelocity;
-    FLOAT ThisTimstep;
-    TArrayNoInit<FVector> TrailBoneLocations;
-    FMatrix OldLocalToWorld;
-    //## END PROPS SkelControlTrail
-
-    DECLARE_CLASS(USkelControlTrail,USkelControlBase,0,Engine)
-	// USkelControlBase interface
-	virtual void TickSkelControl(FLOAT DeltaSeconds, USkeletalMeshComponent* SkelComp);
-	virtual void GetAffectedBones(INT BoneIndex, USkeletalMeshComponent* SkelComp, TArray<INT>& OutBoneIndices);
-	virtual void CalculateNewBoneTransforms(INT BoneIndex, USkeletalMeshComponent* SkelComp, TArray<FMatrix>& OutBoneTransforms);	
 };
 
 #endif // !INCLUDED_ENGINE_ANIM_CLASSES
@@ -3741,7 +3733,6 @@ VERIFY_CLASS_OFFSET_NODIE(A,CrowdAttractor,Attraction)
 VERIFY_CLASS_OFFSET_NODIE(A,CrowdAttractor,Mode)
 VERIFY_CLASS_SIZE_NODIE(ACrowdAttractor)
 VERIFY_CLASS_OFFSET_NODIE(U,MorphNodeBase,NodeName)
-VERIFY_CLASS_OFFSET_NODIE(U,MorphNodeBase,OutDrawY)
 VERIFY_CLASS_SIZE_NODIE(UMorphNodeBase)
 VERIFY_CLASS_OFFSET_NODIE(U,MorphNodePose,Target)
 VERIFY_CLASS_OFFSET_NODIE(U,MorphNodePose,Weight)
@@ -3756,8 +3747,8 @@ VERIFY_CLASS_OFFSET_NODIE(U,MorphTargetSet,Targets)
 VERIFY_CLASS_OFFSET_NODIE(U,MorphTargetSet,BaseSkelMesh)
 VERIFY_CLASS_SIZE_NODIE(UMorphTargetSet)
 VERIFY_CLASS_SIZE_NODIE(UMorphWeightSequence)
-VERIFY_CLASS_OFFSET_NODIE(U,SkelControlBase,SkelComponent)
-VERIFY_CLASS_OFFSET_NODIE(U,SkelControlBase,DrawWidth)
+VERIFY_CLASS_OFFSET_NODIE(U,SkelControlBase,ControlName)
+VERIFY_CLASS_OFFSET_NODIE(U,SkelControlBase,ControlPosY)
 VERIFY_CLASS_SIZE_NODIE(USkelControlBase)
 VERIFY_CLASS_OFFSET_NODIE(U,SkelControlFootPlacement,FootOffset)
 VERIFY_CLASS_OFFSET_NODIE(U,SkelControlFootPlacement,MaxFootOrientAdjust)

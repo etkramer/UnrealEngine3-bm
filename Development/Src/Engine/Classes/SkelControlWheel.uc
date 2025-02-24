@@ -28,11 +28,11 @@ var(Wheel)		transient float	WheelRoll;
 /** Axis around which the wheel rolls. */
 var(Wheel)		EAxis	WheelRollAxis;
 
-/** Steering angle of wheel. In degrees. */
-var(Wheel)		transient float	WheelSteering;
-
 /** Axis around which wheel steering occurs. */
 var(Wheel)		EAxis	WheelSteeringAxis;
+
+/** Steering angle of wheel. In degrees. */
+var(Wheel)		transient float	WheelSteering;
 
 /** If we should invert the rotation applied to the wheel for rolling motion. */
 var(Wheel)		bool	bInvertWheelRoll;

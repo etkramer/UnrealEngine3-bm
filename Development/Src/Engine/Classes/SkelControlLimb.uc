@@ -26,23 +26,23 @@ var(Effector)	vector					EffectorLocation;
 /** Reference frame that the DesiredLocation is defined in. */
 var(Effector)	EBoneControlSpace		EffectorLocationSpace;
 
-/** Name of bone used if DesiredLocationSpace is BCS_OtherBoneSpace. */
-var(Effector)	name					EffectorSpaceBoneName;
-
-/** Point in space where the joint should move towards as it bends. */
-var(Joint)		vector					JointTargetLocation;
-
 /** Reference frame in which JointTargetLocation is defined. */
 var(Joint)		EBoneControlSpace		JointTargetLocationSpace;
-
-/** Name of bone used if JointTargetLocationSpace is BCS_OtherBoneSpace. */
-var(Joint)		name					JointTargetSpaceBoneName;
 
 /** Axis of graphical bone to align along the length of the bone. */
 var(Limb)		EAxis					BoneAxis;
 
 /** Axis of graphical bone to align along the hinge axis of the joint. */
 var(Limb)		EAxis					JointAxis;
+
+/** Name of bone used if DesiredLocationSpace is BCS_OtherBoneSpace. */
+var(Effector)	name					EffectorSpaceBoneName;
+
+/** Point in space where the joint should move towards as it bends. */
+var(Joint)		vector					JointTargetLocation;
+
+/** Name of bone used if JointTargetLocationSpace is BCS_OtherBoneSpace. */
+var(Joint)		name					JointTargetSpaceBoneName;
 
 /** If we want to invert BoneAxis when constructing the transform for the bones. */
 var(Limb)		bool					bInvertBoneAxis;

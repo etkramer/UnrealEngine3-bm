@@ -24,26 +24,26 @@ var(Adjustments)	bool				bApplyTranslation;
 /** If false, replaces rotation with BoneRotation. If true, adds to existing rotation. */
 var(Translation)	bool				bAddTranslation;
 
+/** Whether to modify the translation of this bone. */
+var(Adjustments)	bool				bApplyRotation;
+
+/** If false, replaces rotation with BoneRotation. If true, adds to existing rotation. */
+var(Rotation)		bool				bAddRotation;
+
 /** New translation of bone to apply. */
 var(Translation)	vector				BoneTranslation;
 
 /** Reference frame to apply BoneTranslation in. */
 var(Translation)	EBoneControlSpace	BoneTranslationSpace;
 
+/** Reference frame to apply BoneRotation in. */
+var(Rotation)		EBoneControlSpace	BoneRotationSpace;
+
 /** Name of bone used if BoneTranslationSpace is BCS_OtherBoneSpace. */
 var(Translation)	name				TranslationSpaceBoneName;
-
-/** Whether to modify the translation of this bone. */
-var(Adjustments)	bool				bApplyRotation;
-
-/** If false, replaces rotation with BoneRotation. If true, adds to existing rotation. */
-var(Rotation)		bool				bAddRotation;
  
 /** New rotation of bone to apply. */
 var(Rotation)		rotator				BoneRotation;
-
-/** Reference frame to apply BoneRotation in. */
-var(Rotation)		EBoneControlSpace	BoneRotationSpace;
 
 /** Name of bone used if BoneRotationSpace is BCS_OtherBoneSpace. */
 var(Rotation)		name				RotationSpaceBoneName;

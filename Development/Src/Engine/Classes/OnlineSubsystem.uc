@@ -43,6 +43,15 @@ var OnlineStatsInterface StatsInterface;
 /** The interface to use for reading game specific news announcements */
 var OnlineNewsInterface NewsInterface;
 
+// BM1
+var const bool bWasLastLoginAutomatic;
+
+/** Whether to use the override or not */
+var config bool bUseBuildIdOverride;
+
+var float TimeGuideLastOpened;
+var float TimeGuideLastClosed;
+
 /** Struct that holds a transient, unique identifier for a player */
 struct native UniqueNetId
 {
@@ -316,6 +325,11 @@ struct native OnlineContent
 	var string FriendlyName;
 	/** File system usable reference to the content */
 	var string ContentPath;
+
+	// BM1
+	var int DeviceID;
+    var int DLCPackID;
+
 	/** List of packages in the content */
 	var array<string> ContentPackages;
 	/** List of all non-package files in the content */
@@ -632,9 +646,6 @@ enum EOnlineNewsType
 	ONT_ContentAnnouncements,
 	ONT_Misc
 };
-
-/** Whether to use the override or not */
-var config bool bUseBuildIdOverride;
 
 /** Used to specify a build override value */
 var config int BuildIdOverride;

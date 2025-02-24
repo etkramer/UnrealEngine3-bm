@@ -5,7 +5,7 @@
  * Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
  */
 
-class SkelControlBase extends Object
+class SkelControlBase extends AnimObject
 	hidecategories(Object)
 	native(Anim)
 	abstract;
@@ -32,10 +32,6 @@ enum EBoneControlSpace
 	/** Set position of bone in the reference frame of another bone. */
 	BCS_OtherBoneSpace
 };
-
-
-/** SkeletalMeshComponent owner */
-var const transient	SkeletalMeshComponent		SkelComponent;
 
 /** Name used to identify this SkelControl. */
 var(Controller)	name			ControlName;
@@ -64,23 +60,11 @@ var				float			BlendTimeToGo;
 
 /** If true, Strength will be the same as given AnimNode(s). This is to make transitions easier between nodes and Controllers. */
 var(Controller)	bool			bSetStrengthFromAnimNode;
-/** List of AnimNode names, to get Strength from */
-var(Controller)	Array<Name>		StrengthAnimNodeNameList;
-/** Cached list of nodes to get strength from */
-var	transient	Array<AnimNode>	CachedNodeList;
+
 var transient	bool			bInitializedCachedNodeList;
 
 /** If true, calling SetSkelControlActive on this node will call SetSkelControlActive on the next one in the chain as well. */
 var(Controller)	bool			bPropagateSetActive;
-
-/** This scaling is applied to the bone that this control is acting upon. */
-var(Controller) float			BoneScale;
-
-/**
- *	Used to ensure we don't tick this SkelControl twice, if used in multiple different control chains.
- *	Compared against the SkeletalMeshComponent TickTag.
- */
-var				int				ControlTickTag;
 
 /** 
  *	whether this control should be ignored if the SkeletalMeshComponent being composed hasn't been rendered recently
@@ -93,6 +77,20 @@ var()			bool			bIgnoreWhenNotRendered;
 /** This will change to BlendType in general **/
 var() editconst deprecated bool			bEnableEaseInOut;
 
+/** List of AnimNode names, to get Strength from */
+var(Controller)	Array<Name>		StrengthAnimNodeNameList;
+/** Cached list of nodes to get strength from */
+var	transient	Array<AnimNode>	CachedNodeList;
+
+/** This scaling is applied to the bone that this control is acting upon. */
+var(Controller) float			BoneScale;
+
+/**
+ *	Used to ensure we don't tick this SkelControl twice, if used in multiple different control chains.
+ *	Compared against the SkeletalMeshComponent TickTag.
+ */
+var				int				ControlTickTag;
+
 /** If the LOD of this skeletal mesh is at or above this LOD, then this SkelControl will not be applied. */
 var(Controller)	int				IgnoreAtOrAboveLOD;
 
@@ -104,9 +102,6 @@ var				int				ControlPosX;
 
 /** Used by editor. */
 var				int				ControlPosY;
-
-/** Used by editor. */
-var				int				DrawWidth;
 
 
 cpptext

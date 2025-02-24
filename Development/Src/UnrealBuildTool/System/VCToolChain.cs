@@ -190,6 +190,7 @@ namespace UnrealBuildTool
 
 			// Link for win32.
 			Result += " /SUBSYSTEM:WINDOWS";
+			Result += " /MACHINE:X86";
 
 			// Allow the OS to load the EXE at different base addresses than its preferred base address.
 			Result += " /FIXED:No";
@@ -510,8 +511,9 @@ namespace UnrealBuildTool
 			// Create an action that invokes the linker.
 			Action LinkAction = new Action();
 			LinkAction.WorkingDirectory = Path.GetFullPath(".");
-			LinkAction.CommandPath = Path.Combine(GetVCBinDirectory(LinkEnvironment.TargetPlatform), "link.exe");
-
+			
+			// Use 64-bit link.exe for performance
+			LinkAction.CommandPath = Path.Combine(Path.Combine(GetVCBinDirectory(LinkEnvironment.TargetPlatform), "amd64/"), "link.exe");
 			LinkAction.CommandArguments = GetLinkArguments_Global();
 
 			// Add platform-specific arguments.

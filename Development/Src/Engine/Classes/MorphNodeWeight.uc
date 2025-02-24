@@ -16,7 +16,6 @@ cpptext
 /** Weight to apply to all child nodes of this one. */
 var		float	NodeWeight;
 
-
 /** 
  *	Change the current NodeWeight of this MorphNodeWeight.
  */

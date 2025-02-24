@@ -35,11 +35,16 @@ var(LookAt)		vector				TargetLocation;
 /** Reference frame that TargetLocation is defined in. */
 var(LookAt)		EBoneControlSpace	TargetLocationSpace;
 
-/** Name of bone used if TargetLocationSpace is BCS_OtherBoneSpace. */
-var(LookAt)		name				TargetSpaceBoneName;
-
 /** Axis of the controlled bone that you wish to point at the TargetLocation. */
 var(LookAt)		EAxis				LookAtAxis;
+
+/** Axis of bone to point upwards. Cannot be the same as LookAtAxis. */
+var(LookAt)		EAxis				UpAxis;
+
+var(Limit)		EBoneControlSpace	AllowRotationSpace;
+
+/** Name of bone used if TargetLocationSpace is BCS_OtherBoneSpace. */
+var(LookAt)		name				TargetSpaceBoneName;
 
 /** Whether to invert the LookAtAxis, so it points away from the TargetLocation. */
 var(LookAt)		bool				bInvertLookAtAxis;
@@ -47,17 +52,8 @@ var(LookAt)		bool				bInvertLookAtAxis;
 /** If you want to also define which axis should try to point 'up' (world +Z). */
 var(LookAt)		bool				bDefineUpAxis;
 
-/** Axis of bone to point upwards. Cannot be the same as LookAtAxis. */
-var(LookAt)		EAxis				UpAxis;
-
 /** Whether to invert the UpAxis, so it points down instead. */
 var(LookAt)		bool				bInvertUpAxis;
-
-/** Interpolation speed for TargetLocation to DesiredTargetLocation */
-var(LookAt)		float				TargetLocationInterpSpeed;
-
-/** Interpolation target for TargetLocation */
-var				vector				DesiredTargetLocation;
 
 /** If true, only allow a certain adjustment from the reference pose of the bone. */
 var(Limit)		bool				bEnableLimit;
@@ -71,6 +67,16 @@ var(Limit)		bool				bNotifyBeyondLimit;
 /** If true, draw a cone in the editor to indicate the maximum allowed movement of the bone. */
 var(Limit)		bool				bShowLimit;
 
+var(Limit)		bool				bAllowRotationX;
+var(Limit)		bool				bAllowRotationY;
+var(Limit)		bool				bAllowRotationZ;
+
+/** Interpolation speed for TargetLocation to DesiredTargetLocation */
+var(LookAt)		float				TargetLocationInterpSpeed;
+
+/** Interpolation target for TargetLocation */
+var				vector				DesiredTargetLocation;
+
 /** The maximum rotation applied from the reference pose of the bone, in degrees. */
 var(Limit)		float				MaxAngle;
 
@@ -81,10 +87,6 @@ var(Limit)		float				OuterMaxAngle;
 var(Limit)		float				DeadZoneAngle;
 
 /** Per rotation axis filtering */
-var(Limit)		bool				bAllowRotationX;
-var(Limit)		bool				bAllowRotationY;
-var(Limit)		bool				bAllowRotationZ;
-var(Limit)		EBoneControlSpace	AllowRotationSpace;
 var(Limit)		Name				AllowRotationOtherBoneName;
 
 /** LookAtAlpha allows to cancel head look when going beyond boundaries */

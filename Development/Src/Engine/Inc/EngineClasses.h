@@ -6687,6 +6687,8 @@ struct FOnlineContent
     INT UserIndex;
     FStringNoInit FriendlyName;
     FStringNoInit ContentPath;
+    INT DeviceID;
+    INT DLCPackID;
     TArrayNoInit<FString> ContentPackages;
     TArrayNoInit<FString> ContentFiles;
 
@@ -7039,10 +7041,13 @@ public:
     TScriptInterface<class IInterface> VoiceInterface;
     TScriptInterface<class IInterface> StatsInterface;
     TScriptInterface<class IInterface> NewsInterface;
+    BITFIELD bWasLastLoginAutomatic:1;
+    BITFIELD bUseBuildIdOverride:1;
+    FLOAT TimeGuideLastOpened;
+    FLOAT TimeGuideLastClosed;
     TArrayNoInit<struct FNamedInterface> NamedInterfaces;
     TArrayNoInit<struct FNamedInterfaceDef> NamedInterfaceDefs;
     TArrayNoInit<struct FNamedSession> Sessions;
-    BITFIELD bUseBuildIdOverride:1;
     INT BuildIdOverride;
     FStringNoInit IniLocPatcherClassName;
     class UIniLocPatcher* Patcher;
