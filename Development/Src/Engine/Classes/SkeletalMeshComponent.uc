@@ -5,6 +5,7 @@ class SkeletalMeshComponent extends MeshComponent
 	native
 	noexport
 	dependson(AnimNode)
+	dependson(Engine)
 	hidecategories(Object)
 	editinlinenew;
 
@@ -29,6 +30,9 @@ var()	const editinline export	AnimNode	Animations;
 /** Array of all AnimNodes in entire tree, in the order they should be ticked - that is, all parents appear before a child. */
 var		const transient array<AnimNode>		AnimTickArray;
 
+// BM1
+var transient array<MaterialInterface> AdditionalMaterialsForTextureStreaming;
+
 /**
  *	Physics and collision information used for this SkeletalMesh, set up in PhAT.
  *	This is used for per-bone hit detection, accurate bounding box calculation and ragdoll physics for example.
@@ -41,10 +45,24 @@ var()	const PhysicsAsset										PhysicsAsset;
  */
 var		const transient editinline export PhysicsAssetInstance	PhysicsAssetInstance;
 
+// BM1
+var const export editinline transient PhysicsAssetInstance CachedPhysicsAssetInstance;
+
 /**
  *	Influence of rigid body physics on the mesh's pose (0.0 == use only animation, 1.0 == use only physics)
  */
 var()	interp float			PhysicsWeight;
+
+enum ESkeletalMeshComponentBoundsType
+{
+    SMCBT_Original,
+    SMCBT_Conservative,
+    SMCBT_PerBone,
+};
+
+// BM1
+var() float SecondaryPhysicsWeight;
+var() ESkeletalMeshComponentBoundsType BoundsType;
 
 /** Used to scale speed of all animations on this skeletal mesh. */
 var()	float					GlobalAnimRateScale;
@@ -54,6 +72,11 @@ var() Color						WireframeColor;
 
 /** Temporary array of of component-space bone matrices, update each frame and used for rendering the mesh. */
 var native transient const array<matrix>				SpaceBases;
+
+// BM1
+var native const transient array<Matrix> PrePhysicsSpaceBases;
+var transient Matrix PhysicsLocalToWorld;
+var transient float PhysicsLocalToWorldTime;
 
 /** Temporary array of local-space (ie relative to parent bone) rotation/translation for each bone. */
 var native transient const array<AnimNode.BoneAtom>		LocalAtoms;
@@ -67,6 +90,19 @@ var native transient const array<byte>					RequiredBones;
  *	skeleton within the same Actor.
  */
 var()	const SkeletalMeshComponent	ParentAnimComponent;
+
+enum EParentAnimComponentMode
+{
+    PACM_Original,
+    PACM_Add,
+    PACM_Replace,
+    PACM_RetargetCharacter,
+    PACM_CapeReplace,
+    PACM_CapeReplaceAtomsTranslationOnly,
+};
+
+// BM1
+var() EParentAnimComponentMode ParentAnimComponentMode;
 
 /**
  *	Mapping between bone indices in this component and the parent one. Each element is the index of the bone in the ParentAnimComponent.
@@ -198,6 +234,9 @@ var() bool		bConsiderAllBodiesForBounds;
  */
 var() bool bUpdateSkelWhenNotRendered;
 
+// BM1
+var() const bool bUsePrePhysicsSpaceBases;
+
 /** If true, do not apply any SkelControls when owner has not been rendered recently. */
 var bool bIgnoreControllersWhenNotRendered;
 
@@ -282,12 +321,30 @@ var bool bOverrideAttachmentOwnerVisibility;
 
 /** pauses this component's animations (doesn't tick them) */
 var bool bPauseAnims;
+
+// BM1
+var const bool bNoAnimNodeTick;
+
 /** If true, DistanceFactor for this SkeletalMeshComponent will be added to global chart. */
 var bool	bChartDistanceFactor;
 /** If TRUE, line checks will test against the bounding box of this skeletal mesh component and return a hit if there is a collision. */
 var bool	bEnableLineCheckWithBounds;
 /** If bEnableLineCheckWithBounds is TRUE, scale the bounds by this value before doing line check. */
 var	vector	LineCheckBoundsScale;
+
+// BM1
+var transient bool bAllowPermanentFixOnSleep;
+var transient bool bHasBeenPermanentlyFixed;
+var transient bool bDisableRagdollCalmingMeasures;
+var transient bool bDebugDisableRagdollCalmingMeasures;
+var bool bDisableCollisionWhenPermanentlyFixed;
+var transient bool bForceJointProjection;
+var transient bool bForceUseRagdollPhysicsTranslation;
+var bool bAllowAngularDampingRamping;
+var transient float CurrDampingRampupTime;
+var float DampingRampupMinTime;
+var float DampingRampupMaxTime;
+var float PermanentFixRampupTime;
 
 // CLOTH bools
 
@@ -334,6 +391,9 @@ var const transient bool bNeedsInstanceWeightUpdate;
 /** If TRUE, always use instanced vertex influences for this mesh */
 var const transient bool bAlwaysUseInstanceWeights;
 
+// BM1
+var bool bUseParentAnimComponentLODLevel;
+
 /**
 * Set of bones which will be used to find vertices to switch to using instanced influence weights
 * instead of the default skeletal mesh weighting.
@@ -344,11 +404,11 @@ struct BonePair
 };
 var native transient const array<BonePair> InstanceVertexWeightBones;
 
+// BM1: Renamed from ClothExternalForce
+var(Cloth)	const vector	ClothExternalAcceleration;
+
 // CLOTH
 // Under Development! Not a fully supported feature at the moment.
-
-/** Constant force applied to all vertices in the cloth. */
-var(Cloth)	const vector	ClothExternalForce;
 
 /** 'Wind' force applied to cloth. Force on each vertex is based on the dot product between the wind vector and the surface normal. */
 var(Cloth)	vector			ClothWind;
@@ -358,6 +418,11 @@ var(Cloth)	vector			ClothBaseVelClampRange;
 
 /** How much to blend in results from cloth simulation with results from regular skinning. */
 var(Cloth)	float			ClothBlendWeight;
+
+// BM1
+var float ClothDynamicBlendWeight;
+var(Cloth) float ClothBlendMinDistanceFactor;
+var(Cloth) float ClothBlendMaxDistanceFactor;
 
 var const native transient pointer	ClothSim;
 var const native transient int		SceneIndex;
@@ -394,6 +459,11 @@ var(Cloth)	const float				ClothForceScale;
 /** Amount to scale impulses applied to cloth simulation. */
 var(Cloth)	float					ClothImpulseScale;
 
+// BM1
+var(Cloth) bool bEnableValidBounds;
+var(Cloth) Vector ValidBoundsMin;
+var(Cloth) Vector ValidBoundsMax;
+
 /**
     The cloth tear factor for this SkeletalMeshComponent, negative values take the tear factor from the SkeletalMesh.
     Note: UpdateClothParams() should be called after modification so that the changes are reflected in the simulation.
@@ -402,6 +472,9 @@ var(Cloth)	const float				ClothAttachmentTearFactor;
 
 /** If TRUE, soft body uses compartment in physics scene (usually with fixed timstep for better behaviour) */
 var(Cloth)	const bool				bClothUseCompartment;
+
+// BM1
+var(Cloth) const bool bClothUseBannerCompartment;
 
 /** If the distance traveled between frames exceeds this value the vertices will be reset to avoid stretching. */
 var(Cloth)	const float				MinDistanceForClothReset;
@@ -489,6 +562,15 @@ var		ERootMotionMode		OldPendingRMM;
 /** Handle one frame delay with PendingRMM */
 var	const INT				bRMMOneFrameDelay;
 
+enum ERootMotionSpace
+{
+    RMS_Local,
+    RMS_World,
+};
+
+// BM1
+var() ERootMotionSpace RootMotionSpace;
+
 /** Root Motion Rotation mode */
 enum ERootMotionRotationMode
 {
@@ -516,6 +598,9 @@ enum EFaceFXBlendMode
 /** How FaceFX transforms should be blended with skeletal mesh */
 var()	EFaceFXBlendMode	FaceFXBlendMode;
 
+// BM1
+var float FaceFxWeight;
+
 /** The valid FaceFX register operations. */
 enum EFaceFXRegOp
 {
@@ -527,14 +612,69 @@ enum EFaceFXRegOp
 /** The FaceFX actor instance associated with the skeletal mesh component. */
 var transient native pointer FaceFXActorInstance;
 
+// BM1
+var transient float FaceFxAnimStartTime;
+
 /**
  *	The audio component that we are using to play audio for a facial animation.
  *	Assigned in PlayFaceFXAnim and cleared in StopFaceFXAnim.
  */
 var AudioComponent	CachedFaceFXAudioComp;
 
+// BM1
+var native transient int AnimFXTriggerIndex;
+
 /** Array of bone visibilities. */
 var	transient const array<byte>	BoneVisibility;
+
+enum EDepthBiasApplicationType
+{
+    DEPTHBIASAPPLICATIONTYPE_World,
+    DEPTHBIASAPPLICATIONTYPE_Screen,
+    DEPTHBIASAPPLICATIONTYPE_WorldCustomTestPoint,
+};
+
+struct ExtraDepthBiasData
+{
+    var EDepthBiasApplicationType DepthBiasApplicationType;
+    var Vector DepthBiasCustomTestPoint;
+    var float DepthBiasMinDistanceFromCameraPlaneOverride;
+    var float MinDepthBiasMultiplier;
+
+    structdefaultproperties
+    {
+        DepthBiasMinDistanceFromCameraPlaneOverride=-1.0
+        MinDepthBiasMultiplier=0.5
+    }
+};
+
+// BM1
+var bool bDontPlaySoundWhenPlayingFaceFx;
+var float NextSubtitlePriority;
+var() float DepthBias;
+var() ExtraDepthBiasData DepthBiasData;
+var bool bDisableColourWrites;
+var transient bool bNeedsProxyUpdate;
+var bool bUseComposeSkeletonLite;
+var bool bUseBlendPhysicsBonesLite;
+var bool bUseUpdateRBBonesLite;
+var() bool bAllowRagdollContainmentChecks;
+var transient bool bStuckAsARagdoll;
+var transient int StuckBodyPartIndex;
+var transient Double StuckStartTime;
+var transient float CurrRagdollTime;
+var transient float ContainmentTestDelay;
+var() float MaxRagdollLiveTime;
+var() float MinRagdollStuckTime;
+var float MinNearlyStillBodiesProportionForNearlyStillRagdoll;
+var transient array<int> BoneToBody;
+var transient array<int> BodyToBone;
+
+// BM1
+var transient Engine.TwistBoneFixers TwistBoneFixers;
+var transient Engine.ParentTwistBoneFixers ParentTwistBoneFixers;
+var transient Engine.BreathingFixerState BreathingFixerState;
+var transient Engine.BreathingFixer BreathingFixer;
 
 //=============================================================================
 // Animation.
@@ -622,7 +762,7 @@ simulated native final function SetClothFrozen(bool bNewFrozen);
 simulated native final function UpdateClothParams();
 
 /** Modify the external force that is applied to the cloth. Will continue to be applied until it is changed. */
-simulated native final function SetClothExternalForce(vector InForce);
+simulated native final function SetClothExternalAcceleration(vector InForce);
 
 /** Attach/detach verts from physics body that this components actor is attached to. */
 simulated native final function SetAttachClothVertsToBaseBody(bool bAttachVerts);

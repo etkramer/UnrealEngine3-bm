@@ -122,7 +122,11 @@ void SetShouldPauseBeforeExit(INT ErrorLevel)
 		// Either close log window manually or press CTRL-C to exit if not in "silent" or "nopause" mode.
 		GShouldPauseBeforeExit = !bInheritConsole && !GIsSilent && !ParseParam(appCmdLine(),TEXT("NOPAUSE"));
 		// if it was specified to not pause if successful, then check that here
+#if BATMAN
+		// We don't need to leave the app running to debug it.
+#else
 		if (ParseParam(appCmdLine(),TEXT("NOPAUSEONSUCCESS")) && ErrorLevel == 0)
+#endif
 		{
 			// we succeeded, so don't pause 
 			GShouldPauseBeforeExit = FALSE;

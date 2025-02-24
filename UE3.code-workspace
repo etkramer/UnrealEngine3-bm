@@ -19,8 +19,7 @@
         "args": ["BmGame", "Debug"],
         "presentation": {
           "echo": false,
-          "clear": true,
-          "showReuseMessage": false
+          "clear": true
         },
         "group": {
           "kind": "build",
@@ -33,18 +32,19 @@
   // Launch configurations
   "launch": {
     "version": "0.2.0",
+    "compounds": [
+      {
+        "name": "Compound",
+        "configurations": []
+      }
+    ],
     "configurations": [
       {
-        "name": "Debug Editor",
+        "name": "Launch Editor",
         "type": "cppvsdbg",
         "request": "launch",
         "program": "${workspaceFolder}/Binaries/Debug-BmGame.exe",
-        "args": [
-          "editor",
-          "-nopauseonsuccess"
-          // "-cookededitor"
-        ],
-        "cwd": "${workspaceFolder}/Binaries",
+        "args": ["editor"],
         "environment": [
           {
             "name": "PATH",
@@ -52,7 +52,7 @@
           }
         ],
         "visualizerFile": "${workspaceFolder}/UE3.natvis",
-        "preLaunchTask": "build",
+        // "preLaunchTask": "build",
         "internalConsoleOptions": "openOnSessionStart",
         "logging": { "moduleLoad": false, "exceptions": false }
       }
@@ -156,6 +156,10 @@
       "_MSC_VER=1400",
       "_WIN32_WINDOWS=0x0500"
     ],
-    "dotnet.backgroundAnalysis.analyzerDiagnosticsScope": "none"
+    "dotnet.backgroundAnalysis.analyzerDiagnosticsScope": "none",
+    "files.associations": {
+      "*.natvis": "xml",
+      "*.rh": "cpp"
+    }
   }
 }

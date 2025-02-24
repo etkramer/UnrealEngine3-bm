@@ -1096,3 +1096,5 @@ function DumpVoiceRegistration();
  * @param DebugSpewLevel the level to set
  */
 function SetDebugSpewLevel(int DebugSpewLevel);
+
+function bool OnlineDebugCommand(int Command, optional int Parameter);

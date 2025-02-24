@@ -761,6 +761,14 @@ exec function SetOnlineDebugLevel(int DebugLevel)
 	}
 }
 
+exec function Online(int Command, optional int Parameter)
+{
+    if (OnlineSub != none)
+    {
+        OnlineSub.OnlineDebugCommand(Command, Parameter);
+    }
+}
+
 defaultproperties
 {
 }

@@ -8,6 +8,47 @@ class Engine extends Subsystem
 	config(Engine)
 	transient;
 
+// BM1
+struct native TwistBoneFixer
+{
+    var int BaseBoneIndex;
+    var int TwistBoneIndex;
+    var float BaseYDotTwistY;
+    var float BaseYDotTwistZ;
+};
+
+// BM1
+struct native TwistBoneFixers
+{
+    var bool Ok;
+    var init array<init TwistBoneFixer> Fixers;
+    var init array<init byte> DependentBoneIndices;
+};
+
+// BM1
+struct native ParentTwistBoneFixers
+{
+    var init array<init int> BoneIndices;
+};
+
+// BM1
+struct native BreathingFixerState
+{
+    var bool Enabled;
+    var float Spine1Scale;
+    var float Spine2Scale;
+    var float Spine3Scale;
+};
+
+// BM1
+struct native BreathingFixer
+{
+    var bool Ok;
+    var int Spine1Index;
+    var int Spine2Index;
+    var int Spine3Index;
+};
+
 // Fonts.
 var private Font	TinyFont;
 var globalconfig string TinyFontName;

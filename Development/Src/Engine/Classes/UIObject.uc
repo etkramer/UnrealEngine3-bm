@@ -8,6 +8,11 @@ class UIObject extends UIScreenObject
 	AutoCollapseCategories(Data,ZDebug,PostProcess)
 	abstract;
 
+/** used to differentiate tooltip bindings from others */
+const	FIRST_DEFAULT_DATABINDING_INDEX=100;
+const	TOOLTIP_BINDING_INDEX=100;
+const	CONTEXTMENU_BINDING_INDEX=101;
+
 /** Unique identifier for this widget */
 var	noimport					WIDGET_ID						WidgetID;
 
@@ -77,11 +82,6 @@ var(Appearance)				vector							RenderOffset;
  *  Valid behavior flags are defined in UIRoot.uc, as consts which begin with PRIVATE_
  */
 var private{private}			int								PrivateFlags;
-
-/** used to differentiate tooltip bindings from others */
-const	FIRST_DEFAULT_DATABINDING_INDEX=100;
-const	TOOLTIP_BINDING_INDEX=100;
-const	CONTEXTMENU_BINDING_INDEX=101;
 
 /**
  * The tool tip for this widget; only relevant for widgets that implement the UIDataStoreSubscriber interface.

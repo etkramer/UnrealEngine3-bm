@@ -1967,8 +1967,8 @@ INT FEngineLoop::PreInit( const TCHAR* CmdLine )
 			// Set UCC as the current package (used for e.g. log and localization files).
 			appStrcpy( GPackage, TEXT("UCC") );
 
-			// Bring up console unless we're a silent build.
-			if( GLogConsole && !GIsSilent )
+			// Bring up console unless we're a silent build or have a debugger attached.
+			if( GLogConsole && !GIsSilent && !appIsDebuggerPresent() )
 			{
 				GLogConsole->Show( TRUE );
 			}
@@ -2116,6 +2116,9 @@ INT FEngineLoop::PreInit( const TCHAR* CmdLine )
 			// Log warning/ error summary.
 			if( Commandlet->ShowErrorCount )
 			{
+#if BATMAN
+				// This is usually redundant and appears right after the original message.
+#else
 				if( GWarn->Errors.Num() || GWarn->Warnings.Num() )
 				{
 					SET_WARN_COLOR(COLOR_WHITE);
@@ -2145,8 +2148,9 @@ INT FEngineLoop::PreInit( const TCHAR* CmdLine )
 						warnf(TEXT("NOTE: Only first 50 warnings displayed."));
 					}
 				}
-
+				
 				warnf(TEXT(""));
+#endif
 
 				if( ErrorLevel != 0 )
 				{
@@ -2173,7 +2177,7 @@ INT FEngineLoop::PreInit( const TCHAR* CmdLine )
 			}
 		
 			DOUBLE CommandletExecutionTime = appSeconds() - CommandletExecutionStartTime;
-			warnf( TEXT("\nExecution of commandlet took:  %.2f seconds"), CommandletExecutionTime );
+			warnf( TEXT("Execution of commandlet took:  %.2f seconds"), CommandletExecutionTime );
 			GTaskPerfTracker->AddTask( *Class->GetName(), TEXT(""), CommandletExecutionTime );
 
 			// We're ready to exit!

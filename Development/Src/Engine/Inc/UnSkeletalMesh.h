@@ -116,6 +116,14 @@ struct FBonePair
 	}
 };
 
+struct FExtraDepthBiasData
+{
+	BYTE DepthBiasApplicationType;
+	FVector DepthBiasCustomTestPoint;
+	FLOAT DepthBiasMinDistanceFromCameraPlaneOverride;
+	FLOAT MinDepthBiasMultiplier;
+};
+
 enum ERootMotionMode
 {
 	RMM_Translate	= 0,
@@ -166,10 +174,17 @@ class USkeletalMeshComponent : public UMeshComponent
 	/** Array of all AnimNodes in entire tree, in the order they should be ticked - that is, all parents appear before a child. */
 	TArray<UAnimNode*>					AnimTickArray;
 
+	TArray<UMaterialInterface*> 		AdditionalMaterialsForTextureStreaming;
+
 	class UPhysicsAsset*				PhysicsAsset;
 	class UPhysicsAssetInstance*		PhysicsAssetInstance;
 
+	class UPhysicsAssetInstance*		CachedPhysicsAssetInstance;
+
 	FLOAT								PhysicsWeight;
+
+	FLOAT								SecondaryPhysicsWeight;
+	BYTE								BoundsType;
 
 	/** Used to scale speed of all animations on this skeletal mesh. */
 	FLOAT								GlobalAnimRateScale;
@@ -181,6 +196,10 @@ class USkeletalMeshComponent : public UMeshComponent
 	// State of bone bases - set up in local mesh space.
 	TArray <FMatrix>					SpaceBases; 
 
+	TArray <FMatrix>					PrePhysicsSpaceBases;
+	FMatrix								PhysicsLocalToWorld;
+	FLOAT								PhysicsLocalToWorldTime;
+
 	/** Temporary array of local-space (ie relative to parent bone) rotation/translation for each bone. */
 	TArray <FBoneAtom>					LocalAtoms;
 
@@ -188,6 +207,7 @@ class USkeletalMeshComponent : public UMeshComponent
 	TArray <BYTE>						RequiredBones;
 
 	USkeletalMeshComponent*				ParentAnimComponent;
+	BYTE								ParentAnimComponentMode;
 	TArrayNoInit<INT>					ParentBoneMap;
 
 
@@ -314,6 +334,8 @@ class USkeletalMeshComponent : public UMeshComponent
 	/** if true, update skeleton/attachments even when our Owner has not been rendered recently */
 	BITFIELD bUpdateSkelWhenNotRendered:1;
 
+	BITFIELD bUsePrePhysicsSpaceBases:1;
+
 	/** If true, do not apply any SkelControls when owner has not been rendered recently. */
 	BITFIELD bIgnoreControllersWhenNotRendered:1;
 
@@ -399,6 +421,8 @@ class USkeletalMeshComponent : public UMeshComponent
 	/** pauses animations (doesn't tick them) */
 	BITFIELD bPauseAnims:1;
 
+	BITFIELD bNoAnimNodeTick:1;
+
 	/** If true, DistanceFactor for this SkeletalMeshComponent will be added to global chart. */
 	BITFIELD bChartDistanceFactor:1;
 
@@ -407,6 +431,19 @@ class USkeletalMeshComponent : public UMeshComponent
 
 	/** If bEnableLineCheckWithBounds is TRUE, scale the bounds by this value before doing line check. */
 	FVector LineCheckBoundsScale;
+
+	BITFIELD bAllowPermanentFixOnSleep:1;
+	BITFIELD bHasBeenPermanentlyFixed:1;
+	BITFIELD bDisableRagdollCalmingMeasures:1;
+	BITFIELD bDebugDisableRagdollCalmingMeasures:1;
+	BITFIELD bDisableCollisionWhenPermanentlyFixed:1;
+	BITFIELD bForceJointProjection:1;
+	BITFIELD bForceUseRagdollPhysicsTranslation:1;
+	BITFIELD bAllowAngularDampingRamping:1;
+	FLOAT	 CurrDampingRampupTime;
+	FLOAT	 DampingRampupMinTime;
+	FLOAT	 DampingRampupMaxTime;
+	FLOAT	 PermanentFixRampupTime;
 
 	// CLOTH
 
@@ -449,14 +486,17 @@ class USkeletalMeshComponent : public UMeshComponent
 	BITFIELD bNeedsInstanceWeightUpdate:1;
 	/** If TRUE, always use instanced vertex influences for this mesh */
 	BITFIELD bAlwaysUseInstanceWeights:1;
+
+	BITFIELD bUseParentAnimComponentLODLevel:1;
+
 	/** 
 	* Set of bones which will be used to find vertices to switch to using instanced influence weights
 	* instead of the default skeletal mesh weighting.
 	*/
 	TArrayNoInit<FBonePair> InstanceVertexWeightBones;	
 
-	/** Constant force applied to all vertices in the cloth. */
-	FVector ClothExternalForce;
+	// BM1: Renamed from ClothExternalForce
+	FVector ClothExternalAcceleration;
 
 	/** 'Wind' force applied to cloth. Force on each vertex is based on the dot product between the wind vector and the surface normal. */
 	FVector	ClothWind;
@@ -466,6 +506,10 @@ class USkeletalMeshComponent : public UMeshComponent
 
 	/** How much to blend in results from cloth simulation with results from regular skinning. */
 	FLOAT	ClothBlendWeight;
+
+	FLOAT ClothDynamicBlendWeight;
+	FLOAT ClothBlendMinDistanceFactor;
+	FLOAT ClothBlendMaxDistanceFactor;
 
 	/** Pointer to internal simulation object for cloth on this skeletal mesh. */
 	FPointer ClothSim;
@@ -521,6 +565,10 @@ class USkeletalMeshComponent : public UMeshComponent
 	/** Amount to scale impulses applied to cloth simulation. */ 
 	FLOAT			ClothImpulseScale;
 
+	BITFIELD		bEnableValidBounds:1;
+	FVector 		ValidBoundsMin;
+	FVector 		ValidBoundsMax;
+
 	/** 
      * The cloth tear factor for this SkeletalMeshComponent, negative values take the tear factor from the SkeletalMesh.
      * Note: UpdateClothParams() should be called after modification so that the changes are reflected in the simulation.
@@ -529,6 +577,8 @@ class USkeletalMeshComponent : public UMeshComponent
 
 	/** If TRUE, cloth uses compartment in physics scene (usually with fixed timstep for better behaviour) */
 	BITFIELD		bClothUseCompartment:1;
+
+	BITFIELD		bClothUseBannerCompartment:1;
 
 	/** If the distance traveled between frames exceeds this value the vertices will be reset to avoid stretching. */
 	FLOAT MinDistanceForClothReset;
@@ -601,11 +651,14 @@ class USkeletalMeshComponent : public UMeshComponent
 	BYTE	PendingRMM;
 	BYTE	OldPendingRMM;
 	INT		bRMMOneFrameDelay;
+	BYTE 	RootMotionSpace;
 	/** Root Motion Rotation mode (uses ERootMotionRotationMode) */
 	BYTE	RootMotionRotationMode;
 
 	/** How should be blend FaceFX animations? */
 	BYTE	FaceFXBlendMode;
+
+	FLOAT	FaceFxWeight;
 
 #if WITH_FACEFX
 	// The FaceFX actor instance associated with the skeletal mesh component.
@@ -614,13 +667,43 @@ class USkeletalMeshComponent : public UMeshComponent
 	void* FaceFXActorInstance;
 #endif
 
+	FLOAT FaceFxAnimStartTime;
+
 	/** 
 	 *	The audio component that we are using to play audio for a facial animation. 
 	 *	Assigned in PlayFaceFXAnim and cleared in StopFaceFXAnim.
 	 */
 	UAudioComponent* CachedFaceFXAudioComp;
 
+	INT	AnimFXTriggerIndex;
+
 	TArrayNoInit <BYTE>	BoneVisibility;
+
+	BITFIELD				bDontPlaySoundWhenPlayingFaceFx:1;
+	FLOAT					NextSubtitlePriority;
+	FLOAT					DepthBias;
+	FExtraDepthBiasData 	DepthBiasData;
+	BITFIELD				bDisableColourWrites:1;
+	BITFIELD				bNeedsProxyUpdate:1;
+	BITFIELD				bUseComposeSkeletonLite:1;
+	BITFIELD				bUseBlendPhysicsBonesLite:1;
+	BITFIELD				bUseUpdateRBBonesLite:1;
+	BITFIELD				bAllowRagdollContainmentChecks:1;
+	BITFIELD				bStuckAsARagdoll:1;
+	INT						StuckBodyPartIndex;
+	DOUBLE					StuckStartTime;
+	FLOAT					CurrRagdollTime;
+	FLOAT					ContainmentTestDelay;
+	FLOAT					MaxRagdollLiveTime;
+	FLOAT					MinRagdollStuckTime;
+	FLOAT					MinNearlyStillBodiesProportionForNearlyStillRagdoll;
+	TArray<INT>				BoneToBody;
+	TArray<INT>				BodyToBone;
+
+	FTwistBoneFixers		TwistBoneFixers;
+	FParentTwistBoneFixers	ParentTwistBoneFixers;
+	FBreathingFixerState	BreathingFixerState;
+	FBreathingFixer			BreathingFixer;
 
 	// USkeletalMeshComponent interface
 	void DeleteAnimTree();
@@ -972,7 +1055,7 @@ public:
 	void SetClothFrozen(UBOOL bNewFrozen);
 
 	void UpdateClothParams();
-	void SetClothExternalForce(const FVector& InForce);
+	void SetClothExternalAcceleration(const FVector& InForce);
 
 	/** Attach/detach verts from physics body that this components actor is attached to. */
 	void SetAttachClothVertsToBaseBody(UBOOL bAttachVerts);
@@ -1095,7 +1178,7 @@ public:
 	DECLARE_FUNCTION(execSetEnableClothSimulation);
 	DECLARE_FUNCTION(execSetClothFrozen);
 	DECLARE_FUNCTION(execUpdateClothParams);
-	DECLARE_FUNCTION(execSetClothExternalForce);
+	DECLARE_FUNCTION(execSetClothExternalAcceleration);
 	DECLARE_FUNCTION(execSetAttachClothVertsToBaseBody);
 	DECLARE_FUNCTION(execResetClothVertsToRefPose);
 	DECLARE_FUNCTION(execUpdateMeshForBrokenConstraints);

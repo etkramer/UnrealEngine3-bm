@@ -3376,7 +3376,7 @@ void USkeletalMeshComponent::InitClothSim(FRBPhysScene* Scene)
 
 		// Push params into this instance of the cloth.
 		UpdateClothParams();
-		SetClothExternalForce(ClothExternalForce);
+		SetClothExternalAcceleration(ClothExternalAcceleration);
 		SetClothFrozen(bClothFrozen);
 
 		// Initialise fixed verts.
@@ -3783,7 +3783,7 @@ void USkeletalMeshComponent::execUpdateClothParams( FFrame& Stack, RESULT_DECL )
  *	Update the external force applied to all vertices in the simulated cloth. Can be used for wind etc.
  *	Will be applied until changed.
  */
-void USkeletalMeshComponent::SetClothExternalForce(const FVector& InForce)
+void USkeletalMeshComponent::SetClothExternalAcceleration(const FVector& InForce)
 {
 #if WITH_NOVODEX && !NX_DISABLE_CLOTH
 	if(ClothSim)
@@ -3793,16 +3793,16 @@ void USkeletalMeshComponent::SetClothExternalForce(const FVector& InForce)
 	}
 #endif
 
-	ClothExternalForce = InForce;
+	ClothExternalAcceleration = InForce;
 }
 
-/** Script version of SetClothExternalForce. */
-void USkeletalMeshComponent::execSetClothExternalForce( FFrame& Stack, RESULT_DECL )
+/** Script version of SetClothExternalAcceleration. */
+void USkeletalMeshComponent::execSetClothExternalAcceleration( FFrame& Stack, RESULT_DECL )
 {
 	P_GET_VECTOR(InForce);
 	P_FINISH;
 
-	SetClothExternalForce(InForce);
+	SetClothExternalAcceleration(InForce);
 }
 
 void USkeletalMeshComponent::UpdateClothBounds()

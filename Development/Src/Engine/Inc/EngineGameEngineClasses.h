@@ -53,6 +53,77 @@ enum EFullyLoadPackageType
 #ifndef INCLUDED_ENGINE_GAMEENGINE_CLASSES
 #define INCLUDED_ENGINE_GAMEENGINE_CLASSES 1
 
+struct FTwistBoneFixer
+{
+    INT BaseBoneIndex;
+    INT TwistBoneIndex;
+    FLOAT BaseYDotTwistY;
+    FLOAT BaseYDotTwistZ;
+
+    /** Constructors */
+    FTwistBoneFixer() {}
+    FTwistBoneFixer(EEventParm)
+    {
+        appMemzero(this, sizeof(FTwistBoneFixer));
+    }
+};
+
+struct FTwistBoneFixers
+{
+    BITFIELD Ok:1;
+    TArray<struct FTwistBoneFixer> Fixers;
+    TArray<BYTE> DependentBoneIndices;
+
+    /** Constructors */
+    FTwistBoneFixers() {}
+    FTwistBoneFixers(EEventParm)
+    {
+        appMemzero(this, sizeof(FTwistBoneFixers));
+    }
+};
+
+struct FParentTwistBoneFixers
+{
+    TArray<INT> BoneIndices;
+
+    /** Constructors */
+    FParentTwistBoneFixers() {}
+    FParentTwistBoneFixers(EEventParm)
+    {
+        appMemzero(this, sizeof(FParentTwistBoneFixers));
+    }
+};
+
+struct FBreathingFixerState
+{
+    BITFIELD Enabled:1;
+    FLOAT Spine1Scale;
+    FLOAT Spine2Scale;
+    FLOAT Spine3Scale;
+
+    /** Constructors */
+    FBreathingFixerState() {}
+    FBreathingFixerState(EEventParm)
+    {
+        appMemzero(this, sizeof(FBreathingFixerState));
+    }
+};
+
+struct FBreathingFixer
+{
+    BITFIELD Ok:1;
+    INT Spine1Index;
+    INT Spine2Index;
+    INT Spine3Index;
+
+    /** Constructors */
+    FBreathingFixer() {}
+    FBreathingFixer(EEventParm)
+    {
+        appMemzero(this, sizeof(FBreathingFixer));
+    }
+};
+
 struct FStatColorMapEntry
 {
     FLOAT In;

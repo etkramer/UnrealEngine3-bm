@@ -458,6 +458,25 @@ void FOutputDeviceDebug::Serialize( const TCHAR* Data, enum EName Event )
 					printf(TEXT("\033[0;32m"));
 				}
 #endif
+
+#if BATMAN
+				// Use pretty colors in debug console.
+				if (appStricmp(Data, COLOR_RED) == 0)
+				{
+					// Red
+					appOutputDebugString(TEXT("\033[0;31m"));
+				}
+				else if (appStricmp(Data, COLOR_GREEN) == 0)
+				{
+					// Green
+					appOutputDebugString(TEXT("\033[0;32m"));
+				}
+				else if (appStricmp(Data, COLOR_YELLOW) == 0)
+				{
+					// Yellow
+					appOutputDebugString(TEXT("\033[0;33m"));
+				}
+#endif
 			}
 			else
 			if( Event!=NAME_Title)// && Event != NAME_Color )
