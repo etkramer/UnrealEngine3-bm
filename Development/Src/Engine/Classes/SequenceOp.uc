@@ -117,6 +117,9 @@ var bool bActive;
 /** Does this op use latent execution (can it stay active multiple updates?) */
 var const bool bLatentExecution;
 
+/** indicates whether all output links should be activated when this op has finished executing */
+var bool bAutoActivateOutputLinks;
+
 /**
  * Represents an input link for a SequenceOp, that is
  * connected via another SequenceOp's output link.
@@ -399,9 +402,6 @@ var	transient	noimport	byte	GamepadID;
 
 /** Number of times that this Op has had Activate called on it. Used for finding often-hit ops and optimising levels. */
 var transient int				ActivateCount;
-
-/** indicates whether all output links should be activated when this op has finished executing */
-var				bool			bAutoActivateOutputLinks;
 
 /** used when searching for objects to avoid unnecessary recursion */
 var transient duplicatetransient const protected{protected} int SearchTag;

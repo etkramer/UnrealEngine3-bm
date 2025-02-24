@@ -20,6 +20,16 @@ var vector2d Origin;
 /** The size of the master viewport subregion allocated to this player. 0-1 */
 var vector2d Size;
 
+// BM1
+var float ForegroundFOVScale;
+var bool IsXrayEnabled;
+
+/** Whether to override the post process settings or not */
+var bool bOverridePostProcessSettings;
+
+/** set when we've sent a split join request */
+var const editconst transient bool bSentSplitJoin;
+
 /** Chain of post process effects for this player view */
 var const PostProcessChain PlayerPostProcess;
 var const array<PostProcessChain> PlayerPostProcessChains;
@@ -51,15 +61,10 @@ struct native CurrentPostProcessVolumeInfo
 /** current state of post process info set in the scene */
 var const noimport transient CurrentPostProcessVolumeInfo CurrentPPInfo;
 
-/** Whether to override the post process settings or not */
-var bool bOverridePostProcessSettings;
 /** The post process settings to override to */
 var PostProcessSettings PostProcessSettingsOverride;
 /** The start time of the post process override blend */
 var float PPSettingsOverrideStartBlend;
-
-/** set when we've sent a split join request */
-var const editconst transient bool bSentSplitJoin;
 
 cpptext
 {

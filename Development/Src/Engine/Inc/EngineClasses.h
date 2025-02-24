@@ -18404,14 +18404,16 @@ public:
     class UGameViewportClient* ViewportClient;
     FVector2D Origin;
     FVector2D Size;
+    FLOAT ForegroundFOVScale;
+    BITFIELD IsXrayEnabled:1;
+    BITFIELD bOverridePostProcessSettings:1;
+    BITFIELD bSentSplitJoin:1;
     class UPostProcessChain* PlayerPostProcess;
     TArrayNoInit<class UPostProcessChain*> PlayerPostProcessChains;
     FSceneViewStateInterface* ViewState;
     FSynchronizedActorVisibilityHistory ActorVisibilityHistory;
     FVector LastViewLocation;
     struct FCurrentPostProcessVolumeInfo CurrentPPInfo;
-    BITFIELD bOverridePostProcessSettings:1;
-    BITFIELD bSentSplitJoin:1;
     struct FPostProcessSettings PostProcessSettingsOverride;
     FLOAT PPSettingsOverrideStartBlend;
     //## END PROPS LocalPlayer

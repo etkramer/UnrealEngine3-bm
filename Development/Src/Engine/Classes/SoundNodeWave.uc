@@ -33,10 +33,34 @@ var		transient const bool							bOneTimeUse;
 
 /** Set to true to speak SpokenText using TTS */
 var(TTS)	bool										bUseTTS<Use Text To Speech to verbalise SpokenText>;
+
+// BM1
+var(LiveEdit) const bool bLinearRollOff;
+
+/** TRUE if this sound is considered to contain mature content. */
+var(Subtitles) localized bool							bMature<ToolTip=For marking any adult language>;
+
+/** TRUE if the subtitles have been split manually. */
+var(Subtitles) localized bool							bManualWordWrap<ToolTip=Disable automatic generation of line breaks>;
+
+// BM1
+var bool bDataIsStreamed;
+
 /** Speaker to use for TTS */
 var(TTS)	ETTSSpeaker									TTSSpeaker<The voice to use for Text To Speech>;
+
+/** Type of buffer this wave uses. Set once on load */
+var		transient const	EDecompressionType				DecompressionType;
+
 /** A localized version of the text that is actually spoken in the audio. */
 var(TTS)	localized string							SpokenText<ToolTip=The phonetic version of the dialog>;
+
+// BM1
+var(LiveEdit) editoronly const float VolumeDB;
+var(LiveEdit) const float MinRange;
+var(LiveEdit) const float MaxRange;
+var(LiveEdit) const int DialogPriority;
+var(LiveEdit) const int DialogMode;
 
 /** Playback volume of sound 0 to 1 */
 var(Info)	editconst const	float						Volume<Default is 0.75>;
@@ -60,8 +84,6 @@ var		native const	UntypedBulkData_Mirror			RawData{FByteBulkData};
 /** Pointer to 16 bit PCM data - used to preview sounds */
 var		native const	pointer							RawPCMData{SWORD};
 
-/** Type of buffer this wave uses. Set once on load */
-var		transient const	EDecompressionType				DecompressionType;
 /** Async worker that decompresses the vorbis data on a different thread */
 var		native const pointer							VorbisDecompressor{FAsyncVorbisDecompress};
 /** Where the compressed vorbis data is decompressed to */
@@ -91,6 +113,9 @@ struct native SubtitleCue
 
 	/** The time at which the subtitle is to be displayed, in seconds relative to the beginning of the line. */
 	var() localized float	Time;
+
+	// BM1
+	var() editoronly string TaggedText;
 };
 
 /**
@@ -99,14 +124,14 @@ struct native SubtitleCue
  */
 var(Subtitles) localized array<SubtitleCue>				Subtitles;
 
-/** TRUE if this sound is considered to contain mature content. */
-var(Subtitles) localized bool							bMature<ToolTip=For marking any adult language>;
-
 /** Provides contextual information for the sound to the translator. */
 var(Subtitles) localized string							Comment<ToolTip=Contextual information for the sound to the translator>;
 
-/** TRUE if the subtitles have been split manually. */
-var(Subtitles) localized bool							bManualWordWrap<ToolTip=Disable automatic generation of line breaks>;
+// BM1
+var() editoronly editconst string SourceFilePath;
+var() editoronly editconst string SourceFileTimestamp;
+var transient int FMODResourceSize;
+var() editconst string Effect;
 
 /**
  *	A subtitle localized to a specific language.
@@ -134,11 +159,19 @@ struct native LocalizedSubtitle
  */
 var array<LocalizedSubtitle> LocalizedSubtitles;
 
+// BM1
+var name StreamFilenameURL;
+var() string FaceFXGroupName;
+var() string FaceFXAnimName;
+
 defaultproperties
 {
-	Volume=0.75
+	CompressionQuality=30
+    MinRange=1.0
+    MaxRange=10000.0
+	DialogPriority=128
+	Volume=1.0
 	Pitch=1.0
-	CompressionQuality=40
 }
 
 cpptext

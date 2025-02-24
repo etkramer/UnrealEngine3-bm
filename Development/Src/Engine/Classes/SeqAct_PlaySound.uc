@@ -41,8 +41,16 @@ var()	float	PitchMultiplier;
 /** TRUE to suppress display of any subtitles the soundcue may have.  FALSE for normal subtitle behavior. */
 var()	bool	bSuppressSubtitles;
 
+// BM1
+var() bool bLockVariableLinks;
+
 /** Was this sound stopped? */
 var transient bool bStopped;
+
+// BM1
+var int NumberOfParameters;
+var array<float> StoredFloat;
+var array<string> ParamNameList;
 
 /**
  * Return the version number for this class.  Child classes should increment this method by calling Super then adding
@@ -54,7 +62,7 @@ var transient bool bStopped;
  */
 static event int GetObjClassVersion()
 {
-	return Super.GetObjClassVersion() + 1;
+	return Super.GetObjClassVersion() + 2;
 }
 
 defaultproperties

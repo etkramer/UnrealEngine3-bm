@@ -744,6 +744,7 @@ struct FSubtitleCue
 {
     FStringNoInit Text;
     FLOAT Time;
+    FStringNoInit TaggedText;
 
     /** Constructors */
     FSubtitleCue() {}
@@ -776,11 +777,18 @@ public:
     BITFIELD bDynamicResource:1;
     BITFIELD bOneTimeUse:1;
     BITFIELD bUseTTS:1;
+    BITFIELD bLinearRollOff:1;
     BITFIELD bMature:1;
     BITFIELD bManualWordWrap:1;
+    BITFIELD bDataIsStreamed:1;
     BYTE TTSSpeaker GCC_BITFIELD_MAGIC;
     BYTE DecompressionType;
     FStringNoInit SpokenText;
+    FLOAT VolumeDB;
+    FLOAT MinRange;
+    FLOAT MaxRange;
+    INT DialogPriority;
+    INT DialogMode;
     FLOAT Volume;
     FLOAT Pitch;
     FLOAT Duration;
@@ -801,7 +809,14 @@ public:
     void* ResourceData;
     TArrayNoInit<struct FSubtitleCue> Subtitles;
     FStringNoInit Comment;
+    FStringNoInit SourceFilePath;
+    FStringNoInit SourceFileTimestamp;
+    INT FMODResourceSize;
+    FStringNoInit Effect;
     TArrayNoInit<struct FLocalizedSubtitle> LocalizedSubtitles;
+    FName StreamFilenameURL;
+    FStringNoInit FaceFXGroupName;
+    FStringNoInit FaceFXAnimName;
     //## END PROPS SoundNodeWave
 
     DECLARE_CLASS(USoundNodeWave,USoundNode,0,Engine)
@@ -1075,7 +1090,7 @@ VERIFY_CLASS_OFFSET_NODIE(U,SoundNodeRandom,Weights)
 VERIFY_CLASS_OFFSET_NODIE(U,SoundNodeRandom,NumRandomUsed)
 VERIFY_CLASS_SIZE_NODIE(USoundNodeRandom)
 VERIFY_CLASS_OFFSET_NODIE(U,SoundNodeWave,CompressionQuality)
-VERIFY_CLASS_OFFSET_NODIE(U,SoundNodeWave,LocalizedSubtitles)
+VERIFY_CLASS_OFFSET_NODIE(U,SoundNodeWave,FaceFXAnimName)
 VERIFY_CLASS_SIZE_NODIE(USoundNodeWave)
 VERIFY_CLASS_OFFSET_NODIE(U,SoundNodeWaveParam,WaveParameterName)
 VERIFY_CLASS_SIZE_NODIE(USoundNodeWaveParam)

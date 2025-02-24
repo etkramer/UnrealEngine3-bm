@@ -28,6 +28,13 @@ var				bool			bEnabled;
 /** If TRUE, the module has had editing enabled on it							*/
 var				bool			bEditable;
 
+/**
+ *	If TRUE, this flag indicates that auto-generation for LOD will result in
+ *	an exact duplicate of the module, regardless of the percentage.
+ *	If FALSE, it will result in a module with different settings.
+ */
+var bool						LODDuplicate;
+
 /** The color to draw the modules curves in the curve editor. 
  *	If bCurvesAsColor is TRUE, it overrides this value.
  */
@@ -77,13 +84,6 @@ enum EParticleSourceSelectionMethod
  *	then the module is used in that LOD.
  */
 var const byte					LODValidity;
-
-/**
- *	If TRUE, this flag indicates that auto-generation for LOD will result in
- *	an exact duplicate of the module, regardless of the percentage.
- *	If FALSE, it will result in a module with different settings.
- */
-var bool						LODDuplicate;
 
 /**
  *	Names of properties that should be ignored during IsIdentical check.

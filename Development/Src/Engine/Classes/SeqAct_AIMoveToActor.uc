@@ -30,7 +30,6 @@ defaultproperties
 {
 	ObjName="Move To Actor (Latent)"
 	ObjCategory="AI"
-	ObjRemoveInProject(0)="Gear"
 
 	OutputLinks(2)=(LinkDesc="Out")
 

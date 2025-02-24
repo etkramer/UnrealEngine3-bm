@@ -296,9 +296,16 @@ public:
     class USkeletalMeshComponent* SkeletalMeshComponent;
     class ULightEnvironmentComponent* LightEnvironment;
     class UAudioComponent* FacialAudioComp;
+    class UAudioComponent* ImpactSoundComponent;
+    class UAudioComponent* ImpactSoundComponent2;
+    FLOAT LastImpactTime;
+    class UPrimitiveComponent* ImpactForceComponent;
     class USkeletalMesh* ReplicatedMesh;
     class UMaterialInterface* ReplicatedMaterial;
     TArrayNoInit<struct FSkelMeshActorControlTarget> ControlTargets;
+    class AActor* LookAtTarget;
+    FLOAT LookAtWeight;
+    class USkeletalMeshComponent* HeadMesh;
     //## END PROPS SkeletalMeshActor
 
     void eventOnSetSkelControlTarget(class USeqAct_SetSkelControlTarget* Action)
@@ -3095,6 +3102,8 @@ public:
     TArrayNoInit<FName> UseTranslationBoneNames;
     TArrayNoInit<FName> ForceMeshTranslationBoneNames;
     FName PreviewSkelMeshName;
+    class USkeletalMesh* PreviewSkelMesh;
+    FName SkeletonName;
     //## END PROPS AnimSet
 
     DECLARE_CLASS(UAnimSet,UObject,0,Engine)
@@ -3721,7 +3730,7 @@ VERIFY_CLASS_OFFSET_NODIE(U,AnimSequence,SequenceName)
 VERIFY_CLASS_OFFSET_NODIE(U,AnimSequence,EncodingPkgVersion)
 VERIFY_CLASS_SIZE_NODIE(UAnimSequence)
 VERIFY_CLASS_OFFSET_NODIE(U,AnimSet,TrackBoneNames)
-VERIFY_CLASS_OFFSET_NODIE(U,AnimSet,PreviewSkelMeshName)
+VERIFY_CLASS_OFFSET_NODIE(U,AnimSet,SkeletonName)
 VERIFY_CLASS_SIZE_NODIE(UAnimSet)
 VERIFY_CLASS_OFFSET_NODIE(U,AnimTree,AnimGroups)
 VERIFY_CLASS_OFFSET_NODIE(U,AnimTree,PreviewFloorYaw)
@@ -3772,7 +3781,7 @@ VERIFY_CLASS_OFFSET_NODIE(U,SkelControlWheel,WheelDisplacement)
 VERIFY_CLASS_OFFSET_NODIE(U,SkelControlWheel,WheelSteering)
 VERIFY_CLASS_SIZE_NODIE(USkelControlWheel)
 VERIFY_CLASS_OFFSET_NODIE(A,SkeletalMeshActor,SkeletalMeshComponent)
-VERIFY_CLASS_OFFSET_NODIE(A,SkeletalMeshActor,ControlTargets)
+VERIFY_CLASS_OFFSET_NODIE(A,SkeletalMeshActor,HeadMesh)
 VERIFY_CLASS_SIZE_NODIE(ASkeletalMeshActor)
 VERIFY_CLASS_OFFSET_NODIE(A,SkeletalMeshActorBasedOnExtremeContent,ExtremeContent)
 VERIFY_CLASS_OFFSET_NODIE(A,SkeletalMeshActorBasedOnExtremeContent,NonExtremeContent)

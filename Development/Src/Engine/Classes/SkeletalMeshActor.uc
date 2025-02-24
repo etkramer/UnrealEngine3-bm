@@ -7,10 +7,24 @@ class SkeletalMeshActor extends Actor
 
 var()		bool		bDamageAppliesImpulse;
 
+/** whether we need to save this Actor's Rotation in checkpoints */
+var(Gears) const bool bCheckpointSaveRotation;
+
+/** Whether or not this actor should respond to anim notifies **/
+var() bool bShouldDoAnimNotifies;
+
 var()	SkeletalMeshComponent			SkeletalMeshComponent;
 var() const editconst LightEnvironmentComponent LightEnvironment;
 
 var		AudioComponent					FacialAudioComp;
+
+// BM1
+var export editinline AudioComponent ImpactSoundComponent;
+var export editinline AudioComponent ImpactSoundComponent2;
+var float LastImpactTime;
+
+// BM1: This should be RB_ForceComponent
+var export editinline PrimitiveComponent ImpactForceComponent;
 
 /** Used to replicate mesh to clients */
 var repnotify transient SkeletalMesh ReplicatedMesh;
@@ -23,11 +37,6 @@ struct CheckpointRecord
 	var bool bHidden;
 	var rotator Rotation;
 };
-/** whether we need to save this Actor's Rotation in checkpoints */
-var(Gears) const bool bCheckpointSaveRotation;
-
-/** Whether or not this actor should respond to anim notifies **/
-var() bool bShouldDoAnimNotifies;
 
 /** Struct that stores info to update one skel control with a location target */
 struct native SkelMeshActorControlTarget
@@ -40,6 +49,11 @@ struct native SkelMeshActorControlTarget
 
 /** Set of skel controls to update targets of, based on Actor location */
 var() array<SkelMeshActorControlTarget>		ControlTargets;
+
+// BM1
+var() Actor LookAtTarget;
+var() interp float LookAtWeight;
+var() export editinline SkeletalMeshComponent HeadMesh;
 
 cpptext
 {

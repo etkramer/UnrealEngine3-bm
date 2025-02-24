@@ -7,6 +7,9 @@ class SeqAct_ParticleEventGenerator extends SequenceAction
 /** Is this event generator enabled? */
 var() bool bEnabled;
 
+/** If TRUE, use the Emitter target position as the Location. */
+var() bool bUseEmitterLocation;
+
 /** Player that trigger the event (Controller or Pawn) */
 var Actor Instigator;
 /** Name of the event to generate. */
@@ -21,9 +24,6 @@ var vector EventDirection;
 var vector EventVelocity;
 /** The (hit) normal of the event. */
 var vector EventNormal;
-
-/** If TRUE, use the Emitter target position as the Location. */
-var() bool bUseEmitterLocation;
 
 cpptext
 {

@@ -3386,6 +3386,7 @@ public:
     struct FRawDistributionFloat Distance;
     struct FRawDistributionFloat TaperFactor;
     struct FRawDistributionFloat TaperScale;
+    TArrayNoInit<FBonePair> BonePairs;
     //## END PROPS ParticleModuleTypeDataBeam2
 
     DECLARE_CLASS(UParticleModuleTypeDataBeam2,UParticleModuleTypeDataBase,0,Engine)
@@ -4448,7 +4449,7 @@ VERIFY_CLASS_OFFSET_NODIE(U,ParticleModuleTypeDataBeam,BeamMethod)
 VERIFY_CLASS_OFFSET_NODIE(U,ParticleModuleTypeDataBeam,TextureTile)
 VERIFY_CLASS_SIZE_NODIE(UParticleModuleTypeDataBeam)
 VERIFY_CLASS_OFFSET_NODIE(U,ParticleModuleTypeDataBeam2,BeamMethod)
-VERIFY_CLASS_OFFSET_NODIE(U,ParticleModuleTypeDataBeam2,TaperScale)
+VERIFY_CLASS_OFFSET_NODIE(U,ParticleModuleTypeDataBeam2,BonePairs)
 VERIFY_CLASS_SIZE_NODIE(UParticleModuleTypeDataBeam2)
 VERIFY_CLASS_OFFSET_NODIE(U,ParticleModuleTypeDataMesh,Mesh)
 VERIFY_CLASS_OFFSET_NODIE(U,ParticleModuleTypeDataMesh,MeshAlignment)

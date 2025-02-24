@@ -161,11 +161,6 @@ WxMBKismetNewObject::WxMBKismetNewObject(WxKismet* SeqEditor)
 			{
 				// grab the default object for reference
 				USequenceObject* SeqObjDefault = (USequenceObject*)SeqClass->GetDefaultObject();
-				// Skip item if it should be removed from this project
-				if( SeqObjDefault->ObjRemoveInProject.ContainsItem( appGetGameName() ) )
-				{
-					continue;
-				}				
 
 				// first look up the menu type
 				wxMenu* Menu = NULL;

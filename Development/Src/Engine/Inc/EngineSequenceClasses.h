@@ -111,8 +111,8 @@ public:
     INT ObjPosY;
     FStringNoInit ObjName;
     FStringNoInit ObjCategory;
-    TArrayNoInit<FString> ObjRemoveInProject;
     FColor ObjColor;
+    FColor ObjTitleColor;
     FStringNoInit ObjComment;
     BITFIELD bDeletable:1;
     BITFIELD bDrawFirst:1;
@@ -1458,6 +1458,7 @@ public:
     INT LastSpawnIdx;
     INT SpawnedCount;
     FLOAT RemainingDelay;
+    TArrayNoInit<FVector> SpawnScales;
     //## END PROPS SeqAct_ActorFactory
 
     DECLARE_CLASS(USeqAct_ActorFactory,USeqAct_Latent,0,Engine)
@@ -2169,7 +2170,11 @@ public:
     FLOAT VolumeMultiplier;
     FLOAT PitchMultiplier;
     BITFIELD bSuppressSubtitles:1;
+    BITFIELD bLockVariableLinks:1;
     BITFIELD bStopped:1;
+    INT NumberOfParameters;
+    TArrayNoInit<FLOAT> StoredFloat;
+    TArrayNoInit<FString> ParamNameList;
     //## END PROPS SeqAct_PlaySound
 
     DECLARE_CLASS(USeqAct_PlaySound,USeqAct_Latent,0,Engine)
@@ -2382,6 +2387,7 @@ public:
     class APawn* PawnToPossess;
     BITFIELD bKillOldPawn:1;
     BITFIELD bTryToLeaveVehicle:1;
+    BITFIELD bDontUpdateControllerRotation:1;
     //## END PROPS SeqAct_Possess
 
     DECLARE_CLASS(USeqAct_Possess,USequenceAction,0,Engine)
@@ -5077,7 +5083,7 @@ VERIFY_CLASS_OFFSET_NODIE(U,SeqAct_ActivateRemoteEvent,Instigator)
 VERIFY_CLASS_OFFSET_NODIE(U,SeqAct_ActivateRemoteEvent,EventName)
 VERIFY_CLASS_SIZE_NODIE(USeqAct_ActivateRemoteEvent)
 VERIFY_CLASS_OFFSET_NODIE(U,SeqAct_ActorFactory,Factory)
-VERIFY_CLASS_OFFSET_NODIE(U,SeqAct_ActorFactory,RemainingDelay)
+VERIFY_CLASS_OFFSET_NODIE(U,SeqAct_ActorFactory,SpawnScales)
 VERIFY_CLASS_SIZE_NODIE(USeqAct_ActorFactory)
 VERIFY_CLASS_SIZE_NODIE(USeqAct_ActorFactoryEx)
 VERIFY_CLASS_OFFSET_NODIE(U,SeqAct_AddFloat,ValueA)
@@ -5179,7 +5185,7 @@ VERIFY_CLASS_SIZE_NODIE(USeqAct_PlayFaceFXAnim)
 VERIFY_CLASS_OFFSET_NODIE(U,SeqAct_PlayMusicTrack,MusicTrack)
 VERIFY_CLASS_SIZE_NODIE(USeqAct_PlayMusicTrack)
 VERIFY_CLASS_OFFSET_NODIE(U,SeqAct_PlaySound,PlaySound)
-VERIFY_CLASS_OFFSET_NODIE(U,SeqAct_PlaySound,PitchMultiplier)
+VERIFY_CLASS_OFFSET_NODIE(U,SeqAct_PlaySound,ParamNameList)
 VERIFY_CLASS_SIZE_NODIE(USeqAct_PlaySound)
 VERIFY_CLASS_OFFSET_NODIE(U,SeqAct_Possess,PawnToPossess)
 VERIFY_CLASS_SIZE_NODIE(USeqAct_Possess)

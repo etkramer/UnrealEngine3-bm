@@ -62,6 +62,10 @@ var() Array<Name>		ForceMeshTranslationBoneNames;
 /** In the AnimSetEditor, when you switch to this AnimSet, it sees if this skeletal mesh is loaded and if so switches to it. */
 var	name				PreviewSkelMeshName;
 
+// BM1
+var editoronly SkeletalMesh PreviewSkelMesh;
+var() name SkeletonName;
+
 cpptext
 {
 	/**

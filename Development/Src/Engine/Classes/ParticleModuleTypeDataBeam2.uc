@@ -25,6 +25,21 @@ enum EBeam2Method
  */
 var(Beam)			EBeam2Method				BeamMethod;
 
+enum EBeamTaperMethod
+{
+	PEBTM_None, 
+	PEBTM_Full,
+	PEBTM_Partial
+};
+
+/**
+ *	Tapering mode - one of the following:
+ *	PEBTM_None		- No tapering is applied
+ *	PEBTM_Full		- Taper the beam relative to source-->target, regardless of current beam length
+ *	PEBTM_Partial	- Taper the beam relative to source-->location, 0=source,1=endpoint
+ */
+var(Taper)			EBeamTaperMethod			TaperMethod;
+
 /** The number of times to tile the texture along each beam									*/
 var(Beam)			int							TextureTile;
 
@@ -51,6 +66,14 @@ var(Beam)			int							InterpolationPoints;
 
 /** If true, there will ALWAYS be a beam...													*/
 var(Beam)			bool						bAlwaysOn;
+
+//*************************************************************************************************
+// Beam Rendering Variables
+//*************************************************************************************************
+var(Rendering)		bool						RenderGeometry;
+var(Rendering)		bool						RenderDirectLine;
+var(Rendering)		bool						RenderLines;
+var(Rendering)		bool						RenderTessellation;
 
 /** 
  *	The approach to use for determining the Up vector(s) for the beam.
@@ -93,20 +116,6 @@ struct BeamTargetData
 //*************************************************************************************************
 // Beam Tapering Variables
 //*************************************************************************************************
-enum EBeamTaperMethod
-{
-	PEBTM_None, 
-	PEBTM_Full,
-	PEBTM_Partial
-};
-
-/**
- *	Tapering mode - one of the following:
- *	PEBTM_None		- No tapering is applied
- *	PEBTM_Full		- Taper the beam relative to source-->target, regardless of current beam length
- *	PEBTM_Partial	- Taper the beam relative to source-->location, 0=source,1=endpoint
- */
-var(Taper)			EBeamTaperMethod			TaperMethod;
 
 /** Tapering factor, 0 = source of beam, 1 = target											*/
 var(Taper)			rawdistributionfloat		TaperFactor;
@@ -119,14 +128,7 @@ var(Taper)			rawdistributionfloat		TaperFactor;
  */
 var(Taper)			rawdistributionfloat		TaperScale;
 
-
-//*************************************************************************************************
-// Beam Rendering Variables
-//*************************************************************************************************
-var(Rendering)		bool						RenderGeometry;
-var(Rendering)		bool						RenderDirectLine;
-var(Rendering)		bool						RenderLines;
-var(Rendering)		bool						RenderTessellation;
+var() array<BonePair> BonePairs;
 
 //*************************************************************************************************
 // C++ Text
