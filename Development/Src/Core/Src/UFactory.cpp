@@ -128,7 +128,11 @@ UObject* UFactory::StaticImportObject
 		{
 			if( Factory->bText )
 			{
+#if BATMAN
+				// Disable non-useful debug message.
+#else
 				debugf( NAME_Log, TEXT("FactoryCreateText: %s with %s (%i %i %s)"), *Class->GetName(), *Factories(i)->GetClass()->GetName(), Factory->bCreateNew, Factory->bText, Filename );
+#endif
 				FString Data;
 				if( appLoadFileToString( Data, Filename ) )
 				{

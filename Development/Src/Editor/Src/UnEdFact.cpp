@@ -1259,7 +1259,11 @@ UObject* UClassFactoryUC::FactoryCreateText
 			}
 		}
 
+#if BATMAN
+		// Disable non-useful debug message.
+#else
 		debugf(TEXT("Class: %s extends %s"),*ClassName,*BaseClassName);
+#endif
 
 		// Handle failure.
 		if( ClassName==TEXT("") || (BaseClassName==TEXT("") && ClassName!=TEXT("Object")) )

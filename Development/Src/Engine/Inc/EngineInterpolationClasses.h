@@ -392,12 +392,34 @@ public:
 	void UpdateFaceFXSoundCueReferences( class UFaceFXAsset* FaceFXAsset );
 };
 
+struct FRandomGenerator
+{
+    BITFIELD bUseRandomise:1;
+    INT RandomSeed;
+    FLOAT StepValue;
+    FLOAT StartTime;
+    FLOAT EndTime;
+    FLOAT StartValues[2];
+    FLOAT EndValues[2];
+    FLOAT ValueVariationsPerc[2];
+    BITFIELD bStartAtMax:1;
+    FLOAT StepValueMax;
+
+    /** Constructors */
+    FRandomGenerator() {}
+    FRandomGenerator(EEventParm)
+    {
+        appMemzero(this, sizeof(FRandomGenerator));
+    }
+};
+
 class UInterpTrackFloatBase : public UInterpTrack
 {
 public:
     //## BEGIN PROPS InterpTrackFloatBase
     FInterpCurveFloat FloatTrack;
     FLOAT CurveTension;
+    struct FRandomGenerator Randomiser;
     //## END PROPS InterpTrackFloatBase
 
     DECLARE_ABSTRACT_CLASS(UInterpTrackFloatBase,UInterpTrack,0,Engine)
@@ -979,12 +1001,36 @@ public:
 	virtual void DrawTrack( FCanvas* Canvas, const FInterpTrackDrawParams& Params );
 };
 
+struct FRandomGeneratorVector
+{
+    BITFIELD bUseRandomise:1;
+    INT RandomSeed;
+    FLOAT StepValue;
+    FLOAT StepValueMax;
+    FLOAT StartTime;
+    FLOAT EndTime;
+    FLOAT StartValues[6];
+    FLOAT EndValues[6];
+    FLOAT ValueVariationsPerc[6];
+    BITFIELD bStartAtMaxX:1;
+    BITFIELD bStartAtMaxY:1;
+    BITFIELD bStartAtMaxZ:1;
+
+    /** Constructors */
+    FRandomGeneratorVector() {}
+    FRandomGeneratorVector(EEventParm)
+    {
+        appMemzero(this, sizeof(FRandomGeneratorVector));
+    }
+};
+
 class UInterpTrackVectorBase : public UInterpTrack
 {
 public:
     //## BEGIN PROPS InterpTrackVectorBase
     FInterpCurveVector VectorTrack;
     FLOAT CurveTension;
+    struct FRandomGeneratorVector Randomiser;
     //## END PROPS InterpTrackVectorBase
 
     DECLARE_ABSTRACT_CLASS(UInterpTrackVectorBase,UInterpTrack,0,Engine)
@@ -1115,6 +1161,7 @@ public:
     TArrayNoInit<struct FSoundTrackKey> Sounds;
     BITFIELD bContinueSoundOnMatineeEnd:1;
     BITFIELD bSuppressSubtitles:1;
+    BITFIELD bStopSoundOnMatineeSkip:1;
     //## END PROPS InterpTrackSound
 
     DECLARE_CLASS(UInterpTrackSound,UInterpTrackVectorBase,0,Engine)
@@ -1746,7 +1793,7 @@ VERIFY_CLASS_OFFSET_NODIE(U,InterpTrackFaceFX,FaceFXSoundCueKeys)
 VERIFY_CLASS_SIZE_NODIE(UInterpTrackFaceFX)
 VERIFY_CLASS_SIZE_NODIE(UInterpTrackFade)
 VERIFY_CLASS_OFFSET_NODIE(U,InterpTrackFloatBase,FloatTrack)
-VERIFY_CLASS_OFFSET_NODIE(U,InterpTrackFloatBase,CurveTension)
+VERIFY_CLASS_OFFSET_NODIE(U,InterpTrackFloatBase,Randomiser)
 VERIFY_CLASS_SIZE_NODIE(UInterpTrackFloatBase)
 VERIFY_CLASS_OFFSET_NODIE(U,InterpTrackFloatMaterialParam,ParamName)
 VERIFY_CLASS_SIZE_NODIE(UInterpTrackFloatMaterialParam)
@@ -1818,7 +1865,7 @@ VERIFY_CLASS_SIZE_NODIE(UInterpTrackSound)
 VERIFY_CLASS_OFFSET_NODIE(U,InterpTrackToggle,ToggleTrack)
 VERIFY_CLASS_SIZE_NODIE(UInterpTrackToggle)
 VERIFY_CLASS_OFFSET_NODIE(U,InterpTrackVectorBase,VectorTrack)
-VERIFY_CLASS_OFFSET_NODIE(U,InterpTrackVectorBase,CurveTension)
+VERIFY_CLASS_OFFSET_NODIE(U,InterpTrackVectorBase,Randomiser)
 VERIFY_CLASS_SIZE_NODIE(UInterpTrackVectorBase)
 VERIFY_CLASS_OFFSET_NODIE(U,InterpTrackVectorMaterialParam,ParamName)
 VERIFY_CLASS_SIZE_NODIE(UInterpTrackVectorMaterialParam)

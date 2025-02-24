@@ -69,6 +69,9 @@ var()	bool			bContinueSoundOnMatineeEnd;
 /** If TRUE, don't show subtitles for sounds played by this track. */
 var()	bool			bSuppressSubtitles;
 
+// BM1
+var() bool bStopSoundOnMatineeSkip;
+
 defaultproperties
 {
 	TrackInstClass=class'Engine.InterpTrackInstSound'

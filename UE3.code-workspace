@@ -10,7 +10,7 @@
     "version": "2.0.0",
     "tasks": [
       {
-        "label": "build",
+        "label": "Build Editor",
         "type": "shell",
         "command": "${workspaceFolder}/Development/Build-Win11.cmd",
         "options": {
@@ -44,6 +44,7 @@
         "type": "cppvsdbg",
         "request": "launch",
         "program": "${workspaceFolder}/Binaries/Debug-BmGame.exe",
+        "cwd": "${workspaceFolder}/Binaries",
         "args": ["editor"],
         "environment": [
           {
@@ -52,7 +53,24 @@
           }
         ],
         "visualizerFile": "${workspaceFolder}/UE3.natvis",
-        // "preLaunchTask": "build",
+        "internalConsoleOptions": "openOnSessionStart",
+        "logging": { "moduleLoad": false, "exceptions": false }
+      },
+      {
+        "name": "Build and Launch Editor",
+        "type": "cppvsdbg",
+        "request": "launch",
+        "program": "${workspaceFolder}/Binaries/Debug-BmGame.exe",
+        "cwd": "${workspaceFolder}/Binaries",
+        "args": ["editor"],
+        "environment": [
+          {
+            "name": "PATH",
+            "value": "${workspaceFolder}/Development/External/Developer Runtime/x86;${env:PATH}"
+          }
+        ],
+        "visualizerFile": "${workspaceFolder}/UE3.natvis",
+        "preLaunchTask": "Build Editor",
         "internalConsoleOptions": "openOnSessionStart",
         "logging": { "moduleLoad": false, "exceptions": false }
       }
