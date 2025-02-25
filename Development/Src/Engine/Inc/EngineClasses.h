@@ -19227,6 +19227,8 @@ public:
     BITFIELD bUsedWithFluidSurfaces:1;
     BITFIELD bUsedWithDecals:1;
     BITFIELD bUsedWithMaterialEffect:1;
+    BITFIELD bUsedWithMorphTargets:1;
+    BITFIELD bUsedWithOpacityShadows:1;
     BITFIELD Wireframe:1;
     BITFIELD bIsFallbackMaterial:1;
     BITFIELD bUsesDistortion:1;
@@ -19238,8 +19240,6 @@ public:
     class FDefaultMaterialInstance* DefaultMaterialInstances[2];
     INT EditorX;
     INT EditorY;
-    INT EditorPitch;
-    INT EditorYaw;
     TArrayNoInit<class UMaterialExpression*> Expressions;
     TArrayNoInit<class UMaterialExpressionComment*> EditorComments;
     TArrayNoInit<class UMaterialExpressionCompound*> EditorCompounds;

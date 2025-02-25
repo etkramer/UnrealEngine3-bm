@@ -1675,8 +1675,6 @@ UBOOL UMaterialExporterT3D::ExportText(const FExportObjectInnerContext* Context,
 		ExportObjectProperty(TEXT("FallbackMaterial"), MaterialObj, MaterialObj->FallbackMaterial, Ar, PortFlags);
 		ExportIntProperty(TEXT("EditorX"), MaterialObj->EditorX, Ar, PortFlags);
 		ExportIntProperty(TEXT("EditorY"), MaterialObj->EditorY, Ar, PortFlags);
-		ExportIntProperty(TEXT("EditorPitch"), MaterialObj->EditorPitch, Ar, PortFlags);
-		ExportIntProperty(TEXT("EditorYaw"), MaterialObj->EditorYaw, Ar, PortFlags);
 
 		Ar.Logf(TEXT("%sBegin ExpressionList") LINE_TERMINATOR, appSpc(TextIndent));
 		TextIndent += 3;

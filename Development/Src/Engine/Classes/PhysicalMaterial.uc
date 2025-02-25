@@ -20,10 +20,25 @@ var()	bool	bForceConeFriction;
 
 /** Enable support for different friction in different directions. */
 var(Advanced)	bool		bEnableAnisotropicFriction;
+
+// BM1
+var(RockAdvanced) bool bUseSphericalInertiaTensor;
+var(Sound) float BaseOcclusionDensity;
+var(Sound) float OcclusionDensity;
+
 /** Direction (in physics object local space) for FrictionV to be applied. */
 var(Advanced)	vector		AnisoFrictionDir;
 /** Friction to be applied in AnisoFrictionDir - Friction will be used for the other direction. */
 var(Advanced)	float		FrictionV;
+
+// BM1
+var(RockAdvanced) float SphericalInertiaTensorRadius;
+var(RockAdvanced) float MassOverride;
+var(RockAdvanced) int PhysicsSolverIterationCount;
+var(RockAdvanced) float SkinWidthOverride;
+var(RockAdvanced) float MaxRampUpAngularDamping;
+var(RockAdvanced) float LinearDampingStartProportion;
+var(RockAdvanced) float MaxRampUpLinearDamping;
 
 // Object properties
 var()	float	Density;
@@ -38,6 +53,11 @@ var()	float	WindResponse;
 
 /** How hard an impact must be to trigger effect/sound */
 var(Impact)		float						ImpactThreshold;
+
+// BM1
+var(Impact) float MinImpactEffectSpeed;
+var(Impact) float MaxImpactEffectSpeed;
+
 /** Min time between effect/sound being triggered */
 var(Impact)		float						ImpactReFireDelay;
 /** Particle effect to play at impact location */
@@ -45,15 +65,28 @@ var(Impact)		ParticleSystem				ImpactEffect;
 /** Sound to play  */
 var(Impact)		SoundCue					ImpactSound;
 
+// BM1: Should be RB_ForceComponent
+var(Impact) export editinline object ImpactForce;
+// var(Impact) export editinline RB_ForceComponent ImpactForce;
+
 // Slide effects
 /** How fast an object must slide to trigger effect/sound */
 var(Slide)		float						SlideThreshold;
+
+// BM1
+var(Slide) float MinSlideEffectSpeed;
+var(Slide) float MaxSlideEffectSpeed;
+
 /** How long since last slide before sound/effect can be re-triggered */
 var(Slide)		float						SlideReFireDelay;
 /** Effect to place at contact position and enable while sliding */
 var(Slide)		ParticleSystem				SlideEffect;
 /** Looping sound to play while objects are sliding */
 var(Slide)		SoundCue					SlideSound;
+
+// BM1
+var(SoundMovement) SoundCue BodyfallSound;
+var(SoundMovement) SoundCue GenericSound;
 
 // Fracture effects
 

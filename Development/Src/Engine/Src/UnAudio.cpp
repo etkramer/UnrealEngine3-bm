@@ -3484,6 +3484,10 @@ USoundCue* UAudioDevice::CreateTTSSoundCue( const FString& SpokenText, ETTSSpeak
 
 #define DROP_REMAINING() { FObjectExport& Exp = GetLinker()->ExportMap(GetLinkerIndex()); Ar.Seek(Exp.SerialOffset + Exp.SerialSize); }
 
+#define OBJECT_SERIALSIZE 12
+#define MIXBIN_SERIALSIZE (71 - OBJECT_SERIALSIZE)
+#define RFMODSOUND_SERIALSIZE (677071 - OBJECT_SERIALSIZE)
+
 /*-----------------------------------------------------------------------------
 	URFMODSound implementation.
 -----------------------------------------------------------------------------*/
@@ -3492,7 +3496,15 @@ void URFMODSound::Serialize( FArchive& Ar )
 {
 	Super::Serialize( Ar );
 
-	DROP_REMAINING();
+	// TODO: Implement serialization
+	if (Ar.IsLoading())
+	{
+		DROP_REMAINING();
+	}
+	else
+	{
+		Ar.Seek(Ar.Tell() + RFMODSOUND_SERIALSIZE);
+	}
 }
 
 /*-----------------------------------------------------------------------------
@@ -3503,5 +3515,13 @@ void UMixBin::Serialize( FArchive& Ar )
 {
 	Super::Serialize( Ar );
 
-	DROP_REMAINING();
+	// TODO: Implement serialization
+	if (Ar.IsLoading())
+	{
+		DROP_REMAINING();
+	}
+	else
+	{
+		Ar.Seek(Ar.Tell() + MIXBIN_SERIALSIZE);
+	}
 }

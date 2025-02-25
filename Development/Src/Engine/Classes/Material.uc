@@ -147,34 +147,14 @@ var(Usage) const bool bUsedWithFluidSurfaces;
 var(Usage) const bool bUsedWithDecals;
 var(Usage) const bool bUsedWithMaterialEffect;
 
+// BM1
+var(Usage) const bool bUsedWithMorphTargets;
+var(Usage) const bool bUsedWithOpacityShadows;
+
 var() bool Wireframe;
 
 /** Indicates that the material will be used as a fallback on sm2 platforms */
 var bool bIsFallbackMaterial;
-
-/** The fallback material, which will be used on sm2 platforms */
-var Material FallbackMaterial;
-
-// Two resources for sm3 and sm2, indexed by EMaterialShaderPlatform
-var const native duplicatetransient pointer MaterialResources[2]{FMaterialResource};
-
-var const native duplicatetransient pointer DefaultMaterialInstances[2]{class FDefaultMaterialInstance};
-
-var int		EditorX,
-			EditorY,
-			EditorPitch,
-			EditorYaw;
-
-/** Array of material expressions, excluding Comments and Compounds.  Used by the material editor. */
-var array<MaterialExpression>			Expressions;
-
-/** Array of comments associated with this material; viewed in the material editor. */
-var editoronly array<MaterialExpressionComment>	EditorComments;
-
-/** Array of material expression compounds associated with this material; viewed in the material editor. */
-var editoronly array<MaterialExpressionCompound> EditorCompounds;
-
-var native map{FName, TArray<UMaterialExpression*>} EditorParameters;
 
 /** TRUE if Material uses distortion */
 var private bool						bUsesDistortion;
@@ -187,6 +167,28 @@ var private bool						bSupportsSinglePassSHLight;
 
 /** TRUE if Material is the preview material used in the material editor. */
 var transient duplicatetransient private bool bIsPreviewMaterial;
+
+/** The fallback material, which will be used on sm2 platforms */
+var Material FallbackMaterial;
+
+// Two resources for sm3 and sm2, indexed by EMaterialShaderPlatform
+var const native duplicatetransient pointer MaterialResources[2]{FMaterialResource};
+
+var const native duplicatetransient pointer DefaultMaterialInstances[2]{class FDefaultMaterialInstance};
+
+var int		EditorX,
+			EditorY;
+
+/** Array of material expressions, excluding Comments and Compounds.  Used by the material editor. */
+var array<MaterialExpression>			Expressions;
+
+/** Array of comments associated with this material; viewed in the material editor. */
+var editoronly array<MaterialExpressionComment>	EditorComments;
+
+/** Array of material expression compounds associated with this material; viewed in the material editor. */
+var editoronly array<MaterialExpressionCompound> EditorCompounds;
+
+var native map{FName, TArray<UMaterialExpression*>} EditorParameters;
 
 /**
  * Array of textures referenced, updated in PostLoad.  These are needed to keep the textures used by material resources

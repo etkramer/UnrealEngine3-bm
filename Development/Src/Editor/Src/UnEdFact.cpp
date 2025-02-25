@@ -533,16 +533,6 @@ UBOOL UMaterialFactory::InitializeFromT3DMaterialDataText(UMaterial* InMaterial,
 			InMaterial->EditorY = appAtoi(*ParsedText);
 		}
 		else
-		if (Parse(Str, TEXT("EditorPitch="), ParsedText))
-		{
-			InMaterial->EditorPitch = appAtoi(*ParsedText);
-		}
-		else
-		if (Parse(Str, TEXT("EditorYaw="), ParsedText))
-		{
-			InMaterial->EditorYaw = appAtoi(*ParsedText);
-		}
-		else
 		if (GetBEGIN(&Str, TEXT("EXPRESSIONLIST")))
 		{
 			while( ParseLine(&Buffer,StrLine) )
