@@ -976,61 +976,6 @@ public:
 	virtual void GetNodes( class UAudioComponent* AudioComponent, TArray<USoundNode*>& SoundNodes );
 };
 
-class URFMODSound : public UObject
-{
-public:
-    //## BEGIN PROPS RFMODSound
-	FString SourceFilePath;
-	FName FileType;
-	INT cues;
-	TArray<FString> cueNames;
-	FByteBulkData FMODRawData;
-	INT RawDataSize;
-	void* eventProject;
-	TArray<USoundCue*> refCueList;
-	INT importTime;
-	INT ReadVersion;
-	TArray<FString> bankNames;
-	FByteBulkData FMODXboxRawData;
-	FByteBulkData FMODPS3RawData;
-	INT CategoryCount;
-	void* categoryList;
-	INT Flags;
-	BYTE flagMasterCategoryList;
-	BYTE flagFullyLoaded;
-	BYTE flagIsDirty;
-	BYTE flagRegistered;
-	BYTE flagCanStream;
-	BYTE flagPS3RSX;
-	BYTE flagMemoryStream;
-	BYTE NumberOfPCStreams;
-	BYTE NumberOfX360Streams;
-	BYTE NumberOfPS3Streams;
-	void* FSBBankData;
-	INT FSBBankDataSize;
-	void* FSBBankSound;
-    //## END PROPS RFMODSound
-
-    DECLARE_CLASS(URFMODSound,UObject,CLASS_NoExport,Engine)
-};
-
-class UMixBin : public UObject
-{
-public:
-    //## BEGIN PROPS MixBin
-	INT Version;
-	FName MixBinName;
-	URFMODSound* FMODSound;
-	INT CategoryCount;
-	void* List;
-	INT CueCount;
-	void* CueList;
-    BITFIELD Parented:1;
-    //## END PROPS MixBin
-
-    DECLARE_CLASS(UMixBin,UObject,CLASS_NoExport,Engine)
-};
-
 #endif // !INCLUDED_ENGINE_SOUND_CLASSES
 #endif // !NAMES_ONLY
 
@@ -1066,8 +1011,6 @@ DECLARE_NATIVE_TYPE(Engine,USoundNodeOscillator);
 DECLARE_NATIVE_TYPE(Engine,USoundNodeRandom);
 DECLARE_NATIVE_TYPE(Engine,USoundNodeWave);
 DECLARE_NATIVE_TYPE(Engine,USoundNodeWaveParam);
-DECLARE_NATIVE_TYPE(Engine,URFMODSound);
-DECLARE_NATIVE_TYPE(Engine,UMixBin);
 
 #define AUTO_INITIALIZE_REGISTRANTS_ENGINE_SOUND \
 	AAmbientSound::StaticClass(); \
@@ -1075,6 +1018,8 @@ DECLARE_NATIVE_TYPE(Engine,UMixBin);
 	AAmbientSoundNonLoop::StaticClass(); \
 	AAmbientSoundSimple::StaticClass(); \
 	UDistributionFloatSoundParameter::StaticClass(); \
+	UMixBin::StaticClass(); \
+	URFMODSound::StaticClass(); \
 	USoundMode::StaticClass(); \
 	USoundNode::StaticClass(); \
 	USoundNodeAmbient::StaticClass(); \
@@ -1092,8 +1037,6 @@ DECLARE_NATIVE_TYPE(Engine,UMixBin);
 	USoundNodeRandom::StaticClass(); \
 	USoundNodeWave::StaticClass(); \
 	USoundNodeWaveParam::StaticClass(); \
-	URFMODSound::StaticClass(); \
-	UMixBin::StaticClass(); \
 
 #endif // ENGINE_SOUND_NATIVE_DEFS
 
@@ -1110,6 +1053,44 @@ VERIFY_CLASS_OFFSET_NODIE(A,AmbientSoundSimple,AmbientProperties)
 VERIFY_CLASS_OFFSET_NODIE(A,AmbientSoundSimple,SoundNodeInstance)
 VERIFY_CLASS_SIZE_NODIE(AAmbientSoundSimple)
 VERIFY_CLASS_SIZE_NODIE(UDistributionFloatSoundParameter)
+VERIFY_CLASS_OFFSET_NODIE(U,MixBin,Version)
+VERIFY_CLASS_OFFSET_NODIE(U,MixBin,MixBinName)
+VERIFY_CLASS_OFFSET_NODIE(U,MixBin,FMODSound)
+VERIFY_CLASS_OFFSET_NODIE(U,MixBin,CategoryCount)
+VERIFY_CLASS_OFFSET_NODIE(U,MixBin,List)
+VERIFY_CLASS_OFFSET_NODIE(U,MixBin,CueCount)
+VERIFY_CLASS_OFFSET_NODIE(U,MixBin,CueList)
+VERIFY_CLASS_SIZE_NODIE(UMixBin)
+VERIFY_CLASS_OFFSET_NODIE(U,RFMODSound,SourceFilePath)
+VERIFY_CLASS_OFFSET_NODIE(U,RFMODSound,FileType)
+VERIFY_CLASS_OFFSET_NODIE(U,RFMODSound,cues)
+VERIFY_CLASS_OFFSET_NODIE(U,RFMODSound,cueNames)
+VERIFY_CLASS_OFFSET_NODIE(U,RFMODSound,FMODRawData)
+VERIFY_CLASS_OFFSET_NODIE(U,RFMODSound,RawDataSize)
+VERIFY_CLASS_OFFSET_NODIE(U,RFMODSound,eventProject)
+VERIFY_CLASS_OFFSET_NODIE(U,RFMODSound,refCueList)
+VERIFY_CLASS_OFFSET_NODIE(U,RFMODSound,importTime)
+VERIFY_CLASS_OFFSET_NODIE(U,RFMODSound,ReadVersion)
+VERIFY_CLASS_OFFSET_NODIE(U,RFMODSound,bankNames)
+VERIFY_CLASS_OFFSET_NODIE(U,RFMODSound,FMODXboxRawData)
+VERIFY_CLASS_OFFSET_NODIE(U,RFMODSound,FMODPS3RawData)
+VERIFY_CLASS_OFFSET_NODIE(U,RFMODSound,CategoryCount)
+VERIFY_CLASS_OFFSET_NODIE(U,RFMODSound,categoryList)
+VERIFY_CLASS_OFFSET_NODIE(U,RFMODSound,Flags)
+VERIFY_CLASS_OFFSET_NODIE(U,RFMODSound,flagMasterCategoryList)
+VERIFY_CLASS_OFFSET_NODIE(U,RFMODSound,flagFullyLoaded)
+VERIFY_CLASS_OFFSET_NODIE(U,RFMODSound,flagIsDirty)
+VERIFY_CLASS_OFFSET_NODIE(U,RFMODSound,flagRegistered)
+VERIFY_CLASS_OFFSET_NODIE(U,RFMODSound,flagCanStream)
+VERIFY_CLASS_OFFSET_NODIE(U,RFMODSound,flagPS3RSX)
+VERIFY_CLASS_OFFSET_NODIE(U,RFMODSound,flagMemoryStream)
+VERIFY_CLASS_OFFSET_NODIE(U,RFMODSound,NumberOfPCStreams)
+VERIFY_CLASS_OFFSET_NODIE(U,RFMODSound,NumberOfX360Streams)
+VERIFY_CLASS_OFFSET_NODIE(U,RFMODSound,NumberOfPS3Streams)
+VERIFY_CLASS_OFFSET_NODIE(U,RFMODSound,FSBBankData)
+VERIFY_CLASS_OFFSET_NODIE(U,RFMODSound,FSBBankDataSize)
+VERIFY_CLASS_OFFSET_NODIE(U,RFMODSound,FSBBankSound)
+VERIFY_CLASS_SIZE_NODIE(URFMODSound)
 VERIFY_CLASS_OFFSET_NODIE(U,SoundMode,EQSettings)
 VERIFY_CLASS_OFFSET_NODIE(U,SoundMode,FadeOutTime)
 VERIFY_CLASS_SIZE_NODIE(USoundMode)

@@ -1334,6 +1334,14 @@ void UStaticMesh::Serialize(FArchive& Ar)
 		Ar << HighResSourceMeshCRC;
 	}
 
+#if BATMAN
+	if ( Ar.LicenseeVer() >= VER_BATMAN1 )
+	{
+		INT Unk = 0;
+		Ar << Unk;
+	}
+#endif
+
 #if !CONSOLE
 	// Strip away loaded Editor-only data if we're a client and never care about saving.
 	if( Ar.IsLoading() && GIsClient && !GIsEditor && !GIsUCC )

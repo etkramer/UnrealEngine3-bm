@@ -3481,3 +3481,27 @@ USoundCue* UAudioDevice::CreateTTSSoundCue( const FString& SpokenText, ETTSSpeak
 #undef WAVE_FORMAT_1M16
 
 #endif // WITH_TTS
+
+#define DROP_REMAINING() { FObjectExport& Exp = GetLinker()->ExportMap(GetLinkerIndex()); Ar.Seek(Exp.SerialOffset + Exp.SerialSize); }
+
+/*-----------------------------------------------------------------------------
+	URFMODSound implementation.
+-----------------------------------------------------------------------------*/
+
+void URFMODSound::Serialize( FArchive& Ar )
+{
+	Super::Serialize( Ar );
+
+	DROP_REMAINING();
+}
+
+/*-----------------------------------------------------------------------------
+	UMixBin implementation.
+-----------------------------------------------------------------------------*/
+
+void UMixBin::Serialize( FArchive& Ar )
+{
+	Super::Serialize( Ar );
+
+	DROP_REMAINING();
+}

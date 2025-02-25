@@ -37,10 +37,7 @@ var() 						bool 									FMODIgnoreOcclusion;
 var 						bool 									FMODRetryFail;
 var 						bool 									FMODLooping;
 var 						bool 									bSlowOcclusion;
-
-// BM1: Should be RFMODSound
 var 						RFMODSound 								FMODSound;
-
 var 						float 									OcclusionValue;
 var 						float 									FMODOriginalVolume;
 var 						float 									FMODOriginalWetVolume;
@@ -58,7 +55,7 @@ var()						string									FaceFXAnimName;
 
 // BM1
 var() 						array<AnimTriggerFaceFXTag> 			AnimTriggers;
-var 		const transient int 									FMODResourceID;
+var		const transient 	int 									FMODResourceID;
 
 cpptext
 {

@@ -243,6 +243,69 @@ class UDrawSoundRadiusComponent : public UDrawSphereComponent
 	virtual void UpdateBounds( void );
 };
 
+/*-----------------------------------------------------------------------------
+	URFMODSound. 
+-----------------------------------------------------------------------------*/
+
+class URFMODSound : public UObject
+{
+	DECLARE_CLASS(URFMODSound,UObject,CLASS_NoExport,Engine);
+
+	FString SourceFilePath;
+	FName FileType;
+	INT cues;
+	TArray<FString> cueNames;
+	FByteBulkData FMODRawData;
+	INT RawDataSize;
+	void* eventProject;
+	TArray<USoundCue*> refCueList;
+	INT importTime;
+	INT ReadVersion;
+	TArray<FString> bankNames;
+	FByteBulkData FMODXboxRawData;
+	FByteBulkData FMODPS3RawData;
+	INT CategoryCount;
+	void* categoryList;
+	INT Flags;
+	BYTE flagMasterCategoryList;
+	BYTE flagFullyLoaded;
+	BYTE flagIsDirty;
+	BYTE flagRegistered;
+	BYTE flagCanStream;
+	BYTE flagPS3RSX;
+	BYTE flagMemoryStream;
+	BYTE NumberOfPCStreams;
+	BYTE NumberOfX360Streams;
+	BYTE NumberOfPS3Streams;
+	void* FSBBankData;
+	INT FSBBankDataSize;
+	void* FSBBankSound;
+
+	// UObject interface.
+	virtual void Serialize( FArchive& Ar );
+};
+
+/*-----------------------------------------------------------------------------
+	UMixBin. 
+-----------------------------------------------------------------------------*/
+
+class UMixBin : public UObject
+{
+	DECLARE_CLASS(UMixBin,UObject,CLASS_NoExport,Engine)
+
+	INT Version;
+	FName MixBinName;
+	URFMODSound* FMODSound;
+	INT CategoryCount;
+	void* List;
+	INT CueCount;
+	void* CueList;
+    BITFIELD Parented:1;
+
+	// UObject interface.
+	virtual void Serialize( FArchive& Ar );
+};
+
 /**  Hash function. Needed to avoid UObject v FResource ambiguity due to multiple inheritance */
 DWORD GetTypeHash( const class USoundNodeWave* A );
 
