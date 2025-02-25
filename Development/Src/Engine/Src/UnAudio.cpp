@@ -17,6 +17,9 @@ IMPLEMENT_CLASS( AAmbientSoundNonLoop );
 IMPLEMENT_CLASS( AAmbientSoundMovable );
 IMPLEMENT_CLASS( UDrawSoundRadiusComponent );
 
+IMPLEMENT_CLASS( URFMODSound );
+IMPLEMENT_CLASS( UMixBin );
+
 /** Audio stats */
 DECLARE_STATS_GROUP( TEXT( "Audio" ), STATGROUP_Audio );
 DECLARE_DWORD_COUNTER_STAT( TEXT( "Audio Components" ), STAT_AudioComponents, STATGROUP_Audio );

@@ -19,6 +19,7 @@ struct native AnimTriggerFaceFXTag
     var() editconst float AtTime;
 };
 
+// BM1
 var 						string 									FMODCategory;
 
 /** Sound group this sound cue belongs to */
@@ -28,6 +29,7 @@ var()						float									VolumeMultiplier;
 var()						float									PitchMultiplier;
 var							float									Duration;
 
+// BM1
 var() 						bool 									IgnorePitch;
 var 						bool 									FMODGeneratedCue;
 var 						bool 									FMODValidCue;
@@ -35,7 +37,10 @@ var() 						bool 									FMODIgnoreOcclusion;
 var 						bool 									FMODRetryFail;
 var 						bool 									FMODLooping;
 var 						bool 									bSlowOcclusion;
-// var 						RFMODSound 								FMODSound;
+
+// BM1: Should be RFMODSound
+var 						RFMODSound 								FMODSound;
+
 var 						float 									OcclusionValue;
 var 						float 									FMODOriginalVolume;
 var 						float 									FMODOriginalWetVolume;
@@ -51,6 +56,7 @@ var()						string									FaceFXGroupName;
 /** Name of the FaceFX Animation */
 var()						string									FaceFXAnimName;
 
+// BM1
 var() 						array<AnimTriggerFaceFXTag> 			AnimTriggers;
 var 		const transient int 									FMODResourceID;
 

@@ -15,13 +15,18 @@ class PlayerReplicationInfo extends ReplicationInfo
 var databinding float				Score;			// Player's current score.
 var databinding float				Deaths;			// Number of player's deaths.
 var byte				Ping;
+
+var transient	ETTSSpeaker			TTSSpeaker;		// Voice to use for TTS
+var byte				PacketLoss;
+
 var Actor				PlayerLocationHint;
 var 			int					NumLives;
 
+// BM1
+var int ChallengeMedal;
+
 var databinding repnotify string	PlayerName;		// Player name, or blank if none.
 var databinding repnotify string 	PlayerAlias;	// The Player's current alias or blank if we are using the Player Name
-
-var transient	ETTSSpeaker			TTSSpeaker;		// Voice to use for TTS
 
 var string				OldName;
 var int					PlayerID;		// Unique id number.
@@ -49,8 +54,6 @@ var bool bFromPreviousLevel;
 
 /** This determines whether the user has turned on or off their Controller Vibration **/
 var bool                bControllerVibrationAllowed;
-
-var byte				PacketLoss;
 
 // Time elapsed.
 var int					StartTime;

@@ -3923,14 +3923,13 @@ public:
 	}
 };
 
-class UUIDataProvider_OnlineClanMates : public UUIDataProvider_OnlinePlayerDataBase, public IUIListElementCellProvider
+class UUIDataProvider_OnlineClanMates : public UUIDataProvider_OnlinePlayerDataBase
 {
 public:
     //## BEGIN PROPS UIDataProvider_OnlineClanMates
     //## END PROPS UIDataProvider_OnlineClanMates
 
     DECLARE_CLASS(UUIDataProvider_OnlineClanMates,UUIDataProvider_OnlinePlayerDataBase,0|CLASS_Transient,Engine)
-    virtual UObject* GetUObjectInterfaceUIListElementCellProvider(){return this;}
 /* === IUIListElement interface === */
 
 	/**
@@ -4004,7 +4003,7 @@ public:
 	}
 };
 
-class UUIDataProvider_OnlineFriendMessages : public UUIDataProvider_OnlinePlayerDataBase, public IUIListElementCellProvider
+class UUIDataProvider_OnlineFriendMessages : public UUIDataProvider_OnlinePlayerDataBase
 {
 public:
     //## BEGIN PROPS UIDataProvider_OnlineFriendMessages
@@ -4018,7 +4017,6 @@ public:
     //## END PROPS UIDataProvider_OnlineFriendMessages
 
     DECLARE_CLASS(UUIDataProvider_OnlineFriendMessages,UUIDataProvider_OnlinePlayerDataBase,0|CLASS_Transient,Engine)
-    virtual UObject* GetUObjectInterfaceUIListElementCellProvider(){return this;}
 /* === IUIListElement interface === */
 
 	/**
@@ -4204,14 +4202,13 @@ public:
 	virtual UBOOL GetFieldValue( const FString& FieldName, struct FUIProviderFieldValue& out_FieldValue, INT ArrayIndex=INDEX_NONE );
 };
 
-class UUIDataProvider_OnlinePlayers : public UUIDataProvider_OnlinePlayerDataBase, public IUIListElementCellProvider
+class UUIDataProvider_OnlinePlayers : public UUIDataProvider_OnlinePlayerDataBase
 {
 public:
     //## BEGIN PROPS UIDataProvider_OnlinePlayers
     //## END PROPS UIDataProvider_OnlinePlayers
 
     DECLARE_CLASS(UUIDataProvider_OnlinePlayers,UUIDataProvider_OnlinePlayerDataBase,0|CLASS_Transient,Engine)
-    virtual UObject* GetUObjectInterfaceUIListElementCellProvider(){return this;}
 /* === IUIListElement interface === */
 
 	/**
@@ -4375,7 +4372,7 @@ public:
 	virtual TScriptInterface<class IUIListElementProvider> ResolveListElementProvider( const FString& PropertyName );
 };
 
-class UUIDataProvider_PlayerAchievements : public UUIDataProvider_OnlinePlayerDataBase, public IUIListElementCellProvider
+class UUIDataProvider_PlayerAchievements : public UUIDataProvider_OnlinePlayerDataBase
 {
 public:
     //## BEGIN PROPS UIDataProvider_PlayerAchievements
@@ -4389,7 +4386,6 @@ public:
         *(INT*)Result=GetTotalGamerScore();
     }
     DECLARE_CLASS(UUIDataProvider_PlayerAchievements,UUIDataProvider_OnlinePlayerDataBase,0|CLASS_Transient,Engine)
-    virtual UObject* GetUObjectInterfaceUIListElementCellProvider(){return this;}
 	/* === IUIListElement interface === */
 	/**
 	 * Returns the names of the exposed members in OnlineFriend
@@ -8328,7 +8324,7 @@ struct UIDynamicDataProvider_eventProviderInstanceBound_Parms
     {
     }
 };
-class UUIDynamicDataProvider : public UUIPropertyDataProvider, public IUIListElementCellProvider
+class UUIDynamicDataProvider : public UUIPropertyDataProvider
 {
 public:
     //## BEGIN PROPS UIDynamicDataProvider
@@ -8370,7 +8366,6 @@ public:
         ProcessEvent(FindFunctionChecked(ENGINE_ProviderInstanceBound),&Parms);
     }
     DECLARE_ABSTRACT_CLASS(UUIDynamicDataProvider,UUIPropertyDataProvider,0|CLASS_Transient,Engine)
-    virtual UObject* GetUObjectInterfaceUIListElementCellProvider(){return this;}
 	/* === UUIDynamicDataProvider interface === */
 	/**
 	 * Determines whether the specified class should be represented by this dynamic data provider.

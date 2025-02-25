@@ -29,6 +29,11 @@ var bool bNeedsOnlineCleanup;
 /** Used to determine who handles session ending */
 var bool bIsArbitrated;
 
+var bool bTrackStats;
+
+// BM1
+var() bool Debug_Draw_Physics_Sounds;
+
 var databinding int  RemainingTime, ElapsedTime, RemainingMinute;
 var float SecondCount;
 var databinding int GoalScore;
@@ -56,7 +61,6 @@ var		array<PlayerReplicationInfo> InactivePRIArray;
 // stats
 
 var int MatchID;
-var bool bTrackStats;
 
 cpptext
 {

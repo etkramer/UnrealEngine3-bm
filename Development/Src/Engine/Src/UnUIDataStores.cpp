@@ -5010,6 +5010,9 @@ TScriptInterface<IUIListElementCellProvider> UCurrentGameDataStore::GetElementCe
 {
 	TScriptInterface<IUIListElementCellProvider> Result;
 
+#if BATMAN
+	// No need to implement for now.
+#else
 	if ( DataTag == TEXT("Players") )
 	{
 		if ( ProviderTypes.PlayerDataProviderClass != NULL )
@@ -5025,6 +5028,7 @@ TScriptInterface<IUIListElementCellProvider> UCurrentGameDataStore::GetElementCe
 		}
 	}
 	else
+#endif
 	{
 		FString NextFieldName = DataTag.ToString();
 		UTeamDataProvider* ReferencedTeamProvider = ParseTeamProviderCollectionReference(NextFieldName);
@@ -5062,6 +5066,9 @@ TScriptInterface<IUIListElementCellProvider> UCurrentGameDataStore::GetElementCe
 TScriptInterface<IUIListElementCellProvider> UCurrentGameDataStore::GetElementCellValueProvider( FName FieldName, INT ListIndex )
 {
 	TScriptInterface<IUIListElementCellProvider> Result;
+#if BATMAN
+	// No need to implement for now.
+#else
 	if ( FieldName == TEXT("Players") )
 	{
 		if ( PlayerData.IsValidIndex(ListIndex) )
@@ -5077,6 +5084,7 @@ TScriptInterface<IUIListElementCellProvider> UCurrentGameDataStore::GetElementCe
 		}
 	}
 	else
+#endif
 	{
 		FString NextFieldName = FieldName.ToString();
 		UTeamDataProvider* ReferencedTeamProvider = ParseTeamProviderCollectionReference(NextFieldName);
@@ -5238,6 +5246,9 @@ TScriptInterface<IUIListElementCellProvider> UTeamDataProvider::GetElementCellSc
 {
 	TScriptInterface<IUIListElementCellProvider> Result;
 
+#if BATMAN
+	// No need to implement for now.
+#else
 	if ( DataTag == PlayerListFieldName )
 	{
 		// we need to CDO for the PlayerDataProvider class that is being used - since that class is specified in the CurrentGame
@@ -5257,6 +5268,7 @@ TScriptInterface<IUIListElementCellProvider> UTeamDataProvider::GetElementCellSc
 			}
 		}
 	}
+#endif
 
 	return Result;
 }
@@ -5274,10 +5286,14 @@ TScriptInterface<IUIListElementCellProvider> UTeamDataProvider::GetElementCellVa
 {
 	TScriptInterface<IUIListElementCellProvider> Result;
 
+#if BATMAN
+	// No need to implement for now.
+#else
 	if ( FieldName == PlayerListFieldName && Players.IsValidIndex(ListIndex) )
 	{
 		Result = Players(ListIndex);
 	}
+#endif
 
 	return Result;
 }
@@ -11344,6 +11360,9 @@ UBOOL UUIDataStore_OnlinePlayerData::GetListElements(FName FieldName,TArray<INT>
  */
 TScriptInterface<IUIListElementCellProvider> UUIDataStore_OnlinePlayerData::GetElementCellSchemaProvider(FName FieldName)
 {
+#if BATMAN
+	// No need to implement for now.
+#else
 	if (FieldName == FName(TEXT("Friends")))
 	{
 		return FriendsProvider;
@@ -11364,6 +11383,7 @@ TScriptInterface<IUIListElementCellProvider> UUIDataStore_OnlinePlayerData::GetE
 	{
 		return AchievementsProvider;
 	}
+#endif
 	return TScriptInterface<IUIListElementCellProvider>();
 }
 

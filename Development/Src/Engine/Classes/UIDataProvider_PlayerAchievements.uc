@@ -5,7 +5,6 @@
  */
 class UIDataProvider_PlayerAchievements extends UIDataProvider_OnlinePlayerDataBase
 	native(inherit)
-	implements(UIListElementCellProvider)
 	dependson(OnlineSubsystem)
 	transient;
 

@@ -11565,6 +11565,7 @@ public:
     BITFIELD bNeedsOnlineCleanup:1;
     BITFIELD bIsArbitrated:1;
     BITFIELD bTrackStats:1;
+    BITFIELD Debug_Draw_Physics_Sounds:1;
     INT RemainingTime;
     INT ElapsedTime;
     INT RemainingMinute;
@@ -11638,6 +11639,7 @@ public:
     BYTE PacketLoss;
     class AActor* PlayerLocationHint;
     INT NumLives;
+    INT ChallengeMedal;
     FStringNoInit PlayerName;
     FStringNoInit PlayerAlias;
     FStringNoInit OldName;
@@ -18706,6 +18708,7 @@ public:
     BITFIELD FMODRetryFail:1;
     BITFIELD FMODLooping:1;
     BITFIELD bSlowOcclusion:1;
+    class URFMODSound* FMODSound;
     FLOAT OcclusionValue;
     FLOAT FMODOriginalVolume;
     FLOAT FMODOriginalWetVolume;

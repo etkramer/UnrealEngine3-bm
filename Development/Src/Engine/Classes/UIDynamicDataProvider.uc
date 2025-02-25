@@ -5,7 +5,6 @@
  */
 class UIDynamicDataProvider extends UIPropertyDataProvider
 	native(inherit)
-	implements(UIListElementCellProvider)
 	abstract;
 
 cpptext

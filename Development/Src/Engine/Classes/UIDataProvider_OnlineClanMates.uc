@@ -8,7 +8,6 @@
  */
 class UIDataProvider_OnlineClanMates extends UIDataProvider_OnlinePlayerDataBase
 	native(inherit)
-	implements(UIListElementCellProvider)
 	dependson(OnlineSubsystem)
 	transient;
 
