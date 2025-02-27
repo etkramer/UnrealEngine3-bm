@@ -115,6 +115,18 @@ void FOutputDeviceRedirector::Serialize( const TCHAR* Data, enum EName Event )
 {
 	FScopeLock ScopeLock( &SynchronizationObject );
 
+#if BATMAN
+	// Colorize warning/error messages
+	if (Event == NAME_Error)
+	{
+		SET_WARN_COLOR(COLOR_RED);
+	}
+	else if (Event == NAME_Warning)
+	{
+		SET_WARN_COLOR(COLOR_YELLOW);
+	}
+#endif
+
 	if(appGetCurrentThreadId() != MasterThreadID || OutputDevices.Num() == 0)
 	{
 		new(BufferedLines) FBufferedLine(Data,Event);
@@ -130,6 +142,14 @@ void FOutputDeviceRedirector::Serialize( const TCHAR* Data, enum EName Event )
 			OutputDevices(OutputDeviceIndex)->Serialize( Data, Event );
 		}
 	}
+
+#if BATMAN
+	// Colorize warning/error messages
+	if (Event == NAME_Error || Event == NAME_Warning)
+	{
+		CLEAR_WARN_COLOR();
+	}
+#endif
 }
 
 /**

@@ -843,6 +843,7 @@ public:
 	/** For simplified meshes, this is the CRC of the high res mesh we were originally duplicated from. */
 	DWORD HighResSourceMeshCRC;
 
+	UBOOL						ForceShadowVolumes;
 
 	// UObject interface.
 

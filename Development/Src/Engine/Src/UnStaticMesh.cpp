@@ -1337,8 +1337,7 @@ void UStaticMesh::Serialize(FArchive& Ar)
 #if BATMAN
 	if ( Ar.LicenseeVer() >= VER_BATMAN1 )
 	{
-		INT Unk = 0;
-		Ar << Unk;
+		Ar << ForceShadowVolumes;
 	}
 #endif
 
