@@ -3616,9 +3616,6 @@ class AVolume : public ABrush
 {
 public:
     //## BEGIN PROPS Volume
-    class AActor* AssociatedActor;
-    INT LocationPriority;
-    FStringNoInit LocationName;
     BITFIELD bForcePawnWalk:1;
     BITFIELD bProcessAllActors:1;
     //## END PROPS Volume
@@ -24000,8 +23997,6 @@ VERIFY_CLASS_SIZE_NODIE(UUberPostProcessEffect)
 VERIFY_CLASS_OFFSET_NODIE(A,Vehicle,Driver)
 VERIFY_CLASS_OFFSET_NODIE(A,Vehicle,TurnTime)
 VERIFY_CLASS_SIZE_NODIE(AVehicle)
-VERIFY_CLASS_OFFSET_NODIE(A,Volume,AssociatedActor)
-VERIFY_CLASS_OFFSET_NODIE(A,Volume,LocationName)
 VERIFY_CLASS_SIZE_NODIE(AVolume)
 VERIFY_CLASS_OFFSET_NODIE(A,VolumePathNode,StartingRadius)
 VERIFY_CLASS_OFFSET_NODIE(A,VolumePathNode,StartingHeight)

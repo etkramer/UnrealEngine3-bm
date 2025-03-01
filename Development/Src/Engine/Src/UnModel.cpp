@@ -139,6 +139,15 @@ void UModel::Serialize( FArchive& Ar )
 	Ar << NumVertices; 
 	// load/save vertex buffer
 	Ar << VertexBuffer;
+
+#if BATMAN
+	// TODO: Impl
+	if (Ar.LicenseeVer() >= VER_BATMAN1)
+	{
+		INT Unk = 0;
+		Ar << Unk << Unk << Unk;
+	}
+#endif
 }
 
 void UModel::PreSave()

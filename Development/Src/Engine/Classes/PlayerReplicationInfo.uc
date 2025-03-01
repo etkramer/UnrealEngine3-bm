@@ -154,8 +154,6 @@ simulated event PostBeginPlay()
 	}
 
 	StartTime = WorldInfo.GRI.ElapsedTime;
-	Timer();
-	SetTimer(1.5 + FRand(), true);
 }
 
 /* epic ===============================================
@@ -399,47 +397,6 @@ simulated function string GetHumanReadableName()
 	return PlayerName;
 }
 
-simulated function string GetLocationName()
-{
-	local String LocationString;
-
-    if( PlayerLocationHint == None )
-		return StringSpectating;
-
-	LocationString = PlayerLocationHint.GetLocationStringFor(self);
-	return (LocationString == "") ? StringUnknown : LocationString;
-}
-
-function UpdatePlayerLocation()
-{
-    local Volume V, Best;
-    local Pawn P;
-
-    if( Controller(Owner) != None )
-	{
-		P = Controller(Owner).Pawn;
-	}
-
-    if( P == None )
-	{
-		PlayerLocationHint = None;
-		return;
-    }
-
-    foreach P.TouchingActors( class'Volume', V )
-    {
-		if( V.LocationName == "" )
-			continue;
-
-		if( (Best != None) && (V.LocationPriority <= Best.LocationPriority) )
-			continue;
-
-		if( V.Encompasses(P) )
-			Best = V;
-	}
-	PlayerLocationHint = (Best != None) ? Best : P.WorldInfo;
-}
-
 /* DisplayDebug()
 list important controller attributes on canvas
 */
@@ -473,12 +430,6 @@ simulated function DisplayDebug(HUD HUD, out float YL, out float YPos)
 		YPos += YL;
 		HUD.Canvas.SetPos(4, YPos);
 	}
-}
-
-event Timer()
-{
-	UpdatePlayerLocation();
-	SetTimer(1.5 + FRand(), true);
 }
 
 event SetPlayerName(string S)
