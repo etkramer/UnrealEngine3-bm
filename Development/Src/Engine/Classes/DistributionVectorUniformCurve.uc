@@ -13,9 +13,10 @@ var()	interpcurvetwovectors		ConstantCurve;
 /** If true, X == Y == Z ie. only one degree of freedom. If false, each axis is picked independently. */ 
 var		bool							bLockAxes1;
 var		bool							bLockAxes2;
+var()	bool							bUseExtremes;
+
 var()	EDistributionVectorLockFlags	LockedAxes[2];
 var()	EDistributionVectorMirrorFlags	MirrorFlags[3];
-var()	bool							bUseExtremes;
 
 cpptext
 {

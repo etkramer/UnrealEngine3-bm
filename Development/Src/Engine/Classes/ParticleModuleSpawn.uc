@@ -19,6 +19,9 @@ var(Burst)						EParticleBurstMethod	ParticleBurstMethod;
 /** The array of burst entries. */
 var(Burst)	export noclear		array<ParticleBurst>	BurstList;
 
+// BM1
+var(Burst) SoundCue BurstSound;
+
 cpptext
 {
 	virtual void	PostEditChange(UProperty* PropertyThatChanged);

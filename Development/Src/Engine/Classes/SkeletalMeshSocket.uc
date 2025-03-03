@@ -23,6 +23,10 @@ var()	editoronly					SkeletalMesh			PreviewSkelMesh;
 var()	const editconst	transient	SkeletalMeshComponent	PreviewSkelComp;
 var()	editoronly					StaticMesh				PreviewStaticMesh;
 
+// BM1
+var() editoronly AnimSet PreviewSkelMeshAnimSet;
+var() editoronly name PreviewSkelMeshAnimName;
+
 cpptext
 {
 	/** Utility that returns the current matrix for this socket. Returns false if socket was not valid (bone not found etc) */

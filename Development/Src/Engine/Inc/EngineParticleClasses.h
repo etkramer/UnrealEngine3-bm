@@ -3077,6 +3077,7 @@ public:
     struct FRawDistributionFloat RateScale;
     BYTE ParticleBurstMethod;
     TArrayNoInit<struct FParticleBurst> BurstList;
+    class USoundCue* BurstSound;
     //## END PROPS ParticleModuleSpawn
 
     DECLARE_CLASS(UParticleModuleSpawn,UParticleModuleSpawnBase,0,Engine)
@@ -4432,7 +4433,7 @@ VERIFY_CLASS_SIZE_NODIE(UParticleModuleSizeMultiplyVelocity)
 VERIFY_CLASS_OFFSET_NODIE(U,ParticleModuleSizeScale,SizeScale)
 VERIFY_CLASS_SIZE_NODIE(UParticleModuleSizeScale)
 VERIFY_CLASS_OFFSET_NODIE(U,ParticleModuleSpawn,Rate)
-VERIFY_CLASS_OFFSET_NODIE(U,ParticleModuleSpawn,BurstList)
+VERIFY_CLASS_OFFSET_NODIE(U,ParticleModuleSpawn,BurstSound)
 VERIFY_CLASS_SIZE_NODIE(UParticleModuleSpawn)
 VERIFY_CLASS_SIZE_NODIE(UParticleModuleSpawnBase)
 VERIFY_CLASS_OFFSET_NODIE(U,ParticleModuleSpawnPerUnit,UnitScalar)

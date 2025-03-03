@@ -14,9 +14,10 @@ var() vector	Min;
 
 /** If true, X == Y == Z ie. only one degree of freedom. If false, each axis is picked independently. */ 
 var		bool							bLockAxes;
+
+var()	bool							bUseExtremes;
 var()	EDistributionVectorLockFlags	LockedAxes;
 var()	EDistributionVectorMirrorFlags	MirrorFlags[3];
-var()	bool							bUseExtremes;
 
 cpptext
 {

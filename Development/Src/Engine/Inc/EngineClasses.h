@@ -18649,6 +18649,8 @@ public:
     class USkeletalMesh* PreviewSkelMesh;
     class USkeletalMeshComponent* PreviewSkelComp;
     class UStaticMesh* PreviewStaticMesh;
+    class UAnimSet* PreviewSkelMeshAnimSet;
+    FName PreviewSkelMeshAnimName;
     //## END PROPS SkeletalMeshSocket
 
     DECLARE_CLASS(USkeletalMeshSocket,UObject,0,Engine)
@@ -23898,7 +23900,7 @@ VERIFY_CLASS_OFFSET_NODIE(U,SkeletalMeshComponent,BreathingFixerState)
 VERIFY_CLASS_OFFSET_NODIE(U,SkeletalMeshComponent,BreathingFixer)
 VERIFY_CLASS_SIZE_NODIE(USkeletalMeshComponent)
 VERIFY_CLASS_OFFSET_NODIE(U,SkeletalMeshSocket,SocketName)
-VERIFY_CLASS_OFFSET_NODIE(U,SkeletalMeshSocket,PreviewStaticMesh)
+VERIFY_CLASS_OFFSET_NODIE(U,SkeletalMeshSocket,PreviewSkelMeshAnimName)
 VERIFY_CLASS_SIZE_NODIE(USkeletalMeshSocket)
 VERIFY_CLASS_SIZE_NODIE(ASkyLight)
 VERIFY_CLASS_OFFSET_NODIE(U,SkyLightComponent,LowerBrightness)
