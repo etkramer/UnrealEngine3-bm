@@ -1041,17 +1041,6 @@ public:
 	virtual UBOOL ShowObjectEditor( UObject* InObject );
 };
 
-class UGenericBrowserType_PhysXDestructible : public UGenericBrowserType
-{
-public:
-    //## BEGIN PROPS GenericBrowserType_PhysXDestructible
-    //## END PROPS GenericBrowserType_PhysXDestructible
-
-    DECLARE_CLASS(UGenericBrowserType_PhysXDestructible,UGenericBrowserType,0,UnrealEd)
-	virtual void Init();
-	virtual UBOOL ShowObjectEditor(UObject *InObject);
-};
-
 class UGenericBrowserType_PhysXParticleSystem : public UGenericBrowserType
 {
 public:
@@ -4173,7 +4162,6 @@ DECLARE_NATIVE_TYPE(UnrealEd,UGenericBrowserType_MorphWeightSequence);
 DECLARE_NATIVE_TYPE(UnrealEd,UGenericBrowserType_ParticleSystem);
 DECLARE_NATIVE_TYPE(UnrealEd,UGenericBrowserType_PhysicalMaterial);
 DECLARE_NATIVE_TYPE(UnrealEd,UGenericBrowserType_PhysicsAsset);
-DECLARE_NATIVE_TYPE(UnrealEd,UGenericBrowserType_PhysXDestructible);
 DECLARE_NATIVE_TYPE(UnrealEd,UGenericBrowserType_PhysXParticleSystem);
 DECLARE_NATIVE_TYPE(UnrealEd,UGenericBrowserType_PostProcess);
 DECLARE_NATIVE_TYPE(UnrealEd,UGenericBrowserType_Prefab);
@@ -4300,7 +4288,6 @@ DECLARE_NATIVE_TYPE(UnrealEd,UUnrealEdOptions);
 	UGenericBrowserType_ParticleSystem::StaticClass(); \
 	UGenericBrowserType_PhysicalMaterial::StaticClass(); \
 	UGenericBrowserType_PhysicsAsset::StaticClass(); \
-	UGenericBrowserType_PhysXDestructible::StaticClass(); \
 	UGenericBrowserType_PhysXParticleSystem::StaticClass(); \
 	UGenericBrowserType_PostProcess::StaticClass(); \
 	UGenericBrowserType_Prefab::StaticClass(); \
@@ -4485,7 +4472,6 @@ VERIFY_CLASS_SIZE_NODIE(UGenericBrowserType_MorphWeightSequence)
 VERIFY_CLASS_SIZE_NODIE(UGenericBrowserType_ParticleSystem)
 VERIFY_CLASS_SIZE_NODIE(UGenericBrowserType_PhysicalMaterial)
 VERIFY_CLASS_SIZE_NODIE(UGenericBrowserType_PhysicsAsset)
-VERIFY_CLASS_SIZE_NODIE(UGenericBrowserType_PhysXDestructible)
 VERIFY_CLASS_SIZE_NODIE(UGenericBrowserType_PhysXParticleSystem)
 VERIFY_CLASS_SIZE_NODIE(UGenericBrowserType_PostProcess)
 VERIFY_CLASS_SIZE_NODIE(UGenericBrowserType_Prefab)
@@ -4605,7 +4591,7 @@ VERIFY_CLASS_OFFSET_NODIE(U,UnrealEdEngine,BrowserManagerClassName)
 VERIFY_CLASS_OFFSET_NODIE(U,UnrealEdEngine,ThumbnailManagerClassName)
 VERIFY_CLASS_OFFSET_NODIE(U,UnrealEdEngine,AutoSaveIndex)
 VERIFY_CLASS_OFFSET_NODIE(U,UnrealEdEngine,AutosaveCount)
-VERIFY_CLASS_OFFSET_NODIE(U,UnrealEdEngine,AutosaveTimeMinutes)
+VERIFY_CLASS_OFFSET_NODIE(U,UnrealEdEngine,SavedAutosaveCount)
 VERIFY_CLASS_OFFSET_NODIE(U,UnrealEdEngine,MaterialCopyPasteBuffer)
 VERIFY_CLASS_OFFSET_NODIE(U,UnrealEdEngine,MatineeCopyPasteBuffer)
 VERIFY_CLASS_OFFSET_NODIE(U,UnrealEdEngine,SkelSocketPasteBuffer)

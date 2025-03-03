@@ -208,6 +208,16 @@ void RestoreEditorWorld( UWorld* EditorWorld );
 typedef void (*POLY_CALLBACK)( UModel* Model, INT iSurf );
 
 /*-----------------------------------------------------------------------------
+	FAnimClipboardStorage.
+-----------------------------------------------------------------------------*/
+
+struct FAnimClipboardStorage
+{
+	TArray<UAnimSequence*> Anims;
+	TArray<FName> TrackNames;
+};
+
+/*-----------------------------------------------------------------------------
 	FConstraints.
 -----------------------------------------------------------------------------*/
 
@@ -314,6 +324,7 @@ class UEditorEngine : public UEngine, public FCallbackEventDevice
 	BITFIELD				UseSizingBox:1;		// Shows sizing information in the top left corner of the viewports
 	BITFIELD				UseAxisIndicator:1;	// Displays an axis indictor in the bottom left corner of the viewports
 	FLOAT					FOVAngle;
+	FLOAT					LevelViewFOVAngle;
 	BITFIELD				GodMode:1;
 	/** The location to autosave to. */
 	FStringNoInit			AutoSaveDir;
@@ -390,6 +401,13 @@ class UEditorEngine : public UEngine, public FCallbackEventDevice
 
 	/** Global instance of the editor user settings class. */
 	UEditorUserSettings* UserSettings;
+
+	// BM1
+	INT ParticleRotationIndexManager;
+	FAnimClipboardStorage AnimClipboard;
+	UAnimSequence* AnimNotifyClipboard;
+	FLOAT AnimNotifyClipboardTime;
+	UAnimSequence* AnimPropertiesClipboard;
 
 	// Constructor.
 	void StaticConstructor();

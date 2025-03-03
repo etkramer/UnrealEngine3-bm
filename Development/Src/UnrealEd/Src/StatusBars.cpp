@@ -541,13 +541,6 @@ void WxStatusBarStandard::OnScaleGridToggleClick( wxCommandEvent& InEvent )
 
 void WxStatusBarStandard::OnAutosaveToggleClick( wxCommandEvent& InEvent )
 {
-	GUnrealEd->AutoSave = !GUnrealEd->AutoSave;
-
-	//reset the counter if autosave has been enabled
-	if (GUnrealEd->AutoSave) 
-	{
-		GUnrealEd->AutosaveCount = 0;
-	}
 }
 
 void WxStatusBarStandard::OnSize( wxSizeEvent& InEvent )
@@ -725,8 +718,6 @@ void WxStatusBarStandard::OnUpdateUI(wxUpdateUIEvent &Event)
 	// Update autosave image
 	static INT AutosaveSeconds = -1;
 	const UBOOL bCanAutosave = GUnrealEd->CanAutosave();
-
-	AutoSaveCB->SetValue(GUnrealEd->AutoSave);
 
 	if(bCanAutosave)
 	{

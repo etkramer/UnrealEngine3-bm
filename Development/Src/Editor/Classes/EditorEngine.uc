@@ -73,6 +73,10 @@ var(RotationGrid)	noexport config rotator RotGridSize;
 var(Advanced) config bool UseSizingBox;
 var(Advanced) config bool UseAxisIndicator;
 var(Advanced) config float FOVAngle;
+
+// BM1
+var(Advanced) config float LevelViewFOVAngle;
+
 var(Advanced) config bool GodMode;
 
 /** The location to autosave to. */
@@ -162,6 +166,18 @@ var const transient Texture2D StreamingBoundsTexture;
 /** Global instance of the editor user settings */
 var const EditorUserSettings UserSettings;
 
+struct native AnimClipboardStorage
+{
+    var array<AnimSequence> Anims;
+    var array<name> TrackNames;
+};
+
+// BM1
+var const transient int ParticleRotationIndexManager;
+var transient AnimClipboardStorage AnimClipboard;
+var transient AnimSequence AnimNotifyClipboard;
+var transient float AnimNotifyClipboardTime;
+var transient AnimSequence AnimPropertiesClipboard;
 
 defaultproperties
 {

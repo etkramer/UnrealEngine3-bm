@@ -62,10 +62,8 @@ public:
 	INT				AutoSaveIndex;
 	/** The number of seconds since the last autosave. */
 	FLOAT			AutosaveCount;
-	/** Is autosaving enabled? */
-	BITFIELD		AutoSave:1;
-	/** How often to save out to disk */
-	INT				AutosaveTimeMinutes;
+
+	FLOAT			SavedAutosaveCount;
 
 	/** A buffer for implementing material expression copy/paste. */
 	UMaterial*		MaterialCopyPasteBuffer;

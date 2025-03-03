@@ -79,7 +79,6 @@ IMPLEMENT_CLASS(UGenericBrowserType_MorphWeightSequence)
 IMPLEMENT_CLASS(UGenericBrowserType_ParticleSystem)
 IMPLEMENT_CLASS(UGenericBrowserType_PhysicalMaterial)
 IMPLEMENT_CLASS(UGenericBrowserType_PhysXParticleSystem)
-IMPLEMENT_CLASS(UGenericBrowserType_PhysXDestructible)
 IMPLEMENT_CLASS(UGenericBrowserType_PhysicsAsset)
 IMPLEMENT_CLASS(UGenericBrowserType_PostProcess);
 IMPLEMENT_CLASS(UGenericBrowserType_Prefab)
@@ -1372,43 +1371,6 @@ UBOOL UGenericBrowserType_PhysicsAsset::ShowObjectEditor( UObject* InObject )
 {
 	WxPhAT* AssetEditor = new WxPhAT(GApp->EditorFrame, -1, CastChecked<UPhysicsAsset>(InObject));
 	AssetEditor->Show(1);
-
-	return 1;
-}
-
-/*------------------------------------------------------------------------------
-UGenericBrowserType_PhysXDestructible
-------------------------------------------------------------------------------*/
-void UGenericBrowserType_PhysXDestructible::Init()
-{
-	SupportInfo.AddItem( FGenericBrowserTypeInfo( UPhysXDestructible::StaticClass(), FColor(255,192,128), 0, 0, this ) );
-}
-
-UBOOL UGenericBrowserType_PhysXDestructible::ShowObjectEditor( UObject* InObject )
-{
-	class FPhysXDestructiblePropertyNotify : public FNotifyHook
-	{
-	public:
-		FPhysXDestructiblePropertyNotify( UPhysXDestructible * InPhysXDestructible ) :
-			PhysXDestructible( InPhysXDestructible ) {}
-
-		UPhysXDestructible * PhysXDestructible;
-
-		void NotifyDestroy( void* Src )
-		{
-			if( PhysXDestructible )
-			{
-				PhysXDestructible->ApplyCookingScalesToAssets();
-			}
-		}
-	};
-
-	WxPropertyWindowFrame* Properties = new WxPropertyWindowFrame;
-	Properties->Create( GApp->EditorFrame, -1, 0, new FPhysXDestructiblePropertyNotify( Cast<UPhysXDestructible>( InObject ) ) );
-
-	Properties->AllowClose();
-	Properties->SetObject( InObject, 1,1,1 );
-	Properties->Show();
 
 	return 1;
 }

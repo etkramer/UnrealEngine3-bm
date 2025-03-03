@@ -15,13 +15,17 @@ class ParticleEmitter extends Object
 //=============================================================================
 /** The name of the emitter. */
 var(Particle)							name						EmitterName;
-var deprecated							bool						UseLocalSpace;
-var	deprecated							bool						KillOnDeactivate;
-var	deprecated							bool						bKillOnCompleted;
 
-var	deprecated							rawdistributionfloat		SpawnRate;
-var	deprecated							float						EmitterDuration;
-var	deprecated							int							EmitterLoops; // 0 indicates loop continuously
+enum EParticleSortBy
+{
+    PSB_Unsorted,
+    PSB_Z,
+    PSB_OldAfterNew,
+    PSB_NewAfterOld,
+};
+
+// BM1
+var(Particle) ParticleEmitter.EParticleSortBy SortBy;
 
 //=============================================================================
 //	Burst emissions
@@ -48,11 +52,7 @@ struct native ParticleBurst
 };
 
 var	deprecated							EParticleBurstMethod		ParticleBurstMethod;
-var	deprecated			export noclear	array<ParticleBurst>		BurstList;
 
-//=============================================================================
-//	SubUV-related
-//=============================================================================
 enum EParticleSubUVInterpMethod
 {
 	PSUVIM_None,
@@ -63,17 +63,7 @@ enum EParticleSubUVInterpMethod
 };
 
 var	deprecated							EParticleSubUVInterpMethod	InterpolationMethod;
-var	deprecated							int							SubImages_Horizontal;
-var	deprecated							int							SubImages_Vertical;
-var	deprecated							bool						ScaleUV;
-var	deprecated							float						RandomImageTime;
-var	deprecated							int							RandomImageChanges;
-var	deprecated							bool						DirectUV;
-var	transient							int							SubUVDataOffset;
 
-//=============================================================================
-//	Cascade-related
-//=============================================================================
 enum EEmitterRenderMode
 {
 	ERM_Normal,
@@ -83,8 +73,35 @@ enum EEmitterRenderMode
 };
 
 var	deprecated							EEmitterRenderMode				EmitterRenderMode;
+
+// BM1
+var(Particle) float VelocityRotationScale;
+var() SoundCue SoundOnSpawn;
+var(Particle) float NearScaleDistance;
+
+var deprecated							bool						UseLocalSpace;
+var	deprecated							bool						KillOnDeactivate;
+var	deprecated							bool						bKillOnCompleted;
+
+var	deprecated							bool						ScaleUV;
+var	deprecated							bool						DirectUV;
+var	deprecated							bool						bEnabled;
+var										bool						ConvertedModules;
+
+var	deprecated							rawdistributionfloat		SpawnRate;
+var	deprecated							float						EmitterDuration;
+var	deprecated							int							EmitterLoops; // 0 indicates loop continuously
+
+
+var	deprecated			export noclear	array<ParticleBurst>		BurstList;
+
+var	deprecated							int							SubImages_Horizontal;
+var	deprecated							int							SubImages_Vertical;
+var	deprecated							float						RandomImageTime;
+var	deprecated							int							RandomImageChanges;
+var	transient							int							SubUVDataOffset;
+
 var	deprecated							color							EmitterEditorColor;
-var	deprecated							bool							bEnabled;
 
 //=============================================================================
 //	'Private' data - not required by the editor
@@ -98,7 +115,6 @@ var export								ParticleModule					TypeDataModule;
 var native								array<ParticleModule>			SpawnModules;
 // Modules used for ticking.
 var native								array<ParticleModule>			UpdateModules;
-var										bool							ConvertedModules;
 var										int								PeakActiveParticles;
 
 //=============================================================================

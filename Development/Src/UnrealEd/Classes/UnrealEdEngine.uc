@@ -36,17 +36,15 @@ var config string ThumbnailManagerClassName;
 var const config int			AutoSaveIndex;
 /** The number of 10-sec intervals that have passed since last autosave. */
 var const float					AutosaveCount;
-/** Is autosaving enabled? */
-var(Advanced) config bool		AutoSave;
-/** How often to save out to disk */
-var(Advanced) config int		AutosaveTimeMinutes;
+
+// BM1
+var const float SavedAutosaveCount;
 
 /** A buffer for implementing material expression copy/paste. */
 var const Material				MaterialCopyPasteBuffer;
 
 /** A buffer for implementing matinee track/group copy/paste. */
 var const Object				MatineeCopyPasteBuffer;
-
 
 /** Used for copy/pasting sockets between skeletal meshes. */
 struct native SkelSocketCopyInfo

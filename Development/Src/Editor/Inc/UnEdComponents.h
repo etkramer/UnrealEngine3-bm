@@ -78,6 +78,9 @@ class UEditorComponent : public UPrimitiveComponent
 
 	FColor BaseBoxColor;
 
+	FLOAT GridOffsetX;
+	FLOAT GridOffsetY;
+
 	void StaticConstructor();
 
 	virtual void Draw(const FSceneView* View,FPrimitiveDrawInterface* PDI);

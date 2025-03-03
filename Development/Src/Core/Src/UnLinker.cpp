@@ -3072,8 +3072,15 @@ UObject* ULinkerLoad::CreateExport( INT Index )
 		check(GObjBeginLoadCount>0);
 
 #if BATMAN
-		// Load cooked packages as normal
-#else
+		// It's not clear why BM1 does this. Haven't seen EF_ForcedExport in any other game's packages so far.
+		if ( LicenseeVer() >= VER_BATMAN1 && Export.ExportFlags & EF_ForcedExport )
+		{
+			// Remove EF_ForcedExport, RF_Transactional
+			Export.ExportFlags &= ~EF_ForcedExport;
+			Export.ObjectFlags &= ~RF_Transactional;
+		}
+#endif
+
 		// editor loads force exported object from original package, not cooked package (unless we are script patching)
 		if (GIsEditor && !GIsScriptPatcherActive && Export.HasAnyFlags(EF_ForcedExport))
 		{
@@ -3098,6 +3105,14 @@ UObject* ULinkerLoad::CreateExport( INT Index )
 
 			// get the export's class
 			UClass* LoadClass = Export.ClassIndex == 0 ? UClass::StaticClass() : (UClass*)IndexToObject(Export.ClassIndex);
+
+#if BATMAN
+			if ( LoadClass == NULL )
+			{
+				// As long as we're not loading every package, this is possible and hopefully non-critical.
+				return NULL;
+			}
+#endif
 
 			// don't load packages or subobjects (objects not directory in a packge)
 			if (ClassName == NAME_Package || OuterClassName != NAME_Package)
@@ -3127,7 +3142,6 @@ UObject* ULinkerLoad::CreateExport( INT Index )
 			// return the object we just found (or NULL if we didn't)
 			return OriginalLinkerObject;
 		}
-#endif
 
 		// Get the object's class.
 		UClass* LoadClass = (UClass*)IndexToObject( Export.ClassIndex );
@@ -3487,9 +3501,6 @@ UObject* ULinkerLoad::CreateImport( INT Index )
 #if SUPPORTS_SCRIPTPATCH_CREATION
 		//@script patcher
 		||	GIsScriptPatcherActive
-#endif
-#if BATMAN
-		|| LicenseeVer() >= VER_BATMAN1
 #endif
 			)
 		{

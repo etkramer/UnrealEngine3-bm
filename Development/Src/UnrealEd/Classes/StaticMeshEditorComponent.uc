@@ -3,6 +3,6 @@
  */
 class StaticMeshEditorComponent extends StaticMeshComponent
 	native
-	deprecated;
+	editinlinenew;
 
 var native transient const pointer	StaticMeshEditor{class WxStaticMeshEditor};

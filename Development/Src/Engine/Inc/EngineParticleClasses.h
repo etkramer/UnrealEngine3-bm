@@ -78,6 +78,14 @@ enum EParticleBurstMethod
     EPBM_Interpolated       =1,
     EPBM_MAX                =2,
 };
+enum EParticleSortBy
+{
+    PSB_Unsorted            =0,
+    PSB_Z                   =1,
+    PSB_OldAfterNew         =2,
+    PSB_NewAfterOld         =3,
+    PSB_MAX                 =4,
+};
 enum EParticleScreenAlignment
 {
     PSA_Square              =0,
@@ -1154,6 +1162,13 @@ class UParticleEmitter : public UObject
 public:
     //## BEGIN PROPS ParticleEmitter
     FName EmitterName;
+    BYTE SortBy;
+    BYTE ParticleBurstMethod;
+    BYTE InterpolationMethod;
+    BYTE EmitterRenderMode;
+    FLOAT VelocityRotationScale;
+    class USoundCue* SoundOnSpawn;
+    FLOAT NearScaleDistance;
     BITFIELD UseLocalSpace:1;
     BITFIELD KillOnDeactivate:1;
     BITFIELD bKillOnCompleted:1;
@@ -1164,9 +1179,6 @@ public:
     struct FRawDistributionFloat SpawnRate;
     FLOAT EmitterDuration;
     INT EmitterLoops;
-    BYTE ParticleBurstMethod;
-    BYTE InterpolationMethod;
-    BYTE EmitterRenderMode;
     TArrayNoInit<struct FParticleBurst> BurstList;
     INT SubImages_Horizontal;
     INT SubImages_Vertical;

@@ -199,36 +199,20 @@ UBOOL UUnrealEdEngine::Exec( const TCHAR* Stream, FOutputDevice& Ar )
 /** @return Returns whether or not the user is able to autosave. **/
 UBOOL UUnrealEdEngine::CanAutosave() const
 {
-	return ( AutoSave && !GIsSlowTask && GEditorModeTools().GetCurrentModeID() != EM_InterpEdit && !PlayWorld );
+	return FALSE;
 }
 
 /** @return Returns whether or not autosave is going to occur within the next minute. */
 UBOOL UUnrealEdEngine::AutoSaveSoon() const
 {
-	UBOOL bResult = FALSE;
-	if(CanAutosave())
-	{
-		FLOAT TimeTillAutoSave = (FLOAT)AutosaveTimeMinutes - AutosaveCount/60.0f;
-		bResult = TimeTillAutoSave < 1.0f && TimeTillAutoSave > 0.0f;
-	}
-
-	return bResult;
+	return FALSE;
 }
 
 /** @return Returns the amount of time until the next autosave in seconds. */
 INT UUnrealEdEngine::GetTimeTillAutosave() const
 {
-	INT Result = -1;
-
-	if(CanAutosave())
-	{
-		 Result = appTrunc(60*(AutosaveTimeMinutes - AutosaveCount/60.0f));
-	}
-
-	return Result;
+	return -1;
 }
-
-
 
 /**
  * Checks to see if any worlds are dirty (that is, they need to be saved.)
@@ -265,50 +249,7 @@ UBOOL UUnrealEdEngine::AnyWorldsAreDirty() const
 
 void UUnrealEdEngine::AttemptLevelAutosave()
 {
-	// Don't autosave if disabled or if it is not yet time to autosave.
-	const UBOOL bTimeToAutosave = ( AutoSave && (AutosaveCount/60.0f >= (FLOAT)AutosaveTimeMinutes) );
-	if ( bTimeToAutosave )
-	{
-		// Don't autosave during interpolation editing, if there's another slow task
-		// already in progress, or while a PIE world is playing.
-		const UBOOL bCanAutosave = CanAutosave();
-
-		if( bCanAutosave )
-		{
-			// Check to see if the user is in the middle of a drag operation.
-			UBOOL bUserIsInteracting = FALSE;
-			for( INT ClientIndex = 0 ; ClientIndex < ViewportClients.Num() ; ++ClientIndex )
-			{
-				if ( ViewportClients(ClientIndex)->bIsTracking )
-				{
-					bUserIsInteracting = TRUE;
-					break;
-				}
-			}
-
-			// Don't interrupt the user with an autosave.
-			if ( !bUserIsInteracting )
-			{
-				SaveConfig();
-
-				// Make sure the autosave directory exists before attempting to write the file.
-				const FString AbsoluteAutoSaveDir( FString(appBaseDir()) * AutoSaveDir );
-				GFileManager->MakeDirectory( *AbsoluteAutoSaveDir, 1 );
-
-				// Autosave all levels.
-				const INT NewAutoSaveIndex = (AutoSaveIndex+1)%10;
-				const UBOOL bLevelSaved = FEditorFileUtils::AutosaveMap( AbsoluteAutoSaveDir, NewAutoSaveIndex );
-
-				if ( bLevelSaved )
-				{
-					// If a level was actually saved, update the autosave index.
-					AutoSaveIndex = NewAutoSaveIndex;
-				}
-
-				ResetAutosaveTimer();
-			}
-		}
-	}
+	
 }
 
 UBOOL UUnrealEdEngine::Exec_Edit( const TCHAR* Str, FOutputDevice& Ar )

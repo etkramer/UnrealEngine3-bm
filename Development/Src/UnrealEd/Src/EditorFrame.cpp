@@ -3091,9 +3091,7 @@ void WxEditorFrame::MenuAutoSaveInterval( wxCommandEvent& In )
 	case IDM_AUTOSAVE_005:		Interval = 30;		break;
 	}
 
-	GUnrealEd->AutosaveTimeMinutes = Interval;
 	UpdateAutosaveMenuState();
-
 }
 
 /**
@@ -3115,35 +3113,6 @@ void WxEditorFrame::UpdateAutosaveMenuState()
 
 	wxMenuItem* Thirty = AutoSaveIntervalMenu->FindItem(IDM_AUTOSAVE_005);
 	Thirty->Check(false);
-
-	switch(GUnrealEd->AutosaveTimeMinutes)
-	{
-	case 1:
-		{
-			One->Check(true);
-			break;
-		}
-	case 5:
-		{
-			Five->Check(true);
-			break;
-		}
-	case 10:
-		{
-			Ten->Check(true);
-			break;
-		}
-	case 15:
-		{
-			Fifteen->Check(true);
-			break;
-		}
-	case 30:
-		{
-			Thirty->Check(true);
-			break;
-		}
-	}
 }
 
 void WxEditorFrame::MenuScaleGrid( wxCommandEvent& In )

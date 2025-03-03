@@ -226,14 +226,7 @@ static UBOOL PresentFileDialog(const FFilename& InFilename, FFilename& OutFilena
 					  *GetFilter(FI_Save),
 					  wxSAVE | wxOVERWRITE_PROMPT );
 
-	// Disable autosaving while the "Save As..." dialog is up.
-	const UBOOL bOldAutoSave = GUnrealEd->AutoSave;
-	GUnrealEd->AutoSave = FALSE;
-
 	const UBOOL bOK = (dlg.ShowModal() == wxID_OK);
-
-	// Restore autosaving to its previous state.
-	GUnrealEd->AutoSave = bOldAutoSave;
 
 	if( bOK )
 	{
@@ -488,10 +481,6 @@ static UBOOL SaveAsImplementation( const FFilename& DefaultFilename, const UBOOL
 					  *GetFilter(FI_Save),
 					  wxSAVE | wxOVERWRITE_PROMPT );
 
-	// Disable autosaving while the "Save As..." dialog is up.
-	const UBOOL bOldAutoSave = GUnrealEd->AutoSave;
-	GUnrealEd->AutoSave = FALSE;
-
 	UBOOL bStatus = FALSE;
 	if( dlg.ShowModal() == wxID_OK )
 	{
@@ -647,11 +636,7 @@ static UBOOL SaveAsImplementation( const FFilename& DefaultFilename, const UBOOL
 			// Save the level
 			bStatus = FEditorFileUtils::SaveMap( GWorld, FString( dlg.GetPath() ) );
 		}
-
 	}
-
-	// Restore autosaving to its previous state.
-	GUnrealEd->AutoSave = bOldAutoSave;
 
 	return bStatus;
 

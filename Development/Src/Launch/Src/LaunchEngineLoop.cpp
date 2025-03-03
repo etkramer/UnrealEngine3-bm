@@ -463,12 +463,14 @@ void appGetGameScriptPackageNames(TArray<FString>& PackageNames, UBOOL bCanInclu
 		PackageNames.AddItem(TEXT("UTEditor"));
 	}
 #elif GAMENAME == BMGAME
+	PackageNames.AddItem(TEXT("CommonGame"));
 	PackageNames.AddItem(TEXT("BmGame"));
+	PackageNames.AddItem(TEXT("BmScript"));
 	if (bCanIncludeEditorOnlyPackages)
 	{
+		PackageNames.AddItem(TEXT("CommonEditor"));
 		PackageNames.AddItem(TEXT("BmEditor"));
 	}
-
 #else
 	#error Hook up your game name here
 #endif
@@ -573,6 +575,14 @@ void appGetEngineScriptPackageNames(TArray<FString>& PackageNames, UBOOL bCanInc
 #if WITH_UE3_NETWORKING
 	PackageNames.AddItem(TEXT("IpDrv"));
 #endif	//#if WITH_UE3_NETWORKING
+
+#if BATMAN
+	PackageNames.AddItem(TEXT("GFxUI"));
+	if( bCanIncludeEditorOnlyPackages )
+	{
+		PackageNames.AddItem(TEXT("GFxUIEditor"));
+	}
+#endif
 }
 
 /**

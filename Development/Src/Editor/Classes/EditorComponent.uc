@@ -27,6 +27,10 @@ class EditorComponent extends PrimitiveComponent
 
 	var const color BaseBoxColor;
 
+	// BM1
+	var const float GridOffsetX;
+	var const float GridOffsetY;
+
 defaultproperties
 {
 	DepthPriorityGroup=SDPG_UnrealEdBackground

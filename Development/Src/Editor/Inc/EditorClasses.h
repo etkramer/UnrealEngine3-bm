@@ -260,7 +260,9 @@ class UEditorUserSettings : public UObject
 {
 public:
     //## BEGIN PROPS EditorUserSettings
+    BITFIELD bAutoSaveEnable:1;
     BITFIELD AllowFlightCameraToRemapKeys:1;
+    INT AutoSaveTimeMinutes;
     FColor PreviewThumbnailBackgroundColor;
     FColor PreviewThumbnailTranslucentMaterialBackgroundColor;
     //## END PROPS EditorUserSettings
@@ -855,6 +857,8 @@ VERIFY_CLASS_OFFSET_NODIE(U,EditorComponent,PerspectiveGridSize)
 VERIFY_CLASS_OFFSET_NODIE(U,EditorComponent,PivotColor)
 VERIFY_CLASS_OFFSET_NODIE(U,EditorComponent,PivotSize)
 VERIFY_CLASS_OFFSET_NODIE(U,EditorComponent,BaseBoxColor)
+VERIFY_CLASS_OFFSET_NODIE(U,EditorComponent,GridOffsetX)
+VERIFY_CLASS_OFFSET_NODIE(U,EditorComponent,GridOffsetY)
 VERIFY_CLASS_SIZE_NODIE(UEditorComponent)
 VERIFY_CLASS_OFFSET_NODIE(U,EditorEngine,TempModel)
 VERIFY_CLASS_OFFSET_NODIE(U,EditorEngine,Trans)
@@ -883,6 +887,7 @@ VERIFY_CLASS_OFFSET_NODIE(U,EditorEngine,ViewportClients)
 VERIFY_CLASS_OFFSET_NODIE(U,EditorEngine,FarClippingPlane)
 VERIFY_CLASS_OFFSET_NODIE(U,EditorEngine,DetailMode)
 VERIFY_CLASS_OFFSET_NODIE(U,EditorEngine,FOVAngle)
+VERIFY_CLASS_OFFSET_NODIE(U,EditorEngine,LevelViewFOVAngle)
 VERIFY_CLASS_OFFSET_NODIE(U,EditorEngine,AutoSaveDir)
 VERIFY_CLASS_OFFSET_NODIE(U,EditorEngine,GameCommandLine)
 VERIFY_CLASS_OFFSET_NODIE(U,EditorEngine,EditPackages)
@@ -903,8 +908,13 @@ VERIFY_CLASS_OFFSET_NODIE(U,EditorEngine,RemotePropagator)
 VERIFY_CLASS_OFFSET_NODIE(U,EditorEngine,ScratchRenderTarget)
 VERIFY_CLASS_OFFSET_NODIE(U,EditorEngine,StreamingBoundsTexture)
 VERIFY_CLASS_OFFSET_NODIE(U,EditorEngine,UserSettings)
+VERIFY_CLASS_OFFSET_NODIE(U,EditorEngine,ParticleRotationIndexManager)
+VERIFY_CLASS_OFFSET_NODIE(U,EditorEngine,AnimClipboard)
+VERIFY_CLASS_OFFSET_NODIE(U,EditorEngine,AnimNotifyClipboard)
+VERIFY_CLASS_OFFSET_NODIE(U,EditorEngine,AnimNotifyClipboardTime)
+VERIFY_CLASS_OFFSET_NODIE(U,EditorEngine,AnimPropertiesClipboard)
 VERIFY_CLASS_SIZE_NODIE(UEditorEngine)
-VERIFY_CLASS_OFFSET_NODIE(U,EditorUserSettings,PreviewThumbnailBackgroundColor)
+VERIFY_CLASS_OFFSET_NODIE(U,EditorUserSettings,AutoSaveTimeMinutes)
 VERIFY_CLASS_OFFSET_NODIE(U,EditorUserSettings,PreviewThumbnailTranslucentMaterialBackgroundColor)
 VERIFY_CLASS_SIZE_NODIE(UEditorUserSettings)
 VERIFY_CLASS_OFFSET_NODIE(U,EditorViewportInput,Editor)
