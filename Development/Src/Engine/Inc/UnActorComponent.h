@@ -340,8 +340,7 @@ struct FLightingChannelContainer
 			BITFIELD Unnamed_2:1;
 			BITFIELD Unnamed_3:1;
 			BITFIELD Unnamed_4:1;
-			BITFIELD Unnamed_5:1;
-			BITFIELD Unnamed_6:1;
+			BITFIELD PhysXDestruction:1;
 			BITFIELD Cinematic_1:1;
 			BITFIELD Cinematic_2:1;
 			BITFIELD Cinematic_3:1;
@@ -355,8 +354,14 @@ struct FLightingChannelContainer
 			BITFIELD Gameplay_1:1;
 			BITFIELD Gameplay_2:1;
 			BITFIELD Gameplay_3:1;
-			BITFIELD Gameplay_4:1;
+			BITFIELD PhysXEffects:1;
 			BITFIELD Crowd:1;
+			BITFIELD Plant:1;
+			BITFIELD Prop:1;
+			BITFIELD Character:1;
+			BITFIELD CinematicExclusive_1:1;
+			BITFIELD CinematicExclusive_2:1;
+			BITFIELD TVExclusive:1;
 		};
 		DWORD Bitfield;
 	};
@@ -499,6 +504,9 @@ public:
 	/** Whether to use the inclusion/ exclusion volumes. */
 	BITFIELD bUseVolumes : 1;
 
+	BITFIELD ForceShadowVolumes : 1;
+	BITFIELD ForceDynamicShadows : 1;
+
 	/**
 	 * The light environment which the light affects.
 	 * NULL represents an implicit default light environment including all primitives and lights with LightEnvironment=NULL.
@@ -562,6 +570,8 @@ private:
 	 * < 0 == dynamic light list
 	 */
 	INT LightListIndex;
+
+	INT CharacterLightListIndex;
 
 public:
 	/** Type of shadow projection to use for this light */

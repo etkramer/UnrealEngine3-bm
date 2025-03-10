@@ -14298,6 +14298,8 @@ class AStaticMeshActorBase : public AActor
 {
 public:
     //## BEGIN PROPS StaticMeshActorBase
+    BITFIELD bRailing:1;
+    BITFIELD bClimbableSlopedRailing:1;
     //## END PROPS StaticMeshActorBase
 
     DECLARE_ABSTRACT_CLASS(AStaticMeshActorBase,AActor,0,Engine)

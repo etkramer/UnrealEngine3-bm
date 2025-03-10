@@ -995,15 +995,6 @@ public:
 	UStaticMesh* StaticMesh;
 	FColor WireframeColor;
 
-	/** 
-	 *	Ignore this instance of this static mesh when calculating streaming information. 
-	 *	This can be useful when doing things like applying character textures to static geometry, 
-	 *	to avoid them using distance-based streaming.
-	 */
-	BITFIELD bIgnoreInstanceForTextureStreaming:1;
-
-	/** Whether to override the lightmap resolution defined in the static mesh */
-	BITFIELD bOverrideLightMapResolution:1;
 	/** Light map resolution used if bOverrideLightMapResolution is TRUE */ 
 	INT	OverriddenLightMapResolution;
 
@@ -1013,15 +1004,26 @@ public:
 	INT MinSubDivisions;
 	/** Maximum number of subdivisions.									*/
 	INT MaxSubDivisions;
-	/** Whether to use subdivisions or just the triangle's vertices.	*/
-	BITFIELD bUseSubDivisions:1;
-	/** if True then decals will always use the fast path and will be treated as static wrt this mesh */
-	BITFIELD bForceStaticDecals:1;
 
 	TArray<FGuid> IrrelevantLights;	// Statically irrelevant lights.
 
 	/** Per-LOD instance information */
 	TArray<FStaticMeshComponentLODInfo> LODData;
+
+	/** 
+	 *	Ignore this instance of this static mesh when calculating streaming information. 
+	 *	This can be useful when doing things like applying character textures to static geometry, 
+	 *	to avoid them using distance-based streaming.
+	 */
+	BITFIELD bIgnoreInstanceForTextureStreaming:1;
+
+	/** Whether to override the lightmap resolution defined in the static mesh */
+	BITFIELD bOverrideLightMapResolution:1;
+
+	/** Whether to use subdivisions or just the triangle's vertices.	*/
+	BITFIELD bUseSubDivisions:1;
+	/** if True then decals will always use the fast path and will be treated as static wrt this mesh */
+	BITFIELD bForceStaticDecals:1;
 	
 	// UStaticMeshComponent interface
 

@@ -249,6 +249,31 @@ enum EInterpTrackMoveRotMode
 
 var()	EInterpTrackMoveRotMode RotMode;
 
+struct native RandomGeneratorMove
+{
+    var() bool bUseRandomise;
+    var() int RandomSeed;
+    var() float StepValue;
+    var() float StepValueMax;
+    var() float StartTime;
+    var() float EndTime;
+    var() float StartValuesPos[6];
+    var() float EndValuesPos[6];
+    var() float ValueVariationsPercPos[6];
+    var() float StartValuesRot[6];
+    var() float EndValuesRot[6];
+    var() float ValueVariationsPercRot[6];
+    var() bool bStartAtMaxX;
+    var() bool bStartAtMaxY;
+    var() bool bStartAtMaxZ;
+    var() bool bStartAtMaxRotX;
+    var() bool bStartAtMaxRotY;
+    var() bool bStartAtMaxRotZ;
+};
+
+// BM1
+var() RandomGeneratorMove Randomiser;
+
 defaultproperties
 {
 	TrackInstClass=class'Engine.InterpTrackInstMove'

@@ -79,6 +79,8 @@ struct native FaceFXSoundCueKey
 /** One key for each key in the associated FaceFX track's array of keys */
 var	private const array< FaceFXSoundCueKey > FaceFXSoundCueKeys;
 
+// BM1
+var() bool bAlwaysPlayOnFirstUpdate;
 
 defaultproperties
 {

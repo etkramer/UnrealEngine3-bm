@@ -233,6 +233,7 @@ struct FDirectorTrackCut
     FLOAT Time;
     FLOAT TransitionTime;
     FName TargetCamGroup;
+	FName TargetBoneName;
 
     /** Constructors */
     FDirectorTrackCut() {}
@@ -246,8 +247,13 @@ class UInterpTrackDirector : public UInterpTrack
 {
 public:
     //## BEGIN PROPS InterpTrackDirector
+	BITFIELD bResetCameraBehindBatman:1;
+	BITFIELD bKeepBatmanOnScreen:1;
+	BITFIELD bDisableCamerCollisionDuringBlend:1;
+	BITFIELD bSimulateCameraCutsOnClients:1;
+	BITFIELD bDetachMic:1;
+	FLOAT SkipBlendTime;
     TArrayNoInit<struct FDirectorTrackCut> CutTrack;
-    BITFIELD bSimulateCameraCutsOnClients:1;
     //## END PROPS InterpTrackDirector
 
     DECLARE_CLASS(UInterpTrackDirector,UInterpTrack,0,Engine)
@@ -356,6 +362,7 @@ public:
     TArrayNoInit<struct FFaceFXTrackKey> FaceFXSeqs;
     class UFaceFXAsset* CachedActorFXAsset;
     TArrayNoInit<struct FFaceFXSoundCueKey> FaceFXSoundCueKeys;
+	BITFIELD bAlwaysPlayOnFirstUpdate:1;
     //## END PROPS InterpTrackFaceFX
 
     DECLARE_CLASS(UInterpTrackFaceFX,UInterpTrack,0,Engine)
@@ -738,6 +745,35 @@ struct FInterpLookupTrack
 	
 };
 
+struct FRandomGeneratorMove
+{
+    BITFIELD bUseRandomise:1;
+    INT RandomSeed;
+    FLOAT StepValue;
+    FLOAT StepValueMax;
+    FLOAT StartTime;
+    FLOAT EndTime;
+    FLOAT StartValuesPos[6];
+    FLOAT EndValuesPos[6];
+	FLOAT ValueVariationsPercPos[6];
+	FLOAT StartValuesRot[6];
+	FLOAT EndValuesRot[6];
+	FLOAT ValueVariationsPercRot[6];
+	BITFIELD bStartAtMaxX:1;
+	BITFIELD bStartAtMaxY:1;
+	BITFIELD bStartAtMaxZ:1;
+	BITFIELD bStartAtMaxRotX:1;
+	BITFIELD bStartAtMaxRotY:1;
+	BITFIELD bStartAtMaxRotZ:1;
+
+    /** Constructors */
+    FRandomGeneratorMove() {}
+    FRandomGeneratorMove(EEventParm)
+    {
+        appMemzero(this, sizeof(FRandomGeneratorMove));
+    }
+};
+
 class UInterpTrackMove : public UInterpTrack
 {
 public:
@@ -756,6 +792,7 @@ public:
     BITFIELD bHide3DTrack:1;
     BYTE MoveFrame GCC_BITFIELD_MAGIC;
     BYTE RotMode;
+	FRandomGeneratorMove Randomiser;
     //## END PROPS InterpTrackMove
 
     DECLARE_CLASS(UInterpTrackMove,UInterpTrack,0,Engine)

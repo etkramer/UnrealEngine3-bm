@@ -160,10 +160,19 @@ struct RBCollisionChannelContainer
 	var()	const bool	Untitled4;
 	var()	const bool	Cloth;
 	var()	const bool	FluidDrain;
+	var()	const bool	PawnRagdoll;
+	var()	const bool	Rope;
+	var()	const bool	Cape;
 	var()	const bool	SoftBody;
+	var()	const bool	CinematicCape;
 	var()	const bool	FracturedMeshPart;
 	var()	const bool	BlockingVolume;
 	var()	const bool	DeadPawn;
+	var()	const bool	PawnRagdollStrungUp;
+	var()	const bool	Projectile;
+	var()	const bool	VenomHenchmanThrow;
+	var()	const bool	Grate;
+	var()	const bool	Destruction;
 };
 
 /** Types of objects that this physics objects will collide with. */
@@ -385,10 +394,19 @@ enum ERBCollisionChannel
 	RBCC_Untitled4,
 	RBCC_Cloth,
 	RBCC_FluidDrain,
+	RBCC_PawnRagdoll,
+	RBCC_Rope,
+	RBCC_Cape,
 	RBCC_SoftBody,
+	RBCC_CinematicCape,
 	RBCC_FracturedMeshPart,
 	RBCC_BlockingVolume,
-	RBCC_DeadPawn
+	RBCC_DeadPawn,
+	RBCC_PawnRagdollStrungUp,
+	RBCC_Projectile,
+	RBCC_VenomHenchmanThrow,
+	RBCC_Grate,
+	RBCC_Destruction
 };
 
 /** Enum indicating what type of object this should be considered for rigid body collision. */

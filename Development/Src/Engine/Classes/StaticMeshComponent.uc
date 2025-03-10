@@ -15,18 +15,8 @@ var int			PreviousLODLevel; // Previous LOD level
 var() const StaticMesh StaticMesh;
 var() Color WireframeColor;
 
-/**
- *	Ignore this instance of this static mesh when calculating streaming information.
- *	This can be useful when doing things like applying character textures to static geometry,
- *	to avoid them using distance-based streaming.
- */
-var()	bool	bIgnoreInstanceForTextureStreaming;
-
-/** Whether to override the lightmap resolution defined in the static mesh */
-var() const bool bOverrideLightMapResolution;
 /** Light map resolution used if bOverrideLightMapResolution is TRUE */
 var() const int	 OverriddenLightMapResolution;
-
 
 /** Subdivision step size for static vertex lighting.				*/
 var(AdvancedLighting) const int	SubDivisionStepSize;
@@ -34,10 +24,6 @@ var(AdvancedLighting) const int	SubDivisionStepSize;
 var(AdvancedLighting) const int MinSubDivisions;
 /** Maximum number of subdivisions.									*/
 var(AdvancedLighting) const int MaxSubDivisions;
-/** Whether to use subdivisions or just the triangle's vertices.	*/
-var(AdvancedLighting) const bool bUseSubDivisions;
-/** if True then decals will always use the fast path and will be treated as static wrt this mesh */
-var const transient bool bForceStaticDecals;
 
 var const array<Guid>	IrrelevantLights;
 
@@ -49,6 +35,21 @@ struct StaticMeshComponentLODInfo
 };
 
 var native private const array<StaticMeshComponentLODInfo> LODData;
+
+/**
+ *	Ignore this instance of this static mesh when calculating streaming information.
+ *	This can be useful when doing things like applying character textures to static geometry,
+ *	to avoid them using distance-based streaming.
+ */
+var()	bool	bIgnoreInstanceForTextureStreaming;
+
+/** Whether to override the lightmap resolution defined in the static mesh */
+var() const bool bOverrideLightMapResolution;
+
+/** Whether to use subdivisions or just the triangle's vertices.	*/
+var(AdvancedLighting) const bool bUseSubDivisions;
+/** if True then decals will always use the fast path and will be treated as static wrt this mesh */
+var const transient bool bForceStaticDecals;
 
 /** Change the StaticMesh used by this instance. */
 simulated native function bool SetStaticMesh( StaticMesh NewMesh, optional bool bForce );

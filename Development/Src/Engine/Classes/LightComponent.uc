@@ -24,8 +24,7 @@ struct LightingChannelContainer
 	var()	bool	Unnamed_2;
 	var()	bool	Unnamed_3;
 	var()	bool	Unnamed_4;
-	var()	bool	Unnamed_5;
-	var()	bool	Unnamed_6;
+	var()	bool	PhysXDestruction;
 	var()	bool	Cinematic_1;
 	var()	bool	Cinematic_2;
 	var()	bool	Cinematic_3;
@@ -39,8 +38,14 @@ struct LightingChannelContainer
 	var()	bool	Gameplay_1;
 	var()	bool	Gameplay_2;
 	var()	bool	Gameplay_3;
-	var()	bool	Gameplay_4;
+	var()	bool 	PhysXEffects;
 	var()	bool	Crowd;
+	var()	bool 	Plant;
+	var()	bool 	Prop;
+	var()	bool 	Character;
+	var()	bool 	CinematicExclusive_1;
+	var()	bool 	CinematicExclusive_2;
+	var()	bool 	TVExclusive;
 };
 
 var native private	transient noimport const pointer	SceneInfo;
@@ -124,6 +129,10 @@ var() const bool bCanAffectDynamicPrimitivesOutsideDynamicChannel;
 
 /** Whether to use the inclusion/ exclusion volumes. */
 var() bool bUseVolumes;
+
+// BM1
+var bool ForceShadowVolumes;
+var() bool ForceDynamicShadows;
 
 /**
  * The light environment which the light affects.
@@ -210,6 +219,9 @@ var() float ModShadowFadeoutExponent;
  * < 0 == dynamic light list
  */
 var const native duplicatetransient int LightListIndex;
+
+// BM1
+var native const int CharacterLightListIndex;
 
 enum EShadowProjectionTechnique
 {

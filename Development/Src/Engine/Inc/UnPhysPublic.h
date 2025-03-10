@@ -89,23 +89,32 @@ extern INT	GCurrentCachedPhysDataVersion;
 /** Enum indicating different type of objects for rigid-body collision purposes. */
 enum ERBCollisionChannel
 {
-	RBCC_Default			= 0,
-	RBCC_Nothing			= 1, // Special channel that nothing should request collision with.
-	RBCC_Pawn				= 2,
-	RBCC_Vehicle			= 3,
-	RBCC_Water				= 4,
-	RBCC_GameplayPhysics	= 5,
-	RBCC_EffectPhysics		= 6,
-	RBCC_Untitled1			= 7,
-	RBCC_Untitled2			= 8,
-	RBCC_Untitled3			= 9,
-	RBCC_Untitled4			= 10,
-	RBCC_Cloth				= 11,
-	RBCC_FluidDrain			= 12,
-	RBCC_SoftBody			= 13,
-	RBCC_FracturedMeshPart	= 14,
-	RBCC_BlockingVolume		= 15,
-	RBCC_DeadPawn			= 16
+	RBCC_Default				= 0,
+	RBCC_Nothing				= 1, // Special channel that nothing should request collision with.
+	RBCC_Pawn					= 2,
+	RBCC_Vehicle				= 3,
+	RBCC_Water					= 4,
+	RBCC_GameplayPhysics		= 5,
+	RBCC_EffectPhysics			= 6,
+	RBCC_Untitled1				= 7,
+	RBCC_Untitled2				= 8,
+	RBCC_Untitled3				= 9,
+	RBCC_Untitled4				= 10,
+	RBCC_Cloth					= 11,
+	RBCC_FluidDrain				= 12,
+	RBCC_PawnRagdoll			= 13,
+	RBCC_Rope					= 14,
+	RBCC_Cape					= 15,
+	RBCC_SoftBody				= 16,
+	RBCC_CinematicCape			= 17,
+	RBCC_FracturedMeshPart		= 18,
+	RBCC_BlockingVolume			= 19,
+	RBCC_DeadPawn				= 20,
+	RBCC_PawnRagdollStrungUp	= 21,
+	RBCC_Projectile				= 22,
+	RBCC_VenomHenchmanThrow		= 23,
+	RBCC_Grate					= 24,
+	RBCC_Destruction			= 25
 };
 
 /** 
@@ -131,10 +140,19 @@ struct FRBCollisionChannelContainer
 			BITFIELD	Untitled4:1;
 			BITFIELD	Cloth:1;
 			BITFIELD	FluidDrain:1;
+			BITFIELD	PawnRagdoll:1;
+			BITFIELD	Rope:1;
+			BITFIELD	Cape:1;
 			BITFIELD	SoftBody:1;
+			BITFIELD	CinematicCape:1;
 			BITFIELD	FracturedMeshPart:1;
 			BITFIELD	BlockingVolume:1;
 			BITFIELD	DeadPawn:1;
+			BITFIELD	PawnRagdollStrungUp:1;
+			BITFIELD	Projectile:1;
+			BITFIELD	VenomHenchmanThrow:1;
+			BITFIELD	Grate:1;
+			BITFIELD	Destruction:1;
 		};
 		DWORD Bitfield;
 	};
