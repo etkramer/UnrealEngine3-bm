@@ -30,22 +30,6 @@ var()	bool			bZeroRootTranslation;
 /** if TRUE, don't display a warning when animation is not found. */
 var()	bool			bDisableWarningWhenAnimNotFound;
 
-/** Current position (in seconds) */
-var()	const float				CurrentTime;
-// Keep track of where animation was at before being ticked
-var		const transient float	PreviousTime;
-
-/** Pointer to actual AnimSequence. Found from SkeletalMeshComponent using AnimSeqName when you call SetAnim. */
-var		transient const AnimSequence	AnimSeq;
-
-/** Bone -> Track mapping info for this player node. Index into the LinkupCache array in the AnimSet. Found from AnimSet when you call SetAnim. */
-var		transient const int				AnimLinkupIndex;
-
-/** 
- * Total weight that this node must be at in the final blend for notifies to be executed.
- * This is ignored when the node is part of a group.
- */
-var()				float	NotifyWeightThreshold;
 /** Whether any notifies in the animation sequence should be executed for this node. */
 var()				bool	bNoNotifies;
 /** Forces the skeletal mesh into the ref pose by setting bForceRespose on the skelmesh comp when not playing. (Optimization) */
@@ -56,8 +40,6 @@ var()				bool	bForceRefposeWhenNotPlaying;
  */
 var					bool	bIsIssuingNotifies;
 
-/** name of group this node belongs to */
-var(Group) const	Name	SynchGroupName;
 /** If TRUE, this node can never be a synchronization master node, always slave. */
 var(Group)			bool	bForceAlwaysSlave;
 
@@ -66,11 +48,43 @@ var(Group)			bool	bForceAlwaysSlave;
  * Set to FALSE if node shouldn't be synchronized, but still part of notification group.
  */
 var(Group) const	bool	bSynchronize;
-/** Relative position offset */
-var(Group)			float	SynchPosOffset;
 
 /** Display time line slider */
 var(Display)		bool	bShowTimeLineSlider;
+
+/** True to loop the CameraAnim, false for a one-off. */
+var(Camera)			bool		bLoopCameraAnim;
+/** True to randomize the CameraAnims start position, so it doesn't look the same every time.  Ignored if bLoopCameraAnim is false. */
+var(Camera)			bool		bRandomizeCameraAnimLoopStartTime;
+
+/** 
+ * EDITOR ONLY
+ * Add Ref Pose to Additive Animation, so it can be viewed fully into the AnimSetViewer.
+ */
+var const	bool	bEditorOnlyAddRefPoseToAdditiveAnimation;
+
+// BM1
+var() bool bUseGetBoneAtomsLite;
+
+/** Current position (in seconds) */
+var()	const float				CurrentTime;
+// Keep track of where animation was at before being ticked
+var		const transient float	PreviousTime;
+
+/** Pointer to actual AnimSequence. Found from SkeletalMeshComponent using AnimSeqName when you call SetAnim. */
+var		transient const AnimSequence	AnimSeq;
+
+/** 
+ * Total weight that this node must be at in the final blend for notifies to be executed.
+ * This is ignored when the node is part of a group.
+ */
+var()				float	NotifyWeightThreshold;
+
+/** name of group this node belongs to */
+var(Group) const	Name	SynchGroupName;
+
+/** Relative position offset */
+var(Group)			float	SynchPosOffset;
 
 /** For debugging. Track graphic used for showing animation position. */
 var	texture2D	DebugTrack;
@@ -82,10 +96,6 @@ var texture2D	DebugCarat;
 var(Camera)			CameraAnim	CameraAnim;
 /** Ref to the CameraAnimInst that is currently playing. */
 var transient CameraAnimInst	ActiveCameraAnimInstance;
-/** True to loop the CameraAnim, false for a one-off. */
-var(Camera)			bool		bLoopCameraAnim;
-/** True to randomize the CameraAnims start position, so it doesn't look the same every time.  Ignored if bLoopCameraAnim is false. */
-var(Camera)			bool		bRandomizeCameraAnimLoopStartTime;
 /** "Intensity" multiplier applied to the camera anim. */
 var(Camera)			float		CameraAnimScale;
 /** How fast to playback the camera anim. */
@@ -122,13 +132,6 @@ enum ERootRotationOption
 };
 
 var() ERootRotationOption	RootRotationOption[3];	// Roll (X), Pitch (Y), Yaw (Z) axes.
-
-
-/** 
- * EDITOR ONLY
- * Add Ref Pose to Additive Animation, so it can be viewed fully into the AnimSetViewer.
- */
-var const	bool	bEditorOnlyAddRefPoseToAdditiveAnimation;
 
 cpptext
 {

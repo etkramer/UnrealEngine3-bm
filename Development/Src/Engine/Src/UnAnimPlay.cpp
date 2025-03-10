@@ -324,7 +324,12 @@ void UAnimNodeSequence::GetBoneAtoms(FBoneAtomArray& Atoms, const TArray<BYTE>& 
 		return;
 	}
 
+#if BATMAN
+	INT AnimLinkupIndex = 0;
 	GetAnimationPose(AnimSeq, AnimLinkupIndex, Atoms, DesiredBones, RootMotionDelta, bHasRootMotion);
+#else
+	GetAnimationPose(AnimSeq, AnimLinkupIndex, Atoms, DesiredBones, RootMotionDelta, bHasRootMotion);
+#endif
 	SaveCachedResults(Atoms, RootMotionDelta, bHasRootMotion);
 }
 
@@ -1117,7 +1122,10 @@ void UAnimNodeSequence::SetAnim(FName InSequenceName)
 
 	AnimSeqName		= InSequenceName;
 	AnimSeq			= NULL;
+#if BATMAN
+#else
 	AnimLinkupIndex = INDEX_NONE;
+#endif
 
 	// Animation updated, clear cached data
 	ConditionalClearCachedData();
@@ -1131,7 +1139,7 @@ void UAnimNodeSequence::SetAnim(FName InSequenceName)
 	if( AnimSeq != NULL )
 	{
 		UAnimSet* AnimSet = AnimSeq->GetAnimSet();
-		AnimLinkupIndex = AnimSet->GetMeshLinkupIndex( SkelComponent->SkeletalMesh );
+		INT AnimLinkupIndex = AnimSet->GetMeshLinkupIndex( SkelComponent->SkeletalMesh );
 		
 		check(AnimLinkupIndex != INDEX_NONE);
 		check(AnimLinkupIndex < AnimSet->LinkupCache.Num());
@@ -1254,6 +1262,16 @@ void UAnimNodeSequence::StopCameraAnim()
 	}
 }
 
+INT UAnimNodeSequence::GetAnimLinkupIndex()
+{
+	UAnimSet* AnimSet = AnimSeq->GetAnimSet();
+	if (AnimSet && SkelComponent && SkelComponent->SkeletalMesh)
+	{
+		return AnimSet->GetMeshLinkupIndex(SkelComponent->SkeletalMesh);
+	}
+
+	return INDEX_NONE;
+}
 
 /** 
  *	Set the CurrentTime to the supplied position. 

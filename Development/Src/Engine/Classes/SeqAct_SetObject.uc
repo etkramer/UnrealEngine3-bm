@@ -14,6 +14,9 @@ var() Object DefaultValue;
 
 var Object Value;
 
+// BM1
+var() bool GetPawnFromController;
+
 /**
  * Return the version number for this class.  Child classes should increment this method by calling Super then adding
  * a individual class version to the result.  When a class is first created, the number should be 0; each time one of the

@@ -9,6 +9,9 @@ class SeqAct_SetPhysics extends SequenceAction
 /** Physics mode to change the Actor to. */
 var()	Actor.EPhysics	NewPhysics;
 
+// BM1
+var() bool bWakePhysics;
+
 defaultproperties
 {
 	ObjName="Set Physics"

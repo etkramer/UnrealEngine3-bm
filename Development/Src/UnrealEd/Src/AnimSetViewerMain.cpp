@@ -315,7 +315,7 @@ void FASVViewportClient::Draw(FViewport* Viewport, FCanvas* Canvas)
 			const UAnimSequence* AnimSeq = AnimSetViewer->SelectedAnimSeq;
 			UAnimSet* AnimSet = AnimSeq->GetAnimSet();
 			check(AnimSet);
-			FAnimSetMeshLinkup* AnimLinkup = &AnimSet->LinkupCache(AnimSetViewer->PreviewAnimNode->AnimLinkupIndex);
+			FAnimSetMeshLinkup* AnimLinkup = &AnimSet->LinkupCache(AnimSetViewer->PreviewAnimNode->GetAnimLinkupIndex());
 			check(AnimLinkup);
 			const INT RootBoneTrackIndex = AnimLinkup->BoneToTrackTable(RootBoneIndex);
 			if(RootBoneTrackIndex != INDEX_NONE)
@@ -705,7 +705,7 @@ public:
 			if( ASV->SelectedAnimSet && ASV->SelectedAnimSeq && ASV->PreviewAnimNode )
 			{
 				UAnimSet* AnimSet = ASV->SelectedAnimSet;
-				FAnimSetMeshLinkup* AnimLinkup = &AnimSet->LinkupCache(ASV->PreviewAnimNode->AnimLinkupIndex);
+				FAnimSetMeshLinkup* AnimLinkup = &AnimSet->LinkupCache(ASV->PreviewAnimNode->GetAnimLinkupIndex());
 
 				// Find which track in the sequence we look in for the Root Bone data
 				const INT	TrackIndex	= AnimLinkup->BoneToTrackTable(0);

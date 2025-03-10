@@ -175,11 +175,17 @@ var editoronly private const transient noimport native map{AActor*,BYTE} SavedAc
 /** Time multiplier for playback. */
 var()	float					PlayRate;
 
+// BM1
+var() float StartPosition;
+
 /** Time position in sequence - starts at 0.0 */
 var		float					Position;
 
 /** Time position to always start at if bForceStartPos is set to TRUE. */
 var()	float					ForceStartPosition;
+
+// BM1
+var() bool DisplayTime;
 
 /** If sequence is currently playing. */
 var		bool					bIsPlaying;
@@ -234,6 +240,15 @@ var() bool bSkipUpdateIfNotVisible;
 /** Lets you skip the matinee with the CANCELMATINEE exec command. Triggers all events to the end along the way. */
 var()	bool					bIsSkippable;
 
+// BM1
+var() bool ExitAutoBink;
+
+/** Cached value that indicates whether or not gore was enabled when the sequence was started */
+var transient bool bShouldShowGore;
+
+// BM1
+var bool bWasStopped;
+
 /** Cover linked to this matinee that should be updated once path building time has been played */
 var() array<CoverLink>			LinkedCover;
 
@@ -249,9 +264,6 @@ var const MatineeActor ReplicatedActor;
 
 /** Preferred local viewport number (when split screen is active) the director track should associate with, or zero for 'all'. */
 var() int PreferredSplitScreenNum;
-
-/** Cached value that indicates whether or not gore was enabled when the sequence was started */
-var transient bool bShouldShowGore;
 
 /** Contains the camera world-position for each camera cut in the cinematic. */
 var transient array<CameraCutInfo> CameraCuts;

@@ -1431,10 +1431,10 @@ public:
     BITFIELD bLoopCameraAnim:1;
     BITFIELD bRandomizeCameraAnimLoopStartTime:1;
     BITFIELD bEditorOnlyAddRefPoseToAdditiveAnimation:1;
+    BITFIELD bUseGetBoneAtomsLite:1;
     FLOAT CurrentTime;
     FLOAT PreviousTime;
     class UAnimSequence* AnimSeq;
-    INT AnimLinkupIndex;
     FLOAT NotifyWeightThreshold;
     FName SynchGroupName;
     FLOAT SynchPosOffset;
@@ -1559,6 +1559,8 @@ public:
 	void StartCameraAnim();
 	/** Stops playing any active camera anim playing in conjunction with this anim. */
 	void StopCameraAnim();
+
+    INT GetAnimLinkupIndex();
 };
 
 struct FAnimInfo
