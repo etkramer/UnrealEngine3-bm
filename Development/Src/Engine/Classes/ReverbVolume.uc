@@ -50,6 +50,9 @@ struct native ReverbSettings
 	/** Time to fade from the current reverb settings into this setting, in seconds. */
 	var() float			FadeTime;
 
+	// BM1
+	var() FMODReverb UserReverb;
+
 	structdefaultproperties
 	{
 		ReverbType=REVERB_Default

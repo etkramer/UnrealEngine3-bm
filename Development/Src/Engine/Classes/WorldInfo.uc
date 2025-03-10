@@ -360,6 +360,32 @@ var(APEX) ApexModuleDestructibleSettings DestructibleSettings;
 /** Verticals */
 var				PhysicsLODVerticalEmitter		EmitterVertical;
 
+struct native ApexModuleDestructibleSettings
+{
+    var() int MaxChunkIslandCount;
+    var() int MaxGrbActorCount;
+    var() float GrbParticleSpacing;
+    var() float GrbMaxLinAcceleration;
+    var() float MaxChunkSeparationLOD;
+    var() int HighMaxChunkIslandCount;
+    var() int HighMaxGrbActorCount;
+    var() float HighGrbParticleSpacing;
+    var() float HighGrbMaxLinAcceleration;
+    var() float HighMaxChunkSeparationLOD;
+
+    structdefaultproperties
+    {
+        MaxChunkIslandCount=500
+        GrbParticleSpacing=1.0
+        GrbMaxLinAcceleration=0.0
+        MaxChunkSeparationLOD=0.5
+        HighMaxChunkIslandCount=500
+        HighGrbParticleSpacing=1.0
+        HighGrbMaxLinAcceleration=10000.0
+        HighMaxChunkSeparationLOD=0.5
+    }
+};
+
 /** Parameters for emitter vertical */
 struct native PhysXEmitterVerticalProperties
 {

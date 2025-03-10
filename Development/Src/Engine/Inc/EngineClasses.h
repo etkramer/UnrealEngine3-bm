@@ -4335,6 +4335,7 @@ struct FReverbSettings
     BYTE ReverbType;
     FLOAT Volume;
     FLOAT FadeTime;
+    class UFMODReverb* UserReverb;
 
     /** Constructors */
     FReverbSettings() {}
@@ -11884,6 +11885,27 @@ struct FPhysXVerticalProperties
     }
 };
 
+struct FApexModuleDestructibleSettings
+{
+    INT MaxChunkIslandCount;
+    INT MaxGrbActorCount;
+    FLOAT GrbParticleSpacing;
+    FLOAT GrbMaxLinAcceleration;
+    FLOAT MaxChunkSeparationLOD;
+    INT HighMaxChunkIslandCount;
+    INT HighMaxGrbActorCount;
+    FLOAT HighGrbParticleSpacing;
+    FLOAT HighGrbMaxLinAcceleration;
+    FLOAT HighMaxChunkSeparationLOD;
+
+    /** Constructors */
+    FApexModuleDestructibleSettings() {}
+    FApexModuleDestructibleSettings(EEventParm)
+    {
+        appMemzero(this, sizeof(FApexModuleDestructibleSettings));
+    }
+};
+
 struct FWorldFractureSettings
 {
     FLOAT ChanceOfPhysicsChunkOverride;
@@ -12041,7 +12063,7 @@ public:
     struct FPhysXSceneProperties PhysicsProperties;
     TArrayNoInit<struct FCompartmentRunList> CompartmentRunFrames;
     FLOAT DefaultSkinWidth;
-    class UApexModuleDestructibleSettings* DestructibleSettings;
+    struct FApexModuleDestructibleSettings DestructibleSettings;
     class UPhysicsLODVerticalEmitter* EmitterVertical;
     struct FPhysXVerticalProperties VerticalProperties;
     FLOAT ChanceOfPhysicsChunkOverride;
