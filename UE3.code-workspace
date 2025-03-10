@@ -45,7 +45,7 @@
         "request": "launch",
         "program": "${workspaceFolder}/Binaries/Debug-BmGame.exe",
         "cwd": "${workspaceFolder}/Binaries",
-        "args": ["editor", "-cookededitor", "-user"],
+        "args": ["editor", "-cookededitor", "-user", "-seekfreeloading"],
         "environment": [
           {
             "name": "PATH",
@@ -62,7 +62,7 @@
         "request": "launch",
         "program": "${workspaceFolder}/Binaries/Debug-BmGame.exe",
         "cwd": "${workspaceFolder}/Binaries",
-        "args": ["editor", "-cookededitor", "-user"],
+        "args": ["editor", "-cookededitor", "-user", "-seekfreeloading"],
         "environment": [
           {
             "name": "PATH",

@@ -35,17 +35,20 @@ var(Collision) float RestitutionWithDynamicShapes;
 var(Collision) float FrictionWithStaticShapes;
 var(Collision) float FrictionWithDynamicShapes;
 var(Collision) bool bDynamicCollision;
+var(Dynamics) bool bDisableGravity;
+var(SdkExpert) bool bStaticCollision;
+var(SdkExpert) bool bTwoWayCollision;
+var transient bool bDestroy;
+var transient bool bSyncFailed;
+var transient bool bIsInGame;
 var(Dynamics) float MaxMotionDistance;
 var(Dynamics) float Damping;
 var(Dynamics) vector ExternalAcceleration;
-var(Dynamics) bool bDisableGravity;
 
 //=============================================================================
 //	More PhysX SDK Params. (SPH particles and parallelization settings, ect...) 
 //=============================================================================
 
-var(SdkExpert) bool bStaticCollision;
-var(SdkExpert) bool bTwoWayCollision;
 var(SdkExpert) ESimulationMethod SimulationMethod;
 var(SdkExpert) EPacketSizeMultiplier PacketSizeMultiplier;
 var(SdkExpert) float RestParticleDistance;
@@ -55,13 +58,12 @@ var(SdkExpert) float Stiffness;
 var(SdkExpert) float Viscosity;
 var(SdkExpert) float CollisionResponseCoefficient;
 
+// BM1
+var(SdkExpert) int ParticleReserve;
+
 //=============================================================================
 //	Non-exposed state 
 //=============================================================================
-
-var transient bool bDestroy;
-var transient bool bSyncFailed;
-var transient bool bIsInGame;
 
 var native pointer CascadeScene {class FRBPhysScene};
 var native pointer PSys {class FPhysXParticleSystem};

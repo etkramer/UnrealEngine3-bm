@@ -5744,6 +5744,15 @@ ULinkerLoad* UObject::GetPackageLinker
 			{
 				Result = GetLoader( i );
 			}
+
+#if BATMAN
+			if (InOuter->GetName() == "EngineMaterials")
+			{
+				ULinkerLoad* OtherLinker = GetLoader(i);
+				UPackage* LinkerRoot = OtherLinker->LinkerRoot;
+				debugf(TEXT("Is this (%s) the EngineMaterials linker?"), *LinkerRoot->GetName());
+			}
+#endif
 		}
 	}
 
@@ -5783,6 +5792,14 @@ ULinkerLoad* UObject::GetPackageLinker
 		}
 		else
 		{
+#if BATMAN
+			if (FString(InFilename) == "PL_BatsXPSFX" || FString(InFilename) == "EngineMaterials")
+			{
+				// Not sure why this is happening, possibly ForceExport-related.
+				InFilename = TEXT("Startup");
+			}
+#endif
+
 			// Verify that the file exists.
 			if( !GPackageFileCache->FindPackageFile( InFilename, CompatibleGuid, NewFilename ) )
 			{
@@ -6173,6 +6190,9 @@ UObject* UObject::StaticLoadObject(UClass* ObjectClass, UObject* InOuter, const 
 			if( bAllowObjectReconciliation && ((GIsGame && !GIsEditor && !GIsUCC) 
 #if !CONSOLE
 				|| GIsImportingT3D
+#endif
+#if BATMAN
+				|| TRUE
 #endif
 				))
 			{

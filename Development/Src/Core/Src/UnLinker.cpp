@@ -3064,6 +3064,14 @@ UObject* ULinkerLoad::CreateExport( INT Index )
 {
 	// Map the object into our table.
 	FObjectExport& Export = ExportMap( Index );
+	
+#if BATMAN
+	// HACK: We don't have CommonGame.RGenericBrowserType, so let's just skip it and its related classes.
+	if (wcsncmp(*Export.ObjectName.ToString(), TEXT("RGenericBrowserType"), 19) == 0)
+	{
+		return NULL;
+	}
+#endif
 
 	// Check whether we already loaded the object and if not whether the context flags allow loading it.
 	if( !Export._Object && (Export.ObjectFlags & _ContextFlags) )
@@ -3071,18 +3079,27 @@ UObject* ULinkerLoad::CreateExport( INT Index )
 		check(Export.ObjectName!=NAME_None || !(Export.ObjectFlags&RF_Public));
 		check(GObjBeginLoadCount>0);
 
-#if BATMAN
-		// It's not clear why BM1 does this. Haven't seen EF_ForcedExport in any other game's packages so far.
-		if ( LicenseeVer() >= VER_BATMAN1 && Export.ExportFlags & EF_ForcedExport )
-		{
-			// Remove EF_ForcedExport, RF_Transactional
-			Export.ExportFlags &= ~EF_ForcedExport;
-			Export.ObjectFlags &= ~RF_Transactional;
-		}
-#endif
+// #if BATMAN
+// 		// It's not clear why BM1 does this. Haven't seen EF_ForcedExport in any other game's packages so far.
+// 		if ( LicenseeVer() >= VER_BATMAN1 && (Export.ExportFlags & EF_ForcedExport) )
+// 		{
+// 			// Remove EF_ForcedExport
+// 			Export.ExportFlags &= ~EF_ForcedExport;
 
+// 			// NOTE: ForceExport tag causes the outer to be the top-level object instead of its real outer.
+// 			// Removing it may be causing the lookup to crash.
+
+// 			warnf(TEXT("Found ForceExport object %s"), *Export.ObjectName.ToString());
+// 		}
+// #endif
+
+		
+#if BATMAN
+		if (GIsEditor && !GIsScriptPatcherActive && Export.HasAnyFlags(EF_ForcedExport) && LicenseeVer() < VER_BATMAN1)
+#else
 		// editor loads force exported object from original package, not cooked package (unless we are script patching)
 		if (GIsEditor && !GIsScriptPatcherActive && Export.HasAnyFlags(EF_ForcedExport))
+#endif
 		{
 			const FName& ClassName = GetExportClassName(Index);
 			FName OuterClassName;
@@ -3105,14 +3122,6 @@ UObject* ULinkerLoad::CreateExport( INT Index )
 
 			// get the export's class
 			UClass* LoadClass = Export.ClassIndex == 0 ? UClass::StaticClass() : (UClass*)IndexToObject(Export.ClassIndex);
-
-#if BATMAN
-			if ( LoadClass == NULL )
-			{
-				// As long as we're not loading every package, this is possible and hopefully non-critical.
-				return NULL;
-			}
-#endif
 
 			// don't load packages or subobjects (objects not directory in a packge)
 			if (ClassName == NAME_Package || OuterClassName != NAME_Package)

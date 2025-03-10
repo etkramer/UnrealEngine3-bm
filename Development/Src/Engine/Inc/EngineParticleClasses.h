@@ -3938,6 +3938,7 @@ public:
     FLOAT Stiffness;
     FLOAT Viscosity;
     FLOAT CollisionResponseCoefficient;
+    INT ParticleReserve;
     class FRBPhysScene* CascadeScene;
     class FPhysXParticleSystem* PSys;
     //## END PROPS PhysXParticleSystem
