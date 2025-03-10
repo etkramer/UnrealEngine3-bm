@@ -8,7 +8,6 @@
  */
 class UIDataStore_OnlinePlayerData extends UIDataStore_Remote
 	native(inherit)
-	implements(UIListElementProvider)
 	config(Engine)
 	transient;
 
@@ -135,16 +134,6 @@ cpptext
 	 * @param	ArrayIndex		ignored
 	 */
 	virtual UBOOL GetFieldValue(const FString& FieldName,FUIProviderFieldValue& OutFieldValue,INT ArrayIndex=INDEX_NONE );
-
-	/**
-	 * Resolves PropertyName into a list element provider that provides list elements for the property specified.
-	 *
-	 * @param	PropertyName	the name of the property that corresponds to a list element provider supported by this data store
-	 *
-	 * @return	a pointer to an interface for retrieving list elements associated with the data specified, or NULL if
-	 *			there is no list element provider associated with the specified property.
-	 */
-	virtual TScriptInterface<class IUIListElementProvider> ResolveListElementProvider( const FString& PropertyName );
 
 /* === IUIListElementProvider interface === */
 

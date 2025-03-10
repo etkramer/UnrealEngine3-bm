@@ -11401,28 +11401,6 @@ TScriptInterface<IUIListElementCellProvider> UUIDataStore_OnlinePlayerData::GetE
 	return GetElementCellSchemaProvider(FieldName);
 }
 
-/**
- * Resolves PropertyName into a list element provider that provides list elements for the property specified.
- *
- * @param	PropertyName	the name of the property that corresponds to a list element provider supported by this data store
- *
- * @return	a pointer to an interface for retrieving list elements associated with the data specified, or NULL if
- *			there is no list element provider associated with the specified property.
- */
-TScriptInterface<class IUIListElementProvider> UUIDataStore_OnlinePlayerData::ResolveListElementProvider(const FString& PropertyName)
-{
-	FString CompareName(PropertyName);
-	FString ProviderName;
-	// If there is an intervening provider name, snip it off
-	ParseNextDataTag(CompareName,ProviderName);
-	// If this provider matches the profile provider..
-	if (FName(*ProviderName) == ProfileProvider->ProviderName)
-	{
-		return ProfileProvider->ResolveListElementProvider(CompareName);
-	}
-	return this;
-}
-
 /* ==========================================================================================================
 	UUIDataProvider_OnlineProfileSettings
 ========================================================================================================== */

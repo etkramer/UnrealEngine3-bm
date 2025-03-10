@@ -4888,6 +4888,14 @@ WxGBLeftContainer::WxGBLeftContainer( wxWindow* InParent )
 
 		if( !bIsAllType && !bIsCustomType && ItC->IsChildOf(UGenericBrowserType::StaticClass()) && !(ItC->ClassFlags&CLASS_Abstract) )
 		{
+#if BATMAN
+			if ( ItC->GetName() == "GenericBrowserType_UIArchetype" || ItC->GetName() == "GenericBrowserType_UIScene" )
+			{
+				// Skip for now.
+				continue;
+			}
+#endif
+
 			UGenericBrowserType* ResourceType = ConstructObject<UGenericBrowserType>( *ItC );
 			if( ResourceType )
 			{

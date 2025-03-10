@@ -2361,17 +2361,6 @@ void UClass::Serialize( FArchive& Ar )
 
 	if( Ar.IsLoading() )
 	{
-#if BATMAN
-		if ((DWORD)Align(GetPropertiesSize(), GetMinAlignment()) < sizeof(UObject))
-		{
-			DWORD Size = (DWORD)Align(GetPropertiesSize(), GetMinAlignment());
-
-			// NOTE: Looks like our base class is 'CommonEditor.RGenericBrowserType' - which we don't have.
-			// Fortunately nobody else is trying to import from CommonEditor, so we can make a specific exception here.
-			debugf(TEXT("Hmm (size was %d)"), Size);
-		}
-#endif
-
 		check((DWORD)Align(GetPropertiesSize(), GetMinAlignment()) >= sizeof(UObject));
 		check(!GetSuperClass() || !GetSuperClass()->HasAnyFlags(RF_NeedLoad));
 		Ar << ClassDefaultObject;

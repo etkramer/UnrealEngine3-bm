@@ -361,6 +361,8 @@ void FPhysXDestructibleManager::TickManager( FLOAT DeltaTime )
 		}
 	}
 
+#if BATMAN
+#else
 	// Read values from vertical
 	AWorldInfo * Wi = GWorld->GetWorldInfo();
 	if(Wi)
@@ -371,6 +373,7 @@ void FPhysXDestructibleManager::TickManager( FLOAT DeltaTime )
 		SetMaxDynamicChunkCount( VeDe->MaxDynamicChunkCount );
 		SetDebrisLifetime( VeDe->DebrisLifetime );
 	}
+#endif
 }
 
 void FPhysXDestructibleManager::SetFlag( EPhysXDestructibleManagerFlag Flag, UBOOL bValue )

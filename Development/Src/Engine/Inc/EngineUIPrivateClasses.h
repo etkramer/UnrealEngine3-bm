@@ -6592,7 +6592,7 @@ struct UIDataStore_OnlinePlayerData_eventOnRegister_Parms
     {
     }
 };
-class UUIDataStore_OnlinePlayerData : public UUIDataStore_Remote, public IUIListElementProvider
+class UUIDataStore_OnlinePlayerData : public UUIDataStore_Remote
 {
 public:
     //## BEGIN PROPS UIDataStore_OnlinePlayerData
@@ -6712,16 +6712,6 @@ public:
 	 * @param	ArrayIndex		ignored
 	 */
 	virtual UBOOL GetFieldValue(const FString& FieldName,FUIProviderFieldValue& OutFieldValue,INT ArrayIndex=INDEX_NONE );
-
-	/**
-	 * Resolves PropertyName into a list element provider that provides list elements for the property specified.
-	 *
-	 * @param	PropertyName	the name of the property that corresponds to a list element provider supported by this data store
-	 *
-	 * @return	a pointer to an interface for retrieving list elements associated with the data specified, or NULL if
-	 *			there is no list element provider associated with the specified property.
-	 */
-	virtual TScriptInterface<class IUIListElementProvider> ResolveListElementProvider( const FString& PropertyName );
 
 /* === IUIListElementProvider interface === */
 

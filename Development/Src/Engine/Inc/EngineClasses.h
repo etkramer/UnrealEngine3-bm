@@ -11828,6 +11828,7 @@ struct FPhysXSimulationProperties
     BITFIELD bUseHardware:1;
     BITFIELD bFixedTimeStep:1;
     FLOAT TimeStep;
+    FLOAT MaxTimeStep;
     INT MaxSubSteps;
 
     /** Constructors */
@@ -11938,6 +11939,7 @@ public:
     struct FPostProcessSettings DefaultPostProcessSettings;
     FLOAT SquintModeKernelSize;
     class APostProcessVolume* HighestPriorityPostProcessVolume;
+    class APostProcessVolume* ForcedActivePostProcessVolume;
     struct FReverbSettings DefaultReverbSettings;
     class AReverbVolume* HighestPriorityReverbVolume;
     TArrayNoInit<class APortalVolume*> PortalVolumes;
@@ -11958,7 +11960,12 @@ public:
     BITFIELD bNoPathWarnings:1;
     BITFIELD bHighPriorityLoading:1;
     BITFIELD bHighPriorityLoadingLocal:1;
+    BITFIELD bLogAnchoring:1;
+    BITFIELD bRouterDebugWeightByAngle:1;
+    BITFIELD DisplayPawnDemoTitles:1;
+    BITFIELD DebugMenuWantsPause:1;
     BITFIELD bSupportDoubleBufferedPhysics:1;
+    BITFIELD bOverrideDestructibleSettings:1;
     BITFIELD bEnableChanceOfPhysicsChunkOverride:1;
     BITFIELD bLimitExplosionChunkSize:1;
     BITFIELD bLimitDamageChunkSize:1;
@@ -11966,6 +11973,7 @@ public:
     BITFIELD bAllowLightEnvSphericalHarmonicLights:1;
     BITFIELD bIncreaseFogNearPrecision:1;
     DOUBLE LastTimeUnbuiltLightingWasEncountered;
+    INT AudioDSPIsHigh;
     class UBookMark* BookMarks[10];
     TArrayNoInit<class UClipPadEntry*> ClipPadEntries;
     FLOAT TimeDilation;
@@ -12001,6 +12009,7 @@ public:
     class AController* ControllerList;
     class APawn* PawnList;
     class ACoverLink* CoverList;
+    class UMacroReachSpec* MacroReachSpecList;
     FLOAT MoveRepSize;
     TArrayNoInit<struct FNetViewer> ReplicationViewers;
     FStringNoInit NextURL;
@@ -12015,10 +12024,12 @@ public:
     struct FMusicTrackStruct CurrentMusicTrack;
     struct FMusicTrackStruct ReplicatedMusicTrack;
     FStringNoInit Title;
-    FStringNoInit Author;
 protected:
     class UMapInfo* MyMapInfo;
 public:
+    TArrayNoInit<class UComponent*> ParticleAttractorComponents;
+    FLOAT RouterTimeOut;
+    FStringNoInit SetFlagsInPIE;
     FStringNoInit EmitterPoolClassPath;
     class AEmitterPool* MyEmitterPool;
     FStringNoInit DecalManagerClassPath;
@@ -12029,8 +12040,9 @@ public:
     INT MaxPhysicsSubsteps;
     struct FPhysXSceneProperties PhysicsProperties;
     TArrayNoInit<struct FCompartmentRunList> CompartmentRunFrames;
+    FLOAT DefaultSkinWidth;
+    class UApexModuleDestructibleSettings* DestructibleSettings;
     class UPhysicsLODVerticalEmitter* EmitterVertical;
-    class UPhysicsLODVerticalDestructible* DestructibleVertical;
     struct FPhysXVerticalProperties VerticalProperties;
     FLOAT ChanceOfPhysicsChunkOverride;
     FLOAT MaxExplosionChunkSize;
