@@ -5744,15 +5744,6 @@ ULinkerLoad* UObject::GetPackageLinker
 			{
 				Result = GetLoader( i );
 			}
-
-#if BATMAN
-			if (InOuter->GetName() == "EngineMaterials")
-			{
-				ULinkerLoad* OtherLinker = GetLoader(i);
-				UPackage* LinkerRoot = OtherLinker->LinkerRoot;
-				debugf(TEXT("Is this (%s) the EngineMaterials linker?"), *LinkerRoot->GetName());
-			}
-#endif
 		}
 	}
 

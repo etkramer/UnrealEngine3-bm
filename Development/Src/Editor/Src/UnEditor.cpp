@@ -252,8 +252,12 @@ void UEditorEngine::Init()
 			(appStricmp( *((UActorFactory*)DefaultObject)->SpecificGameName, TEXT("") ) == 0 ||
 			 appStricmp( *((UActorFactory*)DefaultObject)->SpecificGameName, appGetGameName() ) == 0) )
 		{
+#if BATMAN
+			// TEMP
+#else
 			UActorFactory* NewFactory = ConstructObject<UActorFactory>( Cls );
 			ActorFactories.AddItem(NewFactory);
+#endif
 		}
 	}
 
