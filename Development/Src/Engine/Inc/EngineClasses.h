@@ -18538,6 +18538,7 @@ public:
     BITFIELD HiddenGame:1;
     BITFIELD HiddenEditor:1;
     BITFIELD CastShadow:1;
+    FLOAT CullDistance;
     //## END PROPS PrimitiveComponentFactory
 
     DECLARE_ABSTRACT_CLASS(UPrimitiveComponentFactory,UObject,0,Engine)

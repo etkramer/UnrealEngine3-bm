@@ -62,6 +62,7 @@ public:
     BITFIELD bWakeOnLevelStart:1;
     BITFIELD bCurrentSlide:1;
     BITFIELD bSlideActive:1;
+    BITFIELD bDontBlockActors:1;
     BITFIELD bEnableStayUprightSpring:1;
     BITFIELD bLimitMaxPhysicsVelocity:1;
     BITFIELD bNeedsRBStateReplication:1;
@@ -71,6 +72,7 @@ public:
     class UAudioComponent* ImpactSoundComponent2;
     FLOAT LastImpactTime;
     struct FPhysEffectInfo ImpactEffectInfo;
+    class URB_ForceComponent* ImpactForceComponent;
     class UParticleSystemComponent* SlideEffectComponent;
     class UAudioComponent* SlideSoundComponent;
     FLOAT LastSlideTime;

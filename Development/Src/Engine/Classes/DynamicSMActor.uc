@@ -18,15 +18,15 @@ var repnotify MaterialInterface ReplicatedMaterial;
 /** used to replicate StaticMeshComponent.bForceStaticDecals */
 var repnotify bool bForceStaticDecals;
 
-/** Extra component properties to replicate */
-var repnotify vector ReplicatedMeshTranslation;
-var repnotify rotator ReplicatedMeshRotation;
-var repnotify vector ReplicatedMeshScale3D;
-
 /** If a Pawn can be 'based' on this KActor. If not, they will 'bounce' off when they try to. */
 var() bool	bPawnCanBaseOn;
 /** Pawn can base on this KActor if it is asleep -- Pawn will disable KActor physics while based */
 var() bool	bSafeBaseIfAsleep;
+
+/** Extra component properties to replicate */
+var repnotify vector ReplicatedMeshTranslation;
+var repnotify rotator ReplicatedMeshRotation;
+var repnotify vector ReplicatedMeshScale3D;
 
 cpptext
 {

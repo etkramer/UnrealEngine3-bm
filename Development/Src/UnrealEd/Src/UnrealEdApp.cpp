@@ -556,6 +556,22 @@ bool WxUnrealEdApp::OnInit()
 	EditorFrame->OptionProxyInit();
 
 	// Resources.
+#if BATMAN
+	MaterialEditor_RightHandleOn	= CastChecked<UTexture2D>(UObject::StaticLoadObject( UTexture2D::StaticClass(), ANY_PACKAGE, TEXT("EngineResources.DefaultTexture"), NULL, LOAD_None, NULL ));
+	MaterialEditor_RightHandle		= CastChecked<UTexture2D>(UObject::StaticLoadObject( UTexture2D::StaticClass(), ANY_PACKAGE, TEXT("EngineResources.DefaultTexture"), NULL, LOAD_None, NULL ));
+	MaterialEditor_RGBA				= CastChecked<UTexture2D>(UObject::StaticLoadObject( UTexture2D::StaticClass(), ANY_PACKAGE, TEXT("EngineResources.DefaultTexture"), NULL, LOAD_None, NULL ));
+	MaterialEditor_R				= CastChecked<UTexture2D>(UObject::StaticLoadObject( UTexture2D::StaticClass(), ANY_PACKAGE, TEXT("EngineResources.DefaultTexture"), NULL, LOAD_None, NULL ));
+	MaterialEditor_G				= CastChecked<UTexture2D>(UObject::StaticLoadObject( UTexture2D::StaticClass(), ANY_PACKAGE, TEXT("EngineResources.DefaultTexture"), NULL, LOAD_None, NULL ));
+	MaterialEditor_B				= CastChecked<UTexture2D>(UObject::StaticLoadObject( UTexture2D::StaticClass(), ANY_PACKAGE, TEXT("EngineResources.DefaultTexture"), NULL, LOAD_None, NULL ));
+	MaterialEditor_A				= CastChecked<UTexture2D>(UObject::StaticLoadObject( UTexture2D::StaticClass(), ANY_PACKAGE, TEXT("EngineResources.DefaultTexture"), NULL, LOAD_None, NULL ));
+	MaterialEditor_LeftHandle		= CastChecked<UTexture2D>(UObject::StaticLoadObject( UTexture2D::StaticClass(), ANY_PACKAGE, TEXT("EngineResources.DefaultTexture"), NULL, LOAD_None, NULL ));
+	MaterialEditor_ControlPanelFill = CastChecked<UTexture2D>(UObject::StaticLoadObject( UTexture2D::StaticClass(), ANY_PACKAGE, TEXT("EngineResources.DefaultTexture"), NULL, LOAD_None, NULL ));
+	MaterialEditor_ControlPanelCap	= CastChecked<UTexture2D>(UObject::StaticLoadObject( UTexture2D::StaticClass(), ANY_PACKAGE, TEXT("EngineResources.DefaultTexture"), NULL, LOAD_None, NULL ));
+	UpArrow							= CastChecked<UTexture2D>(UObject::StaticLoadObject( UTexture2D::StaticClass(), ANY_PACKAGE, TEXT("EngineResources.DefaultTexture"), NULL, LOAD_None, NULL ));
+	DownArrow						= CastChecked<UTexture2D>(UObject::StaticLoadObject( UTexture2D::StaticClass(), ANY_PACKAGE, TEXT("EngineResources.DefaultTexture"), NULL, LOAD_None, NULL ));
+	MaterialEditor_LabelBackground	= CastChecked<UTexture2D>(UObject::StaticLoadObject( UTexture2D::StaticClass(), ANY_PACKAGE, TEXT("EngineResources.DefaultTexture"), NULL, LOAD_None, NULL ));
+	MaterialEditor_Delete			= CastChecked<UTexture2D>(UObject::StaticLoadObject( UTexture2D::StaticClass(), ANY_PACKAGE, TEXT("EngineResources.DefaultTexture"), NULL, LOAD_None, NULL ));
+#else
 	MaterialEditor_RightHandleOn	= CastChecked<UTexture2D>(UObject::StaticLoadObject( UTexture2D::StaticClass(), ANY_PACKAGE, TEXT("EditorResources.MaterialEditor_RightHandleOn"), NULL, LOAD_None, NULL ));
 	MaterialEditor_RightHandle		= CastChecked<UTexture2D>(UObject::StaticLoadObject( UTexture2D::StaticClass(), ANY_PACKAGE, TEXT("EditorResources.MaterialEditor_RightHandle"), NULL, LOAD_None, NULL ));
 	MaterialEditor_RGBA				= CastChecked<UTexture2D>(UObject::StaticLoadObject( UTexture2D::StaticClass(), ANY_PACKAGE, TEXT("EditorResources.MaterialEditor_RGBA"), NULL, LOAD_None, NULL ));
@@ -570,6 +586,7 @@ bool WxUnrealEdApp::OnInit()
 	DownArrow						= CastChecked<UTexture2D>(UObject::StaticLoadObject( UTexture2D::StaticClass(), ANY_PACKAGE, TEXT("EditorResources.MaterialEditor_Down"), NULL, LOAD_None, NULL ));
 	MaterialEditor_LabelBackground	= CastChecked<UTexture2D>(UObject::StaticLoadObject( UTexture2D::StaticClass(), ANY_PACKAGE, TEXT("EditorResources.MaterialEditor_LabelBackground"), NULL, LOAD_None, NULL ));
 	MaterialEditor_Delete			= CastChecked<UTexture2D>(UObject::StaticLoadObject( UTexture2D::StaticClass(), ANY_PACKAGE, TEXT("EditorResources.MaterialEditor_Delete"), NULL, LOAD_None, NULL ));
+#endif
 
 	UClass* Parent = UMaterialExpression::StaticClass();
 	INT ID = IDM_NEW_SHADER_EXPRESSION_START;

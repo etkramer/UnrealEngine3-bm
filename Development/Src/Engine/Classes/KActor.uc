@@ -30,42 +30,17 @@ cpptext
 var()	bool	bDamageAppliesImpulse;
 var() repnotify bool bWakeOnLevelStart;
 
-// Impact effects
-var				ParticleSystemComponent		ImpactEffectComponent;
-var				AudioComponent				ImpactSoundComponent;
-var				AudioComponent				ImpactSoundComponent2; // @TODO: This could be turned into a dynamic array; but for the moment just 2 will do.
-var				float						LastImpactTime;
-var				PhysEffectInfo				ImpactEffectInfo;
-
-// Slide effects
-var				ParticleSystemComponent		SlideEffectComponent;
-var				AudioComponent				SlideSoundComponent;
 var				bool						bCurrentSlide;
 var				bool						bSlideActive;
-var				float						LastSlideTime;
-var				PhysEffectInfo				SlideEffectInfo;
+
+// BM1
+var() 			bool 						bDontBlockActors;
 
 /** Enable 'Stay upright' torque, that tries to keep Z axis of KActor pointing along world Z */
-var(StayUprightSpring)	bool		bEnableStayUprightSpring;
-
-/** Torque applied to try and keep KActor horizontal. */
-var(StayUprightSpring)	float		StayUprightTorqueFactor;
-
-/** Max torque that can be applied to try and keep KActor horizontal */
-var(StayUprightSpring)	float		StayUprightMaxTorque;
+var(StayUprightSpring)	bool				bEnableStayUprightSpring;
 
 /** If TRUE limit the maximum speed this object can move. */
 var()	bool	bLimitMaxPhysicsVelocity;
-/** If bLimitMaxPhysicsVelocity is TRUE, this is how fast the object can move. */
-var()	float	MaxPhysicsVelocity;
-
-var native const RigidBodyState RBState;
-var	native const float			AngErrorAccumulator;
-/** replicated version of DrawScale3D */
-var repnotify vector ReplicatedDrawScale3D;
-
-var transient vector InitialLocation;
-var transient rotator InitialRotation;
 
 /** whether we need to replicate RBState - used to avoid it for bNoDelete KActors that haven't moved or been awakened yet
  * as in that case the client should already have the same data
@@ -78,6 +53,39 @@ var transient bool	bNeedsRBStateReplication;
  * vibration, rubberbanding, and general visual badness.
  */
 var bool			bDisableClientSidePawnInteractions;
+
+// Impact effects
+var				ParticleSystemComponent		ImpactEffectComponent;
+var				AudioComponent				ImpactSoundComponent;
+var				AudioComponent				ImpactSoundComponent2; // @TODO: This could be turned into a dynamic array; but for the moment just 2 will do.
+var				float						LastImpactTime;
+var				PhysEffectInfo				ImpactEffectInfo;
+
+// BM1
+var				RB_ForceComponent			ImpactForceComponent;
+
+// Slide effects
+var				ParticleSystemComponent		SlideEffectComponent;
+var				AudioComponent				SlideSoundComponent;
+var				float						LastSlideTime;
+var				PhysEffectInfo				SlideEffectInfo;
+
+/** Torque applied to try and keep KActor horizontal. */
+var(StayUprightSpring)	float		StayUprightTorqueFactor;
+
+/** Max torque that can be applied to try and keep KActor horizontal */
+var(StayUprightSpring)	float		StayUprightMaxTorque;
+
+/** If bLimitMaxPhysicsVelocity is TRUE, this is how fast the object can move. */
+var()	float	MaxPhysicsVelocity;
+
+var native const RigidBodyState RBState;
+var	native const float			AngErrorAccumulator;
+/** replicated version of DrawScale3D */
+var repnotify vector ReplicatedDrawScale3D;
+
+var transient vector InitialLocation;
+var transient rotator InitialRotation;
 
 replication
 {

@@ -19,6 +19,9 @@ var(Rendering) bool	HiddenGame,
 					HiddenEditor,
 					CastShadow;
 
+// BM1
+var(Rendering) float CullDistance;
+
 cpptext
 {
 	virtual UBOOL FactoryIsValid() { return 1; }

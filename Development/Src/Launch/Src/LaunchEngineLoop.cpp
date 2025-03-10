@@ -1022,7 +1022,12 @@ void CheckNativeClassSizes()
 	}
 	else if( Mismatch == TRUE )
 	{
+#if BATMAN
+		// We want to see these errors, but we don't want to give up on loading yet.
+		warnf( NAME_FriendlyError, *LocalizeUnrealEd("Error_ScriptClassSizeMismatch") );
+#else
 		appErrorf( NAME_FriendlyError, *LocalizeUnrealEd("Error_ScriptClassSizeMismatch") );
+#endif
 	}
 	else
 	{
