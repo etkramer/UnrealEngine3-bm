@@ -244,6 +244,19 @@ class UDrawSoundRadiusComponent : public UDrawSphereComponent
 };
 
 /*-----------------------------------------------------------------------------
+	UFMODReverb. 
+-----------------------------------------------------------------------------*/
+
+class UFMODReverb : public UObject
+{
+	DECLARE_CLASS(UFMODReverb,UObject,CLASS_NoExport,Engine);
+
+	INT Version;
+	FName ReverbName;
+	class URFMODSound* FMODSound;
+};
+
+/*-----------------------------------------------------------------------------
 	URFMODSound. 
 -----------------------------------------------------------------------------*/
 

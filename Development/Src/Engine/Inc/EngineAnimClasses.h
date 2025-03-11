@@ -1561,7 +1561,7 @@ public:
 	/** Stops playing any active camera anim playing in conjunction with this anim. */
 	void StopCameraAnim();
 
-    INT GetAnimLinkupIndex();
+	INT GetAnimLinkupIndex();
 };
 
 struct FAnimInfo
@@ -3709,6 +3709,7 @@ VERIFY_CLASS_OFFSET_NODIE(U,AnimNodeSlot,SynchNode)
 VERIFY_CLASS_SIZE_NODIE(UAnimNodeSlot)
 VERIFY_CLASS_OFFSET_NODIE(U,AnimNodeSynch,Groups)
 VERIFY_CLASS_SIZE_NODIE(UAnimNodeSynch)
+VERIFY_CLASS_OFFSET_NODIE(U,AnimNotify,NotifyColour)
 VERIFY_CLASS_SIZE_NODIE(UAnimNotify)
 VERIFY_CLASS_OFFSET_NODIE(U,AnimNotify_CameraEffect,CameraLensEffect)
 VERIFY_CLASS_SIZE_NODIE(UAnimNotify_CameraEffect)

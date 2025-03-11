@@ -1874,9 +1874,12 @@ public:
     struct FRawDistributionFloat MaxCollisions;
     BYTE CollisionCompletionOption;
     BITFIELD bApplyPhysics:1 GCC_BITFIELD_MAGIC;
+    BITFIELD bApplyDecal:1;
     BITFIELD bPawnsDoNotDecrementCount:1;
     BITFIELD bOnlyVerticalNormalsDecrementCount:1;
     BITFIELD bDropDetail:1;
+    INT DecalIndex;
+    class USoundCue* SoundOnCollision;
     struct FRawDistributionFloat ParticleMass;
     FLOAT DirScalar;
     FLOAT VerticalFudgeFactor;
@@ -2737,8 +2740,10 @@ public:
     BITFIELD bKillOnDeactivate:1;
     BITFIELD bKillOnCompleted:1;
     BITFIELD bRequiresSorting:1;
+    BITFIELD bUseDynamicLocalSpace:1;
     BITFIELD bEmitterDurationUseRange:1;
     BITFIELD bDurationRecalcEachLoop:1;
+    BITFIELD bEmitPerMeter:1;
     BITFIELD bDelayFirstLoopOnly:1;
     BITFIELD bScaleUV:1;
     BITFIELD bDirectUV:1;
@@ -2747,6 +2752,7 @@ public:
     FLOAT EmitterDurationLow;
     INT EmitterLoops;
     struct FRawDistributionFloat SpawnRate;
+    struct FRawDistributionFloat ParticlesPerMeter;
     TArrayNoInit<struct FParticleBurst> BurstList;
     FLOAT EmitterDelay;
     INT SubImages_Horizontal;

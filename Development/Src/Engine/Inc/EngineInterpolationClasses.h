@@ -233,7 +233,7 @@ struct FDirectorTrackCut
     FLOAT Time;
     FLOAT TransitionTime;
     FName TargetCamGroup;
-	FName TargetBoneName;
+    FName TargetBoneName;
 
     /** Constructors */
     FDirectorTrackCut() {}
@@ -247,12 +247,12 @@ class UInterpTrackDirector : public UInterpTrack
 {
 public:
     //## BEGIN PROPS InterpTrackDirector
-	BITFIELD bResetCameraBehindBatman:1;
-	BITFIELD bKeepBatmanOnScreen:1;
-	BITFIELD bDisableCamerCollisionDuringBlend:1;
-	BITFIELD bSimulateCameraCutsOnClients:1;
-	BITFIELD bDetachMic:1;
-	FLOAT SkipBlendTime;
+    BITFIELD bResetCameraBehindBatman:1 GCC_BITFIELD_MAGIC;
+    BITFIELD bKeepBatmanOnScreen:1;
+    BITFIELD bDisableCamerCollisionDuringBlend:1;
+    BITFIELD bSimulateCameraCutsOnClients:1;
+    BITFIELD bDetachMic:1;
+    FLOAT SkipBlendTime;
     TArrayNoInit<struct FDirectorTrackCut> CutTrack;
     //## END PROPS InterpTrackDirector
 
@@ -362,7 +362,7 @@ public:
     TArrayNoInit<struct FFaceFXTrackKey> FaceFXSeqs;
     class UFaceFXAsset* CachedActorFXAsset;
     TArrayNoInit<struct FFaceFXSoundCueKey> FaceFXSoundCueKeys;
-	BITFIELD bAlwaysPlayOnFirstUpdate:1;
+    BITFIELD bAlwaysPlayOnFirstUpdate:1;
     //## END PROPS InterpTrackFaceFX
 
     DECLARE_CLASS(UInterpTrackFaceFX,UInterpTrack,0,Engine)
@@ -755,16 +755,16 @@ struct FRandomGeneratorMove
     FLOAT EndTime;
     FLOAT StartValuesPos[6];
     FLOAT EndValuesPos[6];
-	FLOAT ValueVariationsPercPos[6];
-	FLOAT StartValuesRot[6];
-	FLOAT EndValuesRot[6];
-	FLOAT ValueVariationsPercRot[6];
-	BITFIELD bStartAtMaxX:1;
-	BITFIELD bStartAtMaxY:1;
-	BITFIELD bStartAtMaxZ:1;
-	BITFIELD bStartAtMaxRotX:1;
-	BITFIELD bStartAtMaxRotY:1;
-	BITFIELD bStartAtMaxRotZ:1;
+    FLOAT ValueVariationsPercPos[6];
+    FLOAT StartValuesRot[6];
+    FLOAT EndValuesRot[6];
+    FLOAT ValueVariationsPercRot[6];
+    BITFIELD bStartAtMaxX:1;
+    BITFIELD bStartAtMaxY:1;
+    BITFIELD bStartAtMaxZ:1;
+    BITFIELD bStartAtMaxRotX:1;
+    BITFIELD bStartAtMaxRotY:1;
+    BITFIELD bStartAtMaxRotZ:1;
 
     /** Constructors */
     FRandomGeneratorMove() {}
@@ -792,7 +792,7 @@ public:
     BITFIELD bHide3DTrack:1;
     BYTE MoveFrame GCC_BITFIELD_MAGIC;
     BYTE RotMode;
-	FRandomGeneratorMove Randomiser;
+    struct FRandomGeneratorMove Randomiser;
     //## END PROPS InterpTrackMove
 
     DECLARE_CLASS(UInterpTrackMove,UInterpTrack,0,Engine)
@@ -1821,6 +1821,7 @@ VERIFY_CLASS_SIZE_NODIE(UInterpTrackAudioMaster)
 VERIFY_CLASS_OFFSET_NODIE(U,InterpTrackColorProp,PropertyName)
 VERIFY_CLASS_SIZE_NODIE(UInterpTrackColorProp)
 VERIFY_CLASS_SIZE_NODIE(UInterpTrackColorScale)
+VERIFY_CLASS_OFFSET_NODIE(U,InterpTrackDirector,SkipBlendTime)
 VERIFY_CLASS_OFFSET_NODIE(U,InterpTrackDirector,CutTrack)
 VERIFY_CLASS_SIZE_NODIE(UInterpTrackDirector)
 VERIFY_CLASS_OFFSET_NODIE(U,InterpTrackEvent,EventTrack)
@@ -1889,7 +1890,7 @@ VERIFY_CLASS_SIZE_NODIE(UInterpTrackInstVisibility)
 VERIFY_CLASS_OFFSET_NODIE(U,InterpTrackMorphWeight,MorphNodeName)
 VERIFY_CLASS_SIZE_NODIE(UInterpTrackMorphWeight)
 VERIFY_CLASS_OFFSET_NODIE(U,InterpTrackMove,PosTrack)
-VERIFY_CLASS_OFFSET_NODIE(U,InterpTrackMove,RotMode)
+VERIFY_CLASS_OFFSET_NODIE(U,InterpTrackMove,Randomiser)
 VERIFY_CLASS_SIZE_NODIE(UInterpTrackMove)
 VERIFY_CLASS_OFFSET_NODIE(U,InterpTrackParticleReplay,TrackKeys)
 VERIFY_CLASS_OFFSET_NODIE(U,InterpTrackParticleReplay,FixedTimeStep)

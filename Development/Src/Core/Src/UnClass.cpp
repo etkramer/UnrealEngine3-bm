@@ -2044,6 +2044,12 @@ void UClass::Bind()
 			check(*ClassPtr==this);
 			ClassConstructor = (*ClassPtr)->ClassConstructor;
 		}
+#if BATMAN
+		else if( GIsEditor )
+		{
+			warnf( NAME_Error, TEXT("Can't bind to native class %s"), *GetPathName() );
+		}
+#endif
 		else if( !GIsEditor )
 		{
 			appErrorf( TEXT("Can't bind to native class %s"), *GetPathName() );

@@ -6182,9 +6182,6 @@ UObject* UObject::StaticLoadObject(UClass* ObjectClass, UObject* InOuter, const 
 #if !CONSOLE
 				|| GIsImportingT3D
 #endif
-// #if BATMAN
-// 				|| TRUE
-// #endif
 				))
 			{
 				Result = StaticFindObjectFast(ObjectClass, InOuter, *StrName);

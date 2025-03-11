@@ -309,7 +309,7 @@ class UMaterialExpressionConstant3Vector : public UMaterialExpression
 {
 public:
     //## BEGIN PROPS MaterialExpressionConstant3Vector
-	FLinearColor Colour;
+    FLinearColor Colour;
     FLOAT R;
     FLOAT G;
     FLOAT B;
@@ -2585,7 +2585,7 @@ VERIFY_CLASS_SIZE_NODIE(UMaterialExpressionConstant)
 VERIFY_CLASS_OFFSET_NODIE(U,MaterialExpressionConstant2Vector,R)
 VERIFY_CLASS_OFFSET_NODIE(U,MaterialExpressionConstant2Vector,G)
 VERIFY_CLASS_SIZE_NODIE(UMaterialExpressionConstant2Vector)
-VERIFY_CLASS_OFFSET_NODIE(U,MaterialExpressionConstant3Vector,R)
+VERIFY_CLASS_OFFSET_NODIE(U,MaterialExpressionConstant3Vector,Colour)
 VERIFY_CLASS_OFFSET_NODIE(U,MaterialExpressionConstant3Vector,B)
 VERIFY_CLASS_SIZE_NODIE(UMaterialExpressionConstant3Vector)
 VERIFY_CLASS_OFFSET_NODIE(U,MaterialExpressionConstant4Vector,R)

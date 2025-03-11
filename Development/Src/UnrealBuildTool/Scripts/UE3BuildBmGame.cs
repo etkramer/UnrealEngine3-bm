@@ -37,7 +37,6 @@ namespace UnrealBuildTool
 
 			GameCPPEnvironment.Definitions.Add("GAMENAME=BMGAME");
 			GameCPPEnvironment.Definitions.Add("IS_BMGAME=1");
-
 		}
 	}
 }

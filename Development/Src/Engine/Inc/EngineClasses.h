@@ -445,6 +445,12 @@ enum EPathSearchType
     PST_Constraint          =3,
     PST_MAX                 =4,
 };
+enum EForceModeType
+{
+    FMT_Constant            =0,
+    FMT_Impulse             =1,
+    FMT_MAX                 =2,
+};
 enum ESceneCaptureViewMode
 {
     SceneCapView_Lit        =0,
@@ -780,6 +786,7 @@ AUTOGENERATE_NAME(AddDefaultInventory)
 AUTOGENERATE_NAME(AllowDetourTo)
 AUTOGENERATE_NAME(AnimTreeUpdated)
 AUTOGENERATE_NAME(Attach)
+AUTOGENERATE_NAME(AttachCloneToActor)
 AUTOGENERATE_NAME(BaseChange)
 AUTOGENERATE_NAME(BecomeViewTarget)
 AUTOGENERATE_NAME(BeginAnimControl)
@@ -11517,6 +11524,18 @@ public:
     NO_DEFAULT_CONSTRUCTOR(AInternetInfo)
 };
 
+class AMacroReachSpecInfo : public AInfo
+{
+public:
+    //## BEGIN PROPS MacroReachSpecInfo
+    class UMacroReachSpec* MacroReachSpecStart;
+    class UMacroReachSpec* MacroReachSpecEnd;
+    //## END PROPS MacroReachSpecInfo
+
+    DECLARE_CLASS(AMacroReachSpecInfo,AInfo,0,Engine)
+    NO_DEFAULT_CONSTRUCTOR(AMacroReachSpecInfo)
+};
+
 class AMutator : public AInfo
 {
 public:
@@ -11862,6 +11881,27 @@ struct FPhysXSceneProperties
     }
 };
 
+struct FApexModuleDestructibleSettings
+{
+    INT MaxChunkIslandCount;
+    INT MaxGrbActorCount;
+    FLOAT GrbParticleSpacing;
+    FLOAT GrbMaxLinAcceleration;
+    FLOAT MaxChunkSeparationLOD;
+    INT HighMaxChunkIslandCount;
+    INT HighMaxGrbActorCount;
+    FLOAT HighGrbParticleSpacing;
+    FLOAT HighGrbMaxLinAcceleration;
+    FLOAT HighMaxChunkSeparationLOD;
+
+    /** Constructors */
+    FApexModuleDestructibleSettings() {}
+    FApexModuleDestructibleSettings(EEventParm)
+    {
+        appMemzero(this, sizeof(FApexModuleDestructibleSettings));
+    }
+};
+
 struct FPhysXEmitterVerticalProperties
 {
     BITFIELD bDisableLod:1;
@@ -11888,27 +11928,6 @@ struct FPhysXVerticalProperties
     FPhysXVerticalProperties(EEventParm)
     {
         appMemzero(this, sizeof(FPhysXVerticalProperties));
-    }
-};
-
-struct FApexModuleDestructibleSettings
-{
-    INT MaxChunkIslandCount;
-    INT MaxGrbActorCount;
-    FLOAT GrbParticleSpacing;
-    FLOAT GrbMaxLinAcceleration;
-    FLOAT MaxChunkSeparationLOD;
-    INT HighMaxChunkIslandCount;
-    INT HighMaxGrbActorCount;
-    FLOAT HighGrbParticleSpacing;
-    FLOAT HighGrbMaxLinAcceleration;
-    FLOAT HighMaxChunkSeparationLOD;
-
-    /** Constructors */
-    FApexModuleDestructibleSettings() {}
-    FApexModuleDestructibleSettings(EEventParm)
-    {
-        appMemzero(this, sizeof(FApexModuleDestructibleSettings));
     }
 };
 
@@ -13107,6 +13126,7 @@ public:
     BITFIELD bIsCrouched:1;
     BITFIELD bTryToUncrouch:1;
     BITFIELD bCanCrouch:1;
+    BITFIELD bCrouchCollisionCheck:1;
     BITFIELD bCrawler:1;
     BITFIELD bReducedSpeed:1;
     BITFIELD bJumpCapable:1;
@@ -13127,6 +13147,7 @@ public:
     BITFIELD bPushesRigidBodies:1;
     BITFIELD bForceFloorCheck:1;
     BITFIELD bForceKeepAnchor:1;
+    BITFIELD bRootMotionOverridesFallingXY:1;
     BITFIELD bCanMantle:1;
     BITFIELD bCanClimbUp:1;
     BITFIELD bCanClimbCeilings:1;
@@ -13150,11 +13171,17 @@ public:
     BITFIELD bModifyReachSpecCost:1;
     BITFIELD bModifyNavPointDest:1;
     BITFIELD bPathfindsAsVehicle:1;
+    BITFIELD bIsRoaming:1;
+    BITFIELD bForceMaxAnchorChecks:1;
     BITFIELD bRunPhysicsWithNoController:1;
     BITFIELD bForceMaxAccel:1;
     BITFIELD bForceRMVelocity:1;
     BITFIELD bForceRegularVelocity:1;
     BITFIELD bPlayedDeath:1;
+    BITFIELD bCanTraverse:1;
+    BITFIELD bUseSimplePhysWalking:1;
+    BITFIELD bUseComplexStepUpCode:1;
+    BITFIELD bIsBatman:1;
     FLOAT UncrouchTime;
     FLOAT CrouchHeight;
     FLOAT CrouchRadius;
@@ -13187,6 +13214,7 @@ public:
     FLOAT SerpentineTime;
     FLOAT SpawnTime;
     INT MaxPitchLimit;
+    INT MaxPathLength;
     FLOAT GroundSpeed;
     FLOAT WaterSpeed;
     FLOAT AirSpeed;
@@ -13253,6 +13281,8 @@ public:
     class UPrimitiveComponent* PreRagdollCollisionComponent;
     FPointer PhysicsPushBody;
     INT FailedLandingCount;
+    FVector walkFailPoint;
+    class AActor* LinkedCullPawn;
     //## END PROPS Pawn
 
     void SetBasedPosition(struct FBasedPosition& BP,FVector pos,class AActor* ForcedBase=NULL);
@@ -15421,6 +15451,43 @@ public:
 	 * @return The proxy object.
 	 */
 	virtual FPrimitiveSceneProxy* CreateSceneProxy();
+};
+
+struct RB_ForceComponent_eventAttachCloneToActor_Parms
+{
+    class AActor* NewOwner;
+    RB_ForceComponent_eventAttachCloneToActor_Parms(EEventParm)
+    {
+    }
+};
+class URB_ForceComponent : public UPrimitiveComponent
+{
+public:
+    //## BEGIN PROPS RB_ForceComponent
+    BITFIELD bUseNxForcefield:1;
+    BITFIELD bForceActive:1;
+    BITFIELD bDetachWhenInactive:1;
+    BITFIELD bForceApplyToCloth:1;
+    BITFIELD bForceApplyToFluid:1;
+    BITFIELD bForceApplyToRigidBodies:1;
+    BITFIELD bForceApplyToProjectiles:1;
+    BYTE ForceMode GCC_BITFIELD_MAGIC;
+    FLOAT Duration;
+    FRBCollisionChannelContainer CollideWithChannels;
+    FLOAT ElapsedTime;
+    class UPrimitiveComponent* RenderComponent;
+    FPointer LinearKernel;
+    FPointer TheNxForceField;
+    //## END PROPS RB_ForceComponent
+
+    void eventAttachCloneToActor(class AActor* NewOwner)
+    {
+        RB_ForceComponent_eventAttachCloneToActor_Parms Parms(EC_EventParm);
+        Parms.NewOwner=NewOwner;
+        ProcessEvent(FindFunctionChecked(ENGINE_AttachCloneToActor),&Parms);
+    }
+    DECLARE_ABSTRACT_CLASS(URB_ForceComponent,UPrimitiveComponent,0,Engine)
+    NO_DEFAULT_CONSTRUCTOR(URB_ForceComponent)
 };
 
 class USceneCaptureComponent : public UActorComponent
@@ -17771,6 +17838,19 @@ public:
 
     DECLARE_CLASS(ULightFunction,UObject,0,Engine)
     NO_DEFAULT_CONSTRUCTOR(ULightFunction)
+};
+
+class UMacroReachSpec : public UObject
+{
+public:
+    //## BEGIN PROPS MacroReachSpec
+    INT StartNetworkID;
+    INT EndNetworkID;
+    class UMacroReachSpec* Next;
+    //## END PROPS MacroReachSpec
+
+    DECLARE_CLASS(UMacroReachSpec,UObject,0,Engine)
+    NO_DEFAULT_CONSTRUCTOR(UMacroReachSpec)
 };
 
 class UMapInfo : public UObject
@@ -21459,6 +21539,8 @@ DECLARE_NATIVE_TYPE(Engine,ULightEnvironmentComponent);
 DECLARE_NATIVE_TYPE(Engine,ULightFunction);
 DECLARE_NATIVE_TYPE(Engine,ALightVolume);
 DECLARE_NATIVE_TYPE(Engine,ULocalPlayer);
+DECLARE_NATIVE_TYPE(Engine,UMacroReachSpec);
+DECLARE_NATIVE_TYPE(Engine,AMacroReachSpecInfo);
 DECLARE_NATIVE_TYPE(Engine,AMantleMarker);
 DECLARE_NATIVE_TYPE(Engine,UMantleReachSpec);
 DECLARE_NATIVE_TYPE(Engine,UMapInfo);
@@ -21512,6 +21594,7 @@ DECLARE_NATIVE_TYPE(Engine,UPrimitiveComponent);
 DECLARE_NATIVE_TYPE(Engine,UPrimitiveComponentFactory);
 DECLARE_NATIVE_TYPE(Engine,AProjectile);
 DECLARE_NATIVE_TYPE(Engine,UProscribedReachSpec);
+DECLARE_NATIVE_TYPE(Engine,URB_ForceComponent);
 DECLARE_NATIVE_TYPE(Engine,UReachSpec);
 DECLARE_NATIVE_TYPE(Engine,AReplicationInfo);
 DECLARE_NATIVE_TYPE(Engine,AReverbVolume);
@@ -21770,6 +21853,8 @@ DECLARE_NATIVE_TYPE(Engine,AZoneInfo);
 	ULineBatchComponent::StaticClass(); \
 	ULocalPlayer::StaticClass(); \
 	GNativeLookupFuncs[Lookup++] = &FindEngineULocalPlayerNative; \
+	UMacroReachSpec::StaticClass(); \
+	AMacroReachSpecInfo::StaticClass(); \
 	AMantleMarker::StaticClass(); \
 	UMantleReachSpec::StaticClass(); \
 	UMapInfo::StaticClass(); \
@@ -21852,6 +21937,7 @@ DECLARE_NATIVE_TYPE(Engine,AZoneInfo);
 	AProjectile::StaticClass(); \
 	GNativeLookupFuncs[Lookup++] = &FindEngineAProjectileNative; \
 	UProscribedReachSpec::StaticClass(); \
+	URB_ForceComponent::StaticClass(); \
 	UReachSpec::StaticClass(); \
 	GNativeLookupFuncs[Lookup++] = &FindEngineUReachSpecNative; \
 	AReplicationInfo::StaticClass(); \
@@ -23119,12 +23205,14 @@ VERIFY_CLASS_OFFSET_NODIE(U,ActorFactoryDynamicSM,StaticMesh)
 VERIFY_CLASS_OFFSET_NODIE(U,ActorFactoryDynamicSM,CollisionType)
 VERIFY_CLASS_SIZE_NODIE(UActorFactoryDynamicSM)
 VERIFY_CLASS_OFFSET_NODIE(U,ActorFactoryEmitter,ParticleSystem)
+VERIFY_CLASS_OFFSET_NODIE(U,ActorFactoryEmitter,ParticleSystemPhysX)
 VERIFY_CLASS_SIZE_NODIE(UActorFactoryEmitter)
 VERIFY_CLASS_OFFSET_NODIE(U,ActorFactoryFracturedStaticMesh,FracturedStaticMesh)
 VERIFY_CLASS_OFFSET_NODIE(U,ActorFactoryFracturedStaticMesh,DrawScale3D)
 VERIFY_CLASS_SIZE_NODIE(UActorFactoryFracturedStaticMesh)
 VERIFY_CLASS_OFFSET_NODIE(U,ActorFactoryLensFlare,LensFlareObject)
 VERIFY_CLASS_SIZE_NODIE(UActorFactoryLensFlare)
+VERIFY_CLASS_OFFSET_NODIE(U,ActorFactoryLight,LightComponent)
 VERIFY_CLASS_SIZE_NODIE(UActorFactoryLight)
 VERIFY_CLASS_SIZE_NODIE(UActorFactoryMover)
 VERIFY_CLASS_SIZE_NODIE(UActorFactoryPathNode)
@@ -23138,7 +23226,7 @@ VERIFY_CLASS_SIZE_NODIE(UActorFactoryPlayerStart)
 VERIFY_CLASS_OFFSET_NODIE(U,ActorFactoryRigidBody,InitialVelocity)
 VERIFY_CLASS_OFFSET_NODIE(U,ActorFactoryRigidBody,StayUprightMaxTorque)
 VERIFY_CLASS_SIZE_NODIE(UActorFactoryRigidBody)
-VERIFY_CLASS_OFFSET_NODIE(U,ActorFactorySkeletalMesh,SkeletalMesh)
+VERIFY_CLASS_OFFSET_NODIE(U,ActorFactorySkeletalMesh,HeadSkeletalMesh)
 VERIFY_CLASS_OFFSET_NODIE(U,ActorFactorySkeletalMesh,AnimSequenceName)
 VERIFY_CLASS_SIZE_NODIE(UActorFactorySkeletalMesh)
 VERIFY_CLASS_OFFSET_NODIE(U,ActorFactoryStaticMesh,StaticMesh)
@@ -23160,10 +23248,12 @@ VERIFY_CLASS_SIZE_NODIE(UArrowComponent)
 VERIFY_CLASS_OFFSET_NODIE(U,AudioComponent,SoundCue)
 VERIFY_CLASS_OFFSET_NODIE(U,AudioComponent,CueFirstNode)
 VERIFY_CLASS_OFFSET_NODIE(U,AudioComponent,InstanceParameters)
+VERIFY_CLASS_OFFSET_NODIE(U,AudioComponent,SubPriDistance)
 VERIFY_CLASS_OFFSET_NODIE(U,AudioComponent,WaveInstances)
 VERIFY_CLASS_OFFSET_NODIE(U,AudioComponent,SoundNodeData)
 VERIFY_CLASS_OFFSET_NODIE(U,AudioComponent,SoundNodeOffsetMap)
 VERIFY_CLASS_OFFSET_NODIE(U,AudioComponent,SoundNodeResetWaveMap)
+VERIFY_CLASS_OFFSET_NODIE(U,AudioComponent,SoundNodeFMODMap)
 VERIFY_CLASS_OFFSET_NODIE(U,AudioComponent,Listener)
 VERIFY_CLASS_OFFSET_NODIE(U,AudioComponent,PlaybackTime)
 VERIFY_CLASS_OFFSET_NODIE(U,AudioComponent,PortalVolume)
@@ -23171,27 +23261,14 @@ VERIFY_CLASS_OFFSET_NODIE(U,AudioComponent,Location)
 VERIFY_CLASS_OFFSET_NODIE(U,AudioComponent,ComponentLocation)
 VERIFY_CLASS_OFFSET_NODIE(U,AudioComponent,LastOwner)
 VERIFY_CLASS_OFFSET_NODIE(U,AudioComponent,SubtitlePriority)
-VERIFY_CLASS_OFFSET_NODIE(U,AudioComponent,FadeInStartTime)
-VERIFY_CLASS_OFFSET_NODIE(U,AudioComponent,FadeInStopTime)
-VERIFY_CLASS_OFFSET_NODIE(U,AudioComponent,FadeInTargetVolume)
-VERIFY_CLASS_OFFSET_NODIE(U,AudioComponent,FadeOutStartTime)
-VERIFY_CLASS_OFFSET_NODIE(U,AudioComponent,FadeOutStopTime)
-VERIFY_CLASS_OFFSET_NODIE(U,AudioComponent,FadeOutTargetVolume)
-VERIFY_CLASS_OFFSET_NODIE(U,AudioComponent,AdjustVolumeStartTime)
-VERIFY_CLASS_OFFSET_NODIE(U,AudioComponent,AdjustVolumeStopTime)
-VERIFY_CLASS_OFFSET_NODIE(U,AudioComponent,AdjustVolumeTargetVolume)
-VERIFY_CLASS_OFFSET_NODIE(U,AudioComponent,CurrAdjustVolumeTargetVolume)
 VERIFY_CLASS_OFFSET_NODIE(U,AudioComponent,CurrentNotifyBufferFinishedHook)
 VERIFY_CLASS_OFFSET_NODIE(U,AudioComponent,CurrentLocation)
 VERIFY_CLASS_OFFSET_NODIE(U,AudioComponent,CurrentVolume)
 VERIFY_CLASS_OFFSET_NODIE(U,AudioComponent,CurrentPitch)
-VERIFY_CLASS_OFFSET_NODIE(U,AudioComponent,CurrentHighFrequencyGain)
 VERIFY_CLASS_OFFSET_NODIE(U,AudioComponent,CurrentUseSpatialization)
 VERIFY_CLASS_OFFSET_NODIE(U,AudioComponent,CurrentUseSeamlessLooping)
 VERIFY_CLASS_OFFSET_NODIE(U,AudioComponent,CurrentVolumeMultiplier)
 VERIFY_CLASS_OFFSET_NODIE(U,AudioComponent,CurrentPitchMultiplier)
-VERIFY_CLASS_OFFSET_NODIE(U,AudioComponent,CurrentVoiceCenterChannelVolume)
-VERIFY_CLASS_OFFSET_NODIE(U,AudioComponent,CurrentVoiceRadioVolume)
 VERIFY_CLASS_OFFSET_NODIE(U,AudioComponent,VolumeMultiplier)
 VERIFY_CLASS_OFFSET_NODIE(U,AudioComponent,PitchMultiplier)
 VERIFY_CLASS_OFFSET_NODIE(U,AudioComponent,OcclusionCheckInterval)
@@ -23200,6 +23277,7 @@ VERIFY_CLASS_OFFSET_NODIE(U,AudioComponent,PreviewSoundRadius)
 VERIFY_CLASS_OFFSET_NODIE(U,AudioComponent,__OnAudioFinished__Delegate)
 VERIFY_CLASS_SIZE_NODIE(UAudioComponent)
 VERIFY_CLASS_SIZE_NODIE(AAutoLadder)
+VERIFY_CLASS_OFFSET_NODIE(A,BlockingVolume,DebugRenderingColor)
 VERIFY_CLASS_SIZE_NODIE(ABlockingVolume)
 VERIFY_CLASS_SIZE_NODIE(UBloomEffect)
 VERIFY_CLASS_OFFSET_NODIE(U,BookMark,Location)
@@ -23280,6 +23358,7 @@ VERIFY_CLASS_SIZE_NODIE(UCurveEdPresetCurve)
 VERIFY_CLASS_SIZE_NODIE(UCustomPropertyItemHandler)
 VERIFY_CLASS_OFFSET_NODIE(U,CylinderComponent,CollisionHeight)
 VERIFY_CLASS_OFFSET_NODIE(U,CylinderComponent,CollisionRadius)
+VERIFY_CLASS_OFFSET_NODIE(U,CylinderComponent,AABBScale)
 VERIFY_CLASS_OFFSET_NODIE(U,CylinderComponent,CylinderColor)
 VERIFY_CLASS_SIZE_NODIE(UCylinderComponent)
 VERIFY_CLASS_OFFSET_NODIE(U,DamageType,DeathString)
@@ -23378,7 +23457,7 @@ VERIFY_CLASS_SIZE_NODIE(ADynamicAnchor)
 VERIFY_CLASS_SIZE_NODIE(ADynamicBlockingVolume)
 VERIFY_CLASS_SIZE_NODIE(ADynamicCameraActor)
 VERIFY_CLASS_OFFSET_NODIE(U,DynamicLightEnvironmentComponent,State)
-VERIFY_CLASS_OFFSET_NODIE(U,DynamicLightEnvironmentComponent,OverriddenLightingChannels)
+VERIFY_CLASS_OFFSET_NODIE(U,DynamicLightEnvironmentComponent,TimeSlicerId)
 VERIFY_CLASS_SIZE_NODIE(UDynamicLightEnvironmentComponent)
 VERIFY_CLASS_OFFSET_NODIE(A,DynamicSMActor,StaticMeshComponent)
 VERIFY_CLASS_OFFSET_NODIE(A,DynamicSMActor,ReplicatedMeshScale3D)
@@ -23480,6 +23559,7 @@ VERIFY_CLASS_SIZE_NODIE(ALiftCenter)
 VERIFY_CLASS_OFFSET_NODIE(A,LiftExit,MyLiftCenter)
 VERIFY_CLASS_SIZE_NODIE(ALiftExit)
 VERIFY_CLASS_OFFSET_NODIE(A,Light,LightComponent)
+VERIFY_CLASS_OFFSET_NODIE(A,Light,LightGroup)
 VERIFY_CLASS_SIZE_NODIE(ALight)
 VERIFY_CLASS_OFFSET_NODIE(U,LightComponent,SceneInfo)
 VERIFY_CLASS_OFFSET_NODIE(U,LightComponent,WorldToLight)
@@ -23504,6 +23584,7 @@ VERIFY_CLASS_OFFSET_NODIE(U,LightComponent,ModShadowColor)
 VERIFY_CLASS_OFFSET_NODIE(U,LightComponent,ModShadowFadeoutTime)
 VERIFY_CLASS_OFFSET_NODIE(U,LightComponent,ModShadowFadeoutExponent)
 VERIFY_CLASS_OFFSET_NODIE(U,LightComponent,LightListIndex)
+VERIFY_CLASS_OFFSET_NODIE(U,LightComponent,CharacterLightListIndex)
 VERIFY_CLASS_OFFSET_NODIE(U,LightComponent,ShadowProjectionTechnique)
 VERIFY_CLASS_OFFSET_NODIE(U,LightComponent,ShadowFilterQuality)
 VERIFY_CLASS_OFFSET_NODIE(U,LightComponent,MinShadowResolution)
@@ -23516,12 +23597,19 @@ VERIFY_CLASS_OFFSET_NODIE(U,LightFunction,SourceMaterial)
 VERIFY_CLASS_OFFSET_NODIE(U,LightFunction,Scale)
 VERIFY_CLASS_SIZE_NODIE(ULightFunction)
 VERIFY_CLASS_SIZE_NODIE(ALightVolume)
+VERIFY_CLASS_OFFSET_NODIE(U,LineBatchComponent,BatchLineDrawDepth)
 VERIFY_CLASS_OFFSET_NODIE(U,LineBatchComponent,BatchedLines)
 VERIFY_CLASS_OFFSET_NODIE(U,LineBatchComponent,DefaultLifeTime)
 VERIFY_CLASS_SIZE_NODIE(ULineBatchComponent)
 VERIFY_CLASS_OFFSET_NODIE(U,LocalPlayer,ControllerId)
 VERIFY_CLASS_OFFSET_NODIE(U,LocalPlayer,PPSettingsOverrideStartBlend)
 VERIFY_CLASS_SIZE_NODIE(ULocalPlayer)
+VERIFY_CLASS_OFFSET_NODIE(U,MacroReachSpec,StartNetworkID)
+VERIFY_CLASS_OFFSET_NODIE(U,MacroReachSpec,Next)
+VERIFY_CLASS_SIZE_NODIE(UMacroReachSpec)
+VERIFY_CLASS_OFFSET_NODIE(A,MacroReachSpecInfo,MacroReachSpecStart)
+VERIFY_CLASS_OFFSET_NODIE(A,MacroReachSpecInfo,MacroReachSpecEnd)
+VERIFY_CLASS_SIZE_NODIE(AMacroReachSpecInfo)
 VERIFY_CLASS_OFFSET_NODIE(A,MantleMarker,OwningSlot)
 VERIFY_CLASS_SIZE_NODIE(AMantleMarker)
 VERIFY_CLASS_SIZE_NODIE(UMantleReachSpec)
@@ -23593,10 +23681,10 @@ VERIFY_CLASS_SIZE_NODIE(UOnlineSubsystem)
 VERIFY_CLASS_SIZE_NODIE(APathBlockingVolume)
 VERIFY_CLASS_SIZE_NODIE(APathNode)
 VERIFY_CLASS_OFFSET_NODIE(A,Pawn,MaxStepHeight)
-VERIFY_CLASS_OFFSET_NODIE(A,Pawn,FailedLandingCount)
+VERIFY_CLASS_OFFSET_NODIE(A,Pawn,LinkedCullPawn)
 VERIFY_CLASS_SIZE_NODIE(APawn)
 VERIFY_CLASS_OFFSET_NODIE(A,PhysicsVolume,ZoneVelocity)
-VERIFY_CLASS_OFFSET_NODIE(A,PhysicsVolume,NextPhysicsVolume)
+VERIFY_CLASS_OFFSET_NODIE(A,PhysicsVolume,ZoneTorque)
 VERIFY_CLASS_SIZE_NODIE(APhysicsVolume)
 VERIFY_CLASS_OFFSET_NODIE(A,PickupFactory,InventoryType)
 VERIFY_CLASS_OFFSET_NODIE(A,PickupFactory,OriginalFactory)
@@ -23673,11 +23761,15 @@ VERIFY_CLASS_OFFSET_NODIE(U,PrimitiveComponent,DetailMode)
 VERIFY_CLASS_OFFSET_NODIE(U,PrimitiveComponent,RBDominanceGroup)
 VERIFY_CLASS_OFFSET_NODIE(U,PrimitiveComponent,MaxNearlyStillSpeed)
 VERIFY_CLASS_SIZE_NODIE(UPrimitiveComponent)
+VERIFY_CLASS_OFFSET_NODIE(U,PrimitiveComponentFactory,CullDistance)
 VERIFY_CLASS_SIZE_NODIE(UPrimitiveComponentFactory)
 VERIFY_CLASS_OFFSET_NODIE(A,Projectile,Speed)
 VERIFY_CLASS_OFFSET_NODIE(A,Projectile,CylinderComponent)
 VERIFY_CLASS_SIZE_NODIE(AProjectile)
 VERIFY_CLASS_SIZE_NODIE(UProscribedReachSpec)
+VERIFY_CLASS_OFFSET_NODIE(U,RB_ForceComponent,ForceMode)
+VERIFY_CLASS_OFFSET_NODIE(U,RB_ForceComponent,TheNxForceField)
+VERIFY_CLASS_SIZE_NODIE(URB_ForceComponent)
 VERIFY_CLASS_OFFSET_NODIE(U,ReachSpec,NavOctreeObject)
 VERIFY_CLASS_OFFSET_NODIE(U,ReachSpec,RealEndPos)
 VERIFY_CLASS_SIZE_NODIE(UReachSpec)
@@ -23720,7 +23812,7 @@ VERIFY_CLASS_OFFSET_NODIE(A,SceneCaptureReflectActor,StaticMesh)
 VERIFY_CLASS_OFFSET_NODIE(A,SceneCaptureReflectActor,ReflectMaterialInst)
 VERIFY_CLASS_SIZE_NODIE(ASceneCaptureReflectActor)
 VERIFY_CLASS_OFFSET_NODIE(U,SceneCaptureReflectComponent,TextureTarget)
-VERIFY_CLASS_OFFSET_NODIE(U,SceneCaptureReflectComponent,ScaleFOV)
+VERIFY_CLASS_OFFSET_NODIE(U,SceneCaptureReflectComponent,FarClip)
 VERIFY_CLASS_SIZE_NODIE(USceneCaptureReflectComponent)
 VERIFY_CLASS_OFFSET_NODIE(A,Scout,PathSizes)
 VERIFY_CLASS_OFFSET_NODIE(A,Scout,DefaultReachSpecClass)

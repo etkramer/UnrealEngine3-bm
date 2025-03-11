@@ -3093,7 +3093,6 @@ UObject* ULinkerLoad::CreateExport( INT Index )
 // 		}
 // #endif
 
-		
 #if BATMAN
 		if (GIsEditor && !GIsScriptPatcherActive && Export.HasAnyFlags(EF_ForcedExport) && LicenseeVer() < VER_BATMAN1)
 #else
@@ -3496,6 +3495,7 @@ UObject* ULinkerLoad::CreateExport( INT Index )
 			}
 		}
 	}
+
 	return Export._Object;
 }
 

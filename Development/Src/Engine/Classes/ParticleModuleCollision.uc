@@ -46,6 +46,14 @@ var(Collision)					EParticleCollisionComplete	CollisionCompletionOption;
  *	impulse applied to the object it collides with. 
  */
 var(Collision)					bool						bApplyPhysics;
+
+// BM1
+var(Collision) bool bApplyDecal;
+
+// BM1
+var(Collision) int DecalIndex;
+var(Collision) SoundCue SoundOnCollision;
+
 /** 
  *	The mass of the particle - for use when bApplyPhysics is TRUE. 
  *	Value is obtained using the EmitterTime at particle spawn. 

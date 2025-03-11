@@ -17,6 +17,7 @@ IMPLEMENT_CLASS( AAmbientSoundNonLoop );
 IMPLEMENT_CLASS( AAmbientSoundMovable );
 IMPLEMENT_CLASS( UDrawSoundRadiusComponent );
 
+IMPLEMENT_CLASS( UFMODReverb );
 IMPLEMENT_CLASS( URFMODSound );
 IMPLEMENT_CLASS( UMixBin );
 
@@ -1771,7 +1772,6 @@ void FAudioComponentSavedState::Set( UAudioComponent* AudioComponent )
 	CurrentLocation = AudioComponent->CurrentLocation;
 	CurrentVolume = AudioComponent->CurrentVolume;
 	CurrentPitch = AudioComponent->CurrentPitch;
-	CurrentHighFrequencyGain = AudioComponent->CurrentHighFrequencyGain;
 	CurrentUseSpatialization = AudioComponent->CurrentUseSpatialization;
 	CurrentUseSeamlessLooping = AudioComponent->CurrentUseSeamlessLooping;
 }
@@ -1782,7 +1782,6 @@ void FAudioComponentSavedState::Restore( UAudioComponent* AudioComponent )
 	AudioComponent->CurrentLocation = CurrentLocation;
 	AudioComponent->CurrentVolume = CurrentVolume;
 	AudioComponent->CurrentPitch = CurrentPitch;
-	AudioComponent->CurrentHighFrequencyGain = CurrentHighFrequencyGain;
 	AudioComponent->CurrentUseSpatialization = CurrentUseSpatialization;
 	AudioComponent->CurrentUseSeamlessLooping = CurrentUseSeamlessLooping;
 }
@@ -1792,7 +1791,6 @@ void FAudioComponentSavedState::Reset( UAudioComponent* AudioComponent )
 	AudioComponent->CurrentNotifyBufferFinishedHook	= NULL;
 	AudioComponent->CurrentVolume = 1.0f,
 	AudioComponent->CurrentPitch = 1.0f;
-	AudioComponent->CurrentHighFrequencyGain = 1.0f;
 	AudioComponent->CurrentUseSpatialization = 0;
 	AudioComponent->CurrentLocation = AudioComponent->bUseOwnerLocation ? AudioComponent->ComponentLocation : AudioComponent->Location;
 	AudioComponent->CurrentUseSeamlessLooping = FALSE;
@@ -1923,22 +1921,6 @@ void UAudioComponent::Cleanup( void )
 		LastOcclusionCheckTime = 0.0f;
 		OcclusionCheckInterval = 0.0f;
 
-		// Reset fade in variables
-		FadeInStartTime = 0.0f;
-		FadeInStopTime = -1.0f;
-		FadeInTargetVolume = 1.0f;
-		
-		// Reset fade out variables
-		FadeOutStartTime = 0.0f;	
-		FadeOutStopTime = -1.0f;
-		FadeOutTargetVolume = 1.0f;
-
-		// Reset adjust variables
-		AdjustVolumeStartTime = 0.0f;	
-		AdjustVolumeStopTime = -1.0f;
-		AdjustVolumeTargetVolume = 1.0f;
-		CurrAdjustVolumeTargetVolume = 1.0f;
-
 		// We cleaned up everything.
 		bWasPlaying = FALSE;
 	}
@@ -1986,15 +1968,6 @@ void UAudioComponent::Play( void )
 				WaveInstance->bIsRequestingRestart = TRUE;
 			}
 		}
-
-		// stop any fadeins or fadeouts
-		FadeInStartTime = 0.0f;	
-		FadeInStopTime = -1.0f;
-		FadeInTargetVolume = 1.0f;
-
-		FadeOutStartTime = 0.0f;	
-		FadeOutStopTime = -1.0f;
-		FadeOutTargetVolume = 1.0f;
 	}
 
 	PlaybackTime = 0.0f;
@@ -2176,24 +2149,15 @@ void UAudioComponent::UpdateWaveInstances( UAudioDevice* AudioDevice, TArray<FWa
 		CurrentVolumeMultiplier *= SoundGroupProperties->Volume * GGlobalAudioMultiplier;
 		CurrentPitchMultiplier *= SoundGroupProperties->Pitch;
 
-		// Not all values propagate multiplicatively
-		CurrentVoiceCenterChannelVolume = SoundGroupProperties->VoiceCenterChannelVolume;
-		CurrentVoiceRadioVolume = SoundGroupProperties->VoiceRadioVolume * CurrentVolumeMultiplier;
-
 		bApplyEffects = SoundGroupProperties->bApplyEffects;
 		bAlwaysPlay = SoundGroupProperties->bAlwaysPlay;
 		bIsUISound |= SoundGroupProperties->bIsUISound;			// Yes, that's |= because all children of a UI group should be UI sounds
 		bIsMusic |= SoundGroupProperties->bIsMusic;				// Yes, that's |= because all children of a music group should be music
 		bNoReverb = SoundGroupProperties->bNoReverb;			// A group with reverb applied may have children with no reverb
-		bBleedStereo = SoundGroupProperties->bBleedStereo;		// Option to bleed stereo to the rear speakers does not propagate to children
 	}
 
 	// Recurse nodes, have SoundNodeWave's create new wave instances and update bFinished unless we finished fading out. 
 	bFinished = TRUE;
-	if( FadeOutStopTime == -1 || ( PlaybackTime <= FadeOutStopTime ) )
-	{
-		CueFirstNode->ParseNodes( AudioDevice, NULL, 0, this, InWaveInstances );
-	}
 
 	// Stop playback, handles bAutoDestroy in Stop.
 	if( bFinished )
@@ -2347,37 +2311,7 @@ UBOOL UAudioComponent::GetWaveParameter( FName InName, USoundNodeWave*& OutWave 
  **/
 void UAudioComponent::FadeIn( FLOAT FadeInDuration, FLOAT FadeVolumeLevel )
 {
-	if (PlaybackTime >= FadeOutStopTime)
-	{
-		if( FadeInDuration >= 0.0f )
-		{
-			FadeInStartTime = PlaybackTime;
-			FadeInStopTime = FadeInStartTime + FadeInDuration;
-			FadeInTargetVolume = FadeVolumeLevel;
-		}
-
-		// @todo msew:  should this restarting playing?  No probably not.  It should AdjustVolume to the FadeVolumeLevel
-		Play();
-	}
-	else
-	{
-		// there's a fadeout active, cancel it and set up the fadeout to start where the fadeout left off
-		if( FadeInDuration >= 0.0f )
-		{
-			// set up the fade in to be seamless by backing up the FadeInStartTime such that the result volume is the same
-			FadeInStartTime = PlaybackTime - FadeInDuration * GetFadeOutMultiplier();
-			FadeInStopTime = FadeInStartTime + FadeInDuration;
-			FadeInTargetVolume = FadeVolumeLevel;
-		}
-
-		// stop the fadeout
-		FadeOutStartTime = 0.0f;	
-		FadeOutStopTime = -1.0f;
-		FadeOutTargetVolume = 1.0f;
-
-		// no need to Play() here, since it's already playing
-	}
-
+	Play();
 }
 
 /**
@@ -2397,39 +2331,7 @@ void UAudioComponent::FadeIn( FLOAT FadeInDuration, FLOAT FadeVolumeLevel )
  **/
 void UAudioComponent::FadeOut( FLOAT FadeOutDuration, FLOAT FadeVolumeLevel )
 {
-	if (PlaybackTime >= FadeInStopTime)
-	{
-		if( FadeOutDuration >= 0.0f )
-		{
-			FadeOutStartTime = PlaybackTime;
-			FadeOutStopTime = FadeOutStartTime + FadeOutDuration;
-			FadeOutTargetVolume = FadeVolumeLevel;
-		}
-		else
-		{
-			Stop();
-		}
-	}
-	else
-	{
-		// there's a fadein active, cancel it and set up the fadeout to start where the fadein left off
-		if( FadeOutDuration >= 0.0f )
-		{
-			// set up the fade in to be seamless by backing up the FadeInStartTime such that the result volume is the same
-			FadeOutStartTime = PlaybackTime - FadeOutDuration * (1.f - GetFadeInMultiplier());
-			FadeOutStopTime = FadeOutStartTime + FadeOutDuration;
-			FadeOutTargetVolume = FadeVolumeLevel;
-		}
-		else
-		{
-			Stop();
-		}
-
-		// stop the fadein
-		FadeInStartTime = 0.0f;	
-		FadeInStopTime = -1.0f;
-		FadeInTargetVolume = 1.0f;
-	}
+	Stop();
 }
 
 /**
@@ -2437,12 +2339,6 @@ void UAudioComponent::FadeOut( FLOAT FadeOutDuration, FLOAT FadeVolumeLevel )
  **/
 void UAudioComponent::AdjustVolume( FLOAT AdjustVolumeDuration, FLOAT AdjustVolumeLevel )
 {
-	if( AdjustVolumeDuration >= 0.0f )
-	{
-		AdjustVolumeStartTime = PlaybackTime;
-		AdjustVolumeStopTime = AdjustVolumeStartTime + AdjustVolumeDuration;
-		AdjustVolumeTargetVolume = AdjustVolumeLevel;
-	}
 }
 
 /** Helper function to do determine the fade volume value based on start, stop, target volume levels **/
@@ -2461,16 +2357,6 @@ FLOAT UAudioComponent::GetFadeInMultiplier( void ) const
 {
 	FLOAT Retval = 1.0f;
 
-	// keep stepping towards our target until we hit our stop time
-	if( PlaybackTime <= FadeInStopTime )
-	{
-		Retval = FadeMultiplierHelper( FadeInStartTime, FadeInStopTime, FadeInTargetVolume );
-	}
-	else if( PlaybackTime > FadeInStopTime )
-	{
-		Retval = FadeInTargetVolume;
-	}
-
 	return( Retval );
 }
 
@@ -2479,57 +2365,12 @@ FLOAT UAudioComponent::GetFadeOutMultiplier( void ) const
 {
 	FLOAT Retval = 1.0f;
 
-	// keep stepping towards our target until we hit our stop time
-	if( PlaybackTime <= FadeOutStopTime )
-	{
-		// deal with people wanting to crescendo fade out!
-		FLOAT VolAmt = 1.0f;
-		if( FadeOutTargetVolume < 1.0f )
-		{
-			VolAmt = FadeMultiplierHelper( FadeOutStartTime, FadeOutStopTime, ( 1.0f - FadeOutTargetVolume ) );
-			Retval = 1.0f - VolAmt; // in FadeOut() we check for negative values
-		}
-		else if( FadeOutTargetVolume > 1.0f )
-		{
-			VolAmt = FadeMultiplierHelper( FadeOutStartTime, FadeOutStopTime, ( FadeOutTargetVolume  - 1.0f ) );
-			Retval = 1.0f + VolAmt;
-		}
-	}
-	else if( PlaybackTime > FadeOutStopTime )
-	{
-		Retval =  FadeOutTargetVolume;
-	}
-
 	return( Retval );
 }
 
 FLOAT UAudioComponent::GetAdjustVolumeOnFlyMultiplier( void )
 {
 	FLOAT Retval = 1.0f;
-
-	// keep stepping towards our target until we hit our stop time
-	if( PlaybackTime <= AdjustVolumeStopTime )
-	{
-		// deal with people wanting to crescendo fade out!
-		FLOAT VolAmt = 1.0f;
-		if( AdjustVolumeTargetVolume < CurrAdjustVolumeTargetVolume )
-		{
-			VolAmt = FadeMultiplierHelper( AdjustVolumeStartTime, AdjustVolumeStopTime, ( CurrAdjustVolumeTargetVolume - AdjustVolumeTargetVolume ) );
-			Retval = CurrAdjustVolumeTargetVolume - VolAmt; 
-		}
-		else if( AdjustVolumeTargetVolume > CurrAdjustVolumeTargetVolume )
-		{
-			VolAmt = FadeMultiplierHelper( AdjustVolumeStartTime, AdjustVolumeStopTime, ( AdjustVolumeTargetVolume - CurrAdjustVolumeTargetVolume ) );
-			Retval = CurrAdjustVolumeTargetVolume + VolAmt;
-		}
-
-		//debugf( TEXT( "VolAmt: %f CurrentVolume: %f Retval: %f" ), VolAmt, CurrentVolume, Retval );
-	}
-	else if( PlaybackTime > AdjustVolumeStopTime )
-	{
-		CurrAdjustVolumeTargetVolume = AdjustVolumeTargetVolume;
-		Retval = AdjustVolumeTargetVolume;
-	}
 
 	return( Retval );
 }

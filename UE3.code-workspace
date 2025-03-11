@@ -40,6 +40,24 @@
     ],
     "configurations": [
       {
+        "name": "Build/Launch Editor",
+        "type": "cppvsdbg",
+        "request": "launch",
+        "program": "${workspaceFolder}/Binaries/Debug-BmGame.exe",
+        "cwd": "${workspaceFolder}/Binaries",
+        "args": ["editor", "-cookededitor", "-user", "-seekfreeloading"],
+        "environment": [
+          {
+            "name": "PATH",
+            "value": "${workspaceFolder}/Development/External/Developer Runtime/x86;${env:PATH}"
+          }
+        ],
+        "visualizerFile": "${workspaceFolder}/UE3.natvis",
+        "preLaunchTask": "Build Editor",
+        "internalConsoleOptions": "openOnSessionStart",
+        "logging": { "moduleLoad": false, "exceptions": false }
+      },
+      {
         "name": "Launch Editor",
         "type": "cppvsdbg",
         "request": "launch",
@@ -57,12 +75,12 @@
         "logging": { "moduleLoad": false, "exceptions": false }
       },
       {
-        "name": "Build and Launch Editor",
+        "name": "Launch Make",
         "type": "cppvsdbg",
         "request": "launch",
         "program": "${workspaceFolder}/Binaries/Debug-BmGame.exe",
         "cwd": "${workspaceFolder}/Binaries",
-        "args": ["editor", "-cookededitor", "-user", "-seekfreeloading"],
+        "args": ["make"],
         "environment": [
           {
             "name": "PATH",
@@ -70,10 +88,9 @@
           }
         ],
         "visualizerFile": "${workspaceFolder}/UE3.natvis",
-        "preLaunchTask": "Build Editor",
         "internalConsoleOptions": "openOnSessionStart",
         "logging": { "moduleLoad": false, "exceptions": false }
-      }
+      },
     ]
   },
   "settings": {

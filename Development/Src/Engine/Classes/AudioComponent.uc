@@ -20,6 +20,12 @@ struct native AudioComponentParam
 {
 	var()	name		ParamName;
 	var()	float		FloatParam;
+
+	// BM1
+	var() float SeekSpeed;
+    var() float Velocity;
+    var bool bSetValue;
+
 	var() SoundNodeWave WaveParam;
 };
 
@@ -65,8 +71,13 @@ var		transient		bool				bIsUISound;
 var		transient		bool				bIsMusic;
 /** Whether or not the audio component should be excluded from reverb EQ processing */
 var		transient		bool				bNoReverb;
-/** Whether or not to bleed stereo sounds to the rear speakers */
-var		transient		bool				bBleedStereo;
+
+// BM1
+var transient bool bFMODGenerated;
+var transient bool bIsPaused;
+var transient bool bForcePauseUpdate;
+var transient bool bPlaying;
+var transient float SubPriDistance;
 
 var	duplicatetransient native const	array<pointer>		WaveInstances{struct FWaveInstance};
 var	duplicatetransient native const	array<byte>			SoundNodeData;
@@ -77,6 +88,7 @@ var	duplicatetransient native const	array<byte>			SoundNodeData;
  */
 var	duplicatetransient native const	Map{USoundNode*,UINT} SoundNodeOffsetMap;
 var	duplicatetransient native const	multimap_mirror		SoundNodeResetWaveMap{TMultiMap<USoundNode*,FWaveInstance*>};
+var duplicatetransient native const multimap_mirror 	SoundNodeFMODMap{TMultiMap<USoundNode*,UINT>};
 
 var duplicatetransient native const	pointer				Listener{struct FListener};
 
@@ -91,28 +103,11 @@ var 	transient const	Actor							LastOwner;
 /** Used by the subtitle manager to prioritize subtitles wave instances spawned by this component. */
 var		native			float				SubtitlePriority;
 
-var						float				FadeInStartTime;
-var						float				FadeInStopTime;
-/** This is the volume level we are fading to **/
-var						float				FadeInTargetVolume;
-
-var						float				FadeOutStartTime;
-var						float				FadeOutStopTime;
-/** This is the volume level we are fading to **/
-var						float				FadeOutTargetVolume;
-
-var						float				AdjustVolumeStartTime;
-var						float				AdjustVolumeStopTime;
-/** This is the volume level we are adjusting to **/
-var						float				AdjustVolumeTargetVolume;
-var						float				CurrAdjustVolumeTargetVolume;
-
 // Temporary variables for node traversal.
 var		native const	SoundNode			CurrentNotifyBufferFinishedHook;
 var		native const	vector				CurrentLocation;
 var		native const	float				CurrentVolume;
 var		native const	float				CurrentPitch;
-var		native const	float				CurrentHighFrequencyGain;
 var		native const	int					CurrentUseSpatialization;
 var		native const	int					CurrentUseSeamlessLooping;
 
@@ -120,12 +115,13 @@ var		native const	int					CurrentUseSeamlessLooping;
 var		native const	float				CurrentVolumeMultiplier;
 var		native const	float				CurrentPitchMultiplier;
 
-var		native const	float				CurrentVoiceCenterChannelVolume;
-var		native const	float				CurrentVoiceRadioVolume;
-
 // Serialized multipliers used to e.g. override volume for ambient sound actors.
 var()					float				VolumeMultiplier;
 var()					float				PitchMultiplier;
+
+// BM1
+var native const bool bIgnorePitch;
+var transient bool bEmoteCue;
 
 /** while playing, this component will check for occlusion from its closest listener every this many seconds and call OcclusionChanged() if the status changes */
 var						float				OcclusionCheckInterval;

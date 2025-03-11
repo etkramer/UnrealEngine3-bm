@@ -223,6 +223,10 @@ IMPLEMENT_CLASS(UDebugManager);
 IMPLEMENT_CLASS(USaveGameSummary);
 IMPLEMENT_CLASS(UObjectReferencer);
 
+// BM1: Not clear where these belong.
+IMPLEMENT_CLASS(UMacroReachSpec);
+IMPLEMENT_CLASS(AMacroReachSpecInfo);
+
 /*-----------------------------------------------------------------------------
 	Engine init and exit.
 -----------------------------------------------------------------------------*/

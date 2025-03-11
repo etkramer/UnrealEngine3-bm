@@ -1016,18 +1016,13 @@ void USoundNodeWave::ParseNodes( UAudioDevice* AudioDevice, USoundNode* Parent, 
 		// Propagate properties and add WaveInstance to outgoing array of FWaveInstances.
 		WaveInstance->Volume = AudioComponent->CurrentVolume;
 		WaveInstance->VolumeMultiplier = AudioComponent->CurrentVolumeMultiplier;
-		WaveInstance->PlayPriority = AudioComponent->CurrentVolume + ( AudioComponent->bAlwaysPlay ? 1.0f : 0.0f ) + AudioComponent->CurrentVoiceRadioVolume;
 		WaveInstance->Pitch = AudioComponent->CurrentPitch * AudioComponent->CurrentPitchMultiplier;
-		WaveInstance->HighFrequencyGain = AudioComponent->CurrentHighFrequencyGain;
-		WaveInstance->VoiceCenterChannelVolume = AudioComponent->CurrentVoiceCenterChannelVolume;
-		WaveInstance->VoiceRadioVolume = AudioComponent->CurrentVoiceRadioVolume;
 
 		WaveInstance->bApplyEffects = AudioComponent->bApplyEffects;
 		WaveInstance->bAlwaysPlay = AudioComponent->bAlwaysPlay;
 		WaveInstance->bIsUISound = AudioComponent->bIsUISound;
 		WaveInstance->bIsMusic = AudioComponent->bIsMusic;
 		WaveInstance->bNoReverb = AudioComponent->bNoReverb;
-		WaveInstance->bBleedStereo = AudioComponent->bBleedStereo;
 
 		WaveInstance->Location = AudioComponent->CurrentLocation;
 		WaveInstance->bIsStarted = TRUE;
@@ -1171,20 +1166,6 @@ void USoundNodeAttenuation::ParseNodes( UAudioDevice* AudioDevice, USoundNode* P
 					float DistanceInsideMinMax = ( Distance - UsedMinRadius ) / ( UsedMaxRadius - UsedMinRadius );
 					AudioComponent->CurrentVolume *= appPow( 10.0f, ( DistanceInsideMinMax * dBAttenuationAtMax ) / 20.0f );
 				}
-			}
-		}
-
-		// Attenuate with the low pass filter if necessary
-		if( bAttenuateWithLowPassFilter )
-		{
-			if( Distance >= UsedLPFMaxRadius )
-			{
-				AudioComponent->CurrentHighFrequencyGain = 0.0f;
-			}
-			// UsedLPFMinRadius is the point at which to start applying the low pass filter
-			else if( Distance > UsedLPFMinRadius )
-			{
-				AudioComponent->CurrentHighFrequencyGain *= 1.0f - ( ( Distance - UsedLPFMinRadius ) / ( UsedLPFMaxRadius - UsedLPFMinRadius ) );
 			}
 		}
 
@@ -1481,21 +1462,6 @@ void USoundNodeAmbient::ParseNodes( UAudioDevice* AudioDevice, USoundNode* Paren
 		}
 	}
 
-	// Default to no low pass filter
-	if( bAttenuateWithLowPassFilter )
-	{
-		const FLOAT Distance = FDist( AudioComponent->CurrentLocation, AudioComponent->Listener->Location );
-		if( Distance >= UsedLPFMaxRadius )
-		{
-			AudioComponent->CurrentHighFrequencyGain = 0.0f;
-		}
-		// UsedLPFMinRadius is the point at which to start applying the low pass filter
-		else if( Distance > UsedLPFMinRadius )
-		{
-			AudioComponent->CurrentHighFrequencyGain *= 1.0f - ( ( Distance - UsedLPFMinRadius ) / ( UsedLPFMaxRadius - UsedLPFMinRadius ) );
-		}
-	}
-
 	AudioComponent->CurrentUseSpatialization |= bSpatialize;
 	AudioComponent->CurrentVolume *= UsedVolumeModulation;
 	AudioComponent->CurrentPitch *= UsedPitchModulation;
@@ -1592,21 +1558,6 @@ void USoundNodeAmbientNonLoop::ParseNodes( UAudioDevice* AudioDevice, USoundNode
 		else if( Distance > UsedMinRadius )
 		{
 			AudioComponent->CurrentVolume *= 1.f - (Distance - UsedMinRadius) / (UsedMaxRadius - UsedMinRadius);
-		}
-	}
-
-	// Default to no low pass filter
-	if( bAttenuateWithLowPassFilter )
-	{
-		const FLOAT Distance = FDist( AudioComponent->CurrentLocation, AudioComponent->Listener->Location );
-		if( Distance >= UsedLPFMaxRadius )
-		{
-			AudioComponent->CurrentHighFrequencyGain = 0.0f;
-		}
-		// UsedLPFMinRadius is the point at which to start applying the low pass filter
-		else if( Distance > UsedLPFMinRadius )
-		{
-			AudioComponent->CurrentHighFrequencyGain = 1.0f - ( ( Distance - UsedLPFMinRadius ) / ( UsedLPFMaxRadius - UsedLPFMinRadius ) );
 		}
 	}
 

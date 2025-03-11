@@ -997,6 +997,9 @@ struct FAudioComponentParam
 {
 	FName	ParamName;
 	FLOAT	FloatParam;
+	FLOAT	SeekSpeed;
+	FLOAT	Velocity;
+	UBOOL	bSetValue;
 	USoundNodeWave* WaveParam;
 };
 
@@ -1065,13 +1068,18 @@ class UAudioComponent : public UActorComponent
 	BITFIELD								bIsMusic:1;
 	/** Whether or not the audio component should be excluded from reverb EQ processing */
 	BITFIELD								bNoReverb:1;
-	/** Whether or not to bleed stereo files to the rear speakers */
-	BITFIELD								bBleedStereo:1;
+
+	BITFIELD								bFMODGenerated:1;
+	BITFIELD								bIsPaused:1;
+	BITFIELD								bForcePauseUpdate:1;
+	BITFIELD								bPlaying:1;
+	FLOAT									SubPriDistance;
 
 	TArray<FWaveInstance*>					WaveInstances;
 	TArray<BYTE>							SoundNodeData;
 	TMap<USoundNode*,UINT>					SoundNodeOffsetMap;
 	TMultiMap<USoundNode*,FWaveInstance*>	SoundNodeResetWaveMap;
+	TMultiMap<USoundNode*,UINT>				SoundNodeFMODMap;
 	const struct FListener*					Listener;
 
 	FLOAT									PlaybackTime;
@@ -1085,28 +1093,11 @@ class UAudioComponent : public UActorComponent
 	/** Used by the subtitle manager to prioritize subtitles wave instances spawned by this component. */
 	FLOAT									SubtitlePriority;
 
-	FLOAT									FadeInStartTime;
-	FLOAT									FadeInStopTime;
-	/** This is the volume level we are fading to **/
-	FLOAT									FadeInTargetVolume;
-
-	FLOAT									FadeOutStartTime;
-	FLOAT									FadeOutStopTime;
-	/** This is the volume level we are fading to **/
-	FLOAT									FadeOutTargetVolume;
-
-	FLOAT									AdjustVolumeStartTime;
-	FLOAT									AdjustVolumeStopTime;
-	/** This is the volume level we are adjusting to **/
-	FLOAT									AdjustVolumeTargetVolume;
-	FLOAT									CurrAdjustVolumeTargetVolume;
-
 	// Temporary variables for node traversal.
 	USoundNode*								CurrentNotifyBufferFinishedHook;
 	FVector									CurrentLocation;
 	FLOAT									CurrentVolume;
 	FLOAT									CurrentPitch;
-	FLOAT									CurrentHighFrequencyGain;
 	UBOOL									CurrentUseSpatialization;
 	UBOOL									CurrentUseSeamlessLooping;
 
@@ -1114,13 +1105,12 @@ class UAudioComponent : public UActorComponent
 	FLOAT									CurrentVolumeMultiplier;
 	FLOAT									CurrentPitchMultiplier;
 
-	// Accumulators used before propagation to WaveInstance (not simply multiplicative)
-	FLOAT									CurrentVoiceCenterChannelVolume;
-	FLOAT									CurrentVoiceRadioVolume;
-
 	// Serialized multipliers used to e.g. override volume for ambient sound actors.
 	FLOAT									VolumeMultiplier;
 	FLOAT									PitchMultiplier;
+
+	BITFIELD								bIgnorePitch:1;
+	BITFIELD								bEmoteCue:1;
 
 	/** while playing, this component will check for occlusion from its closest listener every this many seconds
 	 * and call OcclusionChanged() if the status changes

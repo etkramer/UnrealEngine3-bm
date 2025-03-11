@@ -17,6 +17,13 @@
 #ifndef INCLUDED_ENGINE_MESH_ENUMS
 #define INCLUDED_ENGINE_MESH_ENUMS 1
 
+enum ESimpleCollisionUsageType
+{
+    SCUT_Inherit            =0,
+    SCUT_Simple             =1,
+    SCUT_Complex            =2,
+    SCUT_MAX                =3,
+};
 enum EPhysXDestructibleChunkState
 {
     DCS_StaticRoot          =0,
@@ -1361,7 +1368,7 @@ IMPLEMENT_NATIVE_HANDLER(Engine,UPhysXDestructibleStructure);
 
 #ifdef VERIFY_CLASS_SIZES
 VERIFY_CLASS_OFFSET_NODIE(U,FracturedBaseComponent,ComponentBaseResources)
-VERIFY_CLASS_OFFSET_NODIE(U,FracturedBaseComponent,bResetStaticMesh)
+VERIFY_CLASS_OFFSET_NODIE(U,FracturedBaseComponent,LineCollisionType)
 VERIFY_CLASS_SIZE_NODIE(UFracturedBaseComponent)
 VERIFY_CLASS_OFFSET_NODIE(U,FracturedSkinnedMeshComponent,ComponentSkinResources)
 VERIFY_CLASS_OFFSET_NODIE(U,FracturedSkinnedMeshComponent,DependentComponents)

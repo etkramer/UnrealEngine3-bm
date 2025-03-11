@@ -6656,7 +6656,6 @@ public:
     DECLARE_CLASS(UUIDataStore_OnlinePlayerData,UUIDataStore_Remote,0|CLASS_Transient|CLASS_Config,Engine)
     static const TCHAR* StaticConfigName() {return TEXT("Engine");}
 
-    virtual UObject* GetUObjectInterfaceUIListElementProvider(){return this;}
 /* === UIDataStore interface === */
 
 	/**

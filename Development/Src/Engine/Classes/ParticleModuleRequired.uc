@@ -23,69 +23,9 @@ var(Emitter)						MaterialInterface			Material;
  */
 var(Emitter)						EParticleScreenAlignment	ScreenAlignment;
 
-/** If TRUE, update the emitter in local space										*/
-var(Emitter)						bool						bUseLocalSpace;
-/** If TRUE, kill the emitter when the particle system is deactivated				*/
-var(Emitter)						bool						bKillOnDeactivate;
-/** If TRUE, kill the emitter when it completes										*/
-var(Emitter)						bool						bKillOnCompleted;
-/** Whether this emitter requires sorting as specified by artist.					*/
-var(Emitter)						bool						bRequiresSorting;
-
-/** 
- *	How long, in seconds, the emitter will run before looping.
- *	If set to 0, the emitter will never loop.
- */
-var(Duration)						float						EmitterDuration;
-/** 
- *	The low end of the emitter duration if using a range.
- */
-var(Duration)						float						EmitterDurationLow;
-/**
- *	If TRUE, select the emitter duration from the range 
- *		[EmitterDurationLow..EmitterDuration]
- */
-var(Duration)						bool						bEmitterDurationUseRange;
-/** 
- *	If TRUE, recalculate the emitter duration on each loop.
- */
-var(Duration)						bool						bDurationRecalcEachLoop;
-
-/** The number of times to loop the emitter.
- *	0 indicates loop continuously
- */
-var(Duration)						int							EmitterLoops;
-
-//=============================================================================
-//	Spawn-related
-//=============================================================================
-/** The rate at which to spawn particles									*/
-var							rawdistributionfloat		SpawnRate;
-
-//=============================================================================
-//	Burst-related
-//=============================================================================
 /** The method to utilize when burst-emitting particles						*/
 var							EParticleBurstMethod		ParticleBurstMethod;
 
-/** The array of burst entries.												*/
-var		export noclear		array<ParticleBurst>		BurstList;
-
-//=============================================================================
-//	Delay-related
-//=============================================================================
-/**
- *	Indicates the time (in seconds) that this emitter should be delayed in the particle system.
- */
-var(Delay)							float						EmitterDelay;
-/**
- *	If TRUE, the emitter will be delayed only on the first loop.
- */
-var(Delay)							bool						bDelayFirstLoopOnly;
-
-//=============================================================================
-//	SubUV-related
-//=============================================================================
 /** 
  *	The interpolation method to used for the SubUV image selection.
  *	One of the following:
@@ -101,14 +41,105 @@ var(Delay)							bool						bDelayFirstLoopOnly;
  */
 var(SubUV)							EParticleSubUVInterpMethod	InterpolationMethod;
 
+/**
+ *	How to render the emitter particles. Can be one of the following:
+ *		ERM_Normal	- As the intended sprite/mesh
+ *		ERM_Point	- As a 2x2 pixel block with no scaling and the color set in EmitterEditorColor
+ *		ERM_Cross	- As a cross of lines, scaled to the size of the particle in EmitterEditorColor
+ *		ERM_None	- Do not render
+ */
+var(Cascade)						EEmitterRenderMode			EmitterRenderMode;
+
+/** If TRUE, update the emitter in local space										*/
+var(Emitter)						bool						bUseLocalSpace;
+/** If TRUE, kill the emitter when the particle system is deactivated				*/
+var(Emitter)						bool						bKillOnDeactivate;
+/** If TRUE, kill the emitter when it completes										*/
+var(Emitter)						bool						bKillOnCompleted;
+/** Whether this emitter requires sorting as specified by artist.					*/
+var(Emitter)						bool						bRequiresSorting;
+
+// BM1
+var(Emitter) bool bUseDynamicLocalSpace;
+
+/**
+ *	If TRUE, select the emitter duration from the range 
+ *		[EmitterDurationLow..EmitterDuration]
+ */
+var(Duration)						bool						bEmitterDurationUseRange;
+/** 
+ *	If TRUE, recalculate the emitter duration on each loop.
+ */
+var(Duration)						bool						bDurationRecalcEachLoop;
+
+// BM1
+var bool bEmitPerMeter;
+
+/**
+ *	If TRUE, the emitter will be delayed only on the first loop.
+ */
+var(Delay)							bool						bDelayFirstLoopOnly;
+
+/** Whether to scale the UV or not - ie, the model wasn't setup with sub uvs		*/
+var(SubUV)							bool						bScaleUV;
+
+/** SUB-UV RELATIVE INTERNAL MEMBERS												*/
+var									bool						bDirectUV;
+
+/**
+ *	If TRUE, use the MaxDrawCount to limit the number of particles rendered.
+ *	NOTE: This does not limit the number spawned/updated, only what is drawn.
+ */
+var(Rendering)						bool						bUseMaxDrawCount;
+
+/** 
+ *	How long, in seconds, the emitter will run before looping.
+ *	If set to 0, the emitter will never loop.
+ */
+var(Duration)						float						EmitterDuration;
+/** 
+ *	The low end of the emitter duration if using a range.
+ */
+var(Duration)						float						EmitterDurationLow;
+
+/** The number of times to loop the emitter.
+ *	0 indicates loop continuously
+ */
+var(Duration)						int							EmitterLoops;
+
+//=============================================================================
+//	Spawn-related
+//=============================================================================
+/** The rate at which to spawn particles									*/
+var							rawdistributionfloat		SpawnRate;
+
+// BM1
+var rawdistributionfloat ParticlesPerMeter;
+
+//=============================================================================
+//	Burst-related
+//=============================================================================
+
+/** The array of burst entries.												*/
+var		export noclear		array<ParticleBurst>		BurstList;
+
+//=============================================================================
+//	Delay-related
+//=============================================================================
+/**
+ *	Indicates the time (in seconds) that this emitter should be delayed in the particle system.
+ */
+var(Delay)							float						EmitterDelay;
+
+//=============================================================================
+//	SubUV-related
+//=============================================================================
+
 /** The number of sub-images horizontally in the texture							*/
 var(SubUV)							int							SubImages_Horizontal;
 
 /** The number of sub-images vertically in the texture								*/
 var(SubUV)							int							SubImages_Vertical;
-
-/** Whether to scale the UV or not - ie, the model wasn't setup with sub uvs		*/
-var(SubUV)							bool						bScaleUV;
 
 /**
  *	The amount of time (particle-relative, 0.0 to 1.0) to 'lock' on a random sub image
@@ -120,14 +151,6 @@ var									float						RandomImageTime;
 /** The number of times to change a random image over the life of the particle.		*/
 var(SubUV)							int							RandomImageChanges;
 
-/** SUB-UV RELATIVE INTERNAL MEMBERS												*/
-var									bool						bDirectUV;
-
-/**
- *	If TRUE, use the MaxDrawCount to limit the number of particles rendered.
- *	NOTE: This does not limit the number spawned/updated, only what is drawn.
- */
-var(Rendering)						bool						bUseMaxDrawCount;
 /**
  *	The maximum number of particles to DRAW for this emitter.
  *	If set to 0, it will use whatever number are present.
@@ -137,14 +160,6 @@ var(Rendering)						int							MaxDrawCount;
 //=============================================================================
 //	Cascade-related
 //=============================================================================
-/**
- *	How to render the emitter particles. Can be one of the following:
- *		ERM_Normal	- As the intended sprite/mesh
- *		ERM_Point	- As a 2x2 pixel block with no scaling and the color set in EmitterEditorColor
- *		ERM_Cross	- As a cross of lines, scaled to the size of the particle in EmitterEditorColor
- *		ERM_None	- Do not render
- */
-var(Cascade)						EEmitterRenderMode			EmitterRenderMode;
 /**
  *	The color of the emitter in the curve editor and debug rendering modes.
  */

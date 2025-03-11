@@ -353,13 +353,6 @@ var(Physics)	editinline PhysXSceneProperties	PhysicsProperties;
 /** Which compartments run on which frames (list is cyclic).  An empty list means all compartments run on all frames. */
 var(Physics)	array< CompartmentRunList >		CompartmentRunFrames;
 
-// BM1
-var(Physics) float DefaultSkinWidth;
-var(APEX) ApexModuleDestructibleSettings DestructibleSettings;
-
-/** Verticals */
-var				PhysicsLODVerticalEmitter		EmitterVertical;
-
 struct native ApexModuleDestructibleSettings
 {
     var() int MaxChunkIslandCount;
@@ -385,6 +378,13 @@ struct native ApexModuleDestructibleSettings
         HighMaxChunkSeparationLOD=0.5
     }
 };
+
+// BM1
+var(Physics) float DefaultSkinWidth;
+var(APEX) ApexModuleDestructibleSettings DestructibleSettings;
+
+/** Verticals */
+var				PhysicsLODVerticalEmitter		EmitterVertical;
 
 /** Parameters for emitter vertical */
 struct native PhysXEmitterVerticalProperties

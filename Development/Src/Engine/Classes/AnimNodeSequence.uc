@@ -197,6 +197,8 @@ public:
 	void StartCameraAnim();
 	/** Stops playing any active camera anim playing in conjunction with this anim. */
 	void StopCameraAnim();
+
+	INT GetAnimLinkupIndex();
 }
 
 /** Change the animation this node is playing to the new name. Will be looked up in owning SkeletaMeshComponent's AnimSets array. */

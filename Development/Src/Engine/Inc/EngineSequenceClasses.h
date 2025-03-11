@@ -1855,10 +1855,10 @@ public:
     TMap< AActor*,FSavedTransform > SavedActorTransforms;
     TMap< AActor*,BYTE > SavedActorVisibilities;
     FLOAT PlayRate;
-	FLOAT StartPosition;
+    FLOAT StartPosition;
     FLOAT Position;
     FLOAT ForceStartPosition;
-	BITFIELD DisplayTime:1;
+    BITFIELD DisplayTime:1;
     BITFIELD bIsPlaying:1;
     BITFIELD bPaused:1;
     BITFIELD bIsBeingEdited:1;
@@ -1872,9 +1872,9 @@ public:
     BITFIELD bClientSideOnly:1;
     BITFIELD bSkipUpdateIfNotVisible:1;
     BITFIELD bIsSkippable:1;
-	BITFIELD ExitAutoBink:1;
+    BITFIELD ExitAutoBink:1;
     BITFIELD bShouldShowGore:1;
-	BITFIELD bWasStopped:1;
+    BITFIELD bWasStopped:1;
     TArrayNoInit<class ACoverLink*> LinkedCover;
     class UInterpData* InterpData;
     TArrayNoInit<class UInterpGroupInst*> GroupInst;
@@ -2554,7 +2554,7 @@ class USeqAct_SetPhysics : public USequenceAction
 public:
     //## BEGIN PROPS SeqAct_SetPhysics
     BYTE newPhysics;
-	BITFIELD bWakePhysics:1;
+    BITFIELD bWakePhysics:1 GCC_BITFIELD_MAGIC;
     //## END PROPS SeqAct_SetPhysics
 
     DECLARE_CLASS(USeqAct_SetPhysics,USequenceAction,0,Engine)
@@ -2835,7 +2835,7 @@ public:
     //## BEGIN PROPS SeqAct_SetObject
     class UObject* DefaultValue;
     class UObject* Value;
-	BITFIELD GetPawnFromController:1;
+    BITFIELD GetPawnFromController:1;
     //## END PROPS SeqAct_SetObject
 
     DECLARE_CLASS(USeqAct_SetObject,USeqAct_SetSequenceVariable,0,Engine)

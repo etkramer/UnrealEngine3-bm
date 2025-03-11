@@ -508,7 +508,7 @@ void appGetGameNativeScriptPackageNames(TArray<FString>& PackageNames, UBOOL bCa
 		PackageNames.AddItem(TEXT("UTEditor"));
 	}
 #elif GAMENAME == BMGAME
-	PackageNames.AddItem(TEXT("Startup"));
+	// PackageNames.AddItem(TEXT("Startup"));
 
 	PackageNames.AddItem(TEXT("BmGame"));
 	if (bCanIncludeEditorOnlyPackages)

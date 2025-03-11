@@ -1018,6 +1018,7 @@ DECLARE_NATIVE_TYPE(Engine,USoundNodeWaveParam);
 	AAmbientSoundNonLoop::StaticClass(); \
 	AAmbientSoundSimple::StaticClass(); \
 	UDistributionFloatSoundParameter::StaticClass(); \
+	UFMODReverb::StaticClass(); \
 	UMixBin::StaticClass(); \
 	URFMODSound::StaticClass(); \
 	USoundMode::StaticClass(); \
@@ -1053,6 +1054,10 @@ VERIFY_CLASS_OFFSET_NODIE(A,AmbientSoundSimple,AmbientProperties)
 VERIFY_CLASS_OFFSET_NODIE(A,AmbientSoundSimple,SoundNodeInstance)
 VERIFY_CLASS_SIZE_NODIE(AAmbientSoundSimple)
 VERIFY_CLASS_SIZE_NODIE(UDistributionFloatSoundParameter)
+VERIFY_CLASS_OFFSET_NODIE(U,FMODReverb,Version)
+VERIFY_CLASS_OFFSET_NODIE(U,FMODReverb,ReverbName)
+VERIFY_CLASS_OFFSET_NODIE(U,FMODReverb,FMODSound)
+VERIFY_CLASS_SIZE_NODIE(UFMODReverb)
 VERIFY_CLASS_OFFSET_NODIE(U,MixBin,Version)
 VERIFY_CLASS_OFFSET_NODIE(U,MixBin,MixBinName)
 VERIFY_CLASS_OFFSET_NODIE(U,MixBin,FMODSound)
