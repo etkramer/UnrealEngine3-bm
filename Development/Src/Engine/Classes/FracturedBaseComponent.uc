@@ -48,6 +48,17 @@ var private{private} const int ComponentIndexBufferSize;
 /** TRUE whenever the static mesh is being reset during Reattach */
 var protected{protected} transient const int bResetStaticMesh;
 
+enum ESimpleCollisionUsageType
+{
+    SCUT_Inherit,
+    SCUT_Simple,
+    SCUT_Complex
+};
+
+// BM1
+var(Collision) ESimpleCollisionUsageType BoxCollisionType;
+var(Collision) ESimpleCollisionUsageType LineCollisionType;
+
 cpptext
 {
 public:

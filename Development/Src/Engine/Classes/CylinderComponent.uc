@@ -10,6 +10,9 @@ class CylinderComponent extends PrimitiveComponent
 var() const export float	CollisionHeight;
 var() const export float	CollisionRadius;
 
+// BM1
+var() const export float AABBScale;
+
 /** Color used to draw the cylinder. */
 var() const	color			CylinderColor;
 

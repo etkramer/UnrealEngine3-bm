@@ -73,6 +73,8 @@ private:
 protected:
     INT bResetStaticMesh;
 public:
+    BYTE BoxCollisionType;
+    BYTE LineCollisionType;
     //## END PROPS FracturedBaseComponent
 
     virtual UBOOL SetStaticMesh(class UStaticMesh* NewMesh,UBOOL bForce=FALSE);

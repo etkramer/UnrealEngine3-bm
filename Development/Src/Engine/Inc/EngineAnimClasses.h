@@ -737,6 +737,7 @@ class UAnimNotify : public UObject
 {
 public:
     //## BEGIN PROPS AnimNotify
+    FColor NotifyColour;
     //## END PROPS AnimNotify
 
     DECLARE_ABSTRACT_CLASS(UAnimNotify,UObject,0,Engine)

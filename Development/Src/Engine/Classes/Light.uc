@@ -8,8 +8,6 @@ class Light extends Actor
 
 var() editconst const LightComponent	LightComponent;
 
-
-
 cpptext
 {
 public:
@@ -52,6 +50,8 @@ public:
 	}
 }
 
+// BM1
+var(Object) name LightGroup;
 
 /** replicated copy of LightComponent's bEnabled property */
 var repnotify bool bEnabled;

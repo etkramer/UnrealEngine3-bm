@@ -13,6 +13,9 @@ var() bool bClampFluid;
 
 var() bool bBlockCamera;
 
+// BM1
+var Color DebugRenderingColor;
+
 cpptext
 {
 	UBOOL IgnoreBlockingBy( const AActor *Other ) const;

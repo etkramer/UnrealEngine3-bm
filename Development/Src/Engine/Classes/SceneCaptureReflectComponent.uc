@@ -14,6 +14,9 @@ var(Capture) TextureRenderTarget2D TextureTarget;
 /** scale field of view so that there can be some overdraw */
 var(Capture) float ScaleFOV;
 
+// BM1
+var(Capture) float FarClip;
+
 cpptext
 {
 public:
@@ -36,5 +39,6 @@ public:
 defaultproperties
 {
 	ScaleFOV=1.f
+	FarClip=1000.0
 	FrameRate=1000
 }

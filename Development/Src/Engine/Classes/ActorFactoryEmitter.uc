@@ -17,6 +17,9 @@ cpptext
 
 var()	ParticleSystem		ParticleSystem;
 
+// BM1: Should be PhysXParticleSystemComponent
+var() export editinline ParticleSystemComponent ParticleSystemPhysX;
+
 defaultproperties
 {
 	MenuName="Add Emitter"

@@ -6,6 +6,9 @@ class MaterialExpressionConstant3Vector extends MaterialExpression
 	collapsecategories
 	hidecategories(Object);
 
+// BM1
+var() LinearColor Colour;
+
 var() float	R,
 			G,
 			B;

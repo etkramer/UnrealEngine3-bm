@@ -13,5 +13,8 @@ var	native const noexport pointer FPrimitiveDrawInterfaceVfTable;
 // FPrimitiveDrawInterface FSceneView*
 var native const noexport pointer FPrimitiveDrawInterfaceView;
 
+// BM1
+var native transient int BatchLineDrawDepth;
+
 var native transient const array<pointer> BatchedLines;
 var native transient const float DefaultLifeTime;

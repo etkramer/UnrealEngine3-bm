@@ -146,6 +146,10 @@ public:
     BITFIELD bBlockPawns:1;
     class USkeletalMesh* ReplicatedMesh;
     class UPhysicsAsset* ReplicatedPhysAsset;
+    class UAudioComponent* ImpactSoundComponent;
+    class UAudioComponent* ImpactSoundComponent2;
+    FLOAT LastImpactTime;
+    class URB_ForceComponent* ImpactForceComponent;
     //## END PROPS KAsset
 
     DECLARE_CLASS(AKAsset,AActor,0|CLASS_NativeReplication,Engine)
@@ -952,6 +956,7 @@ public:
     FLOAT AngularDampingScale;
     FLOAT AngularForceLimitScale;
     BITFIELD bInitBodies:1;
+    FLOAT CachedDampingRampupProportion;
     //## END PROPS PhysicsAssetInstance
 
     void SetLinearDriveScale(FLOAT InLinearSpringScale,FLOAT InLinearDampingScale,FLOAT InLinearForceLimitScale);

@@ -1157,10 +1157,12 @@ struct FReplicatedHitImpulse
 
 struct FPhysEffectInfo
 {
-    FLOAT Threshold;
+    FLOAT MinEffectSpeed;
+    FLOAT MaxEffectSpeed;
     FLOAT ReFireDelay;
     class UParticleSystem* Effect;
     class USoundCue* Sound;
+    class URB_ForceComponent* Force;
 
     /** Constructors */
     FPhysEffectInfo() {}
@@ -3644,6 +3646,7 @@ public:
     //## BEGIN PROPS BlockingVolume
     BITFIELD bClampFluid:1 GCC_BITFIELD_MAGIC;
     BITFIELD bBlockCamera:1;
+    FColor DebugRenderingColor;
     //## END PROPS BlockingVolume
 
     DECLARE_CLASS(ABlockingVolume,AVolume,0,Engine)
@@ -3813,6 +3816,8 @@ public:
     BITFIELD bCrowdAgentsPlayDeathAnim:1;
     BITFIELD bPhysicsOnContact:1;
     BITFIELD bWaterVolume:1;
+    BITFIELD bWindVolume:1;
+    BITFIELD bPerformTorque:1;
     FLOAT GroundFriction;
     FLOAT TerminalVelocity;
     FLOAT DamagePerSec;
@@ -3825,6 +3830,7 @@ public:
     class AInfo* PainTimer;
     class AController* DamageInstigator;
     class APhysicsVolume* NextPhysicsVolume;
+    FVector ZoneTorque;
     //## END PROPS PhysicsVolume
 
     virtual FLOAT GetGravityZ();
@@ -12592,6 +12598,7 @@ class ALight : public AActor
 public:
     //## BEGIN PROPS Light
     class ULightComponent* LightComponent;
+    FName LightGroup;
     BITFIELD bEnabled:1;
     //## END PROPS Light
 
@@ -14406,6 +14413,7 @@ public:
     INT MenuPriority;
     class UClass* NewActorClass;
     BITFIELD bPlaceable:1;
+    BITFIELD UseActorSelection:1;
     FStringNoInit SpecificGameName;
     //## END PROPS ActorFactory
 
@@ -14592,6 +14600,7 @@ class UActorFactoryEmitter : public UActorFactory
 public:
     //## BEGIN PROPS ActorFactoryEmitter
     class UParticleSystem* ParticleSystem;
+    class UParticleSystemComponent* ParticleSystemPhysX;
     //## END PROPS ActorFactoryEmitter
 
     DECLARE_CLASS(UActorFactoryEmitter,UActorFactory,0|CLASS_Config,Engine)
@@ -14634,6 +14643,7 @@ class UActorFactoryLight : public UActorFactory
 {
 public:
     //## BEGIN PROPS ActorFactoryLight
+    class UPointLightComponent* LightComponent;
     //## END PROPS ActorFactoryLight
 
     DECLARE_CLASS(UActorFactoryLight,UActorFactory,0|CLASS_Config,Engine)
@@ -14703,6 +14713,7 @@ class UActorFactorySkeletalMesh : public UActorFactory
 {
 public:
     //## BEGIN PROPS ActorFactorySkeletalMesh
+    class USkeletalMesh* HeadSkeletalMesh;
     class USkeletalMesh* SkeletalMesh;
     class UAnimSet* AnimSet;
     FName AnimSequenceName;
@@ -15338,6 +15349,8 @@ public:
     BITFIELD bTraceFromClosestBoundsPoint:1;
     BITFIELD bOverrideOwnerBounds:1;
     BITFIELD bOverrideOwnerLightingChannels:1;
+    BITFIELD RestrictInterpolationWhenSlow:1;
+    BITFIELD bScaleShadowDistanceWhenAboveCamera:1;
     FLOAT ModShadowFadeoutTime;
     FLOAT ModShadowFadeoutExponent;
     INT MinShadowResolution;
@@ -15345,10 +15358,14 @@ public:
     INT ShadowFadeResolution;
     BYTE ShadowFilterQuality;
     BYTE LightShadowMode;
+    FLOAT ShadowFalloffExponent;
+    FVector SavedLightDirection;
     FLOAT BouncedLightingFactor;
     FLOAT MinShadowAngle;
     FBoxSphereBounds OverriddenBounds;
     FLightingChannelContainer OverriddenLightingChannels;
+    INT StaticLightingTimestamp;
+    INT TimeSlicerId;
     //## END PROPS DynamicLightEnvironmentComponent
 
     DECLARE_CLASS(UDynamicLightEnvironmentComponent,ULightEnvironmentComponent,0,Engine)
@@ -15609,6 +15626,7 @@ public:
     //## BEGIN PROPS SceneCaptureReflectComponent
     class UTextureRenderTarget2D* TextureTarget;
     FLOAT ScaleFOV;
+    FLOAT FarClip;
     //## END PROPS SceneCaptureReflectComponent
 
     DECLARE_CLASS(USceneCaptureReflectComponent,USceneCaptureComponent,0,Engine)

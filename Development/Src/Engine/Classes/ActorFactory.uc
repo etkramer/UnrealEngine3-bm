@@ -60,6 +60,9 @@ var	class<Actor>	NewActorClass;
 /** Whether to appear on menu (or this Factory only used through scripts etc.) */
 var bool			bPlaceable;
 
+// BM1
+var bool UseActorSelection;
+
 /** If this is associated with a specific game, don't display
 	If this is empty string, display for all games */
 var string			SpecificGameName;

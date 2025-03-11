@@ -58,6 +58,8 @@ var		const float										AngularForceLimitScale;
 /** Allows initialization of bodies to be deferred */
 var		const bool										bInitBodies;
 
+// BM1
+var float CachedDampingRampupProportion;
 
 cpptext
 {

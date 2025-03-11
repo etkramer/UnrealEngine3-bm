@@ -988,9 +988,9 @@ public:
 	UStaticMeshComponent();
 
 	/** Force drawing of a specific lodmodel-1. 0 is automatic selection */
-	INT									ForcedLodModel;
+	BYTE								ForcedLodModel;
 	/** LOD that was desired for rendering this StaticMeshComponent last frame. */
-	INT									PreviousLODLevel;
+	BYTE								PreviousLODLevel;
 
 	UStaticMesh* StaticMesh;
 	FColor WireframeColor;

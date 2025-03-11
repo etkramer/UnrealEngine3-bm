@@ -10,16 +10,7 @@ class PhysicsVolume extends Volume
 
 var()		interp vector	ZoneVelocity;
 var()		bool		bVelocityAffectsWalking;
-var()		float		GroundFriction;
-var()		float		TerminalVelocity;
-var()		float		DamagePerSec;
-var() class<DamageType>	DamageType<AllowAbstract>;
-var()		int			Priority;	// determines which PhysicsVolume takes precedence if they overlap
-var()		float		FluidFriction;
-
 var()		bool	bPainCausing;			// Zone causes pain.
-/** If pain causing, time between damage applications. */
-var()		float	PainInterval;
 /** if this is TRUE AI should not treat paths inside this volume differently even if the volume causes pain */
 var()		bool	bAIShouldIgnorePain;
 /** if bPainCausing, cause pain when something enters the volume in addition to damage each second */
@@ -39,6 +30,21 @@ var()		bool	bCrowdAgentsPlayDeathAnim;
  *	If this flag is true though, if this Actor touches the volume at all, it will affect it.
  */
 var()		bool	bPhysicsOnContact;
+var			bool	bWaterVolume;
+
+// BM1
+var bool bWindVolume;
+var bool bPerformTorque;
+
+var()		float		GroundFriction;
+var()		float		TerminalVelocity;
+var()		float		DamagePerSec;
+var() class<DamageType>	DamageType<AllowAbstract>;
+var()		int			Priority;	// determines which PhysicsVolume takes precedence if they overlap
+var()		float		FluidFriction;
+
+/** If pain causing, time between damage applications. */
+var()		float	PainInterval;
 
 /**
  *	This controls the force that will be applied to PHYS_RigidBody objects in this volume to get them
@@ -49,13 +55,15 @@ var()		float	RigidBodyDamping;
 /** Applies a cap on the maximum damping force that is applied to objects. */
 var()		float	MaxDampingForce;
 
-var			bool	bWaterVolume;
 var	Info PainTimer;
 
 /** Controller that gets credit for any damage caused by this volume */
 var Controller DamageInstigator;
 
 var PhysicsVolume NextPhysicsVolume;
+
+// BM1
+var Vector ZoneTorque;
 
 struct CheckpointRecord
 {

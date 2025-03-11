@@ -309,6 +309,7 @@ class UMaterialExpressionConstant3Vector : public UMaterialExpression
 {
 public:
     //## BEGIN PROPS MaterialExpressionConstant3Vector
+	FLinearColor Colour;
     FLOAT R;
     FLOAT G;
     FLOAT B;

@@ -125,6 +125,8 @@ class ULineBatchComponent : public UPrimitiveComponent, public FPrimitiveDrawInt
 		{}
 	};
 
+	INT BatchLineDrawDepth;
+
 	TArray<FLine>	BatchedLines;
 	FLOAT			DefaultLifeTime;
 

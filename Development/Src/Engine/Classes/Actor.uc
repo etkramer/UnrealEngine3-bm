@@ -515,10 +515,16 @@ struct native ReplicatedHitImpulse
 /** Struct used to pass back information for physical impact effect */
 struct native PhysEffectInfo
 {
-	var()	float				Threshold;
+	// BM1
+	var() float MinEffectSpeed;
+	var() float MaxEffectSpeed;
+
 	var()	float				ReFireDelay;
 	var()	ParticleSystem		Effect;
 	var()	SoundCue			Sound;
+
+	// BM1
+	var() export editinline RB_ForceComponent Force;
 };
 
 // endif

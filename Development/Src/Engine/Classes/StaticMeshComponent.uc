@@ -9,8 +9,8 @@ class StaticMeshComponent extends MeshComponent
 
 
 /** If 0, auto-select LOD level. if >0, force to (ForcedLodModel-1). */
-var() int		ForcedLodModel; 
-var int			PreviousLODLevel; // Previous LOD level
+var() byte		ForcedLodModel; 
+var byte			PreviousLODLevel; // Previous LOD level
 
 var() const StaticMesh StaticMesh;
 var() Color WireframeColor;

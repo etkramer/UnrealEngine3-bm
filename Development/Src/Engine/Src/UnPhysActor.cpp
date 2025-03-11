@@ -1248,61 +1248,8 @@ void AKActor::OnRigidBodyCollision(const FRigidBodyCollisionInfo& Info0, const F
 
 	FRotator LocalContactRot = LocalContactNormal.Rotation();
 
-	// We don't allow impact effects to fire when sliding.
-	if( (ImpactVelMag > ImpactEffectInfo.Threshold) && (TimeSinceLastImpact > ImpactEffectInfo.ReFireDelay) && !bSlideActive)
-	{
-		if(ImpactEffectComponent)
-		{
-			ImpactEffectComponent->Translation = LocalContactPos;
-			ImpactEffectComponent->Rotation = LocalContactRot;
-			ImpactEffectComponent->BeginDeferredUpdateTransform();
-
-			ImpactEffectComponent->SetFloatParameter(NAME_ImpactVel, ImpactVelMag);
-			ImpactEffectComponent->ActivateSystem();
-		}
-
-		if(ImpactSoundComponent && ImpactSoundComponent2)
-		{
-			static bool bImpactSoundOdd = true;
-			if(bImpactSoundOdd)
-			{
-				ImpactSoundComponent->SetFloatParameter(NAME_ImpactVel, ImpactVelMag);
-				ImpactSoundComponent->Play();
-				bImpactSoundOdd = false;
-			}
-			else
-			{
-				ImpactSoundComponent2->SetFloatParameter(NAME_ImpactVel, ImpactVelMag);
-				ImpactSoundComponent2->Play();
-				bImpactSoundOdd = true;
-			}
-		}
-
-		bDidImpact = TRUE;
-		LastImpactTime = GWorld->GetTimeSeconds();
-	}
-
 	// Slide effect
-	bCurrentSlide = (SlideVelMag > SlideEffectInfo.Threshold);
 	FLOAT TimeSinceLastSlide = GWorld->GetTimeSeconds() - LastSlideTime;
-
-	// If we think a slide is active, but it isn't now
-	if(!bSlideActive && bCurrentSlide && (TimeSinceLastSlide > SlideEffectInfo.ReFireDelay) && !bDidImpact)
-	{
-		if(SlideEffectComponent)
-		{
-			SlideEffectComponent->SetFloatParameter(NAME_SlideVel, SlideVelMag);
-			SlideEffectComponent->ActivateSystem();
-		}
-
-		if(SlideSoundComponent)
-		{
-			SlideSoundComponent->SetFloatParameter(NAME_SlideVel, SlideVelMag);
-			SlideSoundComponent->FadeIn(SlideFadeInTime,1.0f);
-		}
-
-		bSlideActive = TRUE;
-	}
 
 	// Update transform of slide emitter each frame sliding is active.
 	if(bSlideActive)

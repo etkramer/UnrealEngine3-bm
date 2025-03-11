@@ -14,6 +14,9 @@ struct native NotifierInfo
     var bool AnimMirrored;
 };
 
+// BM1
+var editoronly Color NotifyColour;
+
 cpptext
 {
 	// AnimNotify interface.

@@ -43,6 +43,41 @@ var() bool bCastShadows;
 /** Whether the light environment's shadow includes the effect of dynamic lights. */
 var() bool bCompositeShadowsFromDynamicLights;
 
+/** Whether the light environment should be dynamically updated. */
+var() bool bDynamic;
+
+/** Whether a directional light should be used to synthesize the dominant lighting in the environment. */
+var() bool bSynthesizeDirectionalLight;
+
+/**
+ * Whether a SH light should be used to synthesize all light not accounted for by the synthesized directional light.
+ * If not, a sky light is used instead.
+ */
+var() bool bSynthesizeSHLight;
+
+/** 
+ * This is to allow individual DLEs to force override and get and SH light.  We need this for levels which have their
+ * worldinfo's bAllowLightEnvSphericalHarmonicLights set to FALSE but then have cinematic levels added which were lit needing SH lights
+ * to look good.
+ **/
+var() bool bForceAllowLightEnvSphericalHarmonicLights;
+
+/** Whether this is an actor that can't tolerate latency in lighting updates; a full lighting update is done every frame. */
+var() bool bRequiresNonLatentUpdates;
+
+/* Whether to do visibility traces from the closest point on the bounds to the light, or just from the center of the bounds. */
+var bool bTraceFromClosestBoundsPoint;
+
+/* Whether to override the bounds calculated off of the owner's components with OverriddenBounds. */
+var bool bOverrideOwnerBounds;
+
+/* Whether to override the lighting channels of the owner with OverriddenLightingChannels. */
+var bool bOverrideOwnerLightingChannels;
+
+// BM1
+var() bool RestrictInterpolationWhenSlow;
+var() bool bScaleShadowDistanceWhenAboveCamera;
+
 /** Time since the caster was last visible at which the mod shadow will fade out completely.  */
 var() float ModShadowFadeoutTime;
 
@@ -72,28 +107,12 @@ var() int ShadowFadeResolution;
 /** Quality of shadow buffer filtering to use on the light environment */
 var() EShadowFilterQuality ShadowFilterQuality;
 
-/** Whether the light environment should be dynamically updated. */
-var() bool bDynamic;
-
-/** Whether a directional light should be used to synthesize the dominant lighting in the environment. */
-var() bool bSynthesizeDirectionalLight;
-
-/**
- * Whether a SH light should be used to synthesize all light not accounted for by the synthesized directional light.
- * If not, a sky light is used instead.
- */
-var() bool bSynthesizeSHLight;
-
-/** 
- * This is to allow individual DLEs to force override and get and SH light.  We need this for levels which have their
- * worldinfo's bAllowLightEnvSphericalHarmonicLights set to FALSE but then have cinematic levels added which were lit needing SH lights
- * to look good.
- **/
-var() bool bForceAllowLightEnvSphericalHarmonicLights;
-
-
 /** The type of shadowing to use for the environment's shadow. */
 var() ELightShadowMode LightShadowMode;
+
+// BM1
+var() float ShadowFalloffExponent;
+var Vector SavedLightDirection;
 
 /** The intensity of the simulated bounced light, as a fraction of the LightComponent's bounced lighting settings. */
 var() float BouncedLightingFactor;
@@ -104,23 +123,15 @@ var() float BouncedLightingFactor;
  */
 var() float MinShadowAngle;
 
-/** Whether this is an actor that can't tolerate latency in lighting updates; a full lighting update is done every frame. */
-var() bool bRequiresNonLatentUpdates;
-
-/* Whether to do visibility traces from the closest point on the bounds to the light, or just from the center of the bounds. */
-var bool bTraceFromClosestBoundsPoint;
-
-/* Whether to override the bounds calculated off of the owner's components with OverriddenBounds. */
-var bool bOverrideOwnerBounds;
-
 /* The bounds to use for visibility calculations if bOverrideOwnerBounds is enabled. */
 var BoxSphereBounds OverriddenBounds;
 
-/* Whether to override the lighting channels of the owner with OverriddenLightingChannels. */
-var bool bOverrideOwnerLightingChannels;
-
 /* The lighting channels to use if bOverrideOwnerLightingChannels is enabled. */
 var LightingChannelContainer OverriddenLightingChannels;
+
+// BM1
+var transient int StaticLightingTimestamp;
+var transient int TimeSlicerId;
 
 cpptext
 {

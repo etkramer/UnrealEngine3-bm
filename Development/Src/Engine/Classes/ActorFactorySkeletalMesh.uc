@@ -13,6 +13,9 @@ cpptext
 	virtual FString GetMenuName();
 }
 
+// BM1
+var() SkeletalMesh HeadSkeletalMesh;
+
 var()	SkeletalMesh	SkeletalMesh;
 var()	AnimSet			AnimSet;
 var()	name			AnimSequenceName;
