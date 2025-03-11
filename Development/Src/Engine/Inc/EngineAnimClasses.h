@@ -299,7 +299,7 @@ public:
     class UAudioComponent* ImpactSoundComponent;
     class UAudioComponent* ImpactSoundComponent2;
     FLOAT LastImpactTime;
-    class UPrimitiveComponent* ImpactForceComponent;
+    class URB_ForceComponent* ImpactForceComponent;
     class USkeletalMesh* ReplicatedMesh;
     class UMaterialInterface* ReplicatedMaterial;
     TArrayNoInit<struct FSkelMeshActorControlTarget> ControlTargets;

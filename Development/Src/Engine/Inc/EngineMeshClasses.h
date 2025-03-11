@@ -179,6 +179,8 @@ private:
 	friend class FFracturedBaseSceneProxy;
 };
 
+#define UCONST_MAXMATS 10
+
 class UFracturedSkinnedMeshComponent : public UFracturedBaseComponent
 {
 public:
@@ -190,6 +192,8 @@ protected:
     BITFIELD bBecameVisible:1;
     BITFIELD bFragmentTransformsChanged:1;
 public:
+    BITFIELD XRaySet:1;
+    class UMaterialInterface* OldMaterial[10];
     //## END PROPS FracturedSkinnedMeshComponent
 
     DECLARE_CLASS(UFracturedSkinnedMeshComponent,UFracturedBaseComponent,0,Engine)
@@ -241,6 +245,8 @@ struct FFragmentGroup
     }
 };
 
+#define UCONST_MAXMATS 10
+
 class UFracturedStaticMeshComponent : public UFracturedBaseComponent
 {
 public:
@@ -253,11 +259,13 @@ public:
     BITFIELD bUseVisibleVertsForBounds:1;
     BITFIELD bTopFragmentsRootNonDestroyable:1;
     BITFIELD bBottomFragmentsRootNonDestroyable:1;
+    BITFIELD XRaySet:1;
     FLOAT TopBottomFragmentDistThreshold;
     class UMaterialInterface* LoseChunkOutsideMaterialOverride;
     FLOAT FragmentBoundsMaxZ;
     FLOAT FragmentBoundsMinZ;
     class UFracturedSkinnedMeshComponent* SkinnedComponent;
+    class UMaterialInterface* OldMaterial[10];
     //## END PROPS FracturedStaticMeshComponent
 
     virtual void SetVisibleFragments(const TArray<BYTE>& VisibilityFactors);
@@ -470,15 +478,29 @@ public:
     class UFracturedSkinnedMeshComponent* SkinnedComponent;
     TArrayNoInit<INT> ChunkHealth;
     BITFIELD bBreakChunksOnPawnTouch:1;
+    BITFIELD bSpawnExplosionChunks:1;
+    BITFIELD bAllowFracturedPartCollisions:1;
+    BITFIELD bUseExtraStasis:1;
+    BITFIELD IsForceFullDestroyOnDamage:1;
+    BITFIELD IsForceFullDestroyOnDamageIncludesRootFragments:1;
+    BITFIELD IsXRayable:1;
+    BITFIELD IsMetal:1;
+    BITFIELD bIgnoreBulletFracture:1;
+    BITFIELD bLightingChannelDifferent:1;
     TArrayNoInit<class UClass*> FracturedByDamageType;
     FLOAT ChunkHealthScale;
     TArrayNoInit<class UParticleSystem*> OverrideFragmentDestroyEffects;
     FLOAT FractureCullMinDistance;
     FLOAT FractureCullMaxDistance;
     TArrayNoInit<struct FDeferredPartToSpawn> DeferredPartsToSpawn;
+    class UMaterialInterface* XRayMaterial;
+    class UMaterialInterface* XRayMetalMaterial;
+    FVector InvestigateOffset;
     struct FPhysEffectInfo PartImpactEffect;
     class USoundCue* ExplosionFractureSound;
     class USoundCue* SingleChunkFractureSound;
+    class UDynamicLightEnvironmentComponent* FracturePartLE;
+    FLightingChannelContainer FracturePartLELCC;
     //## END PROPS FracturedStaticMeshActor
 
     virtual class AFracturedStaticMeshPart* SpawnPart(INT ChunkIndex,FVector InitialVel,FVector InitialAngVel,FLOAT RelativeScale,UBOOL bExplosion);
@@ -626,6 +648,9 @@ public:
     FVector OldVelocity;
     FLOAT CurrentVibrationLevel;
     FLOAT LastImpactSoundTime;
+    FVector OldLinearVelocity;
+    FLOAT CurrentLinearVibrationLevel;
+    FLOAT BornAtTime;
     //## END PROPS FracturedStaticMeshPart
 
     virtual void Initialize();
@@ -1371,16 +1396,16 @@ VERIFY_CLASS_OFFSET_NODIE(U,FracturedBaseComponent,ComponentBaseResources)
 VERIFY_CLASS_OFFSET_NODIE(U,FracturedBaseComponent,LineCollisionType)
 VERIFY_CLASS_SIZE_NODIE(UFracturedBaseComponent)
 VERIFY_CLASS_OFFSET_NODIE(U,FracturedSkinnedMeshComponent,ComponentSkinResources)
-VERIFY_CLASS_OFFSET_NODIE(U,FracturedSkinnedMeshComponent,DependentComponents)
+VERIFY_CLASS_OFFSET_NODIE(U,FracturedSkinnedMeshComponent,OldMaterial)
 VERIFY_CLASS_SIZE_NODIE(UFracturedSkinnedMeshComponent)
 VERIFY_CLASS_OFFSET_NODIE(A,FracturedStaticMeshActor,MaxPartsToSpawnAtOnce)
-VERIFY_CLASS_OFFSET_NODIE(A,FracturedStaticMeshActor,SingleChunkFractureSound)
+VERIFY_CLASS_OFFSET_NODIE(A,FracturedStaticMeshActor,FracturePartLELCC)
 VERIFY_CLASS_SIZE_NODIE(AFracturedStaticMeshActor)
 VERIFY_CLASS_OFFSET_NODIE(U,FracturedStaticMeshComponent,FragmentNeighborsVisible)
-VERIFY_CLASS_OFFSET_NODIE(U,FracturedStaticMeshComponent,SkinnedComponent)
+VERIFY_CLASS_OFFSET_NODIE(U,FracturedStaticMeshComponent,OldMaterial)
 VERIFY_CLASS_SIZE_NODIE(UFracturedStaticMeshComponent)
 VERIFY_CLASS_OFFSET_NODIE(A,FracturedStaticMeshPart,DestroyPartRadiusFactor)
-VERIFY_CLASS_OFFSET_NODIE(A,FracturedStaticMeshPart,LastImpactSoundTime)
+VERIFY_CLASS_OFFSET_NODIE(A,FracturedStaticMeshPart,BornAtTime)
 VERIFY_CLASS_SIZE_NODIE(AFracturedStaticMeshPart)
 VERIFY_CLASS_OFFSET_NODIE(A,FractureManager,FSMPartPoolSize)
 VERIFY_CLASS_OFFSET_NODIE(A,FractureManager,ActorsWithDeferredPartsToSpawn)

@@ -186,6 +186,9 @@ native final function ResetToDefaults();
 /** called when we finish playing audio, either because it played to completion or because a Stop() call turned it off early */
 delegate OnAudioFinished(AudioComponent AC);
 
+// BM1
+delegate OnAudioMarker(AudioComponent AC, string MarkerName);
+
 /** called when OcclusionCheckInterval > 0.0 and the occlusion status changes */
 event OcclusionChanged(bool bNowOccluded)
 {
@@ -201,13 +204,4 @@ defaultproperties
 
 	VolumeMultiplier=1.0
 	PitchMultiplier=1.0
-
-	FadeInStopTime=-1.0f
-	FadeOutStopTime=-1.0f
-	AdjustVolumeStopTime=-1.0f
-
-	FadeInTargetVolume=1.0f
-	FadeOutTargetVolume=1.0f
-	AdjustVolumeTargetVolume=1.0f
-	CurrAdjustVolumeTargetVolume=1.0f
 }

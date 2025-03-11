@@ -350,6 +350,10 @@ var array<Actor> HiddenActors;
 /** if true, check relevancy of Actors through portals listed in VisiblePortals array */
 var globalconfig bool bCheckRelevancyThroughPortals;
 
+// BM1
+var transient bool bControllerWasDisconnected;
+var transient bool bDidLoseFocusDeferPause;
+
 /** Different types of progress messages */
 enum EProgressMessageType
 {
@@ -379,8 +383,24 @@ enum EProgressMessageType
 /** set when received a valid ServerSetUniqueId() call, so we don't allow duplicates */
 var bool bReceivedUniqueId;
 
+struct native AmbientSoundStruct
+{
+    var int AmbientSound_ReferenceNumber;
+    var SoundCue AmbientSound_Cue;
+    var int AmbientSound_Priority;
+    var float AmbientSound_Time;
+};
+
+// BM1
+var array<AmbientSoundStruct> AmbientSoundStack;
+var export editinline AudioComponent AmbCurrentSoundPtr;
+var export editinline AudioComponent AmbOtherSoundPtr;
+
 /** Used to make sure the client is kept synchronized when in a spectator state */
 var float LastSpectatorStateSynchTime;
+
+// BM1
+var SeqAct_Latent ActiveDialogueOptions;
 
 cpptext
 {

@@ -820,7 +820,7 @@ public:
     FLOAT ImpactReFireDelay;
     class UParticleSystem* ImpactEffect;
     class USoundCue* ImpactSound;
-    class UObject* ImpactForce;
+    class URB_ForceComponent* ImpactForce;
     FLOAT SlideThreshold;
     FLOAT MinSlideEffectSpeed;
     FLOAT MaxSlideEffectSpeed;

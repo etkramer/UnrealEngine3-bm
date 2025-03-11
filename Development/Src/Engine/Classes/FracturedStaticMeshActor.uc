@@ -43,6 +43,17 @@ var array<int> ChunkHealth;
 /** If true, detach parts when a Pawn contact them. Actor must not block Pawn */
 var()	bool	bBreakChunksOnPawnTouch;
 
+// BM1
+var() bool bSpawnExplosionChunks;
+var() bool bAllowFracturedPartCollisions;
+var() const bool bUseExtraStasis;
+var() bool IsForceFullDestroyOnDamage;
+var() bool IsForceFullDestroyOnDamageIncludesRootFragments;
+var() bool IsXRayable;
+var() bool IsMetal;
+var bool bIgnoreBulletFracture;
+var bool bLightingChannelDifferent;
+
 /** Set of damage types that can cause pieces to break off this FSAM. If empty, all damage types can do this. */
 var() array< class<DamageType> > FracturedByDamageType;
 
@@ -61,6 +72,11 @@ var()	float	FractureCullMaxDistance;
 /** Array of parts that are waiting to be spawned in an upcoming tick */
 var transient array< DeferredPartToSpawn > DeferredPartsToSpawn;
 
+// BM1
+var() MaterialInterface XRayMaterial;
+var() MaterialInterface XRayMetalMaterial;
+var(Investigate) Vector InvestigateOffset;
+
 /** Cached info for part impacts */
 var		PhysEffectInfo	PartImpactEffect;
 
@@ -68,6 +84,10 @@ var		PhysEffectInfo	PartImpactEffect;
 var		SoundCue		ExplosionFractureSound;
 /** Cached sound for single chunk fractures. */
 var		SoundCue		SingleChunkFractureSound;
+
+// BM1
+var() export editinline DynamicLightEnvironmentComponent FracturePartLE;
+var() LightingChannelContainer FracturePartLELCC;
 
 /** Spawn one chunk of this mesh as its own Actor, with the supplied velocities and scale relative to this Actor. */
 native function FracturedStaticMeshPart SpawnPart(int ChunkIndex, vector InitialVel, vector InitialAngVel, float RelativeScale, bool bExplosion);

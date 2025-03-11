@@ -500,6 +500,10 @@
 				>
 			</File>
 			<File
+				RelativePath="Src\UnApex.cpp"
+				>
+			</File>
+			<File
 				RelativePath="Src\UnAudio.cpp"
 				>
 			</File>

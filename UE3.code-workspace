@@ -58,6 +58,24 @@
         "logging": { "moduleLoad": false, "exceptions": false }
       },
       {
+        "name": "Build/Launch Make",
+        "type": "cppvsdbg",
+        "request": "launch",
+        "program": "${workspaceFolder}/Binaries/Debug-BmGame.exe",
+        "cwd": "${workspaceFolder}/Binaries",
+        "args": ["make"],
+        "environment": [
+          {
+            "name": "PATH",
+            "value": "${workspaceFolder}/Development/External/Developer Runtime/x86;${env:PATH}"
+          }
+        ],
+        "visualizerFile": "${workspaceFolder}/UE3.natvis",
+        "preLaunchTask": "Build Editor",
+        "internalConsoleOptions": "openOnSessionStart",
+        "logging": { "moduleLoad": false, "exceptions": false }
+      },
+      {
         "name": "Launch Editor",
         "type": "cppvsdbg",
         "request": "launch",

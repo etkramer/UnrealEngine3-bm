@@ -88,11 +88,6 @@ WxBrowser* UBrowserManager::GetBrowserPane(const TCHAR* FriendlyName,
 void UBrowserManager::CreateBrowserPanes(wxWindow* Parent,
 	FBrowserArray& OutCreated)
 {
-#if BATMAN
-	// Just don't bother for now.
-	return;
-#endif
-
 	// For each entry, create the browser pane associated with it
 	for (INT Index = 0; Index < BrowserPanes.Num(); Index++)
 	{

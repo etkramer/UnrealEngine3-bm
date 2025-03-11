@@ -5,6 +5,8 @@
 class FracturedSkinnedMeshComponent extends FracturedBaseComponent
 	native(Mesh);
 
+const MAXMATS = 10;
+
 /* Render resources used by this component, and whose release progress is tracked by the FRenderCommandFence in FracturedBaseComponent. */
 var protected{protected} const native transient pointer ComponentSkinResources{class FFracturedSkinResources};
 
@@ -20,6 +22,9 @@ var protected{protected} transient const bool bBecameVisible;
 /** TRUE if fragment transforms have changed and the GPU should be refreshed */
 var protected{protected} transient const bool bFragmentTransformsChanged;
 
+// BM1
+var bool XRaySet;
+var MaterialInterface OldMaterial[MAXMATS];
 
 cpptext
 {

@@ -186,11 +186,6 @@ var BroadcastHandler BroadcastHandler;	// handles message (text and localized) b
 var class<PlayerController> PlayerControllerClass;	// type of player controller to spawn for players logging in
 var class<PlayerReplicationInfo> 		PlayerReplicationInfoClass;
 
-/** Name of DialogueManager class */
-var String			DialogueManagerClass;
-/** Pointer to Manager */
-var DialogueManager DialogueManager;
-
 // ReplicationInfo
 var() class<GameReplicationInfo> GameReplicationInfoClass;
 var GameReplicationInfo GameReplicationInfo;
@@ -233,6 +228,9 @@ var protected CoverReplicator CoverReplicatorBase;
 /** Tracks whether the server can travel due to a critical network error or not */
 var bool bHasNetworkError;
 
+// BM1
+var bool bShowThoughts_Vehicles;
+
 /** Whether this game type requires voice to be push to talk or not */
 var const bool bRequiresPushToTalk;
 
@@ -241,6 +239,9 @@ var const class<OnlineGameSettings> OnlineGameSettingsClass;
 
 /** The options to apply for dedicated server when it starts to register */
 var string ServerOptions;
+
+// BM1
+var export editinline AudioComponent SlowMoAC;
 
 /** Current adjusted net speed - Used for dynamically managing netspeed for listen servers*/
 var int AdjustedNetSpeed;
@@ -267,11 +268,18 @@ var transient int SentinelNavigationIdx;
 var transient int SentinelIdx;
 var transient bool bSentinelStreamingLevelStillLoading;
 
+// BM1
+var bool Chapter7SyncSet;
+var bool Chapter7TimerEnabled;
+
 var transient int NumRotationsIncrement;
 var transient int TravelPointsIncrement;
 
-
-
+// BM1
+var float Chapter5MusicTime;
+var float Chapter7MusicTime;
+var float Chapter7MusicTotalTime;
+var float Chapter7Sync;
 
 cpptext
 {
@@ -299,11 +307,6 @@ event PreBeginPlay()
 	GameReplicationInfo.bIsArbitrated = bUsingArbitration;
 
 	InitGameReplicationInfo();
-
-	if( DialogueManagerClass != "" )
-	{
-		DialogueManager = Spawn( class<DialogueManager>(DynamicLoadObject( DialogueManagerClass, class'Class' )) );
-	}
 }
 
 function string FindPlayerByID( int PlayerID )
@@ -3972,4 +3975,11 @@ defaultproperties
 	// Defaults for if your game has only one skill leaderboard
 	LeaderboardId=0xFFFE0000
 	ArbitratedLeaderboardId=0xFFFF0000
+
+    begin object name=SlowMoAudioComponent class=Class'AudioComponent'
+        SoundCue=SoundCue'PL_SlowDownSFX.Combat_SlowMotion'
+        bUseOwnerLocation=false
+    end object
+    SlowMoAC=SlowMoAudioComponent
+	Components[0]=SlowMoAudioComponent
 }

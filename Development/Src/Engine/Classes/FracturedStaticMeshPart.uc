@@ -41,6 +41,10 @@ var	bool	bCompositeThatExplodesOnImpact;
 /** Time since last physics impact sound */
 var	float	LastImpactSoundTime;
 
+// BM1
+var Vector OldLinearVelocity;
+var float CurrentLinearVibrationLevel;
+var float BornAtTime;
 
 /** Revive part, set physics to PHYS_RigidBody, enabled collision etc */
 simulated native function Initialize();

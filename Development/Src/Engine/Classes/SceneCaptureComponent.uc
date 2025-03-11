@@ -53,6 +53,10 @@ var(Capture) float MaxUpdateDist;
 /** if > 0, skip streaming texture updates for the scene capture if the Owner is further than this many units away from the viewer */
 var(Capture) float MaxStreamingUpdateDist;
 
+// BM1
+var(Capture) bool bCaptureEnabled;
+var(Capture) array<Actor> OnlyCaptureIfTheseActorsVisible;
+
 // transients
 
 /** ptr to the scene capture probe */

@@ -22,10 +22,7 @@ var		AudioComponent					FacialAudioComp;
 var export editinline AudioComponent ImpactSoundComponent;
 var export editinline AudioComponent ImpactSoundComponent2;
 var float LastImpactTime;
-
-// BM1: Should be RB_ForceComponent
-var export editinline PrimitiveComponent ImpactForceComponent;
-// var export editinline RB_ForceComponent ImpactForceComponent;
+var export editinline RB_ForceComponent ImpactForceComponent;
 
 /** Used to replicate mesh to clients */
 var repnotify transient SkeletalMesh ReplicatedMesh;

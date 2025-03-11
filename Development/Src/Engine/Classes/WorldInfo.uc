@@ -984,7 +984,6 @@ defaultproperties
 	EmitterVertical=PhysicsLODVerticalEmitter0
 	Begin Object Class=PhysicsLODVerticalDestructible Name=PhysicsLODVerticalDestructible0
 	End Object
-	DestructibleVertical=PhysicsLODVerticalDestructible0
 
 	// Server travel is relative by default
 	NextTravelType=TRAVEL_Relative

@@ -1122,6 +1122,7 @@ class UAudioComponent : public UActorComponent
 	class UDrawSoundRadiusComponent*		PreviewSoundRadius;
 
 	FScriptDelegate __OnAudioFinished__Delegate;
+	FScriptDelegate __OnAudioMarker__Delegate;
 
 	// UObject interface.
 	virtual void PostEditChange(UProperty* PropertyThatChanged);

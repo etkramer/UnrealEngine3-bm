@@ -65,9 +65,8 @@ var(Impact)		ParticleSystem				ImpactEffect;
 /** Sound to play  */
 var(Impact)		SoundCue					ImpactSound;
 
-// BM1: Should be RB_ForceComponent
-var(Impact) export editinline object ImpactForce;
-// var(Impact) export editinline RB_ForceComponent ImpactForce;
+// BM1
+var(Impact) export editinline RB_ForceComponent ImpactForce;
 
 // Slide effects
 /** How fast an object must slide to trigger effect/sound */

@@ -84,6 +84,27 @@ enum EMoveDir
     MD_Down                 =6,
     MD_MAX                  =7,
 };
+enum EForceModeType
+{
+    FMT_Constant            =0,
+    FMT_Impulse             =1,
+    FMT_MAX                 =2,
+};
+enum ESceneCaptureViewMode
+{
+    SceneCapView_Lit        =0,
+    SceneCapView_Unlit      =1,
+    SceneCapView_LitNoShadows=2,
+    SceneCapView_Wire       =3,
+    SceneCapView_MAX        =4,
+};
+enum DistributionParamMode
+{
+    DPM_Normal              =0,
+    DPM_Abs                 =1,
+    DPM_Direct              =2,
+    DPM_MAX                 =3,
+};
 enum ECsgOper
 {
     CSG_Active              =0,
@@ -444,27 +465,6 @@ enum EPathSearchType
     PST_NewBestPathTo       =2,
     PST_Constraint          =3,
     PST_MAX                 =4,
-};
-enum EForceModeType
-{
-    FMT_Constant            =0,
-    FMT_Impulse             =1,
-    FMT_MAX                 =2,
-};
-enum ESceneCaptureViewMode
-{
-    SceneCapView_Lit        =0,
-    SceneCapView_Unlit      =1,
-    SceneCapView_LitNoShadows=2,
-    SceneCapView_Wire       =3,
-    SceneCapView_MAX        =4,
-};
-enum DistributionParamMode
-{
-    DPM_Normal              =0,
-    DPM_Abs                 =1,
-    DPM_Direct              =2,
-    DPM_MAX                 =3,
 };
 enum EFontImportCharacterSet
 {
@@ -1026,6 +1026,7 @@ AUTOGENERATE_NAME(ShutDown)
 AUTOGENERATE_NAME(SoakPause)
 AUTOGENERATE_NAME(SortSearchResults)
 AUTOGENERATE_NAME(SpawnedByKismet)
+AUTOGENERATE_NAME(SpawnFractureEmitter)
 AUTOGENERATE_NAME(SpawnPlayerCamera)
 AUTOGENERATE_NAME(SpecialCost)
 AUTOGENERATE_NAME(SpecialHandling)
@@ -3527,6 +3528,1244 @@ public:
 	{
 	 	return FALSE;
 	}
+};
+
+class UHeightFogComponent : public UActorComponent
+{
+public:
+    //## BEGIN PROPS HeightFogComponent
+    BITFIELD bEnabled:1 GCC_BITFIELD_MAGIC;
+    FLOAT Height;
+    FLOAT Density;
+    FLOAT LightBrightness;
+    FColor LightColor;
+    FLOAT ExtinctionDistance;
+    FLOAT StartDistance;
+    //## END PROPS HeightFogComponent
+
+    void SetEnabled(UBOOL bSetEnabled);
+    DECLARE_FUNCTION(execSetEnabled)
+    {
+        P_GET_UBOOL(bSetEnabled);
+        P_FINISH;
+        SetEnabled(bSetEnabled);
+    }
+    DECLARE_CLASS(UHeightFogComponent,UActorComponent,0,Engine)
+protected:
+	// ActorComponent interface.
+	virtual void SetParentToWorld(const FMatrix& ParentToWorld);
+	virtual void Attach();
+	virtual void UpdateTransform();
+	virtual void Detach( UBOOL bWillReattach = FALSE );
+public:
+};
+
+class UDirectionalLightComponent : public ULightComponent
+{
+public:
+    //## BEGIN PROPS DirectionalLightComponent
+    FLOAT TraceDistance;
+    //## END PROPS DirectionalLightComponent
+
+    DECLARE_CLASS(UDirectionalLightComponent,ULightComponent,0,Engine)
+	virtual FLightSceneInfo* CreateSceneInfo() const;
+	virtual FVector4 GetPosition() const;
+	virtual ELightComponentType GetLightType() const;
+};
+
+class UPointLightComponent : public ULightComponent
+{
+public:
+    //## BEGIN PROPS PointLightComponent
+    FLOAT ShadowRadiusMultiplier;
+    FLOAT Radius;
+    FLOAT FalloffExponent;
+    FLOAT ShadowFalloffExponent;
+    FLOAT MinShadowFalloffRadius;
+    FMatrix CachedParentToWorld;
+    FVector Translation;
+    class UDrawLightRadiusComponent* PreviewLightRadius;
+    //## END PROPS PointLightComponent
+
+    void SetTranslation(FVector NewTranslation);
+    DECLARE_FUNCTION(execSetTranslation)
+    {
+        P_GET_STRUCT(FVector,NewTranslation);
+        P_FINISH;
+        SetTranslation(NewTranslation);
+    }
+    DECLARE_CLASS(UPointLightComponent,ULightComponent,0,Engine)
+protected:
+	/**
+	 * Updates the light's PreviewLightRadius.
+	 */
+	void UpdatePreviewLightRadius();
+
+	// UActorComponent interface.
+	virtual void SetParentToWorld(const FMatrix& ParentToWorld);
+	virtual void Attach();
+	virtual void UpdateTransform();
+public:
+
+	// ULightComponent interface.
+	virtual FLightSceneInfo* CreateSceneInfo() const;
+	virtual UBOOL AffectsBounds(const FBoxSphereBounds& Bounds) const;
+	virtual FVector4 GetPosition() const;
+	virtual FBox GetBoundingBox() const;
+	virtual FLinearColor GetDirectIntensity(const FVector& Point) const;
+	virtual ELightComponentType GetLightType() const;
+
+	// update the LocalToWorld matrix
+	virtual void SetTransformedToWorld();
+
+	/**
+	 * Called after property has changed via e.g. property window or set command.
+	 *
+	 * @param	PropertyThatChanged	UProperty that has been changed, NULL if unknown
+	 */
+	virtual void PostEditChange(UProperty* PropertyThatChanged);
+
+	virtual void PostLoad();
+};
+
+class USpotLightComponent : public UPointLightComponent
+{
+public:
+    //## BEGIN PROPS SpotLightComponent
+    FLOAT InnerConeAngle;
+    FLOAT OuterConeAngle;
+    class UDrawLightConeComponent* PreviewInnerCone;
+    class UDrawLightConeComponent* PreviewOuterCone;
+    //## END PROPS SpotLightComponent
+
+    DECLARE_CLASS(USpotLightComponent,UPointLightComponent,0,Engine)
+	// UActorComponent interface.
+	virtual void Attach();
+
+	// ULightComponent interface.
+	virtual FLightSceneInfo* CreateSceneInfo() const;
+	virtual UBOOL AffectsBounds(const FBoxSphereBounds& Bounds) const;
+	virtual FLinearColor GetDirectIntensity(const FVector& Point) const;
+	virtual ELightComponentType GetLightType() const;
+	virtual void PostLoad();
+};
+
+class USkyLightComponent : public ULightComponent
+{
+public:
+    //## BEGIN PROPS SkyLightComponent
+    FLOAT LowerBrightness;
+    FColor LowerColor;
+    //## END PROPS SkyLightComponent
+
+    DECLARE_CLASS(USkyLightComponent,ULightComponent,0,Engine)
+	/**
+	 * Called when a property is being changed.
+	 *
+	 * @param PropertyThatChanged	Property that changed or NULL if unknown or multiple
+	 */
+	virtual void PostEditChange(UProperty* PropertyThatChanged);
+	/**
+	 * Called after data has been serialized.
+	 */
+	virtual void PostLoad();
+
+	// ULightComponent interface.
+	virtual FLightSceneInfo* CreateSceneInfo() const;
+	virtual FVector4 GetPosition() const;
+	virtual ELightComponentType GetLightType() const;
+};
+
+class USphericalHarmonicLightComponent : public ULightComponent
+{
+public:
+    //## BEGIN PROPS SphericalHarmonicLightComponent
+    FSHVectorRGB WorldSpaceIncidentLighting;
+    BITFIELD bRenderBeforeModShadows:1;
+    //## END PROPS SphericalHarmonicLightComponent
+
+    DECLARE_CLASS(USphericalHarmonicLightComponent,ULightComponent,0,Engine)
+	// ULightComponent interface.
+	virtual FLightSceneInfo* CreateSceneInfo() const;
+	virtual FVector4 GetPosition() const;
+	virtual ELightComponentType GetLightType() const;
+};
+
+class ULightEnvironmentComponent : public UActorComponent
+{
+public:
+    //## BEGIN PROPS LightEnvironmentComponent
+protected:
+    BITFIELD bEnabled:1 GCC_BITFIELD_MAGIC;
+public:
+    BITFIELD bForceNonCompositeDynamicLights:1;
+protected:
+    TArrayNoInit<class UPrimitiveComponent*> AffectedComponents;
+public:
+    //## END PROPS LightEnvironmentComponent
+
+    void SetEnabled(UBOOL bNewEnabled);
+    UBOOL IsEnabled() const;
+    DECLARE_FUNCTION(execSetEnabled)
+    {
+        P_GET_UBOOL(bNewEnabled);
+        P_FINISH;
+        SetEnabled(bNewEnabled);
+    }
+    DECLARE_FUNCTION(execIsEnabled)
+    {
+        P_FINISH;
+        *(UBOOL*)Result=IsEnabled();
+    }
+    DECLARE_CLASS(ULightEnvironmentComponent,UActorComponent,0,Engine)
+	/**
+	 * Signals to the light environment that a light has changed, so the environment may need to be updated.
+	 * @param Light - The light that changed.
+	 */
+	virtual void UpdateLight(const ULightComponent* Light) {}
+
+	// Methods that update AffectedComponents
+	void AddAffectedComponent(UPrimitiveComponent* NewComponent);
+	void RemoveAffectedComponent(UPrimitiveComponent* OldComponent);
+};
+
+class UDynamicLightEnvironmentComponent : public ULightEnvironmentComponent
+{
+public:
+    //## BEGIN PROPS DynamicLightEnvironmentComponent
+    class FDynamicLightEnvironmentState* State;
+    FLOAT InvisibleUpdateTime;
+    FLOAT MinTimeBetweenFullUpdates;
+    INT NumVolumeVisibilitySamples;
+    FLinearColor AmbientShadowColor;
+    FVector AmbientShadowSourceDirection;
+    FLinearColor AmbientGlow;
+    FLOAT LightDesaturation;
+    FLOAT LightDistance;
+    FLOAT ShadowDistance;
+    BITFIELD bCastShadows:1;
+    BITFIELD bCompositeShadowsFromDynamicLights:1;
+    BITFIELD bDynamic:1;
+    BITFIELD bSynthesizeDirectionalLight:1;
+    BITFIELD bSynthesizeSHLight:1;
+    BITFIELD bForceAllowLightEnvSphericalHarmonicLights:1;
+    BITFIELD bRequiresNonLatentUpdates:1;
+    BITFIELD bTraceFromClosestBoundsPoint:1;
+    BITFIELD bOverrideOwnerBounds:1;
+    BITFIELD bOverrideOwnerLightingChannels:1;
+    BITFIELD RestrictInterpolationWhenSlow:1;
+    BITFIELD bScaleShadowDistanceWhenAboveCamera:1;
+    FLOAT ModShadowFadeoutTime;
+    FLOAT ModShadowFadeoutExponent;
+    INT MinShadowResolution;
+    INT MaxShadowResolution;
+    INT ShadowFadeResolution;
+    BYTE ShadowFilterQuality;
+    BYTE LightShadowMode;
+    FLOAT ShadowFalloffExponent;
+    FVector SavedLightDirection;
+    FLOAT BouncedLightingFactor;
+    FLOAT MinShadowAngle;
+    FBoxSphereBounds OverriddenBounds;
+    FLightingChannelContainer OverriddenLightingChannels;
+    INT StaticLightingTimestamp;
+    INT TimeSlicerId;
+    //## END PROPS DynamicLightEnvironmentComponent
+
+    DECLARE_CLASS(UDynamicLightEnvironmentComponent,ULightEnvironmentComponent,0,Engine)
+	// UObject interface.
+	virtual void FinishDestroy();
+	virtual void AddReferencedObjects( TArray<UObject*>& ObjectArray );
+	virtual void Serialize(FArchive& Ar);
+
+	// UActorComponent interface.
+	virtual void Tick(FLOAT DeltaTime);
+	virtual void Attach();
+	virtual void UpdateTransform();
+	virtual void Detach( UBOOL bWillReattach = FALSE );
+	
+	// ULightEnvironmentComponent interface.
+	virtual void UpdateLight(const ULightComponent* Light);
+
+	/* Forces a full update the of the dynamic and static environments on the next Tick. */
+	void ResetEnvironment();
+
+	friend class FDynamicLightEnvironmentState;
+};
+
+class UDrawConeComponent : public UPrimitiveComponent
+{
+public:
+    //## BEGIN PROPS DrawConeComponent
+    FColor ConeColor;
+    FLOAT ConeRadius;
+    FLOAT ConeAngle;
+    INT ConeSides;
+    //## END PROPS DrawConeComponent
+
+    DECLARE_CLASS(UDrawConeComponent,UPrimitiveComponent,0,Engine)
+	// UPrimitiveComponent interface.
+	/**
+	 * Creates a proxy to represent the primitive to the scene manager in the rendering thread.
+	 * @return The proxy object.
+	 */
+	virtual FPrimitiveSceneProxy* CreateSceneProxy();
+	virtual void UpdateBounds();
+};
+
+class UDrawLightConeComponent : public UDrawConeComponent
+{
+public:
+    //## BEGIN PROPS DrawLightConeComponent
+    //## END PROPS DrawLightConeComponent
+
+    DECLARE_CLASS(UDrawLightConeComponent,UDrawConeComponent,0,Engine)
+	/**
+	 * Creates a proxy to represent the primitive to the scene manager in the rendering thread.
+	 * @return The proxy object.
+	 */
+	virtual FPrimitiveSceneProxy* CreateSceneProxy();
+};
+
+class UApexComponentBase : public UMeshComponent
+{
+public:
+    //## BEGIN PROPS ApexComponentBase
+    FPointer ComponentBaseResources;
+    FRenderCommandFence ReleaseResourcesFence;
+    class UApexAsset* Asset;
+    FColor WireframeColor;
+    BITFIELD bAssetChanged:1;
+    //## END PROPS ApexComponentBase
+
+    DECLARE_CLASS(UApexComponentBase,UMeshComponent,0,Engine)
+    NO_DEFAULT_CONSTRUCTOR(UApexComponentBase)
+};
+
+class UApexDynamicComponent : public UApexComponentBase
+{
+public:
+    //## BEGIN PROPS ApexDynamicComponent
+    FPointer ComponentDynamicResources;
+    //## END PROPS ApexDynamicComponent
+
+    DECLARE_CLASS(UApexDynamicComponent,UApexComponentBase,0,Engine)
+    NO_DEFAULT_CONSTRUCTOR(UApexDynamicComponent)
+};
+
+class UApexStaticComponent : public UApexComponentBase
+{
+public:
+    //## BEGIN PROPS ApexStaticComponent
+    //## END PROPS ApexStaticComponent
+
+    DECLARE_CLASS(UApexStaticComponent,UApexComponentBase,0,Engine)
+    NO_DEFAULT_CONSTRUCTOR(UApexStaticComponent)
+};
+
+class UApexStaticDestructibleComponent : public UApexStaticComponent
+{
+public:
+    //## BEGIN PROPS ApexStaticDestructibleComponent
+    FPointer ApexDestructibleActor;
+    FPointer ApexDestructiblePreview;
+    //## END PROPS ApexStaticDestructibleComponent
+
+    DECLARE_CLASS(UApexStaticDestructibleComponent,UApexStaticComponent,0,Engine)
+    NO_DEFAULT_CONSTRUCTOR(UApexStaticDestructibleComponent)
+};
+
+struct RB_ForceComponent_eventAttachCloneToActor_Parms
+{
+    class AActor* NewOwner;
+    RB_ForceComponent_eventAttachCloneToActor_Parms(EEventParm)
+    {
+    }
+};
+class URB_ForceComponent : public UPrimitiveComponent
+{
+public:
+    //## BEGIN PROPS RB_ForceComponent
+    BITFIELD bUseNxForcefield:1;
+    BITFIELD bForceActive:1;
+    BITFIELD bDetachWhenInactive:1;
+    BITFIELD bForceApplyToCloth:1;
+    BITFIELD bForceApplyToFluid:1;
+    BITFIELD bForceApplyToRigidBodies:1;
+    BITFIELD bForceApplyToProjectiles:1;
+    BYTE ForceMode GCC_BITFIELD_MAGIC;
+    FLOAT Duration;
+    FRBCollisionChannelContainer CollideWithChannels;
+    FLOAT ElapsedTime;
+    class UPrimitiveComponent* RenderComponent;
+    FPointer LinearKernel;
+    FPointer TheNxForceField;
+    //## END PROPS RB_ForceComponent
+
+    void eventAttachCloneToActor(class AActor* NewOwner)
+    {
+        RB_ForceComponent_eventAttachCloneToActor_Parms Parms(EC_EventParm);
+        Parms.NewOwner=NewOwner;
+        ProcessEvent(FindFunctionChecked(ENGINE_AttachCloneToActor),&Parms);
+    }
+    DECLARE_ABSTRACT_CLASS(URB_ForceComponent,UPrimitiveComponent,0,Engine)
+    NO_DEFAULT_CONSTRUCTOR(URB_ForceComponent)
+};
+
+class USceneCaptureComponent : public UActorComponent
+{
+public:
+    //## BEGIN PROPS SceneCaptureComponent
+    BITFIELD bEnablePostProcess:1 GCC_BITFIELD_MAGIC;
+    BITFIELD bEnableFog:1;
+    BITFIELD bUseMainScenePostProcessSettings:1;
+    BITFIELD bSkipUpdateIfOwnerOccluded:1;
+    BITFIELD bCaptureEnabled:1;
+    BITFIELD bNeedsSceneUpdate:1;
+    FColor ClearColor;
+    BYTE ViewMode;
+    INT SceneLOD;
+    FLOAT FrameRate;
+    class UPostProcessChain* PostProcess;
+    FLOAT MaxUpdateDist;
+    FLOAT MaxStreamingUpdateDist;
+    TArrayNoInit<class AActor*> OnlyCaptureIfTheseActorsVisible;
+    FCaptureSceneInfo* CaptureInfo;
+    FSceneViewStateInterface* ViewState;
+    //## END PROPS SceneCaptureComponent
+
+    void SetFrameRate(FLOAT NewFrameRate);
+    DECLARE_FUNCTION(execSetFrameRate)
+    {
+        P_GET_FLOAT(NewFrameRate);
+        P_FINISH;
+        SetFrameRate(NewFrameRate);
+    }
+    DECLARE_ABSTRACT_CLASS(USceneCaptureComponent,UActorComponent,0,Engine)
+protected:
+
+	/**
+	* Constructor
+	*/
+	USceneCaptureComponent();
+
+	// UActorComponent interface.
+
+	/**
+	* Adds a capture proxy for this component to the scene
+	*/
+	virtual void Attach();
+
+	/**
+	* Removes a capture proxy for thsi component from the scene
+	*/
+	virtual void Detach( UBOOL bWillReattach = FALSE );
+
+	/**
+	* Tick the component to handle updates
+	*/
+	virtual void Tick(FLOAT DeltaTime);
+
+	/**
+	 * Sets the ParentToWorld transform the component is attached to.
+	 * @param ParentToWorld - The ParentToWorld transform the component is attached to.
+	 */
+	virtual void SetParentToWorld(const FMatrix& ParentToWorld);
+
+	virtual void FinishDestroy();
+
+public:
+	/**
+	* Create a new probe with info needed to render the scene
+	*/
+	virtual class FSceneCaptureProbe* CreateSceneCaptureProbe() { return NULL; }
+
+	/**
+	* Map the various capture view settings to show flags.
+	*/
+	virtual EShowFlags GetSceneShowFlags();
+};
+
+class USceneCapture2DComponent : public USceneCaptureComponent
+{
+public:
+    //## BEGIN PROPS SceneCapture2DComponent
+    class UTextureRenderTarget2D* TextureTarget;
+    FLOAT FieldOfView;
+    FLOAT NearPlane;
+    FLOAT FarPlane;
+    BITFIELD bUpdateMatrices:1;
+    FMatrix ViewMatrix;
+    FMatrix ProjMatrix;
+    //## END PROPS SceneCapture2DComponent
+
+    void SetView(FVector NewLocation,FRotator NewRotation);
+    DECLARE_FUNCTION(execSetCaptureParameters);
+    DECLARE_FUNCTION(execSetView)
+    {
+        P_GET_STRUCT(FVector,NewLocation);
+        P_GET_STRUCT(FRotator,NewRotation);
+        P_FINISH;
+        SetView(NewLocation,NewRotation);
+    }
+    DECLARE_CLASS(USceneCapture2DComponent,USceneCaptureComponent,0,Engine)
+protected:
+
+	// UActorComponent interface
+
+	/**
+	* Attach a new 2d capture component
+	*/
+	virtual void Attach();
+
+	/**
+	 * Sets the ParentToWorld transform the component is attached to.
+	 * @param ParentToWorld - The ParentToWorld transform the component is attached to.
+	 */
+	virtual void SetParentToWorld(const FMatrix& ParentToWorld);
+
+public:
+
+	/**
+	* Constructor
+	*/
+	USceneCapture2DComponent() :
+		ViewMatrix(FMatrix::Identity),
+		ProjMatrix(FMatrix::Identity)
+		{}
+
+	/**
+	* Update the projection matrix using the fov,near,far,aspect
+	*/
+	void UpdateProjMatrix();
+
+	// SceneCaptureComponent interface
+
+	/**
+	* Create a new probe with info needed to render the scene
+	*/
+	virtual class FSceneCaptureProbe* CreateSceneCaptureProbe();
+};
+
+class USceneCaptureCubeMapComponent : public USceneCaptureComponent
+{
+public:
+    //## BEGIN PROPS SceneCaptureCubeMapComponent
+    class UTextureRenderTargetCube* TextureTarget;
+    FLOAT NearPlane;
+    FLOAT FarPlane;
+    FVector WorldLocation;
+    //## END PROPS SceneCaptureCubeMapComponent
+
+    DECLARE_CLASS(USceneCaptureCubeMapComponent,USceneCaptureComponent,0,Engine)
+protected:
+
+	// UActorComponent interface.
+
+	/**
+	* Attach a new cube capture component
+	*/
+	virtual void Attach();
+
+	/**
+	 * Sets the ParentToWorld transform the component is attached to.
+	 * @param ParentToWorld - The ParentToWorld transform the component is attached to.
+	 */
+	virtual void SetParentToWorld(const FMatrix& ParentToWorld);
+
+public:
+	
+	// SceneCaptureComponent interface
+
+	/**
+	* Create a new probe with info needed to render the scene
+	*/
+	virtual class FSceneCaptureProbe* CreateSceneCaptureProbe();
+};
+
+class USceneCapturePortalComponent : public USceneCaptureComponent
+{
+public:
+    //## BEGIN PROPS SceneCapturePortalComponent
+    class UTextureRenderTarget2D* TextureTarget;
+    FLOAT ScaleFOV;
+    class AActor* ViewDestination;
+    //## END PROPS SceneCapturePortalComponent
+
+    DECLARE_FUNCTION(execSetCaptureParameters);
+    DECLARE_CLASS(USceneCapturePortalComponent,USceneCaptureComponent,0,Engine)
+public:
+
+	// UActorComponent interface
+
+	/**
+	* Attach a new portal capture component
+	*/
+	virtual void Attach();
+
+	// SceneCaptureComponent interface
+
+	/**
+	* Create a new probe with info needed to render the scene
+	*/
+	virtual class FSceneCaptureProbe* CreateSceneCaptureProbe();
+};
+
+class USceneCaptureReflectComponent : public USceneCaptureComponent
+{
+public:
+    //## BEGIN PROPS SceneCaptureReflectComponent
+    class UTextureRenderTarget2D* TextureTarget;
+    FLOAT ScaleFOV;
+    FLOAT FarClip;
+    //## END PROPS SceneCaptureReflectComponent
+
+    DECLARE_CLASS(USceneCaptureReflectComponent,USceneCaptureComponent,0,Engine)
+public:
+
+	// UActorComponent interface
+
+	/**
+	* Attach a new reflect capture component
+	*/
+	virtual void Attach();
+
+	// SceneCaptureComponent interface
+
+	/**
+	* Create a new probe with info needed to render the scene
+	*/
+	virtual class FSceneCaptureProbe* CreateSceneCaptureProbe();
+};
+
+class UWindDirectionalSourceComponent : public UActorComponent
+{
+public:
+    //## BEGIN PROPS WindDirectionalSourceComponent
+    FWindSourceSceneProxy* SceneProxy;
+    FLOAT Strength;
+    FLOAT Phase;
+    FLOAT Frequency;
+    FLOAT Speed;
+    //## END PROPS WindDirectionalSourceComponent
+
+    DECLARE_CLASS(UWindDirectionalSourceComponent,UActorComponent,0,Engine)
+protected:
+	// UActorComponent interface.
+	virtual void Attach();
+	virtual void Detach( UBOOL bWillReattach = FALSE );
+public:
+	
+	/**
+	 * Creates a proxy to represent the wind source to the scene manager in the rendering thread.
+	 * @return The proxy object.
+	 */
+	 virtual class FWindSourceSceneProxy* CreateSceneProxy() const;
+};
+
+class UDistributionFloatConstant : public UDistributionFloat
+{
+public:
+    //## BEGIN PROPS DistributionFloatConstant
+    FLOAT Constant;
+    //## END PROPS DistributionFloatConstant
+
+    DECLARE_CLASS(UDistributionFloatConstant,UDistributionFloat,0,Engine)
+	virtual FLOAT GetValue( FLOAT F = 0.f, UObject* Data = NULL );
+
+	// FCurveEdInterface interface
+	virtual INT		GetNumKeys();
+	virtual INT		GetNumSubCurves();
+	virtual FLOAT	GetKeyIn(INT KeyIndex);
+	virtual FLOAT	GetKeyOut(INT SubIndex, INT KeyIndex);
+	virtual void	GetInRange(FLOAT& MinIn, FLOAT& MaxIn);
+	virtual void	GetOutRange(FLOAT& MinOut, FLOAT& MaxOut);
+	virtual BYTE	GetKeyInterpMode(INT KeyIndex);
+	virtual void	GetTangents(INT SubIndex, INT KeyIndex, FLOAT& ArriveTangent, FLOAT& LeaveTangent);
+	virtual FLOAT	EvalSub(INT SubIndex, FLOAT InVal);
+
+	virtual INT		CreateNewKey(FLOAT KeyIn);
+	virtual void	DeleteKey(INT KeyIndex);
+
+	virtual INT		SetKeyIn(INT KeyIndex, FLOAT NewInVal);
+	virtual void	SetKeyOut(INT SubIndex, INT KeyIndex, FLOAT NewOutVal);
+	virtual void	SetKeyInterpMode(INT KeyIndex, EInterpCurveMode NewMode);
+	virtual void	SetTangents(INT SubIndex, INT KeyIndex, FLOAT ArriveTangent, FLOAT LeaveTangent);
+};
+
+class UDistributionFloatParameterBase : public UDistributionFloatConstant
+{
+public:
+    //## BEGIN PROPS DistributionFloatParameterBase
+    FName ParameterName;
+    FLOAT MinInput;
+    FLOAT MaxInput;
+    FLOAT MinOutput;
+    FLOAT MaxOutput;
+    BYTE ParamMode;
+    //## END PROPS DistributionFloatParameterBase
+
+    DECLARE_ABSTRACT_CLASS(UDistributionFloatParameterBase,UDistributionFloatConstant,0,Engine)
+	virtual FLOAT GetValue( FLOAT F = 0.f, UObject* Data = NULL );
+	
+	virtual UBOOL GetParamValue(UObject* Data, FName ParamName, FLOAT& OutFloat) { return false; }
+
+	/**
+	 * Return whether or not this distribution can be baked into a FRawDistribution lookup table
+	 */
+	virtual UBOOL CanBeBaked() const { return FALSE; }
+};
+
+class UDistributionFloatConstantCurve : public UDistributionFloat
+{
+public:
+    //## BEGIN PROPS DistributionFloatConstantCurve
+    FInterpCurveFloat ConstantCurve;
+    //## END PROPS DistributionFloatConstantCurve
+
+    DECLARE_CLASS(UDistributionFloatConstantCurve,UDistributionFloat,0,Engine)
+	virtual FLOAT GetValue( FLOAT F = 0.f, UObject* Data = NULL );
+
+	// FCurveEdInterface interface
+	virtual INT		GetNumKeys();
+	virtual INT		GetNumSubCurves();
+	virtual FLOAT	GetKeyIn(INT KeyIndex);
+	virtual FLOAT	GetKeyOut(INT SubIndex, INT KeyIndex);
+	virtual void	GetInRange(FLOAT& MinIn, FLOAT& MaxIn);
+	virtual void	GetOutRange(FLOAT& MinOut, FLOAT& MaxOut);
+	virtual BYTE	GetKeyInterpMode(INT KeyIndex);
+	virtual void	GetTangents(INT SubIndex, INT KeyIndex, FLOAT& ArriveTangent, FLOAT& LeaveTangent);
+	virtual FLOAT	EvalSub(INT SubIndex, FLOAT InVal);
+
+	virtual INT		CreateNewKey(FLOAT KeyIn);
+	virtual void	DeleteKey(INT KeyIndex);
+
+	virtual INT		SetKeyIn(INT KeyIndex, FLOAT NewInVal);
+	virtual void	SetKeyOut(INT SubIndex, INT KeyIndex, FLOAT NewOutVal);
+	virtual void	SetKeyInterpMode(INT KeyIndex, EInterpCurveMode NewMode);
+	virtual void	SetTangents(INT SubIndex, INT KeyIndex, FLOAT ArriveTangent, FLOAT LeaveTangent);
+
+	/** Returns TRUE if this curve uses legacy tangent/interp algorithms and may be 'upgraded' */
+	virtual UBOOL	UsingLegacyInterpMethod() const;
+
+	/** 'Upgrades' this curve to use the latest tangent/interp algorithms (usually, will 'bake' key tangents.) */
+	virtual void	UpgradeInterpMethod();
+};
+
+class UDistributionFloatUniform : public UDistributionFloat
+{
+public:
+    //## BEGIN PROPS DistributionFloatUniform
+    FLOAT Min;
+    FLOAT Max;
+    //## END PROPS DistributionFloatUniform
+
+    DECLARE_CLASS(UDistributionFloatUniform,UDistributionFloat,0,Engine)
+	virtual void PostLoad();
+
+	virtual FLOAT GetValue( FLOAT F = 0.f, UObject* Data = NULL );
+#if !CONSOLE
+	/**
+	 * Return the operation used at runtime to calculate the final value
+	 */
+	virtual ERawDistributionOperation GetOperation();
+	
+	/**
+	 * Fill out an array of floats and return the number of elements in the entry
+	 *
+	 * @param Time The time to evaluate the distribution
+	 * @param Values An array of values to be filled out, guaranteed to be big enough for 4 floats
+	 * @return The number of elements (values) set in the array
+	 */
+	virtual DWORD InitializeRawEntry(FLOAT Time, FLOAT* Values);
+#endif
+
+	// FCurveEdInterface interface
+	virtual INT		GetNumKeys();
+	virtual INT		GetNumSubCurves();
+	virtual FLOAT	GetKeyIn(INT KeyIndex);
+	virtual FLOAT	GetKeyOut(INT SubIndex, INT KeyIndex);
+	virtual void	GetInRange(FLOAT& MinIn, FLOAT& MaxIn);
+	virtual void	GetOutRange(FLOAT& MinOut, FLOAT& MaxOut);
+	virtual BYTE	GetKeyInterpMode(INT KeyIndex);
+	virtual void	GetTangents(INT SubIndex, INT KeyIndex, FLOAT& ArriveTangent, FLOAT& LeaveTangent);
+	virtual FLOAT	EvalSub(INT SubIndex, FLOAT InVal);
+
+	virtual INT		CreateNewKey(FLOAT KeyIn);
+	virtual void	DeleteKey(INT KeyIndex);
+
+	virtual INT		SetKeyIn(INT KeyIndex, FLOAT NewInVal);
+	virtual void	SetKeyOut(INT SubIndex, INT KeyIndex, FLOAT NewOutVal);
+	virtual void	SetKeyInterpMode(INT KeyIndex, EInterpCurveMode NewMode);
+	virtual void	SetTangents(INT SubIndex, INT KeyIndex, FLOAT ArriveTangent, FLOAT LeaveTangent);
+};
+
+class UDistributionFloatUniformCurve : public UDistributionFloat
+{
+public:
+    //## BEGIN PROPS DistributionFloatUniformCurve
+    FInterpCurveVector2D ConstantCurve;
+    //## END PROPS DistributionFloatUniformCurve
+
+    DECLARE_CLASS(UDistributionFloatUniformCurve,UDistributionFloat,0,Engine)
+	virtual void PostLoad();
+
+	virtual FLOAT GetValue( FLOAT F = 0.f, UObject* Data = NULL );
+#if !CONSOLE
+	/**
+	 * Return the operation used at runtime to calculate the final value
+	 */
+	virtual ERawDistributionOperation GetOperation();
+	
+	/**
+	 * Fill out an array of floats and return the number of elements in the entry
+	 *
+	 * @param Time The time to evaluate the distribution
+	 * @param Values An array of values to be filled out, guaranteed to be big enough for 4 floats
+	 * @return The number of elements (values) set in the array
+	 */
+	virtual DWORD InitializeRawEntry(FLOAT Time, FLOAT* Values);
+#endif
+
+	virtual FVector2D GetMinMaxValue(FLOAT F = 0.f, UObject* Data = NULL);
+
+	// FCurveEdInterface interface
+	virtual INT		GetNumKeys();
+	virtual INT		GetNumSubCurves();
+	virtual FLOAT	GetKeyIn(INT KeyIndex);
+	virtual FLOAT	GetKeyOut(INT SubIndex, INT KeyIndex);
+	virtual FColor	GetKeyColor(INT SubIndex, INT KeyIndex, const FColor& CurveColor);
+	virtual void	GetInRange(FLOAT& MinIn, FLOAT& MaxIn);
+	virtual void	GetOutRange(FLOAT& MinOut, FLOAT& MaxOut);
+	virtual BYTE	GetKeyInterpMode(INT KeyIndex);
+	virtual void	GetTangents(INT SubIndex, INT KeyIndex, FLOAT& ArriveTangent, FLOAT& LeaveTangent);
+	virtual FLOAT	EvalSub(INT SubIndex, FLOAT InVal);
+
+	virtual INT		CreateNewKey(FLOAT KeyIn);
+	virtual void	DeleteKey(INT KeyIndex);
+
+	virtual INT		SetKeyIn(INT KeyIndex, FLOAT NewInVal);
+	virtual void	SetKeyOut(INT SubIndex, INT KeyIndex, FLOAT NewOutVal);
+	virtual void	SetKeyInterpMode(INT KeyIndex, EInterpCurveMode NewMode);
+	virtual void	SetTangents(INT SubIndex, INT KeyIndex, FLOAT ArriveTangent, FLOAT LeaveTangent);
+
+	/** Returns TRUE if this curve uses legacy tangent/interp algorithms and may be 'upgraded' */
+	virtual UBOOL	UsingLegacyInterpMethod() const;
+
+	/** 'Upgrades' this curve to use the latest tangent/interp algorithms (usually, will 'bake' key tangents.) */
+	virtual void	UpgradeInterpMethod();
+};
+
+class UDistributionVectorConstant : public UDistributionVector
+{
+public:
+    //## BEGIN PROPS DistributionVectorConstant
+    FVector Constant;
+    BITFIELD bLockAxes:1;
+    BYTE LockedAxes GCC_BITFIELD_MAGIC;
+    //## END PROPS DistributionVectorConstant
+
+    DECLARE_CLASS(UDistributionVectorConstant,UDistributionVector,0,Engine)
+	virtual FVector GetValue(FLOAT F = 0.f, UObject* Data = NULL, INT Extreme = 0);
+
+	// UObject interface
+	virtual void Serialize(FArchive& Ar);
+	
+	// FCurveEdInterface interface
+	virtual INT		GetNumKeys();
+	virtual INT		GetNumSubCurves();
+	virtual FLOAT	GetKeyIn(INT KeyIndex);
+	virtual FLOAT	GetKeyOut(INT SubIndex, INT KeyIndex);
+	virtual FColor	GetKeyColor(INT SubIndex, INT KeyIndex, const FColor& CurveColor);
+	virtual void	GetInRange(FLOAT& MinIn, FLOAT& MaxIn);
+	virtual void	GetOutRange(FLOAT& MinOut, FLOAT& MaxOut);
+	virtual BYTE	GetKeyInterpMode(INT KeyIndex);
+	virtual void	GetTangents(INT SubIndex, INT KeyIndex, FLOAT& ArriveTangent, FLOAT& LeaveTangent);
+	virtual FLOAT	EvalSub(INT SubIndex, FLOAT InVal);
+
+	virtual INT		CreateNewKey(FLOAT KeyIn);
+	virtual void	DeleteKey(INT KeyIndex);
+
+	virtual INT		SetKeyIn(INT KeyIndex, FLOAT NewInVal);
+	virtual void	SetKeyOut(INT SubIndex, INT KeyIndex, FLOAT NewOutVal);
+	virtual void	SetKeyInterpMode(INT KeyIndex, EInterpCurveMode NewMode);
+	virtual void	SetTangents(INT SubIndex, INT KeyIndex, FLOAT ArriveTangent, FLOAT LeaveTangent);
+
+	// DistributionVector interface
+	virtual	void	GetRange(FVector& OutMin, FVector& OutMax);
+};
+
+class UDistributionVectorParameterBase : public UDistributionVectorConstant
+{
+public:
+    //## BEGIN PROPS DistributionVectorParameterBase
+    FName ParameterName;
+    FVector MinInput;
+    FVector MaxInput;
+    FVector MinOutput;
+    FVector MaxOutput;
+    BYTE ParamModes[3];
+    //## END PROPS DistributionVectorParameterBase
+
+    DECLARE_ABSTRACT_CLASS(UDistributionVectorParameterBase,UDistributionVectorConstant,0,Engine)
+	virtual FVector GetValue(FLOAT F = 0.f, UObject* Data = NULL, INT Extreme = 0);
+	
+	virtual UBOOL GetParamValue(UObject* Data, FName ParamName, FVector& OutVector) { return false; }
+
+	/**
+	 * Return whether or not this distribution can be baked into a FRawDistribution lookup table
+	 */
+	virtual UBOOL CanBeBaked() const { return FALSE; }
+};
+
+class UDistributionVectorConstantCurve : public UDistributionVector
+{
+public:
+    //## BEGIN PROPS DistributionVectorConstantCurve
+    FInterpCurveVector ConstantCurve;
+    BITFIELD bLockAxes:1;
+    BYTE LockedAxes GCC_BITFIELD_MAGIC;
+    //## END PROPS DistributionVectorConstantCurve
+
+    DECLARE_CLASS(UDistributionVectorConstantCurve,UDistributionVector,0,Engine)
+	virtual FVector GetValue(FLOAT F = 0.f, UObject* Data = NULL, INT Extreme = 0);
+
+	// UObject interface
+	virtual void Serialize(FArchive& Ar);
+
+	// FCurveEdInterface interface
+	virtual INT		GetNumKeys();
+	virtual INT		GetNumSubCurves();
+	virtual FLOAT	GetKeyIn(INT KeyIndex);
+	virtual FLOAT	GetKeyOut(INT SubIndex, INT KeyIndex);
+	virtual void	GetInRange(FLOAT& MinIn, FLOAT& MaxIn);
+	virtual void	GetOutRange(FLOAT& MinOut, FLOAT& MaxOut);
+	virtual FColor	GetKeyColor(INT SubIndex, INT KeyIndex, const FColor& CurveColor);
+	virtual BYTE	GetKeyInterpMode(INT KeyIndex);
+	virtual void	GetTangents(INT SubIndex, INT KeyIndex, FLOAT& ArriveTangent, FLOAT& LeaveTangent);
+	virtual FLOAT	EvalSub(INT SubIndex, FLOAT InVal);
+
+	virtual INT		CreateNewKey(FLOAT KeyIn);
+	virtual void	DeleteKey(INT KeyIndex);
+
+	virtual INT		SetKeyIn(INT KeyIndex, FLOAT NewInVal);
+	virtual void	SetKeyOut(INT SubIndex, INT KeyIndex, FLOAT NewOutVal);
+	virtual void	SetKeyInterpMode(INT KeyIndex, EInterpCurveMode NewMode);
+	virtual void	SetTangents(INT SubIndex, INT KeyIndex, FLOAT ArriveTangent, FLOAT LeaveTangent);
+
+	/** Returns TRUE if this curve uses legacy tangent/interp algorithms and may be 'upgraded' */
+	virtual UBOOL	UsingLegacyInterpMethod() const;
+
+	/** 'Upgrades' this curve to use the latest tangent/interp algorithms (usually, will 'bake' key tangents.) */
+	virtual void	UpgradeInterpMethod();
+
+	// DistributionVector interface
+	virtual	void	GetRange(FVector& OutMin, FVector& OutMax);
+};
+
+class UDistributionVectorUniform : public UDistributionVector
+{
+public:
+    //## BEGIN PROPS DistributionVectorUniform
+    FVector Max;
+    FVector Min;
+    BITFIELD bLockAxes:1;
+    BITFIELD bUseExtremes:1;
+    BYTE LockedAxes GCC_BITFIELD_MAGIC;
+    BYTE MirrorFlags[3];
+    //## END PROPS DistributionVectorUniform
+
+    DECLARE_CLASS(UDistributionVectorUniform,UDistributionVector,0,Engine)
+	virtual void PostLoad();
+
+	virtual FVector GetValue(FLOAT F = 0.f, UObject* Data = NULL, INT Extreme = 0);
+#if !CONSOLE
+	/**
+	 * Return the operation used at runtime to calculate the final value
+	 */
+	virtual ERawDistributionOperation GetOperation();
+	
+	/**
+	 * Return the lock flags used at runtime to calculate the final value
+	 */
+	virtual ERawDistributionLockFlags GetLockFlags(INT InIndex) 
+	{
+		if (InIndex != 0)
+		{
+			return RDL_None;
+		}
+
+		switch (LockedAxes)
+		{
+		case EDVLF_XY:		return RDL_XY;
+		case EDVLF_XZ:		return RDL_XZ;
+		case EDVLF_YZ:		return RDL_YZ;
+		case EDVLF_XYZ:		return RDL_XYZ;
+		}
+		return RDL_None;
+	}
+
+	/**
+	 * Fill out an array of vectors and return the number of elements in the entry
+	 *
+	 * @param Time The time to evaluate the distribution
+	 * @param Values An array of values to be filled out, guaranteed to be big enough for 2 vectors
+	 * @return The number of elements (values) set in the array
+	 */
+	virtual DWORD InitializeRawEntry(FLOAT Time, FVector* Values);
+#endif
+	
+	/** These two functions will retrieve the Min/Max values respecting the Locked and Mirror flags. */
+	virtual FVector GetMinValue();
+	virtual FVector GetMaxValue();
+
+	// UObject interface
+	virtual void Serialize(FArchive& Ar);
+
+	// FCurveEdInterface interface
+	virtual INT		GetNumKeys();
+	virtual INT		GetNumSubCurves();
+	virtual FLOAT	GetKeyIn(INT KeyIndex);
+	virtual FLOAT	GetKeyOut(INT SubIndex, INT KeyIndex);
+	virtual FColor	GetKeyColor(INT SubIndex, INT KeyIndex, const FColor& CurveColor);
+	virtual void	GetInRange(FLOAT& MinIn, FLOAT& MaxIn);
+	virtual void	GetOutRange(FLOAT& MinOut, FLOAT& MaxOut);
+	virtual BYTE	GetKeyInterpMode(INT KeyIndex);
+	virtual void	GetTangents(INT SubIndex, INT KeyIndex, FLOAT& ArriveTangent, FLOAT& LeaveTangent);
+	virtual FLOAT	EvalSub(INT SubIndex, FLOAT InVal);
+
+	virtual INT		CreateNewKey(FLOAT KeyIn);
+	virtual void	DeleteKey(INT KeyIndex);
+
+	virtual INT		SetKeyIn(INT KeyIndex, FLOAT NewInVal);
+	virtual void	SetKeyOut(INT SubIndex, INT KeyIndex, FLOAT NewOutVal);
+	virtual void	SetKeyInterpMode(INT KeyIndex, EInterpCurveMode NewMode);
+	virtual void	SetTangents(INT SubIndex, INT KeyIndex, FLOAT ArriveTangent, FLOAT LeaveTangent);
+
+	// DistributionVector interface
+	virtual	void	GetRange(FVector& OutMin, FVector& OutMax);
+};
+
+class UDistributionVectorUniformCurve : public UDistributionVector
+{
+public:
+    //## BEGIN PROPS DistributionVectorUniformCurve
+    FInterpCurveTwoVectors ConstantCurve;
+    BITFIELD bLockAxes1:1;
+    BITFIELD bLockAxes2:1;
+    BITFIELD bUseExtremes:1;
+    BYTE LockedAxes[2] GCC_BITFIELD_MAGIC;
+    BYTE MirrorFlags[3];
+    //## END PROPS DistributionVectorUniformCurve
+
+    DECLARE_CLASS(UDistributionVectorUniformCurve,UDistributionVector,0,Engine)
+	virtual void PostLoad();
+
+	virtual FVector		GetValue(FLOAT F = 0.f, UObject* Data = NULL, INT Extreme = 0);
+#if !CONSOLE
+	/**
+	 * Return the operation used at runtime to calculate the final value
+	 */
+	virtual ERawDistributionOperation GetOperation();
+	
+	/**
+	 * Return the lock flags used at runtime to calculate the final value
+	 */
+	virtual ERawDistributionLockFlags GetLockFlags(INT InIndex) 
+	{
+		if ((InIndex >= 0) && (InIndex <= 1))
+		{
+			switch (LockedAxes[InIndex])
+			{
+			case EDVLF_XY:		return RDL_XY;
+			case EDVLF_XZ:		return RDL_XZ;
+			case EDVLF_YZ:		return RDL_YZ;
+			case EDVLF_XYZ:		return RDL_XYZ;
+			}
+		}
+		return RDL_None;
+	}
+
+	/**
+	 * Return true if the distribution is a uniform curve
+	 */
+	virtual UBOOL IsUniformCurve() { return TRUE; }
+
+	/**
+	 * Fill out an array of vectors and return the number of elements in the entry
+	 *
+	 * @param Time The time to evaluate the distribution
+	 * @param Values An array of values to be filled out, guaranteed to be big enough for 2 vectors
+	 * @return The number of elements (values) set in the array
+	 */
+	virtual DWORD InitializeRawEntry(FLOAT Time, FVector* Values);
+#endif
+	virtual FTwoVectors GetMinMaxValue(FLOAT F = 0.f, UObject* Data = NULL);
+	
+	/** These two functions will retrieve the Min/Max values respecting the Locked and Mirror flags. */
+	virtual FVector GetMinValue();
+	virtual FVector GetMaxValue();
+
+	// UObject interface
+	virtual void Serialize(FArchive& Ar);
+
+	// FCurveEdInterface interface
+	virtual INT		GetNumKeys();
+	virtual INT		GetNumSubCurves();
+	virtual FLOAT	GetKeyIn(INT KeyIndex);
+	virtual FLOAT	GetKeyOut(INT SubIndex, INT KeyIndex);
+	virtual FColor	GetKeyColor(INT SubIndex, INT KeyIndex, const FColor& CurveColor);
+	virtual void	GetInRange(FLOAT& MinIn, FLOAT& MaxIn);
+	virtual void	GetOutRange(FLOAT& MinOut, FLOAT& MaxOut);
+	virtual BYTE	GetKeyInterpMode(INT KeyIndex);
+	virtual void	GetTangents(INT SubIndex, INT KeyIndex, FLOAT& ArriveTangent, FLOAT& LeaveTangent);
+	virtual FLOAT	EvalSub(INT SubIndex, FLOAT InVal);
+
+	virtual INT		CreateNewKey(FLOAT KeyIn);
+	virtual void	DeleteKey(INT KeyIndex);
+
+	virtual INT		SetKeyIn(INT KeyIndex, FLOAT NewInVal);
+	virtual void	SetKeyOut(INT SubIndex, INT KeyIndex, FLOAT NewOutVal);
+	virtual void	SetKeyInterpMode(INT KeyIndex, EInterpCurveMode NewMode);
+	virtual void	SetTangents(INT SubIndex, INT KeyIndex, FLOAT ArriveTangent, FLOAT LeaveTangent);
+	
+	/** Returns TRUE if this curve uses legacy tangent/interp algorithms and may be 'upgraded' */
+	virtual UBOOL	UsingLegacyInterpMethod() const;
+
+	/** 'Upgrades' this curve to use the latest tangent/interp algorithms (usually, will 'bake' key tangents.) */
+	virtual void	UpgradeInterpMethod();
+
+	virtual void	LockAndMirror(FTwoVectors& Val);
+
+	// DistributionVector interface
+	virtual	void	GetRange(FVector& OutMin, FVector& OutMax);
+};
+
+struct FApexDestructibleChunkLevelSettings
+{
+    BITFIELD bTakeImpactDamage:1;
+    BITFIELD bIgnorePoseUpdates:1;
+    BITFIELD bIgnoreRaycastCallbacks:1;
+    BITFIELD bIgnoreContactCallbacks:1;
+    BITFIELD bUserFlag0:1;
+    BITFIELD bUserFlag1:1;
+    BITFIELD bUserFlag2:1;
+    BITFIELD bUserFlag3:1;
+
+    /** Constructors */
+    FApexDestructibleChunkLevelSettings() {}
+    FApexDestructibleChunkLevelSettings(EEventParm)
+    {
+        appMemzero(this, sizeof(FApexDestructibleChunkLevelSettings));
+    }
+};
+
+struct FApexFractureBehavior
+{
+    FLOAT DamageFractureThreshold;
+    FLOAT DamageDistanceMultiplier;
+    FLOAT DamageMaximum;
+    FLOAT DamageFromImpactFactor;
+    BITFIELD bDamageAccumulates:1;
+    BITFIELD bCrumbleSmallestChunks:1;
+    FLOAT DeformationPercentPerDamage;
+    FLOAT DeformationPercentLimit;
+    FLOAT FractureImpulseScale;
+    FLOAT ImpactVelocityThreshold;
+    TArrayNoInit<struct FApexDestructibleChunkLevelSettings> ChunkLevelSettings;
+    BITFIELD bOverrideAssetFractureEffects:1;
+    TArrayNoInit<class UPhysicalMaterial*> FractureEffects;
+
+    /** Constructors */
+    FApexFractureBehavior() {}
+    FApexFractureBehavior(EEventParm)
+    {
+        appMemzero(this, sizeof(FApexFractureBehavior));
+    }
+};
+
+struct FApexDestructibleActorSettings
+{
+    FLOAT MaximumChunkSpeed;
+    FLOAT MassScaleExponent;
+    BITFIELD bUseValidBounds:1;
+    BITFIELD bDisableGravity:1;
+    FVector ValidBoundsMin;
+    FVector ValidBoundsMax;
+    FLOAT GrbVolumeThreshold;
+
+    /** Constructors */
+    FApexDestructibleActorSettings() {}
+    FApexDestructibleActorSettings(EEventParm)
+    {
+        appMemzero(this, sizeof(FApexDestructibleActorSettings));
+    }
+};
+
+struct ApexDestructibleActor_eventSpawnFractureEmitter_Parms
+{
+    class UParticleSystem* EmitterTemplate;
+    FVector SpawnLocation;
+    ApexDestructibleActor_eventSpawnFractureEmitter_Parms(EEventParm)
+    {
+    }
+};
+class AApexDestructibleActor : public AActor
+{
+public:
+    //## BEGIN PROPS ApexDestructibleActor
+    class UApexStaticDestructibleComponent* StaticDestructibleComponent;
+    struct FApexFractureBehavior FractureBehavior;
+    struct FApexDestructibleActorSettings DestructibleActorSettings;
+    TArray<BYTE> VisibilityFactors;
+    FLOAT LastFractureTime;
+    TArrayNoInit<class USoundCue*> FractureSounds;
+    TArrayNoInit<class UParticleSystem*> FractureParticleEffects;
+    TArrayNoInit<FLOAT> FractureReFireDelays;
+    //## END PROPS ApexDestructibleActor
+
+    virtual void CacheFractureEffects();
+    virtual void TakeDamage(INT Damage,class AController* EventInstigator,FVector HitLocation,FVector Momentum,class UClass* DamageType,struct FTraceHitInfo HitInfo=FTraceHitInfo(EC_EventParm),class AActor* DamageCauser=NULL);
+    virtual void TakeRadiusDamage(class AController* InstigatedBy,FLOAT BaseDamage,FLOAT DamageRadius,class UClass* DamageType,FLOAT Momentum,FVector HurtOrigin,UBOOL bFullDamage,class AActor* DamageCauser);
+    DECLARE_FUNCTION(execCacheFractureEffects)
+    {
+        P_FINISH;
+        CacheFractureEffects();
+    }
+    DECLARE_FUNCTION(execTakeDamage)
+    {
+        P_GET_INT(Damage);
+        P_GET_OBJECT(AController,EventInstigator);
+        P_GET_STRUCT(FVector,HitLocation);
+        P_GET_STRUCT(FVector,Momentum);
+        P_GET_OBJECT(UClass,DamageType);
+        P_GET_STRUCT_OPTX(struct FTraceHitInfo,HitInfo,FTraceHitInfo(EC_EventParm));
+        P_GET_OBJECT_OPTX(AActor,DamageCauser,NULL);
+        P_FINISH;
+        TakeDamage(Damage,EventInstigator,HitLocation,Momentum,DamageType,HitInfo,DamageCauser);
+    }
+    DECLARE_FUNCTION(execTakeRadiusDamage)
+    {
+        P_GET_OBJECT(AController,InstigatedBy);
+        P_GET_FLOAT(BaseDamage);
+        P_GET_FLOAT(DamageRadius);
+        P_GET_OBJECT(UClass,DamageType);
+        P_GET_FLOAT(Momentum);
+        P_GET_STRUCT(FVector,HurtOrigin);
+        P_GET_UBOOL(bFullDamage);
+        P_GET_OBJECT(AActor,DamageCauser);
+        P_FINISH;
+        TakeRadiusDamage(InstigatedBy,BaseDamage,DamageRadius,DamageType,Momentum,HurtOrigin,bFullDamage,DamageCauser);
+    }
+    void eventSpawnFractureEmitter(class UParticleSystem* EmitterTemplate,FVector SpawnLocation)
+    {
+        ApexDestructibleActor_eventSpawnFractureEmitter_Parms Parms(EC_EventParm);
+        Parms.EmitterTemplate=EmitterTemplate;
+        Parms.SpawnLocation=SpawnLocation;
+        ProcessEvent(FindFunctionChecked(ENGINE_SpawnFractureEmitter),&Parms);
+    }
+    DECLARE_CLASS(AApexDestructibleActor,AActor,0,Engine)
+    NO_DEFAULT_CONSTRUCTOR(AApexDestructibleActor)
 };
 
 struct FGeomSelection
@@ -7578,6 +8817,21 @@ struct FDebugTextInfo
     }
 };
 
+struct FAmbientSoundStruct
+{
+    INT AmbientSound_ReferenceNumber;
+    class USoundCue* AmbientSound_Cue;
+    INT AmbientSound_Priority;
+    FLOAT AmbientSound_Time;
+
+    /** Constructors */
+    FAmbientSoundStruct() {}
+    FAmbientSoundStruct(EEventParm)
+    {
+        appMemzero(this, sizeof(FAmbientSoundStruct));
+    }
+};
+
 #define UCONST_MAXCLIENTUPDATEINTERVAL 0.25
 #define UCONST_CLIENTADJUSTUPDATECOST 180.0
 #define UCONST_MAXVEHICLEPOSITIONERRORSQUARED 900.0
@@ -8096,6 +9350,8 @@ public:
     BITFIELD bCheckSoundOcclusion:1;
     BITFIELD bLogHearSoundOverflow:1;
     BITFIELD bCheckRelevancyThroughPortals:1;
+    BITFIELD bControllerWasDisconnected:1;
+    BITFIELD bDidLoseFocusDeferPause:1;
     BITFIELD bReceivedUniqueId:1;
     FLOAT MaxResponseTime;
     FLOAT WaitDelay;
@@ -8173,7 +9429,11 @@ public:
     TArrayNoInit<class UAudioComponent*> HearSoundActiveComponents;
     TArrayNoInit<class UAudioComponent*> HearSoundPoolComponents;
     TArrayNoInit<class AActor*> HiddenActors;
+    TArrayNoInit<struct FAmbientSoundStruct> AmbientSoundStack;
+    class UAudioComponent* AmbCurrentSoundPtr;
+    class UAudioComponent* AmbOtherSoundPtr;
     FLOAT LastSpectatorStateSynchTime;
+    class USeqAct_Latent* ActiveDialogueOptions;
     FScriptDelegate __CanUnpause__Delegate;
     //## END PROPS PlayerController
 
@@ -11159,8 +12419,11 @@ public:
     BITFIELD bDoFearCostFallOff:1;
     BITFIELD bUseSeamlessTravel:1;
     BITFIELD bHasNetworkError:1;
+    BITFIELD bShowThoughts_Vehicles:1;
     BITFIELD bRequiresPushToTalk:1;
     BITFIELD bSentinelStreamingLevelStillLoading:1;
+    BITFIELD Chapter7SyncSet:1;
+    BITFIELD Chapter7TimerEnabled:1;
     INT AutomatedPerfRemainingTime;
     INT AutomatedTestingMapIndex;
     TArrayNoInit<FString> AutomatedMapTestingList;
@@ -11209,8 +12472,6 @@ public:
     class ABroadcastHandler* BroadcastHandler;
     class UClass* PlayerControllerClass;
     class UClass* PlayerReplicationInfoClass;
-    FStringNoInit DialogueManagerClass;
-    class ADialogueManager* DialogueManager;
     class UClass* GameReplicationInfoClass;
     class AGameReplicationInfo* GameReplicationInfo;
     FLOAT MaxIdleTime;
@@ -11227,6 +12488,7 @@ public:
     class ACoverReplicator* CoverReplicatorBase;
     class UClass* OnlineGameSettingsClass;
     FStringNoInit ServerOptions;
+    class UAudioComponent* SlowMoAC;
     INT AdjustedNetSpeed;
     FLOAT LastNetSpeedUpdateTime;
     INT TotalNetBandwidth;
@@ -11240,6 +12502,10 @@ public:
     INT SentinelIdx;
     INT NumRotationsIncrement;
     INT TravelPointsIncrement;
+    FLOAT Chapter5MusicTime;
+    FLOAT Chapter7MusicTime;
+    FLOAT Chapter7MusicTotalTime;
+    FLOAT Chapter7Sync;
     FScriptDelegate __CanUnpause__Delegate;
     //## END PROPS GameInfo
 
@@ -14794,6 +16060,70 @@ public:
 	virtual AActor* GetDefaultActor();
 };
 
+class UApexAsset : public UObject
+{
+public:
+    //## BEGIN PROPS ApexAsset
+    TArrayNoInit<class UApexComponentBase*> ApexComponents;
+    BITFIELD bApexRefsUpToDate:1;
+    //## END PROPS ApexAsset
+
+    DECLARE_CLASS(UApexAsset,UObject,0,Engine)
+    NO_DEFAULT_CONSTRUCTOR(UApexAsset)
+};
+
+class UApexDestructibleAsset : public UApexAsset
+{
+public:
+    //## BEGIN PROPS ApexDestructibleAsset
+    FPointer ApexDestructibleAsset;
+    TArrayNoInit<class UMaterialInterface*> Materials;
+    TArrayNoInit<FVector> CookingScales;
+    class UApexMeshParticleFactoryAsset* CrumbleMeshParticleFactory;
+    class UApexMeshParticleFactoryAsset* DustMeshParticleFactory;
+    TArrayNoInit<class UPhysicalMaterial*> FractureEffects;
+    //## END PROPS ApexDestructibleAsset
+
+    DECLARE_CLASS(UApexDestructibleAsset,UApexAsset,0,Engine)
+    NO_DEFAULT_CONSTRUCTOR(UApexDestructibleAsset)
+};
+
+class UApexMeshParticleFactoryAsset : public UApexAsset
+{
+public:
+    //## BEGIN PROPS ApexMeshParticleFactoryAsset
+    FPointer ApexMeshParticleFactoryAsset;
+    class UApexParticleSystemAsset* ParticleSystem;
+    TArrayNoInit<class UApexRenderMeshAsset*> RenderMeshes;
+    //## END PROPS ApexMeshParticleFactoryAsset
+
+    DECLARE_CLASS(UApexMeshParticleFactoryAsset,UApexAsset,0,Engine)
+    NO_DEFAULT_CONSTRUCTOR(UApexMeshParticleFactoryAsset)
+};
+
+class UApexParticleSystemAsset : public UApexAsset
+{
+public:
+    //## BEGIN PROPS ApexParticleSystemAsset
+    FPointer ApexParticleSystemAsset;
+    //## END PROPS ApexParticleSystemAsset
+
+    DECLARE_CLASS(UApexParticleSystemAsset,UApexAsset,0,Engine)
+    NO_DEFAULT_CONSTRUCTOR(UApexParticleSystemAsset)
+};
+
+class UApexRenderMeshAsset : public UApexAsset
+{
+public:
+    //## BEGIN PROPS ApexRenderMeshAsset
+    FPointer ApexRenderMeshAsset;
+    TArrayNoInit<class UMaterialInterface*> Materials;
+    //## END PROPS ApexRenderMeshAsset
+
+    DECLARE_CLASS(UApexRenderMeshAsset,UApexAsset,0,Engine)
+    NO_DEFAULT_CONSTRUCTOR(UApexRenderMeshAsset)
+};
+
 class UBookMark : public UObject
 {
 public:
@@ -15154,1067 +16484,6 @@ public:
 	* @param InTextureMovieResource - output from movie decoding is written to this resource
 	*/
 	virtual void GetFrame( class FTextureMovieResource* InTextureMovieResource );
-};
-
-class UHeightFogComponent : public UActorComponent
-{
-public:
-    //## BEGIN PROPS HeightFogComponent
-    BITFIELD bEnabled:1 GCC_BITFIELD_MAGIC;
-    FLOAT Height;
-    FLOAT Density;
-    FLOAT LightBrightness;
-    FColor LightColor;
-    FLOAT ExtinctionDistance;
-    FLOAT StartDistance;
-    //## END PROPS HeightFogComponent
-
-    void SetEnabled(UBOOL bSetEnabled);
-    DECLARE_FUNCTION(execSetEnabled)
-    {
-        P_GET_UBOOL(bSetEnabled);
-        P_FINISH;
-        SetEnabled(bSetEnabled);
-    }
-    DECLARE_CLASS(UHeightFogComponent,UActorComponent,0,Engine)
-protected:
-	// ActorComponent interface.
-	virtual void SetParentToWorld(const FMatrix& ParentToWorld);
-	virtual void Attach();
-	virtual void UpdateTransform();
-	virtual void Detach( UBOOL bWillReattach = FALSE );
-public:
-};
-
-class UDirectionalLightComponent : public ULightComponent
-{
-public:
-    //## BEGIN PROPS DirectionalLightComponent
-    FLOAT TraceDistance;
-    //## END PROPS DirectionalLightComponent
-
-    DECLARE_CLASS(UDirectionalLightComponent,ULightComponent,0,Engine)
-	virtual FLightSceneInfo* CreateSceneInfo() const;
-	virtual FVector4 GetPosition() const;
-	virtual ELightComponentType GetLightType() const;
-};
-
-class UPointLightComponent : public ULightComponent
-{
-public:
-    //## BEGIN PROPS PointLightComponent
-    FLOAT ShadowRadiusMultiplier;
-    FLOAT Radius;
-    FLOAT FalloffExponent;
-    FLOAT ShadowFalloffExponent;
-    FLOAT MinShadowFalloffRadius;
-    FMatrix CachedParentToWorld;
-    FVector Translation;
-    class UDrawLightRadiusComponent* PreviewLightRadius;
-    //## END PROPS PointLightComponent
-
-    void SetTranslation(FVector NewTranslation);
-    DECLARE_FUNCTION(execSetTranslation)
-    {
-        P_GET_STRUCT(FVector,NewTranslation);
-        P_FINISH;
-        SetTranslation(NewTranslation);
-    }
-    DECLARE_CLASS(UPointLightComponent,ULightComponent,0,Engine)
-protected:
-	/**
-	 * Updates the light's PreviewLightRadius.
-	 */
-	void UpdatePreviewLightRadius();
-
-	// UActorComponent interface.
-	virtual void SetParentToWorld(const FMatrix& ParentToWorld);
-	virtual void Attach();
-	virtual void UpdateTransform();
-public:
-
-	// ULightComponent interface.
-	virtual FLightSceneInfo* CreateSceneInfo() const;
-	virtual UBOOL AffectsBounds(const FBoxSphereBounds& Bounds) const;
-	virtual FVector4 GetPosition() const;
-	virtual FBox GetBoundingBox() const;
-	virtual FLinearColor GetDirectIntensity(const FVector& Point) const;
-	virtual ELightComponentType GetLightType() const;
-
-	// update the LocalToWorld matrix
-	virtual void SetTransformedToWorld();
-
-	/**
-	 * Called after property has changed via e.g. property window or set command.
-	 *
-	 * @param	PropertyThatChanged	UProperty that has been changed, NULL if unknown
-	 */
-	virtual void PostEditChange(UProperty* PropertyThatChanged);
-
-	virtual void PostLoad();
-};
-
-class USpotLightComponent : public UPointLightComponent
-{
-public:
-    //## BEGIN PROPS SpotLightComponent
-    FLOAT InnerConeAngle;
-    FLOAT OuterConeAngle;
-    class UDrawLightConeComponent* PreviewInnerCone;
-    class UDrawLightConeComponent* PreviewOuterCone;
-    //## END PROPS SpotLightComponent
-
-    DECLARE_CLASS(USpotLightComponent,UPointLightComponent,0,Engine)
-	// UActorComponent interface.
-	virtual void Attach();
-
-	// ULightComponent interface.
-	virtual FLightSceneInfo* CreateSceneInfo() const;
-	virtual UBOOL AffectsBounds(const FBoxSphereBounds& Bounds) const;
-	virtual FLinearColor GetDirectIntensity(const FVector& Point) const;
-	virtual ELightComponentType GetLightType() const;
-	virtual void PostLoad();
-};
-
-class USkyLightComponent : public ULightComponent
-{
-public:
-    //## BEGIN PROPS SkyLightComponent
-    FLOAT LowerBrightness;
-    FColor LowerColor;
-    //## END PROPS SkyLightComponent
-
-    DECLARE_CLASS(USkyLightComponent,ULightComponent,0,Engine)
-	/**
-	 * Called when a property is being changed.
-	 *
-	 * @param PropertyThatChanged	Property that changed or NULL if unknown or multiple
-	 */
-	virtual void PostEditChange(UProperty* PropertyThatChanged);
-	/**
-	 * Called after data has been serialized.
-	 */
-	virtual void PostLoad();
-
-	// ULightComponent interface.
-	virtual FLightSceneInfo* CreateSceneInfo() const;
-	virtual FVector4 GetPosition() const;
-	virtual ELightComponentType GetLightType() const;
-};
-
-class USphericalHarmonicLightComponent : public ULightComponent
-{
-public:
-    //## BEGIN PROPS SphericalHarmonicLightComponent
-    FSHVectorRGB WorldSpaceIncidentLighting;
-    BITFIELD bRenderBeforeModShadows:1;
-    //## END PROPS SphericalHarmonicLightComponent
-
-    DECLARE_CLASS(USphericalHarmonicLightComponent,ULightComponent,0,Engine)
-	// ULightComponent interface.
-	virtual FLightSceneInfo* CreateSceneInfo() const;
-	virtual FVector4 GetPosition() const;
-	virtual ELightComponentType GetLightType() const;
-};
-
-class ULightEnvironmentComponent : public UActorComponent
-{
-public:
-    //## BEGIN PROPS LightEnvironmentComponent
-protected:
-    BITFIELD bEnabled:1 GCC_BITFIELD_MAGIC;
-public:
-    BITFIELD bForceNonCompositeDynamicLights:1;
-protected:
-    TArrayNoInit<class UPrimitiveComponent*> AffectedComponents;
-public:
-    //## END PROPS LightEnvironmentComponent
-
-    void SetEnabled(UBOOL bNewEnabled);
-    UBOOL IsEnabled() const;
-    DECLARE_FUNCTION(execSetEnabled)
-    {
-        P_GET_UBOOL(bNewEnabled);
-        P_FINISH;
-        SetEnabled(bNewEnabled);
-    }
-    DECLARE_FUNCTION(execIsEnabled)
-    {
-        P_FINISH;
-        *(UBOOL*)Result=IsEnabled();
-    }
-    DECLARE_CLASS(ULightEnvironmentComponent,UActorComponent,0,Engine)
-	/**
-	 * Signals to the light environment that a light has changed, so the environment may need to be updated.
-	 * @param Light - The light that changed.
-	 */
-	virtual void UpdateLight(const ULightComponent* Light) {}
-
-	// Methods that update AffectedComponents
-	void AddAffectedComponent(UPrimitiveComponent* NewComponent);
-	void RemoveAffectedComponent(UPrimitiveComponent* OldComponent);
-};
-
-class UDynamicLightEnvironmentComponent : public ULightEnvironmentComponent
-{
-public:
-    //## BEGIN PROPS DynamicLightEnvironmentComponent
-    class FDynamicLightEnvironmentState* State;
-    FLOAT InvisibleUpdateTime;
-    FLOAT MinTimeBetweenFullUpdates;
-    INT NumVolumeVisibilitySamples;
-    FLinearColor AmbientShadowColor;
-    FVector AmbientShadowSourceDirection;
-    FLinearColor AmbientGlow;
-    FLOAT LightDesaturation;
-    FLOAT LightDistance;
-    FLOAT ShadowDistance;
-    BITFIELD bCastShadows:1;
-    BITFIELD bCompositeShadowsFromDynamicLights:1;
-    BITFIELD bDynamic:1;
-    BITFIELD bSynthesizeDirectionalLight:1;
-    BITFIELD bSynthesizeSHLight:1;
-    BITFIELD bForceAllowLightEnvSphericalHarmonicLights:1;
-    BITFIELD bRequiresNonLatentUpdates:1;
-    BITFIELD bTraceFromClosestBoundsPoint:1;
-    BITFIELD bOverrideOwnerBounds:1;
-    BITFIELD bOverrideOwnerLightingChannels:1;
-    BITFIELD RestrictInterpolationWhenSlow:1;
-    BITFIELD bScaleShadowDistanceWhenAboveCamera:1;
-    FLOAT ModShadowFadeoutTime;
-    FLOAT ModShadowFadeoutExponent;
-    INT MinShadowResolution;
-    INT MaxShadowResolution;
-    INT ShadowFadeResolution;
-    BYTE ShadowFilterQuality;
-    BYTE LightShadowMode;
-    FLOAT ShadowFalloffExponent;
-    FVector SavedLightDirection;
-    FLOAT BouncedLightingFactor;
-    FLOAT MinShadowAngle;
-    FBoxSphereBounds OverriddenBounds;
-    FLightingChannelContainer OverriddenLightingChannels;
-    INT StaticLightingTimestamp;
-    INT TimeSlicerId;
-    //## END PROPS DynamicLightEnvironmentComponent
-
-    DECLARE_CLASS(UDynamicLightEnvironmentComponent,ULightEnvironmentComponent,0,Engine)
-	// UObject interface.
-	virtual void FinishDestroy();
-	virtual void AddReferencedObjects( TArray<UObject*>& ObjectArray );
-	virtual void Serialize(FArchive& Ar);
-
-	// UActorComponent interface.
-	virtual void Tick(FLOAT DeltaTime);
-	virtual void Attach();
-	virtual void UpdateTransform();
-	virtual void Detach( UBOOL bWillReattach = FALSE );
-	
-	// ULightEnvironmentComponent interface.
-	virtual void UpdateLight(const ULightComponent* Light);
-
-	/* Forces a full update the of the dynamic and static environments on the next Tick. */
-	void ResetEnvironment();
-
-	friend class FDynamicLightEnvironmentState;
-};
-
-class UDrawConeComponent : public UPrimitiveComponent
-{
-public:
-    //## BEGIN PROPS DrawConeComponent
-    FColor ConeColor;
-    FLOAT ConeRadius;
-    FLOAT ConeAngle;
-    INT ConeSides;
-    //## END PROPS DrawConeComponent
-
-    DECLARE_CLASS(UDrawConeComponent,UPrimitiveComponent,0,Engine)
-	// UPrimitiveComponent interface.
-	/**
-	 * Creates a proxy to represent the primitive to the scene manager in the rendering thread.
-	 * @return The proxy object.
-	 */
-	virtual FPrimitiveSceneProxy* CreateSceneProxy();
-	virtual void UpdateBounds();
-};
-
-class UDrawLightConeComponent : public UDrawConeComponent
-{
-public:
-    //## BEGIN PROPS DrawLightConeComponent
-    //## END PROPS DrawLightConeComponent
-
-    DECLARE_CLASS(UDrawLightConeComponent,UDrawConeComponent,0,Engine)
-	/**
-	 * Creates a proxy to represent the primitive to the scene manager in the rendering thread.
-	 * @return The proxy object.
-	 */
-	virtual FPrimitiveSceneProxy* CreateSceneProxy();
-};
-
-struct RB_ForceComponent_eventAttachCloneToActor_Parms
-{
-    class AActor* NewOwner;
-    RB_ForceComponent_eventAttachCloneToActor_Parms(EEventParm)
-    {
-    }
-};
-class URB_ForceComponent : public UPrimitiveComponent
-{
-public:
-    //## BEGIN PROPS RB_ForceComponent
-    BITFIELD bUseNxForcefield:1;
-    BITFIELD bForceActive:1;
-    BITFIELD bDetachWhenInactive:1;
-    BITFIELD bForceApplyToCloth:1;
-    BITFIELD bForceApplyToFluid:1;
-    BITFIELD bForceApplyToRigidBodies:1;
-    BITFIELD bForceApplyToProjectiles:1;
-    BYTE ForceMode GCC_BITFIELD_MAGIC;
-    FLOAT Duration;
-    FRBCollisionChannelContainer CollideWithChannels;
-    FLOAT ElapsedTime;
-    class UPrimitiveComponent* RenderComponent;
-    FPointer LinearKernel;
-    FPointer TheNxForceField;
-    //## END PROPS RB_ForceComponent
-
-    void eventAttachCloneToActor(class AActor* NewOwner)
-    {
-        RB_ForceComponent_eventAttachCloneToActor_Parms Parms(EC_EventParm);
-        Parms.NewOwner=NewOwner;
-        ProcessEvent(FindFunctionChecked(ENGINE_AttachCloneToActor),&Parms);
-    }
-    DECLARE_ABSTRACT_CLASS(URB_ForceComponent,UPrimitiveComponent,0,Engine)
-    NO_DEFAULT_CONSTRUCTOR(URB_ForceComponent)
-};
-
-class USceneCaptureComponent : public UActorComponent
-{
-public:
-    //## BEGIN PROPS SceneCaptureComponent
-    BITFIELD bEnablePostProcess:1 GCC_BITFIELD_MAGIC;
-    BITFIELD bEnableFog:1;
-    BITFIELD bUseMainScenePostProcessSettings:1;
-    BITFIELD bSkipUpdateIfOwnerOccluded:1;
-    BITFIELD bNeedsSceneUpdate:1;
-    FColor ClearColor;
-    BYTE ViewMode;
-    INT SceneLOD;
-    FLOAT FrameRate;
-    class UPostProcessChain* PostProcess;
-    FLOAT MaxUpdateDist;
-    FLOAT MaxStreamingUpdateDist;
-    FCaptureSceneInfo* CaptureInfo;
-    FSceneViewStateInterface* ViewState;
-    //## END PROPS SceneCaptureComponent
-
-    void SetFrameRate(FLOAT NewFrameRate);
-    DECLARE_FUNCTION(execSetFrameRate)
-    {
-        P_GET_FLOAT(NewFrameRate);
-        P_FINISH;
-        SetFrameRate(NewFrameRate);
-    }
-    DECLARE_ABSTRACT_CLASS(USceneCaptureComponent,UActorComponent,0,Engine)
-protected:
-
-	/**
-	* Constructor
-	*/
-	USceneCaptureComponent();
-
-	// UActorComponent interface.
-
-	/**
-	* Adds a capture proxy for this component to the scene
-	*/
-	virtual void Attach();
-
-	/**
-	* Removes a capture proxy for thsi component from the scene
-	*/
-	virtual void Detach( UBOOL bWillReattach = FALSE );
-
-	/**
-	* Tick the component to handle updates
-	*/
-	virtual void Tick(FLOAT DeltaTime);
-
-	/**
-	 * Sets the ParentToWorld transform the component is attached to.
-	 * @param ParentToWorld - The ParentToWorld transform the component is attached to.
-	 */
-	virtual void SetParentToWorld(const FMatrix& ParentToWorld);
-
-	virtual void FinishDestroy();
-
-public:
-	/**
-	* Create a new probe with info needed to render the scene
-	*/
-	virtual class FSceneCaptureProbe* CreateSceneCaptureProbe() { return NULL; }
-
-	/**
-	* Map the various capture view settings to show flags.
-	*/
-	virtual EShowFlags GetSceneShowFlags();
-};
-
-class USceneCapture2DComponent : public USceneCaptureComponent
-{
-public:
-    //## BEGIN PROPS SceneCapture2DComponent
-    class UTextureRenderTarget2D* TextureTarget;
-    FLOAT FieldOfView;
-    FLOAT NearPlane;
-    FLOAT FarPlane;
-    BITFIELD bUpdateMatrices:1;
-    FMatrix ViewMatrix;
-    FMatrix ProjMatrix;
-    //## END PROPS SceneCapture2DComponent
-
-    void SetView(FVector NewLocation,FRotator NewRotation);
-    DECLARE_FUNCTION(execSetCaptureParameters);
-    DECLARE_FUNCTION(execSetView)
-    {
-        P_GET_STRUCT(FVector,NewLocation);
-        P_GET_STRUCT(FRotator,NewRotation);
-        P_FINISH;
-        SetView(NewLocation,NewRotation);
-    }
-    DECLARE_CLASS(USceneCapture2DComponent,USceneCaptureComponent,0,Engine)
-protected:
-
-	// UActorComponent interface
-
-	/**
-	* Attach a new 2d capture component
-	*/
-	virtual void Attach();
-
-	/**
-	 * Sets the ParentToWorld transform the component is attached to.
-	 * @param ParentToWorld - The ParentToWorld transform the component is attached to.
-	 */
-	virtual void SetParentToWorld(const FMatrix& ParentToWorld);
-
-public:
-
-	/**
-	* Constructor
-	*/
-	USceneCapture2DComponent() :
-		ViewMatrix(FMatrix::Identity),
-		ProjMatrix(FMatrix::Identity)
-		{}
-
-	/**
-	* Update the projection matrix using the fov,near,far,aspect
-	*/
-	void UpdateProjMatrix();
-
-	// SceneCaptureComponent interface
-
-	/**
-	* Create a new probe with info needed to render the scene
-	*/
-	virtual class FSceneCaptureProbe* CreateSceneCaptureProbe();
-};
-
-class USceneCaptureCubeMapComponent : public USceneCaptureComponent
-{
-public:
-    //## BEGIN PROPS SceneCaptureCubeMapComponent
-    class UTextureRenderTargetCube* TextureTarget;
-    FLOAT NearPlane;
-    FLOAT FarPlane;
-    FVector WorldLocation;
-    //## END PROPS SceneCaptureCubeMapComponent
-
-    DECLARE_CLASS(USceneCaptureCubeMapComponent,USceneCaptureComponent,0,Engine)
-protected:
-
-	// UActorComponent interface.
-
-	/**
-	* Attach a new cube capture component
-	*/
-	virtual void Attach();
-
-	/**
-	 * Sets the ParentToWorld transform the component is attached to.
-	 * @param ParentToWorld - The ParentToWorld transform the component is attached to.
-	 */
-	virtual void SetParentToWorld(const FMatrix& ParentToWorld);
-
-public:
-	
-	// SceneCaptureComponent interface
-
-	/**
-	* Create a new probe with info needed to render the scene
-	*/
-	virtual class FSceneCaptureProbe* CreateSceneCaptureProbe();
-};
-
-class USceneCapturePortalComponent : public USceneCaptureComponent
-{
-public:
-    //## BEGIN PROPS SceneCapturePortalComponent
-    class UTextureRenderTarget2D* TextureTarget;
-    FLOAT ScaleFOV;
-    class AActor* ViewDestination;
-    //## END PROPS SceneCapturePortalComponent
-
-    DECLARE_FUNCTION(execSetCaptureParameters);
-    DECLARE_CLASS(USceneCapturePortalComponent,USceneCaptureComponent,0,Engine)
-public:
-
-	// UActorComponent interface
-
-	/**
-	* Attach a new portal capture component
-	*/
-	virtual void Attach();
-
-	// SceneCaptureComponent interface
-
-	/**
-	* Create a new probe with info needed to render the scene
-	*/
-	virtual class FSceneCaptureProbe* CreateSceneCaptureProbe();
-};
-
-class USceneCaptureReflectComponent : public USceneCaptureComponent
-{
-public:
-    //## BEGIN PROPS SceneCaptureReflectComponent
-    class UTextureRenderTarget2D* TextureTarget;
-    FLOAT ScaleFOV;
-    FLOAT FarClip;
-    //## END PROPS SceneCaptureReflectComponent
-
-    DECLARE_CLASS(USceneCaptureReflectComponent,USceneCaptureComponent,0,Engine)
-public:
-
-	// UActorComponent interface
-
-	/**
-	* Attach a new reflect capture component
-	*/
-	virtual void Attach();
-
-	// SceneCaptureComponent interface
-
-	/**
-	* Create a new probe with info needed to render the scene
-	*/
-	virtual class FSceneCaptureProbe* CreateSceneCaptureProbe();
-};
-
-class UWindDirectionalSourceComponent : public UActorComponent
-{
-public:
-    //## BEGIN PROPS WindDirectionalSourceComponent
-    FWindSourceSceneProxy* SceneProxy;
-    FLOAT Strength;
-    FLOAT Phase;
-    FLOAT Frequency;
-    FLOAT Speed;
-    //## END PROPS WindDirectionalSourceComponent
-
-    DECLARE_CLASS(UWindDirectionalSourceComponent,UActorComponent,0,Engine)
-protected:
-	// UActorComponent interface.
-	virtual void Attach();
-	virtual void Detach( UBOOL bWillReattach = FALSE );
-public:
-	
-	/**
-	 * Creates a proxy to represent the wind source to the scene manager in the rendering thread.
-	 * @return The proxy object.
-	 */
-	 virtual class FWindSourceSceneProxy* CreateSceneProxy() const;
-};
-
-class UDistributionFloatConstant : public UDistributionFloat
-{
-public:
-    //## BEGIN PROPS DistributionFloatConstant
-    FLOAT Constant;
-    //## END PROPS DistributionFloatConstant
-
-    DECLARE_CLASS(UDistributionFloatConstant,UDistributionFloat,0,Engine)
-	virtual FLOAT GetValue( FLOAT F = 0.f, UObject* Data = NULL );
-
-	// FCurveEdInterface interface
-	virtual INT		GetNumKeys();
-	virtual INT		GetNumSubCurves();
-	virtual FLOAT	GetKeyIn(INT KeyIndex);
-	virtual FLOAT	GetKeyOut(INT SubIndex, INT KeyIndex);
-	virtual void	GetInRange(FLOAT& MinIn, FLOAT& MaxIn);
-	virtual void	GetOutRange(FLOAT& MinOut, FLOAT& MaxOut);
-	virtual BYTE	GetKeyInterpMode(INT KeyIndex);
-	virtual void	GetTangents(INT SubIndex, INT KeyIndex, FLOAT& ArriveTangent, FLOAT& LeaveTangent);
-	virtual FLOAT	EvalSub(INT SubIndex, FLOAT InVal);
-
-	virtual INT		CreateNewKey(FLOAT KeyIn);
-	virtual void	DeleteKey(INT KeyIndex);
-
-	virtual INT		SetKeyIn(INT KeyIndex, FLOAT NewInVal);
-	virtual void	SetKeyOut(INT SubIndex, INT KeyIndex, FLOAT NewOutVal);
-	virtual void	SetKeyInterpMode(INT KeyIndex, EInterpCurveMode NewMode);
-	virtual void	SetTangents(INT SubIndex, INT KeyIndex, FLOAT ArriveTangent, FLOAT LeaveTangent);
-};
-
-class UDistributionFloatParameterBase : public UDistributionFloatConstant
-{
-public:
-    //## BEGIN PROPS DistributionFloatParameterBase
-    FName ParameterName;
-    FLOAT MinInput;
-    FLOAT MaxInput;
-    FLOAT MinOutput;
-    FLOAT MaxOutput;
-    BYTE ParamMode;
-    //## END PROPS DistributionFloatParameterBase
-
-    DECLARE_ABSTRACT_CLASS(UDistributionFloatParameterBase,UDistributionFloatConstant,0,Engine)
-	virtual FLOAT GetValue( FLOAT F = 0.f, UObject* Data = NULL );
-	
-	virtual UBOOL GetParamValue(UObject* Data, FName ParamName, FLOAT& OutFloat) { return false; }
-
-	/**
-	 * Return whether or not this distribution can be baked into a FRawDistribution lookup table
-	 */
-	virtual UBOOL CanBeBaked() const { return FALSE; }
-};
-
-class UDistributionFloatConstantCurve : public UDistributionFloat
-{
-public:
-    //## BEGIN PROPS DistributionFloatConstantCurve
-    FInterpCurveFloat ConstantCurve;
-    //## END PROPS DistributionFloatConstantCurve
-
-    DECLARE_CLASS(UDistributionFloatConstantCurve,UDistributionFloat,0,Engine)
-	virtual FLOAT GetValue( FLOAT F = 0.f, UObject* Data = NULL );
-
-	// FCurveEdInterface interface
-	virtual INT		GetNumKeys();
-	virtual INT		GetNumSubCurves();
-	virtual FLOAT	GetKeyIn(INT KeyIndex);
-	virtual FLOAT	GetKeyOut(INT SubIndex, INT KeyIndex);
-	virtual void	GetInRange(FLOAT& MinIn, FLOAT& MaxIn);
-	virtual void	GetOutRange(FLOAT& MinOut, FLOAT& MaxOut);
-	virtual BYTE	GetKeyInterpMode(INT KeyIndex);
-	virtual void	GetTangents(INT SubIndex, INT KeyIndex, FLOAT& ArriveTangent, FLOAT& LeaveTangent);
-	virtual FLOAT	EvalSub(INT SubIndex, FLOAT InVal);
-
-	virtual INT		CreateNewKey(FLOAT KeyIn);
-	virtual void	DeleteKey(INT KeyIndex);
-
-	virtual INT		SetKeyIn(INT KeyIndex, FLOAT NewInVal);
-	virtual void	SetKeyOut(INT SubIndex, INT KeyIndex, FLOAT NewOutVal);
-	virtual void	SetKeyInterpMode(INT KeyIndex, EInterpCurveMode NewMode);
-	virtual void	SetTangents(INT SubIndex, INT KeyIndex, FLOAT ArriveTangent, FLOAT LeaveTangent);
-
-	/** Returns TRUE if this curve uses legacy tangent/interp algorithms and may be 'upgraded' */
-	virtual UBOOL	UsingLegacyInterpMethod() const;
-
-	/** 'Upgrades' this curve to use the latest tangent/interp algorithms (usually, will 'bake' key tangents.) */
-	virtual void	UpgradeInterpMethod();
-};
-
-class UDistributionFloatUniform : public UDistributionFloat
-{
-public:
-    //## BEGIN PROPS DistributionFloatUniform
-    FLOAT Min;
-    FLOAT Max;
-    //## END PROPS DistributionFloatUniform
-
-    DECLARE_CLASS(UDistributionFloatUniform,UDistributionFloat,0,Engine)
-	virtual void PostLoad();
-
-	virtual FLOAT GetValue( FLOAT F = 0.f, UObject* Data = NULL );
-#if !CONSOLE
-	/**
-	 * Return the operation used at runtime to calculate the final value
-	 */
-	virtual ERawDistributionOperation GetOperation();
-	
-	/**
-	 * Fill out an array of floats and return the number of elements in the entry
-	 *
-	 * @param Time The time to evaluate the distribution
-	 * @param Values An array of values to be filled out, guaranteed to be big enough for 4 floats
-	 * @return The number of elements (values) set in the array
-	 */
-	virtual DWORD InitializeRawEntry(FLOAT Time, FLOAT* Values);
-#endif
-
-	// FCurveEdInterface interface
-	virtual INT		GetNumKeys();
-	virtual INT		GetNumSubCurves();
-	virtual FLOAT	GetKeyIn(INT KeyIndex);
-	virtual FLOAT	GetKeyOut(INT SubIndex, INT KeyIndex);
-	virtual void	GetInRange(FLOAT& MinIn, FLOAT& MaxIn);
-	virtual void	GetOutRange(FLOAT& MinOut, FLOAT& MaxOut);
-	virtual BYTE	GetKeyInterpMode(INT KeyIndex);
-	virtual void	GetTangents(INT SubIndex, INT KeyIndex, FLOAT& ArriveTangent, FLOAT& LeaveTangent);
-	virtual FLOAT	EvalSub(INT SubIndex, FLOAT InVal);
-
-	virtual INT		CreateNewKey(FLOAT KeyIn);
-	virtual void	DeleteKey(INT KeyIndex);
-
-	virtual INT		SetKeyIn(INT KeyIndex, FLOAT NewInVal);
-	virtual void	SetKeyOut(INT SubIndex, INT KeyIndex, FLOAT NewOutVal);
-	virtual void	SetKeyInterpMode(INT KeyIndex, EInterpCurveMode NewMode);
-	virtual void	SetTangents(INT SubIndex, INT KeyIndex, FLOAT ArriveTangent, FLOAT LeaveTangent);
-};
-
-class UDistributionFloatUniformCurve : public UDistributionFloat
-{
-public:
-    //## BEGIN PROPS DistributionFloatUniformCurve
-    FInterpCurveVector2D ConstantCurve;
-    //## END PROPS DistributionFloatUniformCurve
-
-    DECLARE_CLASS(UDistributionFloatUniformCurve,UDistributionFloat,0,Engine)
-	virtual void PostLoad();
-
-	virtual FLOAT GetValue( FLOAT F = 0.f, UObject* Data = NULL );
-#if !CONSOLE
-	/**
-	 * Return the operation used at runtime to calculate the final value
-	 */
-	virtual ERawDistributionOperation GetOperation();
-	
-	/**
-	 * Fill out an array of floats and return the number of elements in the entry
-	 *
-	 * @param Time The time to evaluate the distribution
-	 * @param Values An array of values to be filled out, guaranteed to be big enough for 4 floats
-	 * @return The number of elements (values) set in the array
-	 */
-	virtual DWORD InitializeRawEntry(FLOAT Time, FLOAT* Values);
-#endif
-
-	virtual FVector2D GetMinMaxValue(FLOAT F = 0.f, UObject* Data = NULL);
-
-	// FCurveEdInterface interface
-	virtual INT		GetNumKeys();
-	virtual INT		GetNumSubCurves();
-	virtual FLOAT	GetKeyIn(INT KeyIndex);
-	virtual FLOAT	GetKeyOut(INT SubIndex, INT KeyIndex);
-	virtual FColor	GetKeyColor(INT SubIndex, INT KeyIndex, const FColor& CurveColor);
-	virtual void	GetInRange(FLOAT& MinIn, FLOAT& MaxIn);
-	virtual void	GetOutRange(FLOAT& MinOut, FLOAT& MaxOut);
-	virtual BYTE	GetKeyInterpMode(INT KeyIndex);
-	virtual void	GetTangents(INT SubIndex, INT KeyIndex, FLOAT& ArriveTangent, FLOAT& LeaveTangent);
-	virtual FLOAT	EvalSub(INT SubIndex, FLOAT InVal);
-
-	virtual INT		CreateNewKey(FLOAT KeyIn);
-	virtual void	DeleteKey(INT KeyIndex);
-
-	virtual INT		SetKeyIn(INT KeyIndex, FLOAT NewInVal);
-	virtual void	SetKeyOut(INT SubIndex, INT KeyIndex, FLOAT NewOutVal);
-	virtual void	SetKeyInterpMode(INT KeyIndex, EInterpCurveMode NewMode);
-	virtual void	SetTangents(INT SubIndex, INT KeyIndex, FLOAT ArriveTangent, FLOAT LeaveTangent);
-
-	/** Returns TRUE if this curve uses legacy tangent/interp algorithms and may be 'upgraded' */
-	virtual UBOOL	UsingLegacyInterpMethod() const;
-
-	/** 'Upgrades' this curve to use the latest tangent/interp algorithms (usually, will 'bake' key tangents.) */
-	virtual void	UpgradeInterpMethod();
-};
-
-class UDistributionVectorConstant : public UDistributionVector
-{
-public:
-    //## BEGIN PROPS DistributionVectorConstant
-    FVector Constant;
-    BITFIELD bLockAxes:1;
-    BYTE LockedAxes GCC_BITFIELD_MAGIC;
-    //## END PROPS DistributionVectorConstant
-
-    DECLARE_CLASS(UDistributionVectorConstant,UDistributionVector,0,Engine)
-	virtual FVector GetValue(FLOAT F = 0.f, UObject* Data = NULL, INT Extreme = 0);
-
-	// UObject interface
-	virtual void Serialize(FArchive& Ar);
-	
-	// FCurveEdInterface interface
-	virtual INT		GetNumKeys();
-	virtual INT		GetNumSubCurves();
-	virtual FLOAT	GetKeyIn(INT KeyIndex);
-	virtual FLOAT	GetKeyOut(INT SubIndex, INT KeyIndex);
-	virtual FColor	GetKeyColor(INT SubIndex, INT KeyIndex, const FColor& CurveColor);
-	virtual void	GetInRange(FLOAT& MinIn, FLOAT& MaxIn);
-	virtual void	GetOutRange(FLOAT& MinOut, FLOAT& MaxOut);
-	virtual BYTE	GetKeyInterpMode(INT KeyIndex);
-	virtual void	GetTangents(INT SubIndex, INT KeyIndex, FLOAT& ArriveTangent, FLOAT& LeaveTangent);
-	virtual FLOAT	EvalSub(INT SubIndex, FLOAT InVal);
-
-	virtual INT		CreateNewKey(FLOAT KeyIn);
-	virtual void	DeleteKey(INT KeyIndex);
-
-	virtual INT		SetKeyIn(INT KeyIndex, FLOAT NewInVal);
-	virtual void	SetKeyOut(INT SubIndex, INT KeyIndex, FLOAT NewOutVal);
-	virtual void	SetKeyInterpMode(INT KeyIndex, EInterpCurveMode NewMode);
-	virtual void	SetTangents(INT SubIndex, INT KeyIndex, FLOAT ArriveTangent, FLOAT LeaveTangent);
-
-	// DistributionVector interface
-	virtual	void	GetRange(FVector& OutMin, FVector& OutMax);
-};
-
-class UDistributionVectorParameterBase : public UDistributionVectorConstant
-{
-public:
-    //## BEGIN PROPS DistributionVectorParameterBase
-    FName ParameterName;
-    FVector MinInput;
-    FVector MaxInput;
-    FVector MinOutput;
-    FVector MaxOutput;
-    BYTE ParamModes[3];
-    //## END PROPS DistributionVectorParameterBase
-
-    DECLARE_ABSTRACT_CLASS(UDistributionVectorParameterBase,UDistributionVectorConstant,0,Engine)
-	virtual FVector GetValue(FLOAT F = 0.f, UObject* Data = NULL, INT Extreme = 0);
-	
-	virtual UBOOL GetParamValue(UObject* Data, FName ParamName, FVector& OutVector) { return false; }
-
-	/**
-	 * Return whether or not this distribution can be baked into a FRawDistribution lookup table
-	 */
-	virtual UBOOL CanBeBaked() const { return FALSE; }
-};
-
-class UDistributionVectorConstantCurve : public UDistributionVector
-{
-public:
-    //## BEGIN PROPS DistributionVectorConstantCurve
-    FInterpCurveVector ConstantCurve;
-    BITFIELD bLockAxes:1;
-    BYTE LockedAxes GCC_BITFIELD_MAGIC;
-    //## END PROPS DistributionVectorConstantCurve
-
-    DECLARE_CLASS(UDistributionVectorConstantCurve,UDistributionVector,0,Engine)
-	virtual FVector GetValue(FLOAT F = 0.f, UObject* Data = NULL, INT Extreme = 0);
-
-	// UObject interface
-	virtual void Serialize(FArchive& Ar);
-
-	// FCurveEdInterface interface
-	virtual INT		GetNumKeys();
-	virtual INT		GetNumSubCurves();
-	virtual FLOAT	GetKeyIn(INT KeyIndex);
-	virtual FLOAT	GetKeyOut(INT SubIndex, INT KeyIndex);
-	virtual void	GetInRange(FLOAT& MinIn, FLOAT& MaxIn);
-	virtual void	GetOutRange(FLOAT& MinOut, FLOAT& MaxOut);
-	virtual FColor	GetKeyColor(INT SubIndex, INT KeyIndex, const FColor& CurveColor);
-	virtual BYTE	GetKeyInterpMode(INT KeyIndex);
-	virtual void	GetTangents(INT SubIndex, INT KeyIndex, FLOAT& ArriveTangent, FLOAT& LeaveTangent);
-	virtual FLOAT	EvalSub(INT SubIndex, FLOAT InVal);
-
-	virtual INT		CreateNewKey(FLOAT KeyIn);
-	virtual void	DeleteKey(INT KeyIndex);
-
-	virtual INT		SetKeyIn(INT KeyIndex, FLOAT NewInVal);
-	virtual void	SetKeyOut(INT SubIndex, INT KeyIndex, FLOAT NewOutVal);
-	virtual void	SetKeyInterpMode(INT KeyIndex, EInterpCurveMode NewMode);
-	virtual void	SetTangents(INT SubIndex, INT KeyIndex, FLOAT ArriveTangent, FLOAT LeaveTangent);
-
-	/** Returns TRUE if this curve uses legacy tangent/interp algorithms and may be 'upgraded' */
-	virtual UBOOL	UsingLegacyInterpMethod() const;
-
-	/** 'Upgrades' this curve to use the latest tangent/interp algorithms (usually, will 'bake' key tangents.) */
-	virtual void	UpgradeInterpMethod();
-
-	// DistributionVector interface
-	virtual	void	GetRange(FVector& OutMin, FVector& OutMax);
-};
-
-class UDistributionVectorUniform : public UDistributionVector
-{
-public:
-    //## BEGIN PROPS DistributionVectorUniform
-    FVector Max;
-    FVector Min;
-    BITFIELD bLockAxes:1;
-    BITFIELD bUseExtremes:1;
-    BYTE LockedAxes GCC_BITFIELD_MAGIC;
-    BYTE MirrorFlags[3];
-    //## END PROPS DistributionVectorUniform
-
-    DECLARE_CLASS(UDistributionVectorUniform,UDistributionVector,0,Engine)
-	virtual void PostLoad();
-
-	virtual FVector GetValue(FLOAT F = 0.f, UObject* Data = NULL, INT Extreme = 0);
-#if !CONSOLE
-	/**
-	 * Return the operation used at runtime to calculate the final value
-	 */
-	virtual ERawDistributionOperation GetOperation();
-	
-	/**
-	 * Return the lock flags used at runtime to calculate the final value
-	 */
-	virtual ERawDistributionLockFlags GetLockFlags(INT InIndex) 
-	{
-		if (InIndex != 0)
-		{
-			return RDL_None;
-		}
-
-		switch (LockedAxes)
-		{
-		case EDVLF_XY:		return RDL_XY;
-		case EDVLF_XZ:		return RDL_XZ;
-		case EDVLF_YZ:		return RDL_YZ;
-		case EDVLF_XYZ:		return RDL_XYZ;
-		}
-		return RDL_None;
-	}
-
-	/**
-	 * Fill out an array of vectors and return the number of elements in the entry
-	 *
-	 * @param Time The time to evaluate the distribution
-	 * @param Values An array of values to be filled out, guaranteed to be big enough for 2 vectors
-	 * @return The number of elements (values) set in the array
-	 */
-	virtual DWORD InitializeRawEntry(FLOAT Time, FVector* Values);
-#endif
-	
-	/** These two functions will retrieve the Min/Max values respecting the Locked and Mirror flags. */
-	virtual FVector GetMinValue();
-	virtual FVector GetMaxValue();
-
-	// UObject interface
-	virtual void Serialize(FArchive& Ar);
-
-	// FCurveEdInterface interface
-	virtual INT		GetNumKeys();
-	virtual INT		GetNumSubCurves();
-	virtual FLOAT	GetKeyIn(INT KeyIndex);
-	virtual FLOAT	GetKeyOut(INT SubIndex, INT KeyIndex);
-	virtual FColor	GetKeyColor(INT SubIndex, INT KeyIndex, const FColor& CurveColor);
-	virtual void	GetInRange(FLOAT& MinIn, FLOAT& MaxIn);
-	virtual void	GetOutRange(FLOAT& MinOut, FLOAT& MaxOut);
-	virtual BYTE	GetKeyInterpMode(INT KeyIndex);
-	virtual void	GetTangents(INT SubIndex, INT KeyIndex, FLOAT& ArriveTangent, FLOAT& LeaveTangent);
-	virtual FLOAT	EvalSub(INT SubIndex, FLOAT InVal);
-
-	virtual INT		CreateNewKey(FLOAT KeyIn);
-	virtual void	DeleteKey(INT KeyIndex);
-
-	virtual INT		SetKeyIn(INT KeyIndex, FLOAT NewInVal);
-	virtual void	SetKeyOut(INT SubIndex, INT KeyIndex, FLOAT NewOutVal);
-	virtual void	SetKeyInterpMode(INT KeyIndex, EInterpCurveMode NewMode);
-	virtual void	SetTangents(INT SubIndex, INT KeyIndex, FLOAT ArriveTangent, FLOAT LeaveTangent);
-
-	// DistributionVector interface
-	virtual	void	GetRange(FVector& OutMin, FVector& OutMax);
-};
-
-class UDistributionVectorUniformCurve : public UDistributionVector
-{
-public:
-    //## BEGIN PROPS DistributionVectorUniformCurve
-    FInterpCurveTwoVectors ConstantCurve;
-    BITFIELD bLockAxes1:1;
-    BITFIELD bLockAxes2:1;
-    BITFIELD bUseExtremes:1;
-    BYTE LockedAxes[2] GCC_BITFIELD_MAGIC;
-    BYTE MirrorFlags[3];
-    //## END PROPS DistributionVectorUniformCurve
-
-    DECLARE_CLASS(UDistributionVectorUniformCurve,UDistributionVector,0,Engine)
-	virtual void PostLoad();
-
-	virtual FVector		GetValue(FLOAT F = 0.f, UObject* Data = NULL, INT Extreme = 0);
-#if !CONSOLE
-	/**
-	 * Return the operation used at runtime to calculate the final value
-	 */
-	virtual ERawDistributionOperation GetOperation();
-	
-	/**
-	 * Return the lock flags used at runtime to calculate the final value
-	 */
-	virtual ERawDistributionLockFlags GetLockFlags(INT InIndex) 
-	{
-		if ((InIndex >= 0) && (InIndex <= 1))
-		{
-			switch (LockedAxes[InIndex])
-			{
-			case EDVLF_XY:		return RDL_XY;
-			case EDVLF_XZ:		return RDL_XZ;
-			case EDVLF_YZ:		return RDL_YZ;
-			case EDVLF_XYZ:		return RDL_XYZ;
-			}
-		}
-		return RDL_None;
-	}
-
-	/**
-	 * Return true if the distribution is a uniform curve
-	 */
-	virtual UBOOL IsUniformCurve() { return TRUE; }
-
-	/**
-	 * Fill out an array of vectors and return the number of elements in the entry
-	 *
-	 * @param Time The time to evaluate the distribution
-	 * @param Values An array of values to be filled out, guaranteed to be big enough for 2 vectors
-	 * @return The number of elements (values) set in the array
-	 */
-	virtual DWORD InitializeRawEntry(FLOAT Time, FVector* Values);
-#endif
-	virtual FTwoVectors GetMinMaxValue(FLOAT F = 0.f, UObject* Data = NULL);
-	
-	/** These two functions will retrieve the Min/Max values respecting the Locked and Mirror flags. */
-	virtual FVector GetMinValue();
-	virtual FVector GetMaxValue();
-
-	// UObject interface
-	virtual void Serialize(FArchive& Ar);
-
-	// FCurveEdInterface interface
-	virtual INT		GetNumKeys();
-	virtual INT		GetNumSubCurves();
-	virtual FLOAT	GetKeyIn(INT KeyIndex);
-	virtual FLOAT	GetKeyOut(INT SubIndex, INT KeyIndex);
-	virtual FColor	GetKeyColor(INT SubIndex, INT KeyIndex, const FColor& CurveColor);
-	virtual void	GetInRange(FLOAT& MinIn, FLOAT& MaxIn);
-	virtual void	GetOutRange(FLOAT& MinOut, FLOAT& MaxOut);
-	virtual BYTE	GetKeyInterpMode(INT KeyIndex);
-	virtual void	GetTangents(INT SubIndex, INT KeyIndex, FLOAT& ArriveTangent, FLOAT& LeaveTangent);
-	virtual FLOAT	EvalSub(INT SubIndex, FLOAT InVal);
-
-	virtual INT		CreateNewKey(FLOAT KeyIn);
-	virtual void	DeleteKey(INT KeyIndex);
-
-	virtual INT		SetKeyIn(INT KeyIndex, FLOAT NewInVal);
-	virtual void	SetKeyOut(INT SubIndex, INT KeyIndex, FLOAT NewOutVal);
-	virtual void	SetKeyInterpMode(INT KeyIndex, EInterpCurveMode NewMode);
-	virtual void	SetTangents(INT SubIndex, INT KeyIndex, FLOAT ArriveTangent, FLOAT LeaveTangent);
-	
-	/** Returns TRUE if this curve uses legacy tangent/interp algorithms and may be 'upgraded' */
-	virtual UBOOL	UsingLegacyInterpMethod() const;
-
-	/** 'Upgrades' this curve to use the latest tangent/interp algorithms (usually, will 'bake' key tangents.) */
-	virtual void	UpgradeInterpMethod();
-
-	virtual void	LockAndMirror(FTwoVectors& Val);
-
-	// DistributionVector interface
-	virtual	void	GetRange(FVector& OutMin, FVector& OutMax);
 };
 
 struct FPresetGeneratedPoint
@@ -20997,6 +21266,9 @@ AUTOGENERATE_FUNCTION(AAnimatedCamera,-1,execStopAllCameraAnims);
 AUTOGENERATE_FUNCTION(AAnimatedCamera,-1,execPlayCameraAnim);
 AUTOGENERATE_FUNCTION(AAnimatedCamera,-1,execApplyCameraModifiersNative);
 AUTOGENERATE_FUNCTION(AAnimatedCamera,-1,execApplyCameraModifiers);
+AUTOGENERATE_FUNCTION(AApexDestructibleActor,-1,execTakeRadiusDamage);
+AUTOGENERATE_FUNCTION(AApexDestructibleActor,-1,execTakeDamage);
+AUTOGENERATE_FUNCTION(AApexDestructibleActor,-1,execCacheFractureEffects);
 AUTOGENERATE_FUNCTION(ACamera,-1,execSetViewTarget);
 AUTOGENERATE_FUNCTION(ACamera,-1,execCheckViewTarget);
 AUTOGENERATE_FUNCTION(ACamera,-1,execApplyCameraModifiers);
@@ -21439,6 +21711,16 @@ DECLARE_NATIVE_TYPE(Engine,UActorFactoryVehicle);
 DECLARE_NATIVE_TYPE(Engine,UAdvancedReachSpec);
 DECLARE_NATIVE_TYPE(Engine,UAmbientOcclusionEffect);
 DECLARE_NATIVE_TYPE(Engine,AAnimatedCamera);
+DECLARE_NATIVE_TYPE(Engine,UApexAsset);
+DECLARE_NATIVE_TYPE(Engine,UApexComponentBase);
+DECLARE_NATIVE_TYPE(Engine,AApexDestructibleActor);
+DECLARE_NATIVE_TYPE(Engine,UApexDestructibleAsset);
+DECLARE_NATIVE_TYPE(Engine,UApexDynamicComponent);
+DECLARE_NATIVE_TYPE(Engine,UApexMeshParticleFactoryAsset);
+DECLARE_NATIVE_TYPE(Engine,UApexParticleSystemAsset);
+DECLARE_NATIVE_TYPE(Engine,UApexRenderMeshAsset);
+DECLARE_NATIVE_TYPE(Engine,UApexStaticComponent);
+DECLARE_NATIVE_TYPE(Engine,UApexStaticDestructibleComponent);
 DECLARE_NATIVE_TYPE(Engine,UAudioComponent);
 DECLARE_NATIVE_TYPE(Engine,AAutoLadder);
 DECLARE_NATIVE_TYPE(Engine,ABlockingVolume);
@@ -21695,6 +21977,17 @@ DECLARE_NATIVE_TYPE(Engine,AZoneInfo);
 	UAmbientOcclusionEffect::StaticClass(); \
 	AAnimatedCamera::StaticClass(); \
 	GNativeLookupFuncs[Lookup++] = &FindEngineAAnimatedCameraNative; \
+	UApexAsset::StaticClass(); \
+	UApexComponentBase::StaticClass(); \
+	AApexDestructibleActor::StaticClass(); \
+	GNativeLookupFuncs[Lookup++] = &FindEngineAApexDestructibleActorNative; \
+	UApexDestructibleAsset::StaticClass(); \
+	UApexDynamicComponent::StaticClass(); \
+	UApexMeshParticleFactoryAsset::StaticClass(); \
+	UApexParticleSystemAsset::StaticClass(); \
+	UApexRenderMeshAsset::StaticClass(); \
+	UApexStaticComponent::StaticClass(); \
+	UApexStaticDestructibleComponent::StaticClass(); \
 	UArrowComponent::StaticClass(); \
 	UAudioComponent::StaticClass(); \
 	GNativeLookupFuncs[Lookup++] = &FindEngineUAudioComponentNative; \
@@ -22165,6 +22458,15 @@ NATIVE_INFO(AAnimatedCamera) GEngineAAnimatedCameraNatives[] =
 	{NULL,NULL}
 };
 IMPLEMENT_NATIVE_HANDLER(Engine,AAnimatedCamera);
+
+NATIVE_INFO(AApexDestructibleActor) GEngineAApexDestructibleActorNatives[] = 
+{ 
+	MAP_NATIVE(AApexDestructibleActor,execTakeRadiusDamage)
+	MAP_NATIVE(AApexDestructibleActor,execTakeDamage)
+	MAP_NATIVE(AApexDestructibleActor,execCacheFractureEffects)
+	{NULL,NULL}
+};
+IMPLEMENT_NATIVE_HANDLER(Engine,AApexDestructibleActor);
 
 NATIVE_INFO(UAudioComponent) GEngineUAudioComponentNatives[] = 
 { 
@@ -23242,6 +23544,31 @@ VERIFY_CLASS_SIZE_NODIE(UAmbientOcclusionEffect)
 VERIFY_CLASS_OFFSET_NODIE(A,AnimatedCamera,AnimInstPool)
 VERIFY_CLASS_OFFSET_NODIE(A,AnimatedCamera,AccumulatorCameraActor)
 VERIFY_CLASS_SIZE_NODIE(AAnimatedCamera)
+VERIFY_CLASS_OFFSET_NODIE(U,ApexAsset,ApexComponents)
+VERIFY_CLASS_SIZE_NODIE(UApexAsset)
+VERIFY_CLASS_OFFSET_NODIE(U,ApexComponentBase,ComponentBaseResources)
+VERIFY_CLASS_OFFSET_NODIE(U,ApexComponentBase,WireframeColor)
+VERIFY_CLASS_SIZE_NODIE(UApexComponentBase)
+VERIFY_CLASS_OFFSET_NODIE(A,ApexDestructibleActor,StaticDestructibleComponent)
+VERIFY_CLASS_OFFSET_NODIE(A,ApexDestructibleActor,FractureReFireDelays)
+VERIFY_CLASS_SIZE_NODIE(AApexDestructibleActor)
+VERIFY_CLASS_OFFSET_NODIE(U,ApexDestructibleAsset,ApexDestructibleAsset)
+VERIFY_CLASS_OFFSET_NODIE(U,ApexDestructibleAsset,FractureEffects)
+VERIFY_CLASS_SIZE_NODIE(UApexDestructibleAsset)
+VERIFY_CLASS_OFFSET_NODIE(U,ApexDynamicComponent,ComponentDynamicResources)
+VERIFY_CLASS_SIZE_NODIE(UApexDynamicComponent)
+VERIFY_CLASS_OFFSET_NODIE(U,ApexMeshParticleFactoryAsset,ApexMeshParticleFactoryAsset)
+VERIFY_CLASS_OFFSET_NODIE(U,ApexMeshParticleFactoryAsset,RenderMeshes)
+VERIFY_CLASS_SIZE_NODIE(UApexMeshParticleFactoryAsset)
+VERIFY_CLASS_OFFSET_NODIE(U,ApexParticleSystemAsset,ApexParticleSystemAsset)
+VERIFY_CLASS_SIZE_NODIE(UApexParticleSystemAsset)
+VERIFY_CLASS_OFFSET_NODIE(U,ApexRenderMeshAsset,ApexRenderMeshAsset)
+VERIFY_CLASS_OFFSET_NODIE(U,ApexRenderMeshAsset,Materials)
+VERIFY_CLASS_SIZE_NODIE(UApexRenderMeshAsset)
+VERIFY_CLASS_SIZE_NODIE(UApexStaticComponent)
+VERIFY_CLASS_OFFSET_NODIE(U,ApexStaticDestructibleComponent,ApexDestructibleActor)
+VERIFY_CLASS_OFFSET_NODIE(U,ApexStaticDestructibleComponent,ApexDestructiblePreview)
+VERIFY_CLASS_SIZE_NODIE(UApexStaticDestructibleComponent)
 VERIFY_CLASS_OFFSET_NODIE(U,ArrowComponent,ArrowColor)
 VERIFY_CLASS_OFFSET_NODIE(U,ArrowComponent,ArrowSize)
 VERIFY_CLASS_SIZE_NODIE(UArrowComponent)
@@ -23275,6 +23602,7 @@ VERIFY_CLASS_OFFSET_NODIE(U,AudioComponent,OcclusionCheckInterval)
 VERIFY_CLASS_OFFSET_NODIE(U,AudioComponent,LastOcclusionCheckTime)
 VERIFY_CLASS_OFFSET_NODIE(U,AudioComponent,PreviewSoundRadius)
 VERIFY_CLASS_OFFSET_NODIE(U,AudioComponent,__OnAudioFinished__Delegate)
+VERIFY_CLASS_OFFSET_NODIE(U,AudioComponent,__OnAudioMarker__Delegate)
 VERIFY_CLASS_SIZE_NODIE(UAudioComponent)
 VERIFY_CLASS_SIZE_NODIE(AAutoLadder)
 VERIFY_CLASS_OFFSET_NODIE(A,BlockingVolume,DebugRenderingColor)
