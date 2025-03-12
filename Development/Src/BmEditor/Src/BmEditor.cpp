@@ -4,8 +4,6 @@
 // and functionality
 //=============================================================================
 
-#if _WINDOWS
-
 #include "UnrealEd.h"
 #include "BmEditorClasses.h"
 
@@ -57,5 +55,3 @@ void AutoGenerateNamesBmEditor()
 }
 
 IMPLEMENT_CLASS(UUIContainerThumbnailRenderer);
-
-#endif

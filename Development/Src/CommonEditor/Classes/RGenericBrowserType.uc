@@ -1,1 +1,0 @@
-class RGenericBrowserType extends GenericBrowserType;

@@ -1,5 +1,5 @@
 /**
- * Copyright © 1998-2008 Epic Games, Inc. All Rights Reserved.
+ * Copyright ï¿½ 1998-2008 Epic Games, Inc. All Rights Reserved.
  */
 
 
@@ -27,9 +27,21 @@ struct RBCollisionChannelContainer
 	var()	const bool	Untitled2;
 	var()	const bool	Untitled3;
 	var()	const bool	Untitled4;
-	var()	const bool	FluidDrain;
 	var()	const bool	Cloth;
-	var()	const bool SoftBody;
+	var()	const bool	FluidDrain;
+	var()	const bool	PawnRagdoll;
+	var()	const bool	Rope;
+	var()	const bool	Cape;
+	var()	const bool	SoftBody;
+	var()	const bool	CinematicCape;
+	var()	const bool	FracturedMeshPart;
+	var()	const bool	BlockingVolume;
+	var()	const bool	DeadPawn;
+	var()	const bool	PawnRagdollStrungUp;
+	var()	const bool	Projectile;
+	var()	const bool	VenomHenchmanThrow;
+	var()	const bool	Grate;
+	var()	const bool	Destruction;
 };
 
 

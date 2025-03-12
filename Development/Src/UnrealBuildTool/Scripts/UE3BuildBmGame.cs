@@ -28,9 +28,6 @@ namespace UnrealBuildTool
 
 			if (GameCPPEnvironment.TargetPlatform == CPPTargetPlatform.Win32)
 			{
-				GameProjects.Add("CommonEditor/CommonEditor.vcproj");
-				GameCPPEnvironment.IncludePaths.Add("CommonEditor/Inc");
-
 				GameProjects.Add("BmEditor/BmEditor.vcproj");
 				GameCPPEnvironment.IncludePaths.Add("BmEditor/Inc");
 			}
