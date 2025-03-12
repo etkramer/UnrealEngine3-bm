@@ -3079,20 +3079,6 @@ UObject* ULinkerLoad::CreateExport( INT Index )
 		check(Export.ObjectName!=NAME_None || !(Export.ObjectFlags&RF_Public));
 		check(GObjBeginLoadCount>0);
 
-// #if BATMAN
-// 		// It's not clear why BM1 does this. Haven't seen EF_ForcedExport in any other game's packages so far.
-// 		if ( LicenseeVer() >= VER_BATMAN1 && (Export.ExportFlags & EF_ForcedExport) )
-// 		{
-// 			// Remove EF_ForcedExport
-// 			Export.ExportFlags &= ~EF_ForcedExport;
-
-// 			// NOTE: ForceExport tag causes the outer to be the top-level object instead of its real outer.
-// 			// Removing it may be causing the lookup to crash.
-
-// 			warnf(TEXT("Found ForceExport object %s"), *Export.ObjectName.ToString());
-// 		}
-// #endif
-
 #if BATMAN
 		if (GIsEditor && !GIsScriptPatcherActive && Export.HasAnyFlags(EF_ForcedExport) && LicenseeVer() < VER_BATMAN1)
 #else
