@@ -609,6 +609,33 @@ public:
 	
 };
 
+class UAnimationCompressionAlgorithm_AutoRemoveLinearKeys : public UAnimationCompressionAlgorithm
+{
+public:
+    //## BEGIN PROPS AnimationCompressionAlgorithm_AutoRemoveLinearKeys
+    FLOAT MaxPosDiff;
+    FLOAT MaxAngleDiff;
+    FLOAT MaxEffectorDiff;
+    FLOAT MinEffectorDiff;
+    FLOAT ParentKeyScale;
+    BITFIELD bRetarget:1;
+    FLOAT StartSpeedValue;
+    FLOAT EndSpeedValue;
+    FLOAT StartSpeedErrorMult;
+    FLOAT EndSpeedErrorMult;
+    FLOAT SpeedDeemsVerySlowAnim;
+    FLOAT VerySlowAnimErrorMult;
+    FLOAT FinalErrorMultiplier;
+    FLOAT OneBoneAnimsMultipler;
+    FStringNoInit SpecialBonesNameList;
+    FLOAT SpecialBonesMultipler;
+    TArrayNoInit<FString> SpecialBonesNameArray;
+    //## END PROPS AnimationCompressionAlgorithm_AutoRemoveLinearKeys
+
+    DECLARE_CLASS(UAnimationCompressionAlgorithm_AutoRemoveLinearKeys,UAnimationCompressionAlgorithm,0,Engine)
+    NO_DEFAULT_CONSTRUCTOR(UAnimationCompressionAlgorithm_AutoRemoveLinearKeys)
+};
+
 class UAnimationCompressionAlgorithm_BitwiseCompressOnly : public UAnimationCompressionAlgorithm
 {
 public:
@@ -767,6 +794,17 @@ public:
     DECLARE_CLASS(UAnimNotify_Footstep,UAnimNotify,0,Engine)
 	// AnimNotify interface.
 	virtual void Notify( class USkeletalMeshComponent* SkelComponent );
+};
+
+class UAnimNotify_ForceField : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS AnimNotify_ForceField
+    class URB_ForceComponent* ForceField;
+    //## END PROPS AnimNotify_ForceField
+
+    DECLARE_ABSTRACT_CLASS(UAnimNotify_ForceField,UAnimNotify,0,Engine)
+    NO_DEFAULT_CONSTRUCTOR(UAnimNotify_ForceField)
 };
 
 class UAnimNotify_PlayParticleEffect : public UAnimNotify
@@ -3296,6 +3334,7 @@ AUTOGENERATE_FUNCTION(ASkeletalMeshActorMAT,-1,execMAT_BeginAnimControl);
 #define ENGINE_ANIM_NATIVE_DEFS
 
 DECLARE_NATIVE_TYPE(Engine,UAnimationCompressionAlgorithm);
+DECLARE_NATIVE_TYPE(Engine,UAnimationCompressionAlgorithm_AutoRemoveLinearKeys);
 DECLARE_NATIVE_TYPE(Engine,UAnimationCompressionAlgorithm_BitwiseCompressOnly);
 DECLARE_NATIVE_TYPE(Engine,UAnimationCompressionAlgorithm_RemoveEverySecondKey);
 DECLARE_NATIVE_TYPE(Engine,UAnimationCompressionAlgorithm_RemoveLinearKeys);
@@ -3328,6 +3367,7 @@ DECLARE_NATIVE_TYPE(Engine,UAnimNodeSynch);
 DECLARE_NATIVE_TYPE(Engine,UAnimNotify);
 DECLARE_NATIVE_TYPE(Engine,UAnimNotify_CameraEffect);
 DECLARE_NATIVE_TYPE(Engine,UAnimNotify_Footstep);
+DECLARE_NATIVE_TYPE(Engine,UAnimNotify_ForceField);
 DECLARE_NATIVE_TYPE(Engine,UAnimNotify_PlayParticleEffect);
 DECLARE_NATIVE_TYPE(Engine,UAnimNotify_Rumble);
 DECLARE_NATIVE_TYPE(Engine,UAnimNotify_Script);
@@ -3359,6 +3399,7 @@ DECLARE_NATIVE_TYPE(Engine,ASkeletalMeshActorMAT);
 
 #define AUTO_INITIALIZE_REGISTRANTS_ENGINE_ANIM \
 	UAnimationCompressionAlgorithm::StaticClass(); \
+	UAnimationCompressionAlgorithm_AutoRemoveLinearKeys::StaticClass(); \
 	UAnimationCompressionAlgorithm_BitwiseCompressOnly::StaticClass(); \
 	UAnimationCompressionAlgorithm_RemoveEverySecondKey::StaticClass(); \
 	UAnimationCompressionAlgorithm_RemoveLinearKeys::StaticClass(); \
@@ -3403,6 +3444,7 @@ DECLARE_NATIVE_TYPE(Engine,ASkeletalMeshActorMAT);
 	UAnimNotify::StaticClass(); \
 	UAnimNotify_CameraEffect::StaticClass(); \
 	UAnimNotify_Footstep::StaticClass(); \
+	UAnimNotify_ForceField::StaticClass(); \
 	UAnimNotify_PlayParticleEffect::StaticClass(); \
 	UAnimNotify_Rumble::StaticClass(); \
 	UAnimNotify_Script::StaticClass(); \
@@ -3640,6 +3682,9 @@ IMPLEMENT_NATIVE_HANDLER(Engine,ASkeletalMeshActorMAT);
 VERIFY_CLASS_OFFSET_NODIE(U,AnimationCompressionAlgorithm,Description)
 VERIFY_CLASS_OFFSET_NODIE(U,AnimationCompressionAlgorithm,RotationCompressionFormat)
 VERIFY_CLASS_SIZE_NODIE(UAnimationCompressionAlgorithm)
+VERIFY_CLASS_OFFSET_NODIE(U,AnimationCompressionAlgorithm_AutoRemoveLinearKeys,MaxPosDiff)
+VERIFY_CLASS_OFFSET_NODIE(U,AnimationCompressionAlgorithm_AutoRemoveLinearKeys,SpecialBonesNameArray)
+VERIFY_CLASS_SIZE_NODIE(UAnimationCompressionAlgorithm_AutoRemoveLinearKeys)
 VERIFY_CLASS_SIZE_NODIE(UAnimationCompressionAlgorithm_BitwiseCompressOnly)
 VERIFY_CLASS_OFFSET_NODIE(U,AnimationCompressionAlgorithm_RemoveEverySecondKey,MinKeys)
 VERIFY_CLASS_SIZE_NODIE(UAnimationCompressionAlgorithm_RemoveEverySecondKey)
@@ -3715,6 +3760,8 @@ VERIFY_CLASS_OFFSET_NODIE(U,AnimNotify_CameraEffect,CameraLensEffect)
 VERIFY_CLASS_SIZE_NODIE(UAnimNotify_CameraEffect)
 VERIFY_CLASS_OFFSET_NODIE(U,AnimNotify_Footstep,FootDown)
 VERIFY_CLASS_SIZE_NODIE(UAnimNotify_Footstep)
+VERIFY_CLASS_OFFSET_NODIE(U,AnimNotify_ForceField,ForceField)
+VERIFY_CLASS_SIZE_NODIE(UAnimNotify_ForceField)
 VERIFY_CLASS_OFFSET_NODIE(U,AnimNotify_PlayParticleEffect,PSTemplate)
 VERIFY_CLASS_OFFSET_NODIE(U,AnimNotify_PlayParticleEffect,BoneName)
 VERIFY_CLASS_SIZE_NODIE(UAnimNotify_PlayParticleEffect)

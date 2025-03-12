@@ -45,6 +45,10 @@ IMPLEMENT_CLASS(UActorFactoryFogVolumeConstantDensityInfo);
 IMPLEMENT_CLASS(UActorFactoryFogVolumeLinearHalfspaceDensityInfo);
 IMPLEMENT_CLASS(UActorFactoryFogVolumeSphericalDensityInfo);
 
+IMPLEMENT_CLASS(UActorFactoryApexDestructible);
+IMPLEMENT_CLASS(UActorFactoryCloth);
+IMPLEMENT_CLASS(UActorFactorySpotLight);
+
 /*-----------------------------------------------------------------------------
 	UActorFactory
 -----------------------------------------------------------------------------*/

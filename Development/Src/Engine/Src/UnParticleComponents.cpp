@@ -21,6 +21,8 @@ IMPLEMENT_CLASS(UParticleSystemComponent);
 IMPLEMENT_CLASS(UParticleLODLevel);
 IMPLEMENT_CLASS(UParticleSystemReplay);
 
+IMPLEMENT_CLASS(UPhysXParticleSystemComponent);
+
 
 /** Whether to allow particle systems to perform work. */
 UBOOL GIsAllowingParticles = TRUE;

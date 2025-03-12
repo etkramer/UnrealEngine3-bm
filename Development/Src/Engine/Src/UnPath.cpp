@@ -15,6 +15,8 @@
 IMPLEMENT_CLASS(APathBlockingVolume);
 IMPLEMENT_CLASS(ARoute);
 
+IMPLEMENT_CLASS(AAirNode);
+
 const FOctreeNodeBounds FNavigationOctree::RootNodeBounds(FVector(0,0,0),HALF_WORLD_MAX);
 /** maximum objects we can have in one node before we split it */
 #define MAX_OBJECTS_PER_NODE 10

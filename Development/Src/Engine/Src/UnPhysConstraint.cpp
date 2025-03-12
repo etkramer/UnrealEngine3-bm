@@ -26,6 +26,8 @@ IMPLEMENT_CLASS(URB_ConstraintInstance);
 IMPLEMENT_CLASS(URB_ConstraintDrawComponent);
 
 IMPLEMENT_CLASS(URB_ForceComponent);
+IMPLEMENT_CLASS(URB_ForceComponentCylindrical);
+IMPLEMENT_CLASS(URB_ForceComponentRadial);
 
 //////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////// UTILS ///////////////////////////////////////////////

@@ -226,6 +226,9 @@ IMPLEMENT_CLASS(UObjectReferencer);
 // BM1: Not clear where these belong.
 IMPLEMENT_CLASS(UMacroReachSpec);
 IMPLEMENT_CLASS(AMacroReachSpecInfo);
+IMPLEMENT_CLASS(UDestructibleDamageParameters);
+IMPLEMENT_CLASS(UDwTriovizEffect);
+IMPLEMENT_CLASS(ADebugCameraController);
 
 /*-----------------------------------------------------------------------------
 	Engine init and exit.

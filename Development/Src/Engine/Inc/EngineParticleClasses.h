@@ -1050,6 +1050,16 @@ public:
 	void HandleDynamicDataDeletion(FParticleDynamicData* DynamicData, FDynamicEmitterDataBase* EmitterDynamicData);
 };
 
+class UPhysXParticleSystemComponent : public UParticleSystemComponent
+{
+public:
+    //## BEGIN PROPS PhysXParticleSystemComponent
+    //## END PROPS PhysXParticleSystemComponent
+
+    DECLARE_CLASS(UPhysXParticleSystemComponent,UParticleSystemComponent,0,Engine)
+    NO_DEFAULT_CONSTRUCTOR(UPhysXParticleSystemComponent)
+};
+
 class UDistributionFloatParticleParameter : public UDistributionFloatParameterBase
 {
 public:
@@ -4124,6 +4134,7 @@ DECLARE_NATIVE_TYPE(Engine,UParticleSystemComponent);
 DECLARE_NATIVE_TYPE(Engine,UParticleSystemReplay);
 DECLARE_NATIVE_TYPE(Engine,APhysXEmitterSpawnable);
 DECLARE_NATIVE_TYPE(Engine,UPhysXParticleSystem);
+DECLARE_NATIVE_TYPE(Engine,UPhysXParticleSystemComponent);
 
 #define AUTO_INITIALIZE_REGISTRANTS_ENGINE_PARTICLE \
 	UDistributionFloatParticleParameter::StaticClass(); \
@@ -4232,6 +4243,7 @@ DECLARE_NATIVE_TYPE(Engine,UPhysXParticleSystem);
 	APhysXEmitterSpawnable::StaticClass(); \
 	GNativeLookupFuncs[Lookup++] = &FindEngineAPhysXEmitterSpawnableNative; \
 	UPhysXParticleSystem::StaticClass(); \
+	UPhysXParticleSystemComponent::StaticClass(); \
 
 #endif // ENGINE_PARTICLE_NATIVE_DEFS
 
@@ -4533,6 +4545,7 @@ VERIFY_CLASS_SIZE_NODIE(APhysXEmitterSpawnable)
 VERIFY_CLASS_OFFSET_NODIE(U,PhysXParticleSystem,MaxParticles)
 VERIFY_CLASS_OFFSET_NODIE(U,PhysXParticleSystem,PSys)
 VERIFY_CLASS_SIZE_NODIE(UPhysXParticleSystem)
+VERIFY_CLASS_SIZE_NODIE(UPhysXParticleSystemComponent)
 #endif // VERIFY_CLASS_SIZES
 #endif // !ENUMS_ONLY
 

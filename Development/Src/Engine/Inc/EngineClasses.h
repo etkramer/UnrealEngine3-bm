@@ -136,6 +136,118 @@ enum EFocusType
     FOCUS_Position          =1,
     FOCUS_MAX               =2,
 };
+enum ETriovizParm
+{
+    ETriovizParm_Menu_Trioviz=0,
+    ETriovizParm_Menu_ColorCorrectionGame=1,
+    ETriovizParm_Menu_ColorCorrectionUI=2,
+    ETriovizParm_Menu_DebugMode=3,
+    ETriovizParm_Menu_PlayerSelect=4,
+    ETriovizParm_Menu_ProfileSelect=5,
+    ETriovizParm_Debug_Show =6,
+    ETriovizParm_Debug_Multiplier=7,
+    ETriovizParm_Debug_SplitDemoMode=8,
+    ETriovizParm_Debug_EditMode=9,
+    ETriovizParm_MinMax_EditType=10,
+    ETriovizParm_MinMax_TargetShape=11,
+    ETriovizParm_MinMax_TargetShapeCenter_X=12,
+    ETriovizParm_MinMax_TargetShapeCenter_Y=13,
+    ETriovizParm_MinMax_TargetShapeScale_X=14,
+    ETriovizParm_MinMax_TargetShapeScale_Y=15,
+    ETriovizParm_MinMax_TargetMaxShapeCenter_X=16,
+    ETriovizParm_MinMax_TargetMaxShapeCenter_Y=17,
+    ETriovizParm_MinMax_TargetMaxShapeScale_X=18,
+    ETriovizParm_MinMax_TargetMaxShapeScale_Y=19,
+    ETriovizParm_DMap_EditType=20,
+    ETriovizParm_DMap_DMapCurveForeground_P1X=21,
+    ETriovizParm_DMap_DMapCurveForeground_P2X=22,
+    ETriovizParm_DMap_DMapCurveBackground_P1X=23,
+    ETriovizParm_DMap_DMapCurveBackground_P2X=24,
+    ETriovizParm_DMap_DMapCurveForeground_P1Y=25,
+    ETriovizParm_DMap_DMapCurveForeground_P2Y=26,
+    ETriovizParm_DMap_DMapCurveBackground_P1Y=27,
+    ETriovizParm_DMap_DMapCurveBackground_P2Y=28,
+    ETriovizParm_MinMax_AdaptedSpeed=29,
+    ETriovizParm_ZMap_UseParametersFromCinematicDOF=30,
+    ETriovizParm_ZMap_UseAutomaticDisparityLevel=31,
+    ETriovizParm_ZMap_ZMapGamma=32,
+    ETriovizParm_ZMap_ZMapMin=33,
+    ETriovizParm_ZMap_DisparityLevel=34,
+    ETriovizParm_ZMap_ZMapMax=35,
+    ETriovizParm_DMap_DMapScaleBackground=36,
+    ETriovizParm_DMap_DMapCompose=37,
+    ETriovizParm_DMap_DMapComposeWeight_X=38,
+    ETriovizParm_DMap_DMapComposeWeight_Y=39,
+    ETriovizParm_DMap_DMapComposeWeight_Z=40,
+    ETriovizParm_DMap_DMapComposeWeight_W=41,
+    ETriovizParm_DMap_DMapGammaForeground=42,
+    ETriovizParm_DMap_DMapGammaBackground=43,
+    ETriovizParm_Disparity_PercentFactorForeground=44,
+    ETriovizParm_Disparity_PercentFactorBackground=45,
+    ETriovizParm_AntiGhost_AntiGhostContrast=46,
+    ETriovizParm_AntiGhost_AntiGhostScale=47,
+    ETriovizParm_DOF_UseTriovizDof=48,
+    ETriovizParm_DOF_FocusInnerRadius=49,
+    ETriovizParm_DOF_FalloffExponent=50,
+    ETriovizParm_DOF_MaxNearBlurAmount=51,
+    ETriovizParm_DOF_MaxFarBlurAmount=52,
+    ETriovizParm_Dilation_DilationKernelSize=53,
+    ETriovizParm_DepthControl_UseDownsampledDepthBuffer=54,
+    ETriovizParm_Menu_Exit  =55,
+    ETriovizParm_MAX        =56,
+};
+enum ETriovizEditType
+{
+    ETriovizEditType_MinMax_None=0,
+    ETriovizEditType_MinMax_TargetShape=1,
+    ETriovizEditType_MinMax_TargetCenter=2,
+    ETriovizEditType_MinMax_TargetScale=3,
+    ETriovizEditType_MinMax_TargetMaxCenter=4,
+    ETriovizEditType_MinMax_TargetMaxScale=5,
+    ETriovizEditType_MinMax_ByHand=6,
+    ETriovizEditType_MinMax_Last=7,
+    ETriovizEditType_DMap_None=8,
+    ETriovizEditType_DMap_CurveForeground_P1=9,
+    ETriovizEditType_DMap_CurveForeground_P2=10,
+    ETriovizEditType_DMap_CurveBackground_P1=11,
+    ETriovizEditType_DMap_CurveBackground_P2=12,
+    ETriovizEditType_DMap_ByHand=13,
+    ETriovizEditType_DMap_Last=14,
+    ETriovizEditType_MAX    =15,
+};
+enum ETrioviz
+{
+    TRIOVIZ_NONE            =0,
+    TRIOVIZ_ZMAP            =1,
+    TRIOVIZ_DMAP            =2,
+    TRIOVIZ_DMAP_DILATED    =3,
+    TRIOVIZ_DISPLACEMENT    =4,
+    TRIOVIZ_DISPLACEMENT_RGB_MAP=5,
+    TRIOVIZ_DISPLACEMENT_RGB_MAP_LEFT=6,
+    TRIOVIZ_DISPLACEMENT_RGB_MAP_RIGHT=7,
+    TRIOVIZ_DOF             =8,
+    TRIOVIZ_DOF_LEFT        =9,
+    TRIOVIZ_DOF_RIGHT       =10,
+    TRIOVIZ_SCENE_DOF       =11,
+    TRIOVIZ_SCENE_DOF_BLUR  =12,
+    TRIOVIZ_ANTIGHOSTMASK   =13,
+    TRIOVIZ_MAX             =14,
+};
+enum ETriovizTargetShape
+{
+    ETRIOVIZTargetShape_Rectangle=0,
+    ETRIOVIZTargetShape_Triangle=1,
+    ETRIOVIZTargetShape_TriangleMirror=2,
+    ETRIOVIZTargetShape_MAX =3,
+};
+enum EDwTriovizProfile
+{
+    e_DwTriovizProfile_MainMenu=0,
+    e_DwTriovizProfile_MainGame=1,
+    e_DwTriovizProfile_FullScreenVideo=2,
+    e_DwTriovizProfile_CharacterViewer=3,
+    e_DwTriovizProfile_MAX  =4,
+};
 enum ReverbPreset
 {
     REVERB_Default          =0,
@@ -3912,6 +4024,42 @@ public:
     NO_DEFAULT_CONSTRUCTOR(URB_ForceComponent)
 };
 
+class URB_ForceComponentCylindrical : public URB_ForceComponent
+{
+public:
+    //## BEGIN PROPS RB_ForceComponentCylindrical
+    class UDrawCylinderComponent* RenderComponentCylinder;
+    FLOAT RadialStrength;
+    FLOAT RotationalStrength;
+    FLOAT LiftStrength;
+    FLOAT LiftFalloffHeight;
+    FLOAT EscapeVelocity;
+    FLOAT ForceRadius;
+    FLOAT ForceTopRadius;
+    FLOAT ForceHeight;
+    FLOAT HeightOffset;
+    //## END PROPS RB_ForceComponentCylindrical
+
+    DECLARE_CLASS(URB_ForceComponentCylindrical,URB_ForceComponent,0,Engine)
+    NO_DEFAULT_CONSTRUCTOR(URB_ForceComponentCylindrical)
+};
+
+class URB_ForceComponentRadial : public URB_ForceComponent
+{
+public:
+    //## BEGIN PROPS RB_ForceComponentRadial
+    class UDrawSphereComponent* RenderComponentSphere;
+    FLOAT ForceStrength;
+    FLOAT ForceRadius;
+    FLOAT SwirlStrength;
+    FLOAT SpinTorque;
+    BYTE ForceFalloff;
+    //## END PROPS RB_ForceComponentRadial
+
+    DECLARE_CLASS(URB_ForceComponentRadial,URB_ForceComponent,0,Engine)
+    NO_DEFAULT_CONSTRUCTOR(URB_ForceComponentRadial)
+};
+
 class USceneCaptureComponent : public UActorComponent
 {
 public:
@@ -5406,6 +5554,209 @@ public:
 	 * ever exists in the SDPG_PostProcess scene
 	 */
 	virtual void PostEditChange(UProperty* PropertyThatChanged);
+};
+
+struct FSTriovizParmsRange_BYTE
+{
+    INT MinValue;
+    INT MaxValue;
+
+    /** Constructors */
+    FSTriovizParmsRange_BYTE() {}
+    FSTriovizParmsRange_BYTE(EEventParm)
+    {
+        appMemzero(this, sizeof(FSTriovizParmsRange_BYTE));
+    }
+};
+
+struct FSTriovizParmsRange_FLOAT
+{
+    FLOAT MinValue;
+    FLOAT MaxValue;
+    FLOAT StepValue;
+
+    /** Constructors */
+    FSTriovizParmsRange_FLOAT() {}
+    FSTriovizParmsRange_FLOAT(EEventParm)
+    {
+        appMemzero(this, sizeof(FSTriovizParmsRange_FLOAT));
+    }
+};
+
+struct FSTriovizParms_MinMax
+{
+    FLOAT AdaptedSpeed;
+    BYTE TargetShape;
+    FVector4 TargetShapeCenterAndScale;
+    FVector4 TargetMaxZShapeCenterAndScale;
+    BYTE EditType;
+
+    /** Constructors */
+    FSTriovizParms_MinMax() {}
+    FSTriovizParms_MinMax(EEventParm)
+    {
+        appMemzero(this, sizeof(FSTriovizParms_MinMax));
+    }
+};
+
+struct FSTriovizParms_ZMap
+{
+    FLOAT ZMapMin;
+    FLOAT ZMapMax;
+    FLOAT ZMapGamma;
+    FLOAT DisparityLevel;
+    BITFIELD UseAutomaticDisparityLevel:1;
+    BITFIELD UseParametersFromCinematicDOF:1;
+
+    /** Constructors */
+    FSTriovizParms_ZMap() {}
+    FSTriovizParms_ZMap(EEventParm)
+    {
+        appMemzero(this, sizeof(FSTriovizParms_ZMap));
+    }
+};
+
+struct FSTriovizParms_DMap
+{
+    FLOAT DMapGammaForeground;
+    FLOAT DMapGammaBackground;
+    FLOAT DMapScaleBackground;
+    BITFIELD DMapCompose:1;
+    FVector4 DMapComposeWeight;
+    FVector4 DMapCurveY;
+    class UTexture2D* DMapComposeTexture;
+    BYTE EditType;
+
+    /** Constructors */
+    FSTriovizParms_DMap() {}
+    FSTriovizParms_DMap(EEventParm)
+    {
+        appMemzero(this, sizeof(FSTriovizParms_DMap));
+    }
+};
+
+struct FSTriovizParms_Disparity
+{
+    FLOAT PercentFactorForeground;
+    FLOAT PercentFactorBackground;
+
+    /** Constructors */
+    FSTriovizParms_Disparity() {}
+    FSTriovizParms_Disparity(EEventParm)
+    {
+        appMemzero(this, sizeof(FSTriovizParms_Disparity));
+    }
+};
+
+struct FSTriovizParms_AntiGhost
+{
+    FLOAT AntiGhostContrast;
+    FLOAT AntiGhostScale;
+
+    /** Constructors */
+    FSTriovizParms_AntiGhost() {}
+    FSTriovizParms_AntiGhost(EEventParm)
+    {
+        appMemzero(this, sizeof(FSTriovizParms_AntiGhost));
+    }
+};
+
+struct FSTriovizParms_DOF
+{
+    BITFIELD UseTriovizDof:1;
+    FLOAT FocusInnerRadius;
+    FLOAT FalloffExponent;
+    FLOAT MaxNearBlurAmount;
+    FLOAT MaxFarBlurAmount;
+
+    /** Constructors */
+    FSTriovizParms_DOF() {}
+    FSTriovizParms_DOF(EEventParm)
+    {
+        appMemzero(this, sizeof(FSTriovizParms_DOF));
+    }
+};
+
+struct FSTriovizParms_Dilation
+{
+    FLOAT DilationKernelSize;
+
+    /** Constructors */
+    FSTriovizParms_Dilation() {}
+    FSTriovizParms_Dilation(EEventParm)
+    {
+        appMemzero(this, sizeof(FSTriovizParms_Dilation));
+    }
+};
+
+struct FSTriovizParms_DepthControl
+{
+    BITFIELD UseDownsampledDepthBuffer:1;
+
+    /** Constructors */
+    FSTriovizParms_DepthControl()
+    : UseDownsampledDepthBuffer(FALSE)
+    {}
+    FSTriovizParms_DepthControl(EEventParm)
+    {
+        appMemzero(this, sizeof(FSTriovizParms_DepthControl));
+    }
+};
+
+struct FSTriovizParms_Debug
+{
+    BYTE Show;
+    FLOAT Multiplier;
+    BITFIELD EditMode:1;
+    BITFIELD SplitDemoMode:1;
+
+    /** Constructors */
+    FSTriovizParms_Debug()
+    : Show(0)
+    , Multiplier(0)
+    , EditMode(FALSE)
+    , SplitDemoMode(FALSE)
+    {}
+    FSTriovizParms_Debug(EEventParm)
+    {
+        appMemzero(this, sizeof(FSTriovizParms_Debug));
+    }
+};
+
+struct FSTriovizParms
+{
+    struct FSTriovizParms_MinMax MinMax;
+    struct FSTriovizParms_ZMap ZMap;
+    struct FSTriovizParms_DMap DMap;
+    struct FSTriovizParms_Disparity Disparity;
+    struct FSTriovizParms_AntiGhost AntiGhost;
+    struct FSTriovizParms_DOF DOF;
+    struct FSTriovizParms_Dilation Dilation;
+    struct FSTriovizParms_DepthControl DepthControl;
+    struct FSTriovizParms_Debug Debug;
+    BITFIELD IsCinematicMode:1;
+    BITFIELD UseTriovizPostProcess:1;
+    BITFIELD ApplyColorCorrectionInTriovizUber:1;
+    BITFIELD UseTriovizColorCorrectionUI:1;
+    BITFIELD UseTriovizColorCorrectionGame:1;
+
+    /** Constructors */
+    FSTriovizParms() {}
+    FSTriovizParms(EEventParm)
+    {
+        appMemzero(this, sizeof(FSTriovizParms));
+    }
+};
+
+class UDwTriovizEffect : public UPostProcessEffect
+{
+public:
+    //## BEGIN PROPS DwTriovizEffect
+    BITFIELD bEnableInEditor:1 GCC_BITFIELD_MAGIC;
+    //## END PROPS DwTriovizEffect
+
+    DECLARE_CLASS(UDwTriovizEffect,UPostProcessEffect,0,Engine)
+    NO_DEFAULT_CONSTRUCTOR(UDwTriovizEffect)
 };
 
 class UMaterialEffect : public UPostProcessEffect
@@ -10186,6 +10537,20 @@ public:
 
 };
 
+class ADebugCameraController : public APlayerController
+{
+public:
+    //## BEGIN PROPS DebugCameraController
+    class APlayerController* OryginalControllerRef;
+    class UPlayer* OryginalPlayer;
+    BITFIELD bIsFrozenRendering:1;
+    class UDrawFrustumComponent* DrawFrustum;
+    //## END PROPS DebugCameraController
+
+    DECLARE_CLASS(ADebugCameraController,APlayerController,0|CLASS_Config,Engine)
+    NO_DEFAULT_CONSTRUCTOR(ADebugCameraController)
+};
+
 class ACrowdReplicationActor : public AActor
 {
 public:
@@ -12016,6 +12381,16 @@ public:
 
     DECLARE_CLASS(APathNode,ANavigationPoint,0,Engine)
 	virtual INT AddMyMarker(AActor *S);
+};
+
+class AAirNode : public APathNode
+{
+public:
+    //## BEGIN PROPS AirNode
+    //## END PROPS AirNode
+
+    DECLARE_CLASS(AAirNode,APathNode,0,Engine)
+    NO_DEFAULT_CONSTRUCTOR(AAirNode)
 };
 
 class AVolumePathNode : public APathNode
@@ -15810,6 +16185,22 @@ public:
 	virtual FString GetMenuName();
 };
 
+class UActorFactoryApexDestructible : public UActorFactory
+{
+public:
+    //## BEGIN PROPS ActorFactoryApexDestructible
+    BITFIELD bStartAwake:1;
+    BYTE RBChannel GCC_BITFIELD_MAGIC;
+    FRBCollisionChannelContainer CollideWithChannels;
+    struct FApexDestructibleActorSettings DestructibleActorSettings;
+    struct FApexFractureBehavior FractureBehavior;
+    class UApexDestructibleAsset* DestructibleAsset;
+    //## END PROPS ActorFactoryApexDestructible
+
+    DECLARE_CLASS(UActorFactoryApexDestructible,UActorFactory,0|CLASS_Config,Engine)
+    NO_DEFAULT_CONSTRUCTOR(UActorFactoryApexDestructible)
+};
+
 class UActorFactoryArchetype : public UActorFactory
 {
 public:
@@ -15896,7 +16287,7 @@ class UActorFactoryEmitter : public UActorFactory
 public:
     //## BEGIN PROPS ActorFactoryEmitter
     class UParticleSystem* ParticleSystem;
-    class UParticleSystemComponent* ParticleSystemPhysX;
+    class UPhysXParticleSystemComponent* ParticleSystemPhysX;
     //## END PROPS ActorFactoryEmitter
 
     DECLARE_CLASS(UActorFactoryEmitter,UActorFactory,0|CLASS_Config,Engine)
@@ -16020,6 +16411,47 @@ public:
 	virtual UBOOL CanCreateActor(FString& OutErrorMsg);
 	virtual void AutoFillFields(class USelection* Selection);
 	virtual FString GetMenuName();
+};
+
+class UActorFactoryCloth : public UActorFactorySkeletalMesh
+{
+public:
+    //## BEGIN PROPS ActorFactoryCloth
+    BITFIELD bAttachClothVertsToBaseBody:1;
+    BITFIELD bAutoFreezeClothWhenNotRendered:1;
+    BITFIELD bClothAwakeOnStartup:1;
+    BITFIELD bClothBaseVelClamp:1;
+    BITFIELD bClothFrozen:1;
+    BITFIELD bDisableClothCollision:1;
+    BITFIELD bEnableClothSimulation:1;
+    BITFIELD bClothUseCompartment:1;
+    BITFIELD bEnableLightEnvironment:1;
+    BITFIELD bCastDynamicShadow:1;
+    BITFIELD bSelfShadowOnly:1;
+    FLOAT ClothAttachmentTearFactor;
+    FVector ClothBaseVelClampRange;
+    FLOAT ClothBlendWeight;
+    FVector ClothExternalAcceleration;
+    FLOAT ClothForceScale;
+    BYTE ClothRBChannel;
+    FRBCollisionChannelContainer ClothRBCollideWithChannels;
+    FVector ClothWind;
+    FLightingChannelContainer LightingChannels;
+    //## END PROPS ActorFactoryCloth
+
+    DECLARE_CLASS(UActorFactoryCloth,UActorFactorySkeletalMesh,0|CLASS_Config,Engine)
+    NO_DEFAULT_CONSTRUCTOR(UActorFactoryCloth)
+};
+
+class UActorFactorySpotLight : public UActorFactory
+{
+public:
+    //## BEGIN PROPS ActorFactorySpotLight
+    class USpotLightComponent* LightComponent;
+    //## END PROPS ActorFactorySpotLight
+
+    DECLARE_CLASS(UActorFactorySpotLight,UActorFactory,0|CLASS_Config,Engine)
+    NO_DEFAULT_CONSTRUCTOR(UActorFactorySpotLight)
 };
 
 class UActorFactoryStaticMesh : public UActorFactory
@@ -16571,6 +17003,19 @@ public:
 
     DECLARE_CLASS(UDebugManager,UObject,0|CLASS_Transient,Engine)
     NO_DEFAULT_CONSTRUCTOR(UDebugManager)
+};
+
+class UDestructibleDamageParameters : public UObject
+{
+public:
+    //## BEGIN PROPS DestructibleDamageParameters
+    FLOAT BaseDamage;
+    FLOAT Radius;
+    FLOAT Momentum;
+    //## END PROPS DestructibleDamageParameters
+
+    DECLARE_CLASS(UDestructibleDamageParameters,UObject,0,Engine)
+    NO_DEFAULT_CONSTRUCTOR(UDestructibleDamageParameters)
 };
 
 class UEdCoordSystem : public UObject
@@ -21691,7 +22136,9 @@ DECLARE_NATIVE_TYPE(Engine,UActorFactoryAI);
 DECLARE_NATIVE_TYPE(Engine,UActorFactoryAmbientSound);
 DECLARE_NATIVE_TYPE(Engine,UActorFactoryAmbientSoundMovable);
 DECLARE_NATIVE_TYPE(Engine,UActorFactoryAmbientSoundSimple);
+DECLARE_NATIVE_TYPE(Engine,UActorFactoryApexDestructible);
 DECLARE_NATIVE_TYPE(Engine,UActorFactoryArchetype);
+DECLARE_NATIVE_TYPE(Engine,UActorFactoryCloth);
 DECLARE_NATIVE_TYPE(Engine,UActorFactoryCoverLink);
 DECLARE_NATIVE_TYPE(Engine,UActorFactoryDynamicSM);
 DECLARE_NATIVE_TYPE(Engine,UActorFactoryEmitter);
@@ -21705,10 +22152,12 @@ DECLARE_NATIVE_TYPE(Engine,UActorFactoryPhysXDestructible);
 DECLARE_NATIVE_TYPE(Engine,UActorFactoryPlayerStart);
 DECLARE_NATIVE_TYPE(Engine,UActorFactoryRigidBody);
 DECLARE_NATIVE_TYPE(Engine,UActorFactorySkeletalMesh);
+DECLARE_NATIVE_TYPE(Engine,UActorFactorySpotLight);
 DECLARE_NATIVE_TYPE(Engine,UActorFactoryStaticMesh);
 DECLARE_NATIVE_TYPE(Engine,UActorFactoryTrigger);
 DECLARE_NATIVE_TYPE(Engine,UActorFactoryVehicle);
 DECLARE_NATIVE_TYPE(Engine,UAdvancedReachSpec);
+DECLARE_NATIVE_TYPE(Engine,AAirNode);
 DECLARE_NATIVE_TYPE(Engine,UAmbientOcclusionEffect);
 DECLARE_NATIVE_TYPE(Engine,AAnimatedCamera);
 DECLARE_NATIVE_TYPE(Engine,UApexAsset);
@@ -21751,8 +22200,10 @@ DECLARE_NATIVE_TYPE(Engine,UCurveEdPresetCurve);
 DECLARE_NATIVE_TYPE(Engine,UCustomPropertyItemHandler);
 DECLARE_NATIVE_TYPE(Engine,UCylinderComponent);
 DECLARE_NATIVE_TYPE(Engine,UDamageType);
+DECLARE_NATIVE_TYPE(Engine,ADebugCameraController);
 DECLARE_NATIVE_TYPE(Engine,UDebugManager);
 DECLARE_NATIVE_TYPE(Engine,ADefaultPhysicsVolume);
+DECLARE_NATIVE_TYPE(Engine,UDestructibleDamageParameters);
 DECLARE_NATIVE_TYPE(Engine,ADirectionalLight);
 DECLARE_NATIVE_TYPE(Engine,UDirectionalLightComponent);
 DECLARE_NATIVE_TYPE(Engine,ADirectionalLightToggleable);
@@ -21773,6 +22224,7 @@ DECLARE_NATIVE_TYPE(Engine,ADoorMarker);
 DECLARE_NATIVE_TYPE(Engine,UDrawConeComponent);
 DECLARE_NATIVE_TYPE(Engine,UDrawLightConeComponent);
 DECLARE_NATIVE_TYPE(Engine,ADroppedPickup);
+DECLARE_NATIVE_TYPE(Engine,UDwTriovizEffect);
 DECLARE_NATIVE_TYPE(Engine,ADynamicAnchor);
 DECLARE_NATIVE_TYPE(Engine,ADynamicBlockingVolume);
 DECLARE_NATIVE_TYPE(Engine,ADynamicCameraActor);
@@ -21877,6 +22329,8 @@ DECLARE_NATIVE_TYPE(Engine,UPrimitiveComponentFactory);
 DECLARE_NATIVE_TYPE(Engine,AProjectile);
 DECLARE_NATIVE_TYPE(Engine,UProscribedReachSpec);
 DECLARE_NATIVE_TYPE(Engine,URB_ForceComponent);
+DECLARE_NATIVE_TYPE(Engine,URB_ForceComponentCylindrical);
+DECLARE_NATIVE_TYPE(Engine,URB_ForceComponentRadial);
 DECLARE_NATIVE_TYPE(Engine,UReachSpec);
 DECLARE_NATIVE_TYPE(Engine,AReplicationInfo);
 DECLARE_NATIVE_TYPE(Engine,AReverbVolume);
@@ -21956,7 +22410,9 @@ DECLARE_NATIVE_TYPE(Engine,AZoneInfo);
 	UActorFactoryAmbientSound::StaticClass(); \
 	UActorFactoryAmbientSoundMovable::StaticClass(); \
 	UActorFactoryAmbientSoundSimple::StaticClass(); \
+	UActorFactoryApexDestructible::StaticClass(); \
 	UActorFactoryArchetype::StaticClass(); \
+	UActorFactoryCloth::StaticClass(); \
 	UActorFactoryCoverLink::StaticClass(); \
 	UActorFactoryDynamicSM::StaticClass(); \
 	UActorFactoryEmitter::StaticClass(); \
@@ -21970,10 +22426,12 @@ DECLARE_NATIVE_TYPE(Engine,AZoneInfo);
 	UActorFactoryPlayerStart::StaticClass(); \
 	UActorFactoryRigidBody::StaticClass(); \
 	UActorFactorySkeletalMesh::StaticClass(); \
+	UActorFactorySpotLight::StaticClass(); \
 	UActorFactoryStaticMesh::StaticClass(); \
 	UActorFactoryTrigger::StaticClass(); \
 	UActorFactoryVehicle::StaticClass(); \
 	UAdvancedReachSpec::StaticClass(); \
+	AAirNode::StaticClass(); \
 	UAmbientOcclusionEffect::StaticClass(); \
 	AAnimatedCamera::StaticClass(); \
 	GNativeLookupFuncs[Lookup++] = &FindEngineAAnimatedCameraNative; \
@@ -22037,11 +22495,13 @@ DECLARE_NATIVE_TYPE(Engine,AZoneInfo);
 	UCylinderComponent::StaticClass(); \
 	GNativeLookupFuncs[Lookup++] = &FindEngineUCylinderComponentNative; \
 	UDamageType::StaticClass(); \
+	ADebugCameraController::StaticClass(); \
 	UDebugManager::StaticClass(); \
 	ADefaultPhysicsVolume::StaticClass(); \
 	UDemoPlayPendingLevel::StaticClass(); \
 	UDemoRecConnection::StaticClass(); \
 	UDemoRecDriver::StaticClass(); \
+	UDestructibleDamageParameters::StaticClass(); \
 	ADirectionalLight::StaticClass(); \
 	UDirectionalLightComponent::StaticClass(); \
 	ADirectionalLightToggleable::StaticClass(); \
@@ -22072,6 +22532,7 @@ DECLARE_NATIVE_TYPE(Engine,AZoneInfo);
 	UDrawSphereComponent::StaticClass(); \
 	ADroppedPickup::StaticClass(); \
 	GNativeLookupFuncs[Lookup++] = &FindEngineADroppedPickupNative; \
+	UDwTriovizEffect::StaticClass(); \
 	ADynamicAnchor::StaticClass(); \
 	ADynamicBlockingVolume::StaticClass(); \
 	ADynamicCameraActor::StaticClass(); \
@@ -22231,6 +22692,8 @@ DECLARE_NATIVE_TYPE(Engine,AZoneInfo);
 	GNativeLookupFuncs[Lookup++] = &FindEngineAProjectileNative; \
 	UProscribedReachSpec::StaticClass(); \
 	URB_ForceComponent::StaticClass(); \
+	URB_ForceComponentCylindrical::StaticClass(); \
+	URB_ForceComponentRadial::StaticClass(); \
 	UReachSpec::StaticClass(); \
 	GNativeLookupFuncs[Lookup++] = &FindEngineUReachSpecNative; \
 	AReplicationInfo::StaticClass(); \
@@ -23500,8 +23963,14 @@ VERIFY_CLASS_OFFSET_NODIE(U,ActorFactoryAmbientSoundMovable,AmbientSoundCue)
 VERIFY_CLASS_SIZE_NODIE(UActorFactoryAmbientSoundMovable)
 VERIFY_CLASS_OFFSET_NODIE(U,ActorFactoryAmbientSoundSimple,SoundNodeWave)
 VERIFY_CLASS_SIZE_NODIE(UActorFactoryAmbientSoundSimple)
+VERIFY_CLASS_OFFSET_NODIE(U,ActorFactoryApexDestructible,RBChannel)
+VERIFY_CLASS_OFFSET_NODIE(U,ActorFactoryApexDestructible,DestructibleAsset)
+VERIFY_CLASS_SIZE_NODIE(UActorFactoryApexDestructible)
 VERIFY_CLASS_OFFSET_NODIE(U,ActorFactoryArchetype,ArchetypeActor)
 VERIFY_CLASS_SIZE_NODIE(UActorFactoryArchetype)
+VERIFY_CLASS_OFFSET_NODIE(U,ActorFactoryCloth,ClothAttachmentTearFactor)
+VERIFY_CLASS_OFFSET_NODIE(U,ActorFactoryCloth,LightingChannels)
+VERIFY_CLASS_SIZE_NODIE(UActorFactoryCloth)
 VERIFY_CLASS_SIZE_NODIE(UActorFactoryCoverLink)
 VERIFY_CLASS_OFFSET_NODIE(U,ActorFactoryDynamicSM,StaticMesh)
 VERIFY_CLASS_OFFSET_NODIE(U,ActorFactoryDynamicSM,CollisionType)
@@ -23531,6 +24000,8 @@ VERIFY_CLASS_SIZE_NODIE(UActorFactoryRigidBody)
 VERIFY_CLASS_OFFSET_NODIE(U,ActorFactorySkeletalMesh,HeadSkeletalMesh)
 VERIFY_CLASS_OFFSET_NODIE(U,ActorFactorySkeletalMesh,AnimSequenceName)
 VERIFY_CLASS_SIZE_NODIE(UActorFactorySkeletalMesh)
+VERIFY_CLASS_OFFSET_NODIE(U,ActorFactorySpotLight,LightComponent)
+VERIFY_CLASS_SIZE_NODIE(UActorFactorySpotLight)
 VERIFY_CLASS_OFFSET_NODIE(U,ActorFactoryStaticMesh,StaticMesh)
 VERIFY_CLASS_OFFSET_NODIE(U,ActorFactoryStaticMesh,DrawScale3D)
 VERIFY_CLASS_SIZE_NODIE(UActorFactoryStaticMesh)
@@ -23538,6 +24009,7 @@ VERIFY_CLASS_SIZE_NODIE(UActorFactoryTrigger)
 VERIFY_CLASS_OFFSET_NODIE(U,ActorFactoryVehicle,VehicleClass)
 VERIFY_CLASS_SIZE_NODIE(UActorFactoryVehicle)
 VERIFY_CLASS_SIZE_NODIE(UAdvancedReachSpec)
+VERIFY_CLASS_SIZE_NODIE(AAirNode)
 VERIFY_CLASS_OFFSET_NODIE(U,AmbientOcclusionEffect,OcclusionColor)
 VERIFY_CLASS_OFFSET_NODIE(U,AmbientOcclusionEffect,HistoryWeightConvergenceTime)
 VERIFY_CLASS_SIZE_NODIE(UAmbientOcclusionEffect)
@@ -23692,9 +24164,15 @@ VERIFY_CLASS_SIZE_NODIE(UCylinderComponent)
 VERIFY_CLASS_OFFSET_NODIE(U,DamageType,DeathString)
 VERIFY_CLASS_OFFSET_NODIE(U,DamageType,KilledFFWaveform)
 VERIFY_CLASS_SIZE_NODIE(UDamageType)
+VERIFY_CLASS_OFFSET_NODIE(A,DebugCameraController,OryginalControllerRef)
+VERIFY_CLASS_OFFSET_NODIE(A,DebugCameraController,DrawFrustum)
+VERIFY_CLASS_SIZE_NODIE(ADebugCameraController)
 VERIFY_CLASS_OFFSET_NODIE(U,DebugManager,FirstColoredMip)
 VERIFY_CLASS_SIZE_NODIE(UDebugManager)
 VERIFY_CLASS_SIZE_NODIE(ADefaultPhysicsVolume)
+VERIFY_CLASS_OFFSET_NODIE(U,DestructibleDamageParameters,BaseDamage)
+VERIFY_CLASS_OFFSET_NODIE(U,DestructibleDamageParameters,Momentum)
+VERIFY_CLASS_SIZE_NODIE(UDestructibleDamageParameters)
 VERIFY_CLASS_SIZE_NODIE(ADirectionalLight)
 VERIFY_CLASS_OFFSET_NODIE(U,DirectionalLightComponent,TraceDistance)
 VERIFY_CLASS_SIZE_NODIE(UDirectionalLightComponent)
@@ -23780,6 +24258,7 @@ VERIFY_CLASS_SIZE_NODIE(UDrawSphereComponent)
 VERIFY_CLASS_OFFSET_NODIE(A,DroppedPickup,Inventory)
 VERIFY_CLASS_OFFSET_NODIE(A,DroppedPickup,PickupCache)
 VERIFY_CLASS_SIZE_NODIE(ADroppedPickup)
+VERIFY_CLASS_SIZE_NODIE(UDwTriovizEffect)
 VERIFY_CLASS_OFFSET_NODIE(A,DynamicAnchor,CurrentUser)
 VERIFY_CLASS_SIZE_NODIE(ADynamicAnchor)
 VERIFY_CLASS_SIZE_NODIE(ADynamicBlockingVolume)
@@ -24098,6 +24577,12 @@ VERIFY_CLASS_SIZE_NODIE(UProscribedReachSpec)
 VERIFY_CLASS_OFFSET_NODIE(U,RB_ForceComponent,ForceMode)
 VERIFY_CLASS_OFFSET_NODIE(U,RB_ForceComponent,TheNxForceField)
 VERIFY_CLASS_SIZE_NODIE(URB_ForceComponent)
+VERIFY_CLASS_OFFSET_NODIE(U,RB_ForceComponentCylindrical,RenderComponentCylinder)
+VERIFY_CLASS_OFFSET_NODIE(U,RB_ForceComponentCylindrical,HeightOffset)
+VERIFY_CLASS_SIZE_NODIE(URB_ForceComponentCylindrical)
+VERIFY_CLASS_OFFSET_NODIE(U,RB_ForceComponentRadial,RenderComponentSphere)
+VERIFY_CLASS_OFFSET_NODIE(U,RB_ForceComponentRadial,ForceFalloff)
+VERIFY_CLASS_SIZE_NODIE(URB_ForceComponentRadial)
 VERIFY_CLASS_OFFSET_NODIE(U,ReachSpec,NavOctreeObject)
 VERIFY_CLASS_OFFSET_NODIE(U,ReachSpec,RealEndPos)
 VERIFY_CLASS_SIZE_NODIE(UReachSpec)

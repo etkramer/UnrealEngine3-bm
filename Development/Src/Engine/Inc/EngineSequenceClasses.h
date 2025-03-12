@@ -45,6 +45,7 @@ enum EParticleEventOutputType
 
 AUTOGENERATE_NAME(Activated)
 AUTOGENERATE_NAME(CheckLogins)
+AUTOGENERATE_NAME(CreateInstance)
 AUTOGENERATE_NAME(Deactivated)
 AUTOGENERATE_NAME(GetObjClassVersion)
 AUTOGENERATE_NAME(InsertValueEntry)
@@ -1120,6 +1121,29 @@ public:
 
 	/** Called before the handler function is called on a target actor. */
 	virtual void PreActorHandle(AActor *inActor) {}
+};
+
+struct RSeqAct_SetMaterialInstance_eventCreateInstance_Parms
+{
+    RSeqAct_SetMaterialInstance_eventCreateInstance_Parms(EEventParm)
+    {
+    }
+};
+class URSeqAct_SetMaterialInstance : public USequenceAction
+{
+public:
+    //## BEGIN PROPS RSeqAct_SetMaterialInstance
+    class UMaterialInstance* MaterialToInstance;
+    INT MaterialIndex;
+    class UMaterialInstanceConstant* NewMaterial;
+    //## END PROPS RSeqAct_SetMaterialInstance
+
+    void eventCreateInstance()
+    {
+        ProcessEvent(FindFunctionChecked(ENGINE_CreateInstance),NULL);
+    }
+    DECLARE_CLASS(URSeqAct_SetMaterialInstance,USequenceAction,0,Engine)
+    NO_DEFAULT_CONSTRUCTOR(URSeqAct_SetMaterialInstance)
 };
 
 class USeqAct_ActivateRemoteEvent : public USequenceAction
@@ -4713,6 +4737,7 @@ AUTOGENERATE_FUNCTION(USequenceOp,-1,execHasLinkedOps);
 DECLARE_NATIVE_TYPE(Engine,UInterpData);
 DECLARE_NATIVE_TYPE(Engine,UPrefabSequence);
 DECLARE_NATIVE_TYPE(Engine,UPrefabSequenceContainer);
+DECLARE_NATIVE_TYPE(Engine,URSeqAct_SetMaterialInstance);
 DECLARE_NATIVE_TYPE(Engine,USeqAct_ActivateRemoteEvent);
 DECLARE_NATIVE_TYPE(Engine,USeqAct_ActorFactory);
 DECLARE_NATIVE_TYPE(Engine,USeqAct_ActorFactoryEx);
@@ -4850,6 +4875,7 @@ DECLARE_NATIVE_TYPE(Engine,USeqVar_Vector);
 	UPrefabSequence::StaticClass(); \
 	GNativeLookupFuncs[Lookup++] = &FindEngineUPrefabSequenceNative; \
 	UPrefabSequenceContainer::StaticClass(); \
+	URSeqAct_SetMaterialInstance::StaticClass(); \
 	USeqAct_ActivateRemoteEvent::StaticClass(); \
 	USeqAct_ActorFactory::StaticClass(); \
 	USeqAct_ActorFactoryEx::StaticClass(); \
@@ -5085,6 +5111,9 @@ VERIFY_CLASS_SIZE_NODIE(UInterpData)
 VERIFY_CLASS_OFFSET_NODIE(U,PrefabSequence,OwnerPrefab)
 VERIFY_CLASS_SIZE_NODIE(UPrefabSequence)
 VERIFY_CLASS_SIZE_NODIE(UPrefabSequenceContainer)
+VERIFY_CLASS_OFFSET_NODIE(U,RSeqAct_SetMaterialInstance,MaterialToInstance)
+VERIFY_CLASS_OFFSET_NODIE(U,RSeqAct_SetMaterialInstance,NewMaterial)
+VERIFY_CLASS_SIZE_NODIE(URSeqAct_SetMaterialInstance)
 VERIFY_CLASS_OFFSET_NODIE(U,SeqAct_ActivateRemoteEvent,Instigator)
 VERIFY_CLASS_OFFSET_NODIE(U,SeqAct_ActivateRemoteEvent,EventName)
 VERIFY_CLASS_SIZE_NODIE(USeqAct_ActivateRemoteEvent)

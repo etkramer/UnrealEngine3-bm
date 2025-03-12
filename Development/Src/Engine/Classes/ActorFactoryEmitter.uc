@@ -17,8 +17,8 @@ cpptext
 
 var()	ParticleSystem		ParticleSystem;
 
-// BM1: Should be PhysXParticleSystemComponent
-var() export editinline ParticleSystemComponent ParticleSystemPhysX;
+// BM1
+var() export editinline PhysXParticleSystemComponent ParticleSystemPhysX;
 
 defaultproperties
 {

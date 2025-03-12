@@ -13,7 +13,8 @@
 //
 // * Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
 //-----------------------------------------------------------
-class DebugCameraController extends PlayerController;
+class DebugCameraController extends PlayerController
+    native;
 
 var PlayerController        OryginalControllerRef;
 var Player                  OryginalPlayer;

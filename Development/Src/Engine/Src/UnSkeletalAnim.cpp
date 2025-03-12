@@ -2117,6 +2117,8 @@ void UAnimNotify_Rumble::Notify( USkeletalMeshComponent* SkelComp )
 IMPLEMENT_CLASS(UAnimNotify_Rumble);
 IMPLEMENT_CLASS(UWaveFormBase);
 
+IMPLEMENT_CLASS(UAnimNotify_ForceField);
+
 
 ////////////
 

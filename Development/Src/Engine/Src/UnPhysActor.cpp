@@ -1638,11 +1638,44 @@ static UBOOL CheckCollisionChannels(BYTE RBChannel, const FRBCollisionChannelCon
 	case RBCC_FluidDrain:
 		return CollideWithChannels.FluidDrain;
 
+	case RBCC_PawnRagdoll:
+		return CollideWithChannels.PawnRagdoll;
+
+	case RBCC_Rope:
+		return CollideWithChannels.Rope;
+
+	case RBCC_Cape:
+		return CollideWithChannels.Cape;
+
 	case RBCC_SoftBody:
 		return CollideWithChannels.SoftBody;
 
+	case RBCC_CinematicCape:
+		return CollideWithChannels.Cape;
+
 	case RBCC_FracturedMeshPart:
 		return CollideWithChannels.FracturedMeshPart;
+
+	case RBCC_BlockingVolume:
+		return CollideWithChannels.BlockingVolume;
+
+	case RBCC_DeadPawn:
+		return CollideWithChannels.DeadPawn;
+
+	case RBCC_PawnRagdollStrungUp:
+		return CollideWithChannels.PawnRagdollStrungUp;
+
+	case RBCC_Projectile:
+		return CollideWithChannels.Projectile;
+
+	case RBCC_VenomHenchmanThrow:
+		return CollideWithChannels.VenomHenchmanThrow;
+
+	case RBCC_Grate:
+		return CollideWithChannels.Grate;
+
+	case RBCC_Destruction:
+		return CollideWithChannels.Destruction;
 
 	default:
 		return TRUE;

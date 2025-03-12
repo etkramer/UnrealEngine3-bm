@@ -159,6 +159,8 @@ IMPLEMENT_CLASS(USeqAct_MultiplyFloat);
 IMPLEMENT_CLASS(USeqAct_DivideFloat);
 IMPLEMENT_CLASS(USeqAct_CastToFloat);
 
+IMPLEMENT_CLASS(URSeqAct_SetMaterialInstance);
+
 //==========================
 // AActor Sequence interface
 
