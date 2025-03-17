@@ -16,6 +16,8 @@ IMPLEMENT_CLASS(UMorphNodeWeightBase);
 IMPLEMENT_CLASS(UMorphNodeWeight);
 IMPLEMENT_CLASS(UMorphNodePose);
 
+IMPLEMENT_CLASS(UMorphNodeWeightByBoneAngle);
+
 static const FColor MorphConnColor(50,50,100);
 static const FColor MorphWeightColor(60,60,90);
 /** BackGround color when a node has been deprecated */
@@ -360,4 +362,23 @@ void UMorphNodePose::DrawMorphNode(FCanvas* Canvas, UBOOL bSelected, UBOOL bCurv
 
 	DrawWidth = ObjInfo.DrawWidth;
 	OutDrawY = ObjInfo.InputY(0);
+}
+
+//////////////////////////////////////////////////////////////////////////
+// UMorphNodeWeightByBoneAngle
+//////////////////////////////////////////////////////////////////////////
+
+void UMorphNodeWeightByBoneAngle::GetActiveMorphs(TArray<FActiveMorph>& OutMorphs)
+{
+	Super::GetActiveMorphs(OutMorphs);
+}
+
+void UMorphNodeWeightByBoneAngle::Render(const FSceneView* View, FPrimitiveDrawInterface* PDI)
+{
+	Super::Render(View, PDI);
+}
+
+void UMorphNodeWeightByBoneAngle::Draw(FViewport* Viewport, FCanvas* Canvas, const FSceneView* View)
+{
+	Super::Draw(Viewport, Canvas, View);
 }

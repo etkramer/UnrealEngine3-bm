@@ -5502,6 +5502,3 @@ FString appGetPlatformString()
 #error Please define your platform.
 #endif
 }
-
-
-

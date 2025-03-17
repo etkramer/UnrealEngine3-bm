@@ -102,6 +102,25 @@ public:
 	virtual void SwapReferenceTo(UMaterialExpression* OldExpression,UMaterialExpression* NewExpression = NULL);
 };
 
+class UMaterialExpressionAddNormalMap : public UMaterialExpression
+{
+public:
+    //## BEGIN PROPS MaterialExpressionAddNormalMap
+    class UTexture* Texture;
+    FLOAT AddU;
+    FLOAT AddV;
+    FLOAT MultiplyU;
+    FLOAT MultiplyV;
+    FLOAT TileU;
+    FLOAT TileV;
+    FExpressionInput Scale;
+    FExpressionInput Base;
+    //## END PROPS MaterialExpressionAddNormalMap
+
+    DECLARE_CLASS(UMaterialExpressionAddNormalMap,UMaterialExpression,0,Engine)
+    NO_DEFAULT_CONSTRUCTOR(UMaterialExpressionAddNormalMap)
+};
+
 class UMaterialExpressionAppendVector : public UMaterialExpression
 {
 public:
@@ -1073,6 +1092,88 @@ public:
 	virtual INT GetLabelPadding() { return 8; }
 };
 
+class UMaterialExpressionLightingDiffuseLambert : public UMaterialExpression
+{
+public:
+    //## BEGIN PROPS MaterialExpressionLightingDiffuseLambert
+    FExpressionInput Power;
+    FExpressionInput PowerMin;
+    FExpressionInput PowerMax;
+    FExpressionInput FresnelStraight;
+    FExpressionInput FresnelGlancing;
+    FExpressionInput FresnelPower;
+    FExpressionInput Colour;
+    class UTexture* Lookup;
+    //## END PROPS MaterialExpressionLightingDiffuseLambert
+
+    DECLARE_CLASS(UMaterialExpressionLightingDiffuseLambert,UMaterialExpression,0,Engine)
+    NO_DEFAULT_CONSTRUCTOR(UMaterialExpressionLightingDiffuseLambert)
+};
+
+class UMaterialExpressionLightingSpecularBlinnPhong : public UMaterialExpression
+{
+public:
+    //## BEGIN PROPS MaterialExpressionLightingSpecularBlinnPhong
+    FExpressionInput Power;
+    FExpressionInput PowerMin;
+    FExpressionInput PowerMax;
+    FExpressionInput FresnelPower;
+    FExpressionInput FresnelStraight;
+    FExpressionInput FresnelGlancing;
+    FExpressionInput FalloffPower;
+    FExpressionInput FalloffStraight;
+    FExpressionInput FalloffGlancing;
+    FExpressionInput Colour;
+    class UTexture* Lookup;
+    //## END PROPS MaterialExpressionLightingSpecularBlinnPhong
+
+    DECLARE_CLASS(UMaterialExpressionLightingSpecularBlinnPhong,UMaterialExpression,0,Engine)
+    NO_DEFAULT_CONSTRUCTOR(UMaterialExpressionLightingSpecularBlinnPhong)
+};
+
+class UMaterialExpressionLightingSpecularHeidrichSeidel : public UMaterialExpression
+{
+public:
+    //## BEGIN PROPS MaterialExpressionLightingSpecularHeidrichSeidel
+    FExpressionInput Power;
+    FExpressionInput PowerMin;
+    FExpressionInput PowerMax;
+    FExpressionInput FresnelPower;
+    FExpressionInput FresnelStraight;
+    FExpressionInput FresnelGlancing;
+    FExpressionInput FalloffPower;
+    FExpressionInput FalloffStraight;
+    FExpressionInput FalloffGlancing;
+    FExpressionInput Colour;
+    class UTexture* Lookup;
+    BITFIELD UseAccurateTangent:1;
+    //## END PROPS MaterialExpressionLightingSpecularHeidrichSeidel
+
+    DECLARE_CLASS(UMaterialExpressionLightingSpecularHeidrichSeidel,UMaterialExpression,0,Engine)
+    NO_DEFAULT_CONSTRUCTOR(UMaterialExpressionLightingSpecularHeidrichSeidel)
+};
+
+class UMaterialExpressionLightingSpecularPhong : public UMaterialExpression
+{
+public:
+    //## BEGIN PROPS MaterialExpressionLightingSpecularPhong
+    FExpressionInput Power;
+    FExpressionInput PowerMin;
+    FExpressionInput PowerMax;
+    FExpressionInput FresnelPower;
+    FExpressionInput FresnelStraight;
+    FExpressionInput FresnelGlancing;
+    FExpressionInput FalloffPower;
+    FExpressionInput FalloffStraight;
+    FExpressionInput FalloffGlancing;
+    FExpressionInput Colour;
+    class UTexture* Lookup;
+    //## END PROPS MaterialExpressionLightingSpecularPhong
+
+    DECLARE_CLASS(UMaterialExpressionLightingSpecularPhong,UMaterialExpression,0,Engine)
+    NO_DEFAULT_CONSTRUCTOR(UMaterialExpressionLightingSpecularPhong)
+};
+
 class UMaterialExpressionLightVector : public UMaterialExpression
 {
 public:
@@ -1105,6 +1206,18 @@ public:
 	virtual void SwapReferenceTo(UMaterialExpression* OldExpression,UMaterialExpression* NewExpression = NULL);
 };
 
+class UMaterialExpressionMax : public UMaterialExpression
+{
+public:
+    //## BEGIN PROPS MaterialExpressionMax
+    FExpressionInput A;
+    FExpressionInput B;
+    //## END PROPS MaterialExpressionMax
+
+    DECLARE_CLASS(UMaterialExpressionMax,UMaterialExpression,0,Engine)
+    NO_DEFAULT_CONSTRUCTOR(UMaterialExpressionMax)
+};
+
 class UMaterialExpressionMeshEmitterVertexColor : public UMaterialExpression
 {
 public:
@@ -1115,6 +1228,18 @@ public:
 	virtual INT Compile(FMaterialCompiler* Compiler);
 	virtual FString GetCaption() const;
 	virtual void GetOutputs(TArray<FExpressionOutput>& Outputs) const;
+};
+
+class UMaterialExpressionMin : public UMaterialExpression
+{
+public:
+    //## BEGIN PROPS MaterialExpressionMin
+    FExpressionInput A;
+    FExpressionInput B;
+    //## END PROPS MaterialExpressionMin
+
+    DECLARE_CLASS(UMaterialExpressionMin,UMaterialExpression,0,Engine)
+    NO_DEFAULT_CONSTRUCTOR(UMaterialExpressionMin)
 };
 
 class UMaterialExpressionMultiply : public UMaterialExpression
@@ -1135,6 +1260,16 @@ public:
 	 * @param	NewExpression		Expression to replace reference with.
 	 */
 	virtual void SwapReferenceTo(UMaterialExpression* OldExpression,UMaterialExpression* NewExpression = NULL);
+};
+
+class UMaterialExpressionNormal : public UMaterialExpression
+{
+public:
+    //## BEGIN PROPS MaterialExpressionNormal
+    //## END PROPS MaterialExpressionNormal
+
+    DECLARE_CLASS(UMaterialExpressionNormal,UMaterialExpression,0,Engine)
+    NO_DEFAULT_CONSTRUCTOR(UMaterialExpressionNormal)
 };
 
 class UMaterialExpressionNormalize : public UMaterialExpression
@@ -2337,6 +2472,7 @@ AUTOGENERATE_FUNCTION(UMaterialInstanceTimeVarying,-1,execSetParent);
 
 DECLARE_NATIVE_TYPE(Engine,UMaterialExpressionAbs);
 DECLARE_NATIVE_TYPE(Engine,UMaterialExpressionAdd);
+DECLARE_NATIVE_TYPE(Engine,UMaterialExpressionAddNormalMap);
 DECLARE_NATIVE_TYPE(Engine,UMaterialExpressionAppendVector);
 DECLARE_NATIVE_TYPE(Engine,UMaterialExpressionBumpOffset);
 DECLARE_NATIVE_TYPE(Engine,UMaterialExpressionCameraVector);
@@ -2377,11 +2513,18 @@ DECLARE_NATIVE_TYPE(Engine,UMaterialExpressionLensFlareOcclusion);
 DECLARE_NATIVE_TYPE(Engine,UMaterialExpressionLensFlareRadialDistance);
 DECLARE_NATIVE_TYPE(Engine,UMaterialExpressionLensFlareRayDistance);
 DECLARE_NATIVE_TYPE(Engine,UMaterialExpressionLensFlareSourceDistance);
+DECLARE_NATIVE_TYPE(Engine,UMaterialExpressionLightingDiffuseLambert);
+DECLARE_NATIVE_TYPE(Engine,UMaterialExpressionLightingSpecularBlinnPhong);
+DECLARE_NATIVE_TYPE(Engine,UMaterialExpressionLightingSpecularHeidrichSeidel);
+DECLARE_NATIVE_TYPE(Engine,UMaterialExpressionLightingSpecularPhong);
 DECLARE_NATIVE_TYPE(Engine,UMaterialExpressionLightVector);
 DECLARE_NATIVE_TYPE(Engine,UMaterialExpressionLinearInterpolate);
+DECLARE_NATIVE_TYPE(Engine,UMaterialExpressionMax);
 DECLARE_NATIVE_TYPE(Engine,UMaterialExpressionMeshEmitterVertexColor);
 DECLARE_NATIVE_TYPE(Engine,UMaterialExpressionMeshSubUV);
+DECLARE_NATIVE_TYPE(Engine,UMaterialExpressionMin);
 DECLARE_NATIVE_TYPE(Engine,UMaterialExpressionMultiply);
+DECLARE_NATIVE_TYPE(Engine,UMaterialExpressionNormal);
 DECLARE_NATIVE_TYPE(Engine,UMaterialExpressionNormalize);
 DECLARE_NATIVE_TYPE(Engine,UMaterialExpressionOneMinus);
 DECLARE_NATIVE_TYPE(Engine,UMaterialExpressionPanner);
@@ -2420,6 +2563,7 @@ DECLARE_NATIVE_TYPE(Engine,UMaterialInstanceTimeVarying);
 #define AUTO_INITIALIZE_REGISTRANTS_ENGINE_MATERIAL \
 	UMaterialExpressionAbs::StaticClass(); \
 	UMaterialExpressionAdd::StaticClass(); \
+	UMaterialExpressionAddNormalMap::StaticClass(); \
 	UMaterialExpressionAppendVector::StaticClass(); \
 	UMaterialExpressionBumpOffset::StaticClass(); \
 	UMaterialExpressionCameraVector::StaticClass(); \
@@ -2460,11 +2604,18 @@ DECLARE_NATIVE_TYPE(Engine,UMaterialInstanceTimeVarying);
 	UMaterialExpressionLensFlareRadialDistance::StaticClass(); \
 	UMaterialExpressionLensFlareRayDistance::StaticClass(); \
 	UMaterialExpressionLensFlareSourceDistance::StaticClass(); \
+	UMaterialExpressionLightingDiffuseLambert::StaticClass(); \
+	UMaterialExpressionLightingSpecularBlinnPhong::StaticClass(); \
+	UMaterialExpressionLightingSpecularHeidrichSeidel::StaticClass(); \
+	UMaterialExpressionLightingSpecularPhong::StaticClass(); \
 	UMaterialExpressionLightVector::StaticClass(); \
 	UMaterialExpressionLinearInterpolate::StaticClass(); \
+	UMaterialExpressionMax::StaticClass(); \
 	UMaterialExpressionMeshEmitterVertexColor::StaticClass(); \
 	UMaterialExpressionMeshSubUV::StaticClass(); \
+	UMaterialExpressionMin::StaticClass(); \
 	UMaterialExpressionMultiply::StaticClass(); \
+	UMaterialExpressionNormal::StaticClass(); \
 	UMaterialExpressionNormalize::StaticClass(); \
 	UMaterialExpressionOneMinus::StaticClass(); \
 	UMaterialExpressionPanner::StaticClass(); \
@@ -2559,6 +2710,9 @@ VERIFY_CLASS_SIZE_NODIE(UMaterialExpressionAbs)
 VERIFY_CLASS_OFFSET_NODIE(U,MaterialExpressionAdd,A)
 VERIFY_CLASS_OFFSET_NODIE(U,MaterialExpressionAdd,B)
 VERIFY_CLASS_SIZE_NODIE(UMaterialExpressionAdd)
+VERIFY_CLASS_OFFSET_NODIE(U,MaterialExpressionAddNormalMap,Texture)
+VERIFY_CLASS_OFFSET_NODIE(U,MaterialExpressionAddNormalMap,Base)
+VERIFY_CLASS_SIZE_NODIE(UMaterialExpressionAddNormalMap)
 VERIFY_CLASS_OFFSET_NODIE(U,MaterialExpressionAppendVector,A)
 VERIFY_CLASS_OFFSET_NODIE(U,MaterialExpressionAppendVector,B)
 VERIFY_CLASS_SIZE_NODIE(UMaterialExpressionAppendVector)
@@ -2650,15 +2804,34 @@ VERIFY_CLASS_SIZE_NODIE(UMaterialExpressionLensFlareOcclusion)
 VERIFY_CLASS_SIZE_NODIE(UMaterialExpressionLensFlareRadialDistance)
 VERIFY_CLASS_SIZE_NODIE(UMaterialExpressionLensFlareRayDistance)
 VERIFY_CLASS_SIZE_NODIE(UMaterialExpressionLensFlareSourceDistance)
+VERIFY_CLASS_OFFSET_NODIE(U,MaterialExpressionLightingDiffuseLambert,Power)
+VERIFY_CLASS_OFFSET_NODIE(U,MaterialExpressionLightingDiffuseLambert,Lookup)
+VERIFY_CLASS_SIZE_NODIE(UMaterialExpressionLightingDiffuseLambert)
+VERIFY_CLASS_OFFSET_NODIE(U,MaterialExpressionLightingSpecularBlinnPhong,Power)
+VERIFY_CLASS_OFFSET_NODIE(U,MaterialExpressionLightingSpecularBlinnPhong,Lookup)
+VERIFY_CLASS_SIZE_NODIE(UMaterialExpressionLightingSpecularBlinnPhong)
+VERIFY_CLASS_OFFSET_NODIE(U,MaterialExpressionLightingSpecularHeidrichSeidel,Power)
+VERIFY_CLASS_OFFSET_NODIE(U,MaterialExpressionLightingSpecularHeidrichSeidel,Lookup)
+VERIFY_CLASS_SIZE_NODIE(UMaterialExpressionLightingSpecularHeidrichSeidel)
+VERIFY_CLASS_OFFSET_NODIE(U,MaterialExpressionLightingSpecularPhong,Power)
+VERIFY_CLASS_OFFSET_NODIE(U,MaterialExpressionLightingSpecularPhong,Lookup)
+VERIFY_CLASS_SIZE_NODIE(UMaterialExpressionLightingSpecularPhong)
 VERIFY_CLASS_SIZE_NODIE(UMaterialExpressionLightVector)
 VERIFY_CLASS_OFFSET_NODIE(U,MaterialExpressionLinearInterpolate,A)
 VERIFY_CLASS_OFFSET_NODIE(U,MaterialExpressionLinearInterpolate,Alpha)
 VERIFY_CLASS_SIZE_NODIE(UMaterialExpressionLinearInterpolate)
+VERIFY_CLASS_OFFSET_NODIE(U,MaterialExpressionMax,A)
+VERIFY_CLASS_OFFSET_NODIE(U,MaterialExpressionMax,B)
+VERIFY_CLASS_SIZE_NODIE(UMaterialExpressionMax)
 VERIFY_CLASS_SIZE_NODIE(UMaterialExpressionMeshEmitterVertexColor)
 VERIFY_CLASS_SIZE_NODIE(UMaterialExpressionMeshSubUV)
+VERIFY_CLASS_OFFSET_NODIE(U,MaterialExpressionMin,A)
+VERIFY_CLASS_OFFSET_NODIE(U,MaterialExpressionMin,B)
+VERIFY_CLASS_SIZE_NODIE(UMaterialExpressionMin)
 VERIFY_CLASS_OFFSET_NODIE(U,MaterialExpressionMultiply,A)
 VERIFY_CLASS_OFFSET_NODIE(U,MaterialExpressionMultiply,B)
 VERIFY_CLASS_SIZE_NODIE(UMaterialExpressionMultiply)
+VERIFY_CLASS_SIZE_NODIE(UMaterialExpressionNormal)
 VERIFY_CLASS_OFFSET_NODIE(U,MaterialExpressionNormalize,VectorInput)
 VERIFY_CLASS_SIZE_NODIE(UMaterialExpressionNormalize)
 VERIFY_CLASS_OFFSET_NODIE(U,MaterialExpressionOneMinus,Input)

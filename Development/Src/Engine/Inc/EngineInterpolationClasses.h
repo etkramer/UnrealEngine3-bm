@@ -574,6 +574,18 @@ public:
 	INT CalcChannelIndex();
 };
 
+class UInterpTrackFaceFXRegister : public UInterpTrackFloatBase
+{
+public:
+    //## BEGIN PROPS InterpTrackFaceFXRegister
+    FStringNoInit Register;
+    BYTE Operation;
+    //## END PROPS InterpTrackFaceFXRegister
+
+    DECLARE_CLASS(UInterpTrackFaceFXRegister,UInterpTrackFloatBase,0,Engine)
+    NO_DEFAULT_CONSTRUCTOR(UInterpTrackFaceFXRegister)
+};
+
 class UInterpTrackFade : public UInterpTrackFloatBase
 {
 public:
@@ -693,6 +705,17 @@ public:
 
 	// InterpTrackSlomo interface
 	FLOAT GetSlomoFactorAtTime(FLOAT Time);
+};
+
+class UInterpTrackSoundFade : public UInterpTrackFloatBase
+{
+public:
+    //## BEGIN PROPS InterpTrackSoundFade
+    BITFIELD ResetVolume:1;
+    //## END PROPS InterpTrackSoundFade
+
+    DECLARE_CLASS(UInterpTrackSoundFade,UInterpTrackFloatBase,0,Engine)
+    NO_DEFAULT_CONSTRUCTOR(UInterpTrackSoundFade)
 };
 
 struct FInterpLookupPoint
@@ -1428,6 +1451,16 @@ public:
 	virtual void RestoreActorState(UInterpTrack* Track);
 };
 
+class UInterpTrackInstFaceFXRegister : public UInterpTrackInst
+{
+public:
+    //## BEGIN PROPS InterpTrackInstFaceFXRegister
+    //## END PROPS InterpTrackInstFaceFXRegister
+
+    DECLARE_CLASS(UInterpTrackInstFaceFXRegister,UInterpTrackInst,0,Engine)
+    NO_DEFAULT_CONSTRUCTOR(UInterpTrackInstFaceFXRegister)
+};
+
 class UInterpTrackInstFade : public UInterpTrackInst
 {
 public:
@@ -1623,6 +1656,17 @@ public:
 	virtual void TermTrackInst(UInterpTrack* Track);
 };
 
+class UInterpTrackInstSoundFade : public UInterpTrackInst
+{
+public:
+    //## BEGIN PROPS InterpTrackInstSoundFade
+    FLOAT storedSoundFade;
+    //## END PROPS InterpTrackInstSoundFade
+
+    DECLARE_CLASS(UInterpTrackInstSoundFade,UInterpTrackInst,0,Engine)
+    NO_DEFAULT_CONSTRUCTOR(UInterpTrackInstSoundFade)
+};
+
 class UInterpTrackInstToggle : public UInterpTrackInst
 {
 public:
@@ -1697,6 +1741,7 @@ DECLARE_NATIVE_TYPE(Engine,UInterpTrackColorScale);
 DECLARE_NATIVE_TYPE(Engine,UInterpTrackDirector);
 DECLARE_NATIVE_TYPE(Engine,UInterpTrackEvent);
 DECLARE_NATIVE_TYPE(Engine,UInterpTrackFaceFX);
+DECLARE_NATIVE_TYPE(Engine,UInterpTrackFaceFXRegister);
 DECLARE_NATIVE_TYPE(Engine,UInterpTrackFade);
 DECLARE_NATIVE_TYPE(Engine,UInterpTrackFloatBase);
 DECLARE_NATIVE_TYPE(Engine,UInterpTrackFloatMaterialParam);
@@ -1710,6 +1755,7 @@ DECLARE_NATIVE_TYPE(Engine,UInterpTrackInstColorScale);
 DECLARE_NATIVE_TYPE(Engine,UInterpTrackInstDirector);
 DECLARE_NATIVE_TYPE(Engine,UInterpTrackInstEvent);
 DECLARE_NATIVE_TYPE(Engine,UInterpTrackInstFaceFX);
+DECLARE_NATIVE_TYPE(Engine,UInterpTrackInstFaceFXRegister);
 DECLARE_NATIVE_TYPE(Engine,UInterpTrackInstFade);
 DECLARE_NATIVE_TYPE(Engine,UInterpTrackInstFloatMaterialParam);
 DECLARE_NATIVE_TYPE(Engine,UInterpTrackInstFloatParticleParam);
@@ -1721,6 +1767,7 @@ DECLARE_NATIVE_TYPE(Engine,UInterpTrackInstProperty);
 DECLARE_NATIVE_TYPE(Engine,UInterpTrackInstSkelControlScale);
 DECLARE_NATIVE_TYPE(Engine,UInterpTrackInstSlomo);
 DECLARE_NATIVE_TYPE(Engine,UInterpTrackInstSound);
+DECLARE_NATIVE_TYPE(Engine,UInterpTrackInstSoundFade);
 DECLARE_NATIVE_TYPE(Engine,UInterpTrackInstToggle);
 DECLARE_NATIVE_TYPE(Engine,UInterpTrackInstVectorMaterialParam);
 DECLARE_NATIVE_TYPE(Engine,UInterpTrackInstVectorProp);
@@ -1731,6 +1778,7 @@ DECLARE_NATIVE_TYPE(Engine,UInterpTrackParticleReplay);
 DECLARE_NATIVE_TYPE(Engine,UInterpTrackSkelControlScale);
 DECLARE_NATIVE_TYPE(Engine,UInterpTrackSlomo);
 DECLARE_NATIVE_TYPE(Engine,UInterpTrackSound);
+DECLARE_NATIVE_TYPE(Engine,UInterpTrackSoundFade);
 DECLARE_NATIVE_TYPE(Engine,UInterpTrackToggle);
 DECLARE_NATIVE_TYPE(Engine,UInterpTrackVectorBase);
 DECLARE_NATIVE_TYPE(Engine,UInterpTrackVectorMaterialParam);
@@ -1752,6 +1800,7 @@ DECLARE_NATIVE_TYPE(Engine,UInterpTrackVisibility);
 	UInterpTrackDirector::StaticClass(); \
 	UInterpTrackEvent::StaticClass(); \
 	UInterpTrackFaceFX::StaticClass(); \
+	UInterpTrackFaceFXRegister::StaticClass(); \
 	UInterpTrackFade::StaticClass(); \
 	UInterpTrackFloatBase::StaticClass(); \
 	UInterpTrackFloatMaterialParam::StaticClass(); \
@@ -1765,6 +1814,7 @@ DECLARE_NATIVE_TYPE(Engine,UInterpTrackVisibility);
 	UInterpTrackInstDirector::StaticClass(); \
 	UInterpTrackInstEvent::StaticClass(); \
 	UInterpTrackInstFaceFX::StaticClass(); \
+	UInterpTrackInstFaceFXRegister::StaticClass(); \
 	UInterpTrackInstFade::StaticClass(); \
 	UInterpTrackInstFloatMaterialParam::StaticClass(); \
 	UInterpTrackInstFloatParticleParam::StaticClass(); \
@@ -1776,6 +1826,7 @@ DECLARE_NATIVE_TYPE(Engine,UInterpTrackVisibility);
 	UInterpTrackInstSkelControlScale::StaticClass(); \
 	UInterpTrackInstSlomo::StaticClass(); \
 	UInterpTrackInstSound::StaticClass(); \
+	UInterpTrackInstSoundFade::StaticClass(); \
 	UInterpTrackInstToggle::StaticClass(); \
 	UInterpTrackInstVectorMaterialParam::StaticClass(); \
 	UInterpTrackInstVectorProp::StaticClass(); \
@@ -1786,6 +1837,7 @@ DECLARE_NATIVE_TYPE(Engine,UInterpTrackVisibility);
 	UInterpTrackSkelControlScale::StaticClass(); \
 	UInterpTrackSlomo::StaticClass(); \
 	UInterpTrackSound::StaticClass(); \
+	UInterpTrackSoundFade::StaticClass(); \
 	UInterpTrackToggle::StaticClass(); \
 	UInterpTrackVectorBase::StaticClass(); \
 	UInterpTrackVectorMaterialParam::StaticClass(); \
@@ -1829,6 +1881,9 @@ VERIFY_CLASS_SIZE_NODIE(UInterpTrackEvent)
 VERIFY_CLASS_OFFSET_NODIE(U,InterpTrackFaceFX,FaceFXAnimSets)
 VERIFY_CLASS_OFFSET_NODIE(U,InterpTrackFaceFX,FaceFXSoundCueKeys)
 VERIFY_CLASS_SIZE_NODIE(UInterpTrackFaceFX)
+VERIFY_CLASS_OFFSET_NODIE(U,InterpTrackFaceFXRegister,Register)
+VERIFY_CLASS_OFFSET_NODIE(U,InterpTrackFaceFXRegister,Operation)
+VERIFY_CLASS_SIZE_NODIE(UInterpTrackFaceFXRegister)
 VERIFY_CLASS_SIZE_NODIE(UInterpTrackFade)
 VERIFY_CLASS_OFFSET_NODIE(U,InterpTrackFloatBase,FloatTrack)
 VERIFY_CLASS_OFFSET_NODIE(U,InterpTrackFloatBase,Randomiser)
@@ -1853,6 +1908,7 @@ VERIFY_CLASS_OFFSET_NODIE(U,InterpTrackInstEvent,LastUpdatePosition)
 VERIFY_CLASS_SIZE_NODIE(UInterpTrackInstEvent)
 VERIFY_CLASS_OFFSET_NODIE(U,InterpTrackInstFaceFX,LastUpdatePosition)
 VERIFY_CLASS_SIZE_NODIE(UInterpTrackInstFaceFX)
+VERIFY_CLASS_SIZE_NODIE(UInterpTrackInstFaceFXRegister)
 VERIFY_CLASS_SIZE_NODIE(UInterpTrackInstFade)
 VERIFY_CLASS_OFFSET_NODIE(U,InterpTrackInstFloatMaterialParam,ResetFloat)
 VERIFY_CLASS_SIZE_NODIE(UInterpTrackInstFloatMaterialParam)
@@ -1876,6 +1932,8 @@ VERIFY_CLASS_SIZE_NODIE(UInterpTrackInstSlomo)
 VERIFY_CLASS_OFFSET_NODIE(U,InterpTrackInstSound,LastUpdatePosition)
 VERIFY_CLASS_OFFSET_NODIE(U,InterpTrackInstSound,PlayAudioComp)
 VERIFY_CLASS_SIZE_NODIE(UInterpTrackInstSound)
+VERIFY_CLASS_OFFSET_NODIE(U,InterpTrackInstSoundFade,storedSoundFade)
+VERIFY_CLASS_SIZE_NODIE(UInterpTrackInstSoundFade)
 VERIFY_CLASS_OFFSET_NODIE(U,InterpTrackInstToggle,Action)
 VERIFY_CLASS_OFFSET_NODIE(U,InterpTrackInstToggle,LastUpdatePosition)
 VERIFY_CLASS_SIZE_NODIE(UInterpTrackInstToggle)
@@ -1900,6 +1958,7 @@ VERIFY_CLASS_SIZE_NODIE(UInterpTrackSkelControlScale)
 VERIFY_CLASS_SIZE_NODIE(UInterpTrackSlomo)
 VERIFY_CLASS_OFFSET_NODIE(U,InterpTrackSound,Sounds)
 VERIFY_CLASS_SIZE_NODIE(UInterpTrackSound)
+VERIFY_CLASS_SIZE_NODIE(UInterpTrackSoundFade)
 VERIFY_CLASS_OFFSET_NODIE(U,InterpTrackToggle,ToggleTrack)
 VERIFY_CLASS_SIZE_NODIE(UInterpTrackToggle)
 VERIFY_CLASS_OFFSET_NODIE(U,InterpTrackVectorBase,VectorTrack)

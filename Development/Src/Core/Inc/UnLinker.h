@@ -1327,4 +1327,3 @@ typedef DWORD ELazyLoaderFlags;
  * Mask of all flags
  */
 #define	LLF_AllFlags				0xFFFFFFFF
-

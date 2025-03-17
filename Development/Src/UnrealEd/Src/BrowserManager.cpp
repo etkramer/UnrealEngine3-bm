@@ -91,6 +91,11 @@ void UBrowserManager::CreateBrowserPanes(wxWindow* Parent,
 	// For each entry, create the browser pane associated with it
 	for (INT Index = 0; Index < BrowserPanes.Num(); Index++)
 	{
+#if BATMAN
+		// Leave this broken for now
+		break;
+#endif
+
 		// Prevent the user from doing harmful things by hand editing these
 		// values to incorrect ones
 		if (BrowserPanes(Index).PaneID != Index)

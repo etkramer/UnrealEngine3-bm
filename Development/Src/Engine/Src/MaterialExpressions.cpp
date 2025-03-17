@@ -86,6 +86,15 @@ IMPLEMENT_CLASS(UMaterialExpressionDeriveNormalZ);
 IMPLEMENT_CLASS(UMaterialExpressionConstantBiasScale);
 IMPLEMENT_CLASS(UMaterialExpressionDynamicParameter);
 
+IMPLEMENT_CLASS(UMaterialExpressionAddNormalMap);
+IMPLEMENT_CLASS(UMaterialExpressionLightingDiffuseLambert);
+IMPLEMENT_CLASS(UMaterialExpressionLightingSpecularBlinnPhong);
+IMPLEMENT_CLASS(UMaterialExpressionLightingSpecularHeidrichSeidel);
+IMPLEMENT_CLASS(UMaterialExpressionLightingSpecularPhong);
+IMPLEMENT_CLASS(UMaterialExpressionMax);
+IMPLEMENT_CLASS(UMaterialExpressionMin);
+IMPLEMENT_CLASS(UMaterialExpressionNormal);
+
 #define SWAP_REFERENCE_TO( ExpressionInput, ToBeRemovedExpression, ToReplaceWithExpression )	\
 if( ExpressionInput.Expression == ToBeRemovedExpression )										\
 {																								\

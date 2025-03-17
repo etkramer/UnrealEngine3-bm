@@ -101,6 +101,12 @@ IMPLEMENT_CLASS(UInterpTrackInstVisibility);
 IMPLEMENT_CLASS(UInterpTrackParticleReplay);
 IMPLEMENT_CLASS(UInterpTrackInstParticleReplay);
 
+IMPLEMENT_CLASS(UInterpTrackFaceFXRegister);
+IMPLEMENT_CLASS(UInterpTrackInstFaceFXRegister);
+
+IMPLEMENT_CLASS(UInterpTrackSoundFade);
+IMPLEMENT_CLASS(UInterpTrackInstSoundFade);
+
 
 /*-----------------------------------------------------------------------------
 	Macros for making arrays-of-structs type tracks easier
@@ -7789,4 +7795,3 @@ void UInterpTrackInstParticleReplay::RestoreActorState(UInterpTrack* Track)
 		}
 	}
 }
-

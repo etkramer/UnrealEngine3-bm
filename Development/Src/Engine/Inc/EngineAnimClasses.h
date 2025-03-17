@@ -2524,6 +2524,46 @@ public:
 	virtual void HandleSliderMove(FLOAT NewSliderValue);
 };
 
+struct FBoneAngleMorph
+{
+    FLOAT Angle;
+    FLOAT TargetWeight;
+
+    /** Constructors */
+    FBoneAngleMorph() {}
+    FBoneAngleMorph(EEventParm)
+    {
+        appMemzero(this, sizeof(FBoneAngleMorph));
+    }
+};
+
+class UMorphNodeWeightByBoneAngle : public UMorphNodeWeightBase
+{
+public:
+    //## BEGIN PROPS MorphNodeWeightByBoneAngle
+    FLOAT Angle;
+    FLOAT NodeWeight;
+    FName BaseBoneName;
+    BYTE BaseBoneAxis;
+    BYTE AngleBoneAxis;
+    BITFIELD bInvertBaseBoneAxis:1 GCC_BITFIELD_MAGIC;
+    BITFIELD bInvertAngleBoneAxis:1;
+    BITFIELD bControlMaterialParameter:1;
+    FName AngleBoneName;
+    INT MaterialSlotId;
+    FName ScalarParameterName;
+    class UMaterialInstanceConstant* MaterialInstanceConstant;
+    TArrayNoInit<struct FBoneAngleMorph> WeightArray;
+    //## END PROPS MorphNodeWeightByBoneAngle
+
+    DECLARE_CLASS(UMorphNodeWeightByBoneAngle,UMorphNodeWeightBase,0,Engine)
+	virtual void GetActiveMorphs(TArray<FActiveMorph>& OutMorphs);
+	/** Render on 3d viewport when node is selected. */
+	virtual void Render(const FSceneView* View, FPrimitiveDrawInterface* PDI);
+	/** Draw on 3d viewport canvas when node is selected */
+	virtual void Draw(FViewport* Viewport, FCanvas* Canvas, const FSceneView* View);
+};
+
 class USkelControlBase : public UAnimObject
 {
 public:
@@ -3383,6 +3423,7 @@ DECLARE_NATIVE_TYPE(Engine,UMorphNodeBase);
 DECLARE_NATIVE_TYPE(Engine,UMorphNodePose);
 DECLARE_NATIVE_TYPE(Engine,UMorphNodeWeight);
 DECLARE_NATIVE_TYPE(Engine,UMorphNodeWeightBase);
+DECLARE_NATIVE_TYPE(Engine,UMorphNodeWeightByBoneAngle);
 DECLARE_NATIVE_TYPE(Engine,UMorphTargetSet);
 DECLARE_NATIVE_TYPE(Engine,UMorphWeightSequence);
 DECLARE_NATIVE_TYPE(Engine,USkelControlBase);
@@ -3464,6 +3505,7 @@ DECLARE_NATIVE_TYPE(Engine,ASkeletalMeshActorMAT);
 	UMorphNodeWeight::StaticClass(); \
 	GNativeLookupFuncs[Lookup++] = &FindEngineUMorphNodeWeightNative; \
 	UMorphNodeWeightBase::StaticClass(); \
+	UMorphNodeWeightByBoneAngle::StaticClass(); \
 	UMorphTarget::StaticClass(); \
 	UMorphTargetSet::StaticClass(); \
 	GNativeLookupFuncs[Lookup++] = &FindEngineUMorphTargetSetNative; \
@@ -3801,6 +3843,9 @@ VERIFY_CLASS_OFFSET_NODIE(U,MorphNodeWeight,NodeWeight)
 VERIFY_CLASS_SIZE_NODIE(UMorphNodeWeight)
 VERIFY_CLASS_OFFSET_NODIE(U,MorphNodeWeightBase,NodeConns)
 VERIFY_CLASS_SIZE_NODIE(UMorphNodeWeightBase)
+VERIFY_CLASS_OFFSET_NODIE(U,MorphNodeWeightByBoneAngle,Angle)
+VERIFY_CLASS_OFFSET_NODIE(U,MorphNodeWeightByBoneAngle,WeightArray)
+VERIFY_CLASS_SIZE_NODIE(UMorphNodeWeightByBoneAngle)
 VERIFY_CLASS_OFFSET_NODIE(U,MorphTarget,MorphLODModels)
 VERIFY_CLASS_SIZE_NODIE(UMorphTarget)
 VERIFY_CLASS_OFFSET_NODIE(U,MorphTargetSet,Targets)
