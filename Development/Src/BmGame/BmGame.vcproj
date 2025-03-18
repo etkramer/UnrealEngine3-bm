@@ -114,6 +114,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\Src\BmAnimNodes.cpp"
+			>
+			</File>
+			<File
 				RelativePath=".\Src\NullSurveys.cpp"
 				>
 			</File>

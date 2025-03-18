@@ -151,7 +151,11 @@ void GCreateMalloc()
 #endif
 
 #elif _DEBUG && !USE_MALLOC_PROFILER
+#if BATMAN
+	GMalloc = new FMallocWindows();
+#else
 	GMalloc = new FMallocDebug();
+#endif
 #elif PLATFORM_UNIX
 	GMalloc = new FMallocAnsi();
 #elif _WINDOWS
@@ -3037,5 +3041,3 @@ HRESULT __stdcall DebugConsoleCmdProcessor( const CHAR* Command, CHAR* Response,
 }
 
 #endif
-
-

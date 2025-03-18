@@ -7,7 +7,5 @@
 #include "EngineParticleClasses.h"
 #include "EnginePhysicsClasses.h"
 #include "EngineSequenceClasses.h"
+#include "EngineAnimClasses.h"
 #include "BmGameClasses.h"
-
-
-

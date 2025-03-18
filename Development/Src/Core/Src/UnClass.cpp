@@ -1870,6 +1870,8 @@ void UClass::AddReferencedObjects( TArray<UObject*>& ObjectArray )
 	}
 }
 
+static int I = 0;
+
 UObject* UClass::GetDefaultObject( UBOOL bForce /* = FALSE */ )
 {
 	if ( ClassDefaultObject == NULL )
@@ -1902,6 +1904,12 @@ UObject* UClass::GetDefaultObject( UBOOL bForce /* = FALSE */ )
 			if ( ParentDefaultObject != NULL || this == UObject::StaticClass() )
 			{
 				ClassDefaultObject = StaticConstructObject(this, GetOuter(), NAME_None, LoadFlags, ParentDefaultObject);
+#if BATMAN
+				if (GetName() == "AnimNode")
+				{
+					warnf(TEXT("Constructed CDO %s for AnimNode"), *ClassDefaultObject->GetName());
+				}
+#endif
 
 				// Perform static construction.
 				if( HasAnyFlags(RF_Native) && ClassDefaultObject != NULL )
@@ -1919,6 +1927,24 @@ UObject* UClass::GetDefaultObject( UBOOL bForce /* = FALSE */ )
 			}
 		}
 	}
+#if BATMAN
+	else if (GetName() == "AnimNode")
+	{
+		warnf(TEXT("Returning CDO %s (0x%04x) for AnimNode (%d)"), *ClassDefaultObject->GetName(), (INT)(void*)ClassDefaultObject, I);
+		if (I == 6)
+		{
+			// This is the last time AnimNode is valid... is the caller about to do something to it?
+			warnf(TEXT("CONFIRM last valid use of CDO"));
+		}
+		else if (I == 7)
+		{
+			warnf(TEXT("CONFIRM first invalid use of CDO"));
+		}
+		I++;
+		//ClassDefaultObject->AddToRoot();
+	}
+#endif
+
 	return ClassDefaultObject;
 }
 
@@ -2370,6 +2396,12 @@ void UClass::Serialize( FArchive& Ar )
 		check((DWORD)Align(GetPropertiesSize(), GetMinAlignment()) >= sizeof(UObject));
 		check(!GetSuperClass() || !GetSuperClass()->HasAnyFlags(RF_NeedLoad));
 		Ar << ClassDefaultObject;
+#if BATMAN
+		if (GetName() == "AnimNode")
+		{
+			warnf(TEXT("Serialized CDO %s for AnimNode (1)"), *ClassDefaultObject->GetName());
+		}
+#endif
 
 		// In order to ensure that the CDO inherits config & localized property values from the parent class, we can't initialize the CDO until
 		// the parent class's CDO has serialized its data from disk and called LoadConfig/LoadLocalized - this occurs in ULinkerLoad::Preload so the
@@ -2401,6 +2433,12 @@ void UClass::Serialize( FArchive& Ar )
 		if ( !Ar.IsIgnoringArchetypeRef() )
 		{
 			Ar << ClassDefaultObject;
+#if BATMAN
+			if (GetName() == "AnimNode")
+			{
+				warnf(TEXT("Serialized CDO %s for AnimNode (2)"), *ClassDefaultObject->GetName());
+			}
+#endif
 		}
 		else if ( ClassDefaultObject != NULL )
 		{

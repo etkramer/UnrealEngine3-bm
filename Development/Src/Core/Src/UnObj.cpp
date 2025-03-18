@@ -7175,6 +7175,15 @@ UObject* UObject::StaticAllocateObject
 		BaseClass = InClass;
 	}
 
+#if BATMAN
+	if (ObjectArchetype && ObjectArchetype->Name == NAME_None)
+	{
+		ObjectArchetype = NULL;
+		//UObject* CDO = InClass->GetDefaultObject();
+		warnf(TEXT("ObjectArchetype for %s had name None"), *InName.ToString());
+	}
+#endif
+
 	INT DefaultsCount = ObjectArchetype
 		? ObjectArchetype->GetClass()->GetPropertiesSize()
 		: BaseClass->GetPropertiesSize();

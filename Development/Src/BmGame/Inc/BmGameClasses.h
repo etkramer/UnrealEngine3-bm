@@ -28,56 +28,59 @@
 #define AUTOGENERATE_FUNCTION(cls,idx,name)
 #endif
 
-AUTOGENERATE_NAME(SampleEvent)
 
 #ifndef NAMES_ONLY
 
 #ifndef INCLUDED_BMGAME_CLASSES
 #define INCLUDED_BMGAME_CLASSES 1
 
-struct SampleClass_eventSampleEvent_Parms
-{
-    INT I;
-    SampleClass_eventSampleEvent_Parms(EEventParm)
-    {
-    }
-};
-class ASampleClass : public AActor
+class URAnimNode_AnimCapture : public UAnimNodeBlendBase
 {
 public:
-    //## BEGIN PROPS SampleClass
-    INT MyInteger;
-    FStringNoInit MyString;
-    BITFIELD MyBool:1;
-    FVector MyVector;
-    FString* MyPointer;
-    //## END PROPS SampleClass
+    //## BEGIN PROPS RAnimNode_AnimCapture
+    TArrayNoInit<FBoneAtom> SavedAtoms;
+    //## END PROPS RAnimNode_AnimCapture
 
-    virtual INT SampleNativeFunction(INT I,const FString& S,FVector V);
-    DECLARE_FUNCTION(execSampleNativeFunction)
+    virtual void Capture(class USkeletalMeshComponent* Mesh);
+    DECLARE_FUNCTION(execCapture)
     {
-        P_GET_INT(I);
-        P_GET_STR(S);
-        P_GET_STRUCT(FVector,V);
+        P_GET_OBJECT(USkeletalMeshComponent,Mesh);
         P_FINISH;
-        *(INT*)Result=SampleNativeFunction(I,S,V);
+        Capture(Mesh);
     }
-    void eventSampleEvent(INT I)
-    {
-        SampleClass_eventSampleEvent_Parms Parms(EC_EventParm);
-        Parms.I=I;
-        ProcessEvent(FindFunctionChecked(BMGAME_SampleEvent),&Parms);
-    }
-    DECLARE_CLASS(ASampleClass,AActor,0|CLASS_Config,BmGame)
-    static const TCHAR* StaticConfigName() {return TEXT("Game");}
+    DECLARE_CLASS(URAnimNode_AnimCapture,UAnimNodeBlendBase,0,BmGame)
+    NO_DEFAULT_CONSTRUCTOR(URAnimNode_AnimCapture)
+};
 
-    NO_DEFAULT_CONSTRUCTOR(ASampleClass)
+class URAnimNode_AnimTransform : public UAnimNodeSequence
+{
+public:
+    //## BEGIN PROPS RAnimNode_AnimTransform
+    FRotator AT_Rotation;
+    FVector AT_Translation;
+    FRotator AT_FinalRotation;
+    FVector AT_FinalTranslation;
+    //## END PROPS RAnimNode_AnimTransform
+
+    DECLARE_CLASS(URAnimNode_AnimTransform,UAnimNodeSequence,0,BmGame)
+    NO_DEFAULT_CONSTRUCTOR(URAnimNode_AnimTransform)
+};
+
+class URAnimNode_Bat : public UAnimNode
+{
+public:
+    //## BEGIN PROPS RAnimNode_Bat
+    FLOAT RandomTimeOffset;
+    //## END PROPS RAnimNode_Bat
+
+    DECLARE_CLASS(URAnimNode_Bat,UAnimNode,0,BmGame)
+    NO_DEFAULT_CONSTRUCTOR(URAnimNode_Bat)
 };
 
 #endif // !INCLUDED_BMGAME_CLASSES
 #endif // !NAMES_ONLY
 
-AUTOGENERATE_FUNCTION(ASampleClass,-1,execSampleNativeFunction);
+AUTOGENERATE_FUNCTION(URAnimNode_AnimCapture,-1,execCapture);
 
 #ifndef NAMES_ONLY
 #undef AUTOGENERATE_NAME
@@ -88,29 +91,37 @@ AUTOGENERATE_FUNCTION(ASampleClass,-1,execSampleNativeFunction);
 #ifndef BMGAME_NATIVE_DEFS
 #define BMGAME_NATIVE_DEFS
 
-DECLARE_NATIVE_TYPE(BmGame,ASampleClass);
+DECLARE_NATIVE_TYPE(BmGame,URAnimNode_AnimCapture);
+DECLARE_NATIVE_TYPE(BmGame,URAnimNode_AnimTransform);
+DECLARE_NATIVE_TYPE(BmGame,URAnimNode_Bat);
 
 #define AUTO_INITIALIZE_REGISTRANTS_BMGAME \
-	ASampleClass::StaticClass(); \
-	GNativeLookupFuncs[Lookup++] = &FindBmGameASampleClassNative; \
+	URAnimNode_AnimCapture::StaticClass(); \
+	GNativeLookupFuncs[Lookup++] = &FindBmGameURAnimNode_AnimCaptureNative; \
+	URAnimNode_AnimTransform::StaticClass(); \
+	URAnimNode_Bat::StaticClass(); \
 
 #endif // BMGAME_NATIVE_DEFS
 
 #ifdef NATIVES_ONLY
-NATIVE_INFO(ASampleClass) GBmGameASampleClassNatives[] = 
+NATIVE_INFO(URAnimNode_AnimCapture) GBmGameURAnimNode_AnimCaptureNatives[] = 
 { 
-	MAP_NATIVE(ASampleClass,execSampleNativeFunction)
+	MAP_NATIVE(URAnimNode_AnimCapture,execCapture)
 	{NULL,NULL}
 };
-IMPLEMENT_NATIVE_HANDLER(BmGame,ASampleClass);
+IMPLEMENT_NATIVE_HANDLER(BmGame,URAnimNode_AnimCapture);
 
 #endif // NATIVES_ONLY
 #endif // STATIC_LINKING_MOJO
 
 #ifdef VERIFY_CLASS_SIZES
-VERIFY_CLASS_OFFSET_NODIE(A,SampleClass,MyInteger)
-VERIFY_CLASS_OFFSET_NODIE(A,SampleClass,MyPointer)
-VERIFY_CLASS_SIZE_NODIE(ASampleClass)
+VERIFY_CLASS_OFFSET_NODIE(U,RAnimNode_AnimCapture,SavedAtoms)
+VERIFY_CLASS_SIZE_NODIE(URAnimNode_AnimCapture)
+VERIFY_CLASS_OFFSET_NODIE(U,RAnimNode_AnimTransform,AT_Rotation)
+VERIFY_CLASS_OFFSET_NODIE(U,RAnimNode_AnimTransform,AT_FinalTranslation)
+VERIFY_CLASS_SIZE_NODIE(URAnimNode_AnimTransform)
+VERIFY_CLASS_OFFSET_NODIE(U,RAnimNode_Bat,RandomTimeOffset)
+VERIFY_CLASS_SIZE_NODIE(URAnimNode_Bat)
 #endif // VERIFY_CLASS_SIZES
 #endif // !ENUMS_ONLY
 
