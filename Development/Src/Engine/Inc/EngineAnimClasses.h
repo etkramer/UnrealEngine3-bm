@@ -2241,9 +2241,11 @@ public:
     TArrayNoInit<FBoneAtom> SavedPose;
     BITFIELD bUseSavedPose:1;
     BITFIELD bBeingEdited:1;
+    BITFIELD PreviewUseComposeSkeletonLite:1;
     INT MorphConnDrawY;
     FLOAT PreviewPlayRate;
     class USkeletalMesh* PreviewSkelMesh;
+    class USkeletalMesh* PreviewHeadSkelMesh;
     class USkeletalMesh* SocketSkelMesh;
     class UStaticMesh* SocketStaticMesh;
     FName SocketName;
