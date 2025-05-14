@@ -2223,7 +2223,6 @@ public:
     virtual FString ConsoleCommand(const FString& Command,UBOOL bWriteToLog=TRUE);
     void Sleep(FLOAT Seconds);
     void FinishAnim(class UAnimNodeSequence* SeqNode);
-    void SetCollision(UBOOL bNewColActors=FALSE,UBOOL bNewBlockActors=FALSE,UBOOL bNewIgnoreEncroachers=FALSE);
     void SetCollisionSize(FLOAT NewRadius,FLOAT NewHeight);
     void SetCollisionType(BYTE NewCollisionType);
     void SetDrawScale(FLOAT NewScale);
@@ -2233,21 +2232,15 @@ public:
     UBOOL SetRotation(FRotator NewRotation);
     virtual BYTE MovingWhichWay(FLOAT& Amount);
     UBOOL SetLocationForTest(FVector NewLocation,UBOOL bNoCheck);
-    void SetZone(UBOOL bForceRefresh);
     UBOOL SetRelativeRotation(FRotator NewRotation);
     UBOOL SetRelativeLocation(FVector NewLocation);
-    void SetHardAttach(UBOOL bNewHardAttach=FALSE);
     INT fixedTurn(INT Current,INT Desired,INT DeltaRate);
-    UBOOL MoveSmooth(FVector Delta);
     void AutonomousPhysics(FLOAT DeltaSeconds);
     virtual FLOAT GetTerminalVelocity();
     virtual FVector GetZoneVelocity();
-    void SetBase(class AActor* NewBase,FVector NewFloor=FVector(EC_EventParm),class USkeletalMeshComponent* SkelComp=NULL,FName AttachName=NAME_None);
     void SetOwner(class AActor* NewOwner);
     virtual void FindBase();
-    UBOOL IsBasedOn(class AActor* TestActor);
     virtual class AActor* GetBaseMost();
-    UBOOL IsOwnedBy(class AActor* TestActor);
     void SetForcedInitialReplicatedProperty(class UProperty* PropToReplicate,UBOOL bAdd);
     void FlushPersistentDebugLines();
     void DrawDebugLine(FVector LineStart,FVector LineEnd,BYTE R,BYTE G,BYTE B,UBOOL bPersistentLines=FALSE);
@@ -2259,7 +2252,6 @@ public:
     void ChartData(const FString& DataName,FLOAT DataValue);
     virtual void SetHidden(UBOOL bNewHidden);
     void SetOnlyOwnerSee(UBOOL bNewOnlyOwnerSee);
-    void SetPhysics(BYTE newPhysics,UBOOL WakePhysics=TRUE);
     void Clock(FLOAT& Time);
     void UnClock(FLOAT& Time);
     void AttachComponent(class UActorComponent* NewComponent);
@@ -2267,17 +2259,12 @@ public:
     void ReattachComponent(class UActorComponent* ComponentToReattach);
     void SetTickGroup(BYTE NewTickGroup);
     UBOOL ClampRotation(FRotator& out_Rot,FRotator rBase,FRotator rUpperLimits,FRotator rLowerLimits);
-    class AActor* Trace(FVector& HitLocation,FVector& HitNormal,FVector TraceEnd,FVector TraceStart=FVector(EC_EventParm),UBOOL bTraceActors=FALSE,FVector Extent=FVector(EC_EventParm),struct FTraceHitInfo* HitInfo=NULL,INT ExtraTraceFlags=0);
     UBOOL TraceComponent(FVector& HitLocation,FVector& HitNormal,class UPrimitiveComponent* InComponent,FVector TraceEnd,FVector TraceStart=FVector(EC_EventParm),FVector Extent=FVector(EC_EventParm),struct FTraceHitInfo* HitInfo=NULL);
-    UBOOL PointCheckComponent(class UPrimitiveComponent* InComponent,FVector PointLocation,FVector PointExtent);
-    UBOOL FastTrace(FVector TraceEnd,FVector TraceStart=FVector(EC_EventParm),FVector BoxExtent=FVector(EC_EventParm),UBOOL bTraceBullet=FALSE);
     UBOOL TraceAllPhysicsAssetInteractions(class USkeletalMeshComponent* SkelMeshComp,FVector EndTrace,FVector StartTrace,TArray<struct FImpactInfo>& out_Hits,FVector Extent=FVector(EC_EventParm));
     UBOOL FindSpot(FVector BoxExtent,FVector& SpotLocation,UBOOL DontEaryOut=FALSE);
     UBOOL ContainsPoint(FVector Spot);
-    UBOOL IsOverlapping(class AActor* A);
-    void GetComponentsBoundingBox(FBox& ActorBox);
-    virtual void GetBoundingCylinder(FLOAT& CollisionRadius,FLOAT& CollisionHeight);
-    UBOOL Destroy();
+    void GetComponentsBoundingBox(FBox& ActorBox) const;
+    virtual void GetBoundingCylinder(FLOAT& CollisionRadius,FLOAT& CollisionHeight) const;
     void SetTimer(FLOAT InRate,UBOOL inbLoop=FALSE,FName inTimerFunc=FName(TEXT("Timer")),class UObject* inObj=NULL);
     void ClearTimer(FName inTimerFunc=FName(TEXT("Timer")),class UObject* inObj=NULL);
     void PauseTimer(UBOOL bPause,FName inTimerFunc=FName(TEXT("Timer")),class UObject* inObj=NULL);
@@ -2285,7 +2272,6 @@ public:
     FLOAT GetTimerCount(FName inTimerFunc=FName(TEXT("Timer")),class UObject* inObj=NULL);
     FLOAT GetTimerRate(FName TimerFuncName=FName(TEXT("Timer")),class UObject* inObj=NULL);
     class UAudioComponent* CreateAudioComponent(class USoundCue* InSoundCue,UBOOL bPlay=FALSE,UBOOL bStopWhenOwnerDestroyed=FALSE,UBOOL bUseLocation=FALSE,FVector SourceLocation=FVector(EC_EventParm),UBOOL bAttachToSelf=TRUE);
-    void PlaySound(class USoundCue* InSoundCue,UBOOL bNotReplicated=FALSE,UBOOL bNoRepToOwner=FALSE,UBOOL bStopWhenOwnerDestroyed=FALSE,FVector SoundLocation=FVector(EC_EventParm),UBOOL bNoRepToRelevant=FALSE);
     void EnableEffect(FName effectToEnable,UBOOL Enable=TRUE);
     UBOOL EffectEnabled(FName effectToEnable);
     void EffectValue(FName effectToEnable,FLOAT Value);
@@ -2297,7 +2283,6 @@ public:
     void SetMasterMixBin(class UMixBin* mixToStart);
     void MakeNoise(FLOAT Loudness,FName NoiseType=NAME_None);
     UBOOL PlayerCanSeeMe();
-    UBOOL SuggestTossVelocity(FVector& TossVelocity,FVector Destination,FVector Start,FLOAT TossSpeed,FLOAT BaseTossZ=0,FLOAT DesiredZPct=0,FVector CollisionSize=FVector(EC_EventParm),FLOAT TerminalVelocity=0,FLOAT OverrideGravityZ=0);
     FVector GetDestination(class AController* C);
     FString GetURLMap();
     virtual FLOAT GetGravityZ();
@@ -2305,13 +2290,13 @@ public:
     virtual void PrestreamTextures(FLOAT Seconds,UBOOL bEnableStreaming);
     virtual UBOOL IsPlayerOwned();
     virtual BYTE GetTeamNum();
-    virtual FVector GetTargetLocation(class AActor* RequestedBy=NULL,UBOOL bRequestAlternateLoc=FALSE);
+    virtual FVector GetTargetLocation(class AActor* RequestedBy=NULL,UBOOL bRequestAlternateLoc=FALSE) const;
     virtual FVector GetFOVCheckLocation();
     virtual void SetHUDLocation(FVector NewHUDLocation);
     virtual void NativePostRenderFor(class APlayerController* PC,class UCanvas* Canvas,FVector CameraPosition,FVector CameraDir);
     FGuid GetPackageGuid(FName PackageName);
-    UBOOL IsInPersistentLevel();
-    UBOOL SupportsKismetModification(class USequenceOp* AskingOp,FString& Reason);
+    UBOOL IsInPersistentLevel() const;
+    UBOOL SupportsKismetModification(class USequenceOp* AskingOp,FString& Reason) const;
     DECLARE_FUNCTION(execForceUpdateComponents)
     {
         P_GET_UBOOL_OPTX(bCollisionUpdate,FALSE);
@@ -2344,14 +2329,7 @@ public:
         P_FINISH;
         FinishAnim(SeqNode);
     }
-    DECLARE_FUNCTION(execSetCollision)
-    {
-        P_GET_UBOOL_OPTX(bNewColActors,FALSE);
-        P_GET_UBOOL_OPTX(bNewBlockActors,FALSE);
-        P_GET_UBOOL_OPTX(bNewIgnoreEncroachers,FALSE);
-        P_FINISH;
-        SetCollision(bNewColActors,bNewBlockActors,bNewIgnoreEncroachers);
-    }
+    DECLARE_FUNCTION(execSetCollision);
     DECLARE_FUNCTION(execSetCollisionSize)
     {
         P_GET_FLOAT(NewRadius);
@@ -2408,12 +2386,7 @@ public:
         P_FINISH;
         *(UBOOL*)Result=SetLocationForTest(NewLocation,bNoCheck);
     }
-    DECLARE_FUNCTION(execSetZone)
-    {
-        P_GET_UBOOL(bForceRefresh);
-        P_FINISH;
-        SetZone(bForceRefresh);
-    }
+    DECLARE_FUNCTION(execSetZone);
     DECLARE_FUNCTION(execSetRelativeRotation)
     {
         P_GET_STRUCT(FRotator,NewRotation);
@@ -2426,12 +2399,7 @@ public:
         P_FINISH;
         *(UBOOL*)Result=SetRelativeLocation(NewLocation);
     }
-    DECLARE_FUNCTION(execSetHardAttach)
-    {
-        P_GET_UBOOL_OPTX(bNewHardAttach,FALSE);
-        P_FINISH;
-        SetHardAttach(bNewHardAttach);
-    }
+    DECLARE_FUNCTION(execSetHardAttach);
     DECLARE_FUNCTION(execfixedTurn)
     {
         P_GET_INT(Current);
@@ -2440,12 +2408,7 @@ public:
         P_FINISH;
         *(INT*)Result=fixedTurn(Current,Desired,DeltaRate);
     }
-    DECLARE_FUNCTION(execMoveSmooth)
-    {
-        P_GET_STRUCT(FVector,Delta);
-        P_FINISH;
-        *(UBOOL*)Result=MoveSmooth(Delta);
-    }
+    DECLARE_FUNCTION(execMoveSmooth);
     DECLARE_FUNCTION(execAutonomousPhysics)
     {
         P_GET_FLOAT(DeltaSeconds);
@@ -2462,15 +2425,7 @@ public:
         P_FINISH;
         *(FVector*)Result=GetZoneVelocity();
     }
-    DECLARE_FUNCTION(execSetBase)
-    {
-        P_GET_OBJECT(AActor,NewBase);
-        P_GET_STRUCT_OPTX(FVector,NewFloor,FVector(EC_EventParm));
-        P_GET_OBJECT_OPTX(USkeletalMeshComponent,SkelComp,NULL);
-        P_GET_NAME_OPTX(AttachName,NAME_None);
-        P_FINISH;
-        SetBase(NewBase,NewFloor,SkelComp,AttachName);
-    }
+    DECLARE_FUNCTION(execSetBase);
     DECLARE_FUNCTION(execSetOwner)
     {
         P_GET_OBJECT(AActor,NewOwner);
@@ -2482,23 +2437,13 @@ public:
         P_FINISH;
         FindBase();
     }
-    DECLARE_FUNCTION(execIsBasedOn)
-    {
-        P_GET_OBJECT(AActor,TestActor);
-        P_FINISH;
-        *(UBOOL*)Result=IsBasedOn(TestActor);
-    }
+    DECLARE_FUNCTION(execIsBasedOn);
     DECLARE_FUNCTION(execGetBaseMost)
     {
         P_FINISH;
         *(class AActor**)Result=GetBaseMost();
     }
-    DECLARE_FUNCTION(execIsOwnedBy)
-    {
-        P_GET_OBJECT(AActor,TestActor);
-        P_FINISH;
-        *(UBOOL*)Result=IsOwnedBy(TestActor);
-    }
+    DECLARE_FUNCTION(execIsOwnedBy);
     DECLARE_FUNCTION(execSetForcedInitialReplicatedProperty)
     {
         P_GET_OBJECT(UProperty,PropToReplicate);
@@ -2599,13 +2544,7 @@ public:
         P_FINISH;
         SetOnlyOwnerSee(bNewOnlyOwnerSee);
     }
-    DECLARE_FUNCTION(execSetPhysics)
-    {
-        P_GET_BYTE(newPhysics);
-        P_GET_UBOOL_OPTX(WakePhysics,TRUE);
-        P_FINISH;
-        SetPhysics(newPhysics,WakePhysics);
-    }
+    DECLARE_FUNCTION(execSetPhysics);
     DECLARE_FUNCTION(execClock)
     {
         P_GET_FLOAT_REF(Time);
@@ -2651,19 +2590,7 @@ public:
         P_FINISH;
         *(UBOOL*)Result=ClampRotation(out_Rot,rBase,rUpperLimits,rLowerLimits);
     }
-    DECLARE_FUNCTION(execTrace)
-    {
-        P_GET_STRUCT_REF(FVector,HitLocation);
-        P_GET_STRUCT_REF(FVector,HitNormal);
-        P_GET_STRUCT(FVector,TraceEnd);
-        P_GET_STRUCT_OPTX(FVector,TraceStart,FVector(EC_EventParm));
-        P_GET_UBOOL_OPTX(bTraceActors,FALSE);
-        P_GET_STRUCT_OPTX(FVector,Extent,FVector(EC_EventParm));
-        P_GET_STRUCT_OPTX_REF(struct FTraceHitInfo,HitInfo,FTraceHitInfo(EC_EventParm));
-        P_GET_INT_OPTX(ExtraTraceFlags,0);
-        P_FINISH;
-        *(class AActor**)Result=Trace(HitLocation,HitNormal,TraceEnd,TraceStart,bTraceActors,Extent,pHitInfo ? &HitInfo : NULL,ExtraTraceFlags);
-    }
+    DECLARE_FUNCTION(execTrace);
     DECLARE_FUNCTION(execTraceComponent)
     {
         P_GET_STRUCT_REF(FVector,HitLocation);
@@ -2676,23 +2603,8 @@ public:
         P_FINISH;
         *(UBOOL*)Result=TraceComponent(HitLocation,HitNormal,InComponent,TraceEnd,TraceStart,Extent,pHitInfo ? &HitInfo : NULL);
     }
-    DECLARE_FUNCTION(execPointCheckComponent)
-    {
-        P_GET_OBJECT(UPrimitiveComponent,InComponent);
-        P_GET_STRUCT(FVector,PointLocation);
-        P_GET_STRUCT(FVector,PointExtent);
-        P_FINISH;
-        *(UBOOL*)Result=PointCheckComponent(InComponent,PointLocation,PointExtent);
-    }
-    DECLARE_FUNCTION(execFastTrace)
-    {
-        P_GET_STRUCT(FVector,TraceEnd);
-        P_GET_STRUCT_OPTX(FVector,TraceStart,FVector(EC_EventParm));
-        P_GET_STRUCT_OPTX(FVector,BoxExtent,FVector(EC_EventParm));
-        P_GET_UBOOL_OPTX(bTraceBullet,FALSE);
-        P_FINISH;
-        *(UBOOL*)Result=FastTrace(TraceEnd,TraceStart,BoxExtent,bTraceBullet);
-    }
+    DECLARE_FUNCTION(execPointCheckComponent);
+    DECLARE_FUNCTION(execFastTrace);
     DECLARE_FUNCTION(execTraceAllPhysicsAssetInteractions)
     {
         P_GET_OBJECT(USkeletalMeshComponent,SkelMeshComp);
@@ -2717,12 +2629,7 @@ public:
         P_FINISH;
         *(UBOOL*)Result=ContainsPoint(Spot);
     }
-    DECLARE_FUNCTION(execIsOverlapping)
-    {
-        P_GET_OBJECT(AActor,A);
-        P_FINISH;
-        *(UBOOL*)Result=IsOverlapping(A);
-    }
+    DECLARE_FUNCTION(execIsOverlapping);
     DECLARE_FUNCTION(execGetComponentsBoundingBox)
     {
         P_GET_STRUCT_REF(FBox,ActorBox);
@@ -2737,11 +2644,7 @@ public:
         GetBoundingCylinder(CollisionRadius,CollisionHeight);
     }
     DECLARE_FUNCTION(execSpawn);
-    DECLARE_FUNCTION(execDestroy)
-    {
-        P_FINISH;
-        *(UBOOL*)Result=Destroy();
-    }
+    DECLARE_FUNCTION(execDestroy);
     DECLARE_FUNCTION(execSetTimer)
     {
         P_GET_FLOAT(InRate);
@@ -2798,17 +2701,7 @@ public:
         P_FINISH;
         *(class UAudioComponent**)Result=CreateAudioComponent(InSoundCue,bPlay,bStopWhenOwnerDestroyed,bUseLocation,SourceLocation,bAttachToSelf);
     }
-    DECLARE_FUNCTION(execPlaySound)
-    {
-        P_GET_OBJECT(USoundCue,InSoundCue);
-        P_GET_UBOOL_OPTX(bNotReplicated,FALSE);
-        P_GET_UBOOL_OPTX(bNoRepToOwner,FALSE);
-        P_GET_UBOOL_OPTX(bStopWhenOwnerDestroyed,FALSE);
-        P_GET_STRUCT_OPTX(FVector,SoundLocation,FVector(EC_EventParm));
-        P_GET_UBOOL_OPTX(bNoRepToRelevant,FALSE);
-        P_FINISH;
-        PlaySound(InSoundCue,bNotReplicated,bNoRepToOwner,bStopWhenOwnerDestroyed,SoundLocation,bNoRepToRelevant);
-    }
+    DECLARE_FUNCTION(execPlaySound);
     DECLARE_FUNCTION(execEnableEffect)
     {
         P_GET_NAME(effectToEnable);
@@ -2881,20 +2774,7 @@ public:
         P_FINISH;
         *(UBOOL*)Result=PlayerCanSeeMe();
     }
-    DECLARE_FUNCTION(execSuggestTossVelocity)
-    {
-        P_GET_STRUCT_REF(FVector,TossVelocity);
-        P_GET_STRUCT(FVector,Destination);
-        P_GET_STRUCT(FVector,Start);
-        P_GET_FLOAT(TossSpeed);
-        P_GET_FLOAT_OPTX(BaseTossZ,0);
-        P_GET_FLOAT_OPTX(DesiredZPct,0);
-        P_GET_STRUCT_OPTX(FVector,CollisionSize,FVector(EC_EventParm));
-        P_GET_FLOAT_OPTX(TerminalVelocity,0);
-        P_GET_FLOAT_OPTX(OverrideGravityZ,0);
-        P_FINISH;
-        *(UBOOL*)Result=SuggestTossVelocity(TossVelocity,Destination,Start,TossSpeed,BaseTossZ,DesiredZPct,CollisionSize,TerminalVelocity,OverrideGravityZ);
-    }
+    DECLARE_FUNCTION(execSuggestTossVelocity);
     DECLARE_FUNCTION(execGetDestination)
     {
         P_GET_OBJECT(AController,C);
@@ -5478,14 +5358,8 @@ public:
     BITFIELD bProcessAllActors:1;
     //## END PROPS Volume
 
-    virtual UBOOL Encompasses(class AActor* Other);
     virtual UBOOL EncompassesPoint(FVector Point);
-    DECLARE_FUNCTION(execEncompasses)
-    {
-        P_GET_OBJECT(AActor,Other);
-        P_FINISH;
-        *(UBOOL*)Result=Encompasses(Other);
-    }
+    DECLARE_FUNCTION(execEncompasses);
     DECLARE_FUNCTION(execEncompassesPoint)
     {
         P_GET_STRUCT(FVector,Point);
@@ -7094,12 +6968,9 @@ public:
     FVector GetAdjustLocation();
     UBOOL BeyondFogDistance(FVector ViewPoint,FVector OtherPoint);
     virtual BYTE GetTeamNum();
-    UBOOL LineOfSightTo(class AActor* Other,FVector chkLocation=FVector(EC_EventParm),UBOOL bTryAlternateTargetLoc=FALSE);
     UBOOL CanSee(class APawn* Other);
     UBOOL CanSeeByPoints(FVector ViewLocation,FVector TestLocation,FRotator ViewRotation);
     class APawn* PickTarget(class UClass* TargetClass,FLOAT& bestAim,FLOAT& bestDist,FVector FireDir,FVector projStart,FLOAT MaxRange);
-    void MoveTo(FVector NewDestination,class AActor* ViewFocus=NULL,UBOOL bShouldWalk=FALSE);
-    void MoveToward(class AActor* NewTarget,class AActor* ViewFocus=NULL,FLOAT DestinationOffset=0,UBOOL bUseStrafing=FALSE,UBOOL bShouldWalk=FALSE);
     void FinishRotation();
     class AActor* FindPathTo(FVector aPoint,INT MaxPathLength=0,UBOOL bReturnPartial=FALSE);
     class AActor* FindPathToward(class AActor* anActor,UBOOL bWeightDetours=FALSE,INT MaxPathLength=0,UBOOL bReturnPartial=FALSE);
@@ -7109,7 +6980,6 @@ public:
     UBOOL PointReachable(FVector aPoint);
     UBOOL ActorReachable(class AActor* anActor);
     UBOOL PickWallAdjust(FVector HitNormal);
-    void WaitForLanding(FLOAT waitDuration=0);
     virtual void EndClimbLadder();
     UBOOL InLatentExecution(INT LatentActionNumber);
     void StopLatentExecution();
@@ -7207,14 +7077,7 @@ public:
         P_FINISH;
         *(UBOOL*)Result=BeyondFogDistance(ViewPoint,OtherPoint);
     }
-    DECLARE_FUNCTION(execLineOfSightTo)
-    {
-        P_GET_OBJECT(AActor,Other);
-        P_GET_STRUCT_OPTX(FVector,chkLocation,FVector(EC_EventParm));
-        P_GET_UBOOL_OPTX(bTryAlternateTargetLoc,FALSE);
-        P_FINISH;
-        *(UBOOL*)Result=LineOfSightTo(Other,chkLocation,bTryAlternateTargetLoc);
-    }
+    DECLARE_FUNCTION(execLineOfSightTo);
     DECLARE_FUNCTION(execCanSee)
     {
         P_GET_OBJECT(APawn,Other);
@@ -7240,24 +7103,8 @@ public:
         P_FINISH;
         *(class APawn**)Result=PickTarget(TargetClass,bestAim,bestDist,FireDir,projStart,MaxRange);
     }
-    DECLARE_FUNCTION(execMoveTo)
-    {
-        P_GET_STRUCT(FVector,NewDestination);
-        P_GET_OBJECT_OPTX(AActor,ViewFocus,NULL);
-        P_GET_UBOOL_OPTX(bShouldWalk,bIsWalking);
-        P_FINISH;
-        MoveTo(NewDestination,ViewFocus,bShouldWalk);
-    }
-    DECLARE_FUNCTION(execMoveToward)
-    {
-        P_GET_OBJECT(AActor,NewTarget);
-        P_GET_OBJECT_OPTX(AActor,ViewFocus,NULL);
-        P_GET_FLOAT_OPTX(DestinationOffset,0);
-        P_GET_UBOOL_OPTX(bUseStrafing,FALSE);
-        P_GET_UBOOL_OPTX(bShouldWalk,bIsWalking);
-        P_FINISH;
-        MoveToward(NewTarget,ViewFocus,DestinationOffset,bUseStrafing,bShouldWalk);
-    }
+    DECLARE_FUNCTION(execMoveTo);
+    DECLARE_FUNCTION(execMoveToward);
     DECLARE_FUNCTION(execFinishRotation)
     {
         P_FINISH;
@@ -7322,12 +7169,7 @@ public:
         P_FINISH;
         *(UBOOL*)Result=PickWallAdjust(HitNormal);
     }
-    DECLARE_FUNCTION(execWaitForLanding)
-    {
-        P_GET_FLOAT_OPTX(waitDuration,0);
-        P_FINISH;
-        WaitForLanding(waitDuration);
-    }
+    DECLARE_FUNCTION(execWaitForLanding);
     DECLARE_FUNCTION(execEndClimbLadder)
     {
         P_FINISH;
@@ -10371,13 +10213,13 @@ public:
     UBOOL CheckSpeedHack(FLOAT DeltaTime);
     INT FindStairRotation(FLOAT DeltaTime);
     virtual void CleanUpAudioComponents();
-    virtual UBOOL IsControllerTiltActive();
+    virtual UBOOL IsControllerTiltActive() const;
     virtual void SetControllerTiltDesiredIfAvailable(UBOOL bActive);
     virtual void SetControllerTiltActive(UBOOL bActive);
     virtual void SetOnlyUseControllerTiltInput(UBOOL bActive);
     virtual void SetUseTiltForwardAndBack(UBOOL bActive);
-    virtual UBOOL IsKeyboardAvailable();
-    virtual UBOOL IsMouseAvailable();
+    virtual UBOOL IsKeyboardAvailable() const;
+    virtual UBOOL IsMouseAvailable() const;
     virtual class UAudioComponent* GetPooledAudioComponent(class USoundCue* ASound,class AActor* SourceActor,UBOOL bStopWhenOwnerDestroyed,UBOOL bUseLocation=FALSE,FVector SourceLocation=FVector(EC_EventParm));
     class USoundCue* CreateTTSSoundCue(const FString& StrToSpeak,class APlayerReplicationInfo* PRI);
     void ServerNotifyLoadedWorld(FName WorldPackageName);
@@ -15548,12 +15390,12 @@ public:
 
     void SetBasedPosition(struct FBasedPosition& BP,FVector pos,class AActor* ForcedBase=NULL);
     FVector GetBasedPosition(struct FBasedPosition BP);
-    UBOOL IsAliveAndWell();
+    UBOOL IsAliveAndWell() const;
     FVector AdjustDestination(class AActor* GoalActor,FVector Dest=FVector(EC_EventParm));
     UBOOL ValidAnchor();
     virtual UBOOL SuggestJumpVelocity(FVector& JumpVelocity,FVector Destination,FVector Start);
-    virtual UBOOL IsValidTargetFor(const class AController* C);
-    virtual UBOOL IsValidEnemyTargetFor(const class APlayerReplicationInfo* PRI,UBOOL bNoPRIisEnemy);
+    virtual UBOOL IsValidTargetFor(const class AController* C) const;
+    virtual UBOOL IsValidEnemyTargetFor(const class APlayerReplicationInfo* PRI,UBOOL bNoPRIisEnemy) const;
     virtual UBOOL IsInvisible();
     void SetRemoteViewPitch(INT NewRemoteViewPitch);
     virtual void SetAnchor(class ANavigationPoint* NewAnchor);
@@ -15563,12 +15405,12 @@ public:
     virtual void ForceCrouch();
     virtual void SetPushesRigidBodies(UBOOL NewPush);
     UBOOL ReachedDesiredRotation();
-    virtual void GetBoundingCylinder(FLOAT& CollisionRadius,FLOAT& CollisionHeight);
+    virtual void GetBoundingCylinder(FLOAT& CollisionRadius,FLOAT& CollisionHeight) const;
     virtual UBOOL InitRagdoll();
     virtual UBOOL TermRagdoll();
     UBOOL IsHumanControlled();
     UBOOL IsLocallyControlled();
-    virtual UBOOL IsPlayerPawn();
+    virtual UBOOL IsPlayerPawn() const;
     virtual FRotator GetViewRotation();
     virtual FVector GetPawnViewLocation();
     virtual BYTE GetTeamNum();

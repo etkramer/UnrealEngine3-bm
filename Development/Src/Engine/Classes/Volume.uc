@@ -18,7 +18,7 @@ cpptext
 }
 
 // Export UVolume::execEncompasses(FFrame&, void* const)
-native function bool Encompasses(Actor Other);
+native noexport function bool Encompasses(Actor Other);
 
 // Export UVolume::execEncompassesPoint(FFrame&, void* const)
 native function bool EncompassesPoint(Vector Point);

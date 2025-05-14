@@ -353,10 +353,10 @@ native final function GetVectorVars(out array<Vector> vecVars, optional string i
 native final function GetObjectVars(out array<Object> ObjVars, optional string inDesc);
 
 // Export USequenceOp::execGetInterpDataVars(FFrame&, void* const)
-native final function GetInterpDataVars(out array<InterpData> outIData, optional string inDesc);
+native noexport final function GetInterpDataVars(out array<InterpData> outIData, optional string inDesc);
 
 // Export USequenceOp::execGetBoolVars(FFrame&, void* const)
-native final function GetBoolVars(out array<byte> boolVars, optional string inDesc);
+native noexport final function GetBoolVars(out array<byte> boolVars, optional string inDesc);
 
 // Export USequenceOp::execGetFloatVars(FFrame&, void* const)
 native final function GetFloatVars(out array<float> floatVars, optional string inDesc);

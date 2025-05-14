@@ -93,7 +93,7 @@ event RegisterEvent()
 }
 
 // Export USequenceEvent::execCheckActivate(FFrame&, void* const)
-native final function bool CheckActivate(Actor InOriginator, Actor InInstigator, optional bool bTest, const optional out array<int> ActivateIndices, optional bool bPushTop);
+native noexport final function bool CheckActivate(Actor InOriginator, Actor InInstigator, optional bool bTest, const optional out array<int> ActivateIndices, optional bool bPushTop);
 
 function Reset()
 {

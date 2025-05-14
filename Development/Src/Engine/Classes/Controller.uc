@@ -768,7 +768,7 @@ function NotifyChangedWeapon(Weapon PrevWeapon, Weapon NewWeapon)
 }
 
 // Export UController::execLineOfSightTo(FFrame&, void* const)
-native(514) final function bool LineOfSightTo(Actor Other, optional Vector chkLocation, optional bool bTryAlternateTargetLoc);
+native(514) noexport final function bool LineOfSightTo(Actor Other, optional Vector chkLocation, optional bool bTryAlternateTargetLoc);
 
 // Export UController::execCanSee(FFrame&, void* const)
 native(533) final function bool CanSee(Pawn Other);
@@ -800,10 +800,10 @@ event EnemyNotVisible()
 }
 
 // Export UController::execMoveTo(FFrame&, void* const)
-native(500) final latent function MoveTo(Vector NewDestination, optional Actor ViewFocus, optional bool bShouldWalk = ((Pawn != none) ? Pawn.bIsWalking : false));
+native(500) noexport final latent function MoveTo(Vector NewDestination, optional Actor ViewFocus, optional bool bShouldWalk = ((Pawn != none) ? Pawn.bIsWalking : false));
 
 // Export UController::execMoveToward(FFrame&, void* const)
-native(502) final latent function MoveToward(Actor NewTarget, optional Actor ViewFocus, optional float DestinationOffset, optional bool bUseStrafing, optional bool bShouldWalk = ((Pawn != none) ? Pawn.bIsWalking : false));
+native(502) noexport final latent function MoveToward(Actor NewTarget, optional Actor ViewFocus, optional float DestinationOffset, optional bool bUseStrafing, optional bool bShouldWalk = ((Pawn != none) ? Pawn.bIsWalking : false));
 
 event SetupSpecialPathAbilities()
 {
@@ -843,7 +843,7 @@ event MoveUnreachable(Vector AttemptedDest, Actor AttemptedTarget)
 native(526) final function bool PickWallAdjust(Vector HitNormal);
 
 // Export UController::execWaitForLanding(FFrame&, void* const)
-native(527) final latent function WaitForLanding(optional float waitDuration);
+native(527) noexport final latent function WaitForLanding(optional float waitDuration);
 
 event LongFall()
 {

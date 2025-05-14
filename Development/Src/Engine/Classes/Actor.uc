@@ -1137,7 +1137,7 @@ native(256) final latent function Sleep(float Seconds);
 native(261) final latent function FinishAnim(AnimNodeSequence SeqNode);
 
 // Export UActor::execSetCollision(FFrame&, void* const)
-native(262) final function SetCollision(optional bool bNewColActors, optional bool bNewBlockActors, optional bool bNewIgnoreEncroachers);
+native(262) noexport final function SetCollision(optional bool bNewColActors, optional bool bNewBlockActors, optional bool bNewIgnoreEncroachers);
 
 // Export UActor::execSetCollisionSize(FFrame&, void* const)
 native(283) final function SetCollisionSize(float NewRadius, float NewHeight);
@@ -1167,7 +1167,7 @@ native function Actor.EMoveDir MovingWhichWay(out float Amount);
 native final function bool SetLocationForTest(Vector NewLocation, bool bNoCheck);
 
 // Export UActor::execSetZone(FFrame&, void* const)
-native final function SetZone(bool bForceRefresh);
+native noexport final function SetZone(bool bForceRefresh);
 
 // Export UActor::execSetRelativeRotation(FFrame&, void* const)
 native final function bool SetRelativeRotation(Rotator NewRotation);
@@ -1176,13 +1176,13 @@ native final function bool SetRelativeRotation(Rotator NewRotation);
 native final function bool SetRelativeLocation(Vector NewLocation);
 
 // Export UActor::execSetHardAttach(FFrame&, void* const)
-native final function SetHardAttach(optional bool bNewHardAttach);
+native final function noexport SetHardAttach(optional bool bNewHardAttach);
 
 // Export UActor::execfixedTurn(FFrame&, void* const)
 native final function int fixedTurn(int Current, int Desired, int DeltaRate);
 
 // Export UActor::execMoveSmooth(FFrame&, void* const)
-native(3969) final function bool MoveSmooth(Vector Delta);
+native(3969) noexport final function bool MoveSmooth(Vector Delta);
 
 // Export UActor::execAutonomousPhysics(FFrame&, void* const)
 native(3971) final function AutonomousPhysics(float DeltaSeconds);
@@ -1194,7 +1194,7 @@ native function float GetTerminalVelocity();
 native function Vector GetZoneVelocity();
 
 // Export UActor::execSetBase(FFrame&, void* const)
-native(298) final function SetBase(Actor NewBase, optional Vector NewFloor, optional SkeletalMeshComponent SkelComp, optional name AttachName);
+native(298) noexport final function SetBase(Actor NewBase, optional Vector NewFloor, optional SkeletalMeshComponent SkelComp, optional name AttachName);
 
 // Export UActor::execSetOwner(FFrame&, void* const)
 native(272) final function SetOwner(Actor NewOwner);
@@ -1203,13 +1203,13 @@ native(272) final function SetOwner(Actor NewOwner);
 native function FindBase();
 
 // Export UActor::execIsBasedOn(FFrame&, void* const)
-native final function bool IsBasedOn(Actor TestActor);
+native noexport final function bool IsBasedOn(Actor TestActor);
 
 // Export UActor::execGetBaseMost(FFrame&, void* const)
 native function Actor GetBaseMost();
 
 // Export UActor::execIsOwnedBy(FFrame&, void* const)
-native final function bool IsOwnedBy(Actor TestActor);
+native noexport final function bool IsOwnedBy(Actor TestActor);
 
 simulated event ReplicatedEvent(name VarName)
 {
@@ -1255,7 +1255,7 @@ native function SetHidden(bool bNewHidden);
 native final function SetOnlyOwnerSee(bool bNewOnlyOwnerSee);
 
 // Export UActor::execSetPhysics(FFrame&, void* const)
-native(3970) final function SetPhysics(Actor.EPhysics newPhysics, optional bool WakePhysics = true);
+native(3970) noexport final function SetPhysics(Actor.EPhysics newPhysics, optional bool WakePhysics = true);
 
 // Export UActor::execClock(FFrame&, void* const)
 native final function Clock(out float Time);
@@ -1427,16 +1427,16 @@ simulated function VolumeBasedDestroy(PhysicsVolume PV)
 }
 
 // Export UActor::execTrace(FFrame&, void* const)
-native(277) final function Actor Trace(out Vector HitLocation, out Vector HitNormal, Vector TraceEnd, optional Vector TraceStart, optional bool bTraceActors, optional Vector Extent, optional out TraceHitInfo HitInfo, optional int ExtraTraceFlags);
+native(277) noexport final function Actor Trace(out Vector HitLocation, out Vector HitNormal, Vector TraceEnd, optional Vector TraceStart, optional bool bTraceActors, optional Vector Extent, optional out TraceHitInfo HitInfo, optional int ExtraTraceFlags);
 
 // Export UActor::execTraceComponent(FFrame&, void* const)
 native final function bool TraceComponent(out Vector HitLocation, out Vector HitNormal, PrimitiveComponent InComponent, Vector TraceEnd, optional Vector TraceStart, optional Vector Extent, optional out TraceHitInfo HitInfo);
 
 // Export UActor::execPointCheckComponent(FFrame&, void* const)
-native final function bool PointCheckComponent(PrimitiveComponent InComponent, Vector PointLocation, Vector PointExtent);
+native noexport final function bool PointCheckComponent(PrimitiveComponent InComponent, Vector PointLocation, Vector PointExtent);
 
 // Export UActor::execFastTrace(FFrame&, void* const)
-native(548) final function bool FastTrace(Vector TraceEnd, optional Vector TraceStart, optional Vector BoxExtent, optional bool bTraceBullet);
+native(548) noexport final function bool FastTrace(Vector TraceEnd, optional Vector TraceStart, optional Vector BoxExtent, optional bool bTraceBullet);
 
 // Export UActor::execTraceAllPhysicsAssetInteractions(FFrame&, void* const)
 native final function bool TraceAllPhysicsAssetInteractions(SkeletalMeshComponent SkelMeshComp, Vector EndTrace, Vector StartTrace, out array<ImpactInfo> out_Hits, optional Vector Extent);
@@ -1448,13 +1448,13 @@ native final function bool FindSpot(Vector BoxExtent, out Vector SpotLocation, o
 native final function bool ContainsPoint(Vector Spot);
 
 // Export UActor::execIsOverlapping(FFrame&, void* const)
-native final function bool IsOverlapping(Actor A);
+native noexport final function bool IsOverlapping(Actor A);
 
 // Export UActor::execGetComponentsBoundingBox(FFrame&, void* const)
-native final function GetComponentsBoundingBox(out Box ActorBox);
+native final function GetComponentsBoundingBox(out Box ActorBox) const;
 
 // Export UActor::execGetBoundingCylinder(FFrame&, void* const)
-native function GetBoundingCylinder(out float CollisionRadius, out float CollisionHeight);
+native function GetBoundingCylinder(out float CollisionRadius, out float CollisionHeight) const;
 
 // Export UActor::execSpawn(FFrame&, void* const)
 native noexport final function coerce actor Spawn
@@ -1469,7 +1469,7 @@ native noexport final function coerce actor Spawn
 );
 
 // Export UActor::execDestroy(FFrame&, void* const)
-native(279) final function bool Destroy();
+native(279) noexport final function bool Destroy();
 
 event TornOff()
 {
@@ -1513,7 +1513,7 @@ final simulated function float GetRemainingTimeForTimer(optional name TimerFuncN
 native final function AudioComponent CreateAudioComponent(SoundCue InSoundCue, optional bool bPlay, optional bool bStopWhenOwnerDestroyed, optional bool bUseLocation, optional Vector SourceLocation, optional bool bAttachToSelf = true);
 
 // Export UActor::execPlaySound(FFrame&, void* const)
-native final function PlaySound(SoundCue InSoundCue, optional bool bNotReplicated, optional bool bNoRepToOwner, optional bool bStopWhenOwnerDestroyed, optional Vector SoundLocation, optional bool bNoRepToRelevant);
+native noexport final function PlaySound(SoundCue InSoundCue, optional bool bNotReplicated, optional bool bNoRepToOwner, optional bool bStopWhenOwnerDestroyed, optional Vector SoundLocation, optional bool bNoRepToRelevant);
 
 // Export UActor::execEnableEffect(FFrame&, void* const)
 native final function EnableEffect(name effectToEnable, optional bool Enable = true);
@@ -1549,7 +1549,7 @@ native(512) final function MakeNoise(float Loudness, optional name NoiseType);
 native(532) final function bool PlayerCanSeeMe();
 
 // Export UActor::execSuggestTossVelocity(FFrame&, void* const)
-native final function bool SuggestTossVelocity(out Vector TossVelocity, Vector Destination, Vector Start, float TossSpeed, optional float BaseTossZ, optional float DesiredZPct, optional Vector CollisionSize, optional float TerminalVelocity, optional float OverrideGravityZ);
+native noexport final function bool SuggestTossVelocity(out Vector TossVelocity, Vector Destination, Vector Start, float TossSpeed, optional float BaseTossZ, optional float DesiredZPct, optional Vector CollisionSize, optional float TerminalVelocity, optional float OverrideGravityZ);
 
 // Export UActor::execGetDestination(FFrame&, void* const)
 native final function Vector GetDestination(Controller C);
@@ -2933,7 +2933,7 @@ simulated function FindGoodEndView(PlayerController PC, out Rotator GoodRotation
 }
 
 // Export UActor::execGetTargetLocation(FFrame&, void* const)
-native simulated function Vector GetTargetLocation(optional Actor RequestedBy, optional bool bRequestAlternateLoc);
+native simulated function Vector GetTargetLocation(optional Actor RequestedBy, optional bool bRequestAlternateLoc) const;
 
 // Export UActor::execGetFOVCheckLocation(FFrame&, void* const)
 native simulated function Vector GetFOVCheckLocation();
@@ -3055,7 +3055,7 @@ simulated event OnRigidBodySpringOverextension(RB_BodyInstance BodyInstance)
 }
 
 // Export UActor::execIsInPersistentLevel(FFrame&, void* const)
-native final function bool IsInPersistentLevel();
+native final function bool IsInPersistentLevel() const;
 
 simulated function GetAimFrictionExtent(out float Width, out float Height, out Vector Center)
 {
@@ -3118,7 +3118,7 @@ event PlayParticleEffect(const AnimNotify_PlayParticleEffect AnimNotifyData)
 }
 
 // Export UActor::execSupportsKismetModification(FFrame&, void* const)
-native final function bool SupportsKismetModification(SequenceOp AskingOp, out string Reason);
+native final function bool SupportsKismetModification(SequenceOp AskingOp, out string Reason) const;
 
 simulated event AnimTreeUpdated(SkeletalMeshComponent SkelMesh)
 {

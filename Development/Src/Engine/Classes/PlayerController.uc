@@ -1109,7 +1109,7 @@ final function float GetRumbleScale()
 }
 
 // Export UPlayerController::execIsControllerTiltActive(FFrame&, void* const)
-native simulated function bool IsControllerTiltActive();
+native simulated function bool IsControllerTiltActive() const;
 
 // Export UPlayerController::execSetControllerTiltDesiredIfAvailable(FFrame&, void* const)
 native simulated function SetControllerTiltDesiredIfAvailable(bool bActive);
@@ -1124,10 +1124,10 @@ native simulated function SetOnlyUseControllerTiltInput(bool bActive);
 native simulated function SetUseTiltForwardAndBack(bool bActive);
 
 // Export UPlayerController::execIsKeyboardAvailable(FFrame&, void* const)
-native simulated function bool IsKeyboardAvailable();
+native simulated function bool IsKeyboardAvailable() const;
 
 // Export UPlayerController::execIsMouseAvailable(FFrame&, void* const)
-native simulated function bool IsMouseAvailable();
+native simulated function bool IsMouseAvailable() const;
 
 reliable client simulated function ClientGotoState(name NewState, optional name NewLabel)
 {

@@ -1147,29 +1147,6 @@ UBOOL APawn::ReachedBy(APawn *P, const FVector &TestPosition, const FVector& Des
 		::Min(1.5f * P->CylinderComponent->CollisionRadius, P->MeleeRange) + CylinderComponent->CollisionRadius);	
 }
 
-UBOOL AVehicle::ReachedBy(APawn *P, const FVector &TestPosition, const FVector& Dest)
-{
-	// if enemy vehicle, use normal pawn check
-	if (!bCollideActors || (P->Controller != NULL && P->Controller->Enemy == this))
-	{
-		return Super::ReachedBy(P, TestPosition, Dest);
-	}
-
-	FRadiusOverlapCheck CheckInfo(TestPosition, P->VehicleCheckRadius);
-	for (INT i = 0; i < Components.Num(); i++)
-	{
-		UPrimitiveComponent* Primitive = Cast<UPrimitiveComponent>(Components(i));
-
-		// Only use collidable components to find collision bounding box.
-		if (Primitive != NULL && Primitive->IsAttached() && Primitive->CollideActors && CheckInfo.SphereBoundsTest(Primitive->Bounds))
-		{
-			return TRUE;
-		}
-	}
-
-	return FALSE;
-}
-
 UBOOL AActor::ReachedBy(APawn *P, const FVector &TestPosition, const FVector& Dest)
 {
 	if ( TouchReachSucceeded(P, TestPosition) )

@@ -370,46 +370,6 @@ INT* APawn::GetOptimizedRepList( BYTE* Recent, FPropertyRetirement* Retire, INT*
 	return Ptr;
 }
 
-INT* AVehicle::GetOptimizedRepList( BYTE* Recent, FPropertyRetirement* Retire, INT* Ptr, UPackageMap* Map, UActorChannel* Channel )
-{
-	checkSlow(StaticClass()->ClassFlags & CLASS_NativeReplication);
-
-	Ptr = Super::GetOptimizedRepList(Recent,Retire,Ptr,Map,Channel);
-	
-	if ( Role == ROLE_Authority )
-	{
-		if ( bNetDirty )
-		{
-			DOREP(Vehicle,bDriving);
-			if ( bNetOwner || !Driver || !Driver->bHidden )
-			{
-				DOREP(Vehicle,Driver);
-			}
-		}
-	}
-
-	return Ptr;
-}
-
-INT* ASVehicle::GetOptimizedRepList( BYTE* Recent, FPropertyRetirement* Retire, INT* Ptr, UPackageMap* Map, UActorChannel* Channel )
-{
-	checkSlow(StaticClass()->ClassFlags & CLASS_NativeReplication);
-
-	Ptr = Super::GetOptimizedRepList(Recent,Retire,Ptr,Map,Channel);
-	
-	if (Physics == PHYS_RigidBody && (Controller != NULL || NEQ(VState.RBState, ((ASVehicle*)Recent)->VState.RBState, Map, Channel)))
-	{
-		DOREP(SVehicle,VState);
-	}
-
-	if(bNetDirty && (Role == ROLE_Authority))
-	{
-		DOREP(SVehicle,MaxSpeed);
-	}
-
-	return Ptr;
-}
-
 INT* AController::GetOptimizedRepList( BYTE* Recent, FPropertyRetirement* Retire, INT* Ptr, UPackageMap* Map, UActorChannel* Channel )
 {
 	checkSlow(StaticClass()->ClassFlags & CLASS_NativeReplication);
@@ -2827,8 +2787,11 @@ UBOOL AActor::IsReferencedByKismet( USequenceObject** pReferencer/*=NULL*/ ) con
  * @param AskingOp - Kismet operation to which this Actor is linked
  * @return whether the AskingOp can correctly modify this Actor
  */
-UBOOL AActor::SupportsKismetModification(USequenceOp* AskingOp) const
+UBOOL AActor::SupportsKismetModification(USequenceOp* AskingOp, FString& Reason) const
 {
+	// BM1: Not implemented
+	Reason = TEXT("");
+
 	// the primary thing that goes wrong is the effect works on server but can't replicate to the client
 	// due to bStatic things not being able to change RemoteRole
 	return (!bStatic || RemoteRole == ROLE_SimulatedProxy || bForceAllowKismetModification);
@@ -3530,7 +3493,7 @@ UBOOL APlayerReplicationInfo::AreUniqueNetIdsEqual(APlayerReplicationInfo* Other
  * @Parameter SpotLocation is the position where the box should be placed.  Contains the adjusted location if it is adjusted.
  * @Return true if successful in finding a valid non-world geometry overlapping location
  */
-UBOOL AActor::FindSpot(FVector BoxExtent, FVector& SpotLocation)
+UBOOL AActor::FindSpot(FVector BoxExtent, FVector& SpotLocation, UBOOL DontEaryOut)
 {
 	return GWorld->FindSpot(BoxExtent, SpotLocation, bCollideComplex);
 }

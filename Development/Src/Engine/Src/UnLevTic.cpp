@@ -1418,53 +1418,6 @@ UBOOL APawn::IsNetRelevantFor(APlayerController* RealViewer, AActor* Viewer, con
 	}
 }
 
-UBOOL AVehicle::IsNetRelevantFor(APlayerController* RealViewer, AActor* Viewer, const FVector& SrcLocation)
-{
-	if ( bAlwaysRelevant )
-		return true;
-	if ( (NetRelevancyTime == GWorld->GetTimeSeconds()) && (RealViewer == LastRealViewer) && (Viewer == LastViewer) )
-		return bCachedRelevant;
-	if( IsOwnedBy(Viewer) || IsOwnedBy(RealViewer) || this==Viewer || Viewer==Instigator
-		|| IsBasedOn(Viewer) || (Viewer && Viewer->IsBasedOn(this))  || RealViewer->bReplicateAllPawns 
-		|| (Controller && ((Location - Viewer->Location).SizeSquared() < AlwaysRelevantDistanceSquared)) || HasAudibleAmbientSound(SrcLocation) )
-		return CacheNetRelevancy(true,RealViewer,Viewer);
-	else if( (bHidden || bOnlyOwnerSee) && !bBlockActors )
-		return CacheNetRelevancy(false,RealViewer,Viewer);
-	else
-	{
-#ifdef USE_DISTANCE_FOG_OCCLUSION
-		// check distance fog
-		if ( RealViewer->BeyondFogDistance(SrcLocation, Location) )
-			return CacheNetRelevancy(false,RealViewer,Viewer);
-#endif
-		if ( !CylinderComponent )
-		{
-			return CacheNetRelevancy(true,RealViewer,Viewer);
-		}
-		// check Location and collision bounds
-		FCheckResult Hit(1.f);
-		if ( GWorld->SingleLineCheck( Hit, this, Location + FVector(0.f,0.f,CylinderComponent->CollisionHeight), SrcLocation, TRACE_World|TRACE_StopAtAnyHit|TRACE_ComplexCollision, FVector(0.f,0.f,0.f) )
-			|| GWorld->SingleLineCheck( Hit, this, Location, SrcLocation, TRACE_World|TRACE_StopAtAnyHit|TRACE_ComplexCollision, FVector(0.f,0.f,0.f) )
-			 || IsRelevantThroughPortals(RealViewer) )
-		{
-			return CacheNetRelevancy(true,RealViewer,Viewer);
-		}
-		if ( bDoExtraNetRelevancyTraces )
-		{
-			// check at corner points as well before failing
-			FVector Y = ((Location - SrcLocation) ^ FVector(0.f, 0.f, 1.f)).SafeNormal();
-
-			// randomize point somewhat so stopped vehicle can't worst case stay not relevant
-			if ( GWorld->SingleLineCheck( Hit, this, Location + Y*(0.5f + 0.5*appFrand())*CylinderComponent->CollisionRadius + FVector(0.f,0.f,CylinderComponent->CollisionHeight), SrcLocation, TRACE_World|TRACE_StopAtAnyHit|TRACE_ComplexCollision, FVector(0.f,0.f,0.f))
-				|| GWorld->SingleLineCheck( Hit, this, Location - Y*(0.5f + 0.5*appFrand())*CylinderComponent->CollisionRadius + FVector(0.f,0.f,CylinderComponent->CollisionHeight), SrcLocation, TRACE_World|TRACE_StopAtAnyHit|TRACE_ComplexCollision, FVector(0.f,0.f,0.f)) )
-			{
-				return CacheNetRelevancy(true,RealViewer,Viewer);
-			}
-		}				
-		return CacheNetRelevancy(false,RealViewer,Viewer);
-	}
-}
-
 /**
  * Process as many clients as allowed given Engine.NetClientTicksPerSecond, first building a list of actors to consider for relevancy checking,
  * and then attempting to replicate each actor for each connection that it is relevant to until the connection becomes saturated.

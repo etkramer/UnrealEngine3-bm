@@ -580,8 +580,6 @@ public:
     void GetLinkedObjects(TArray<class USequenceObject*>& out_Objects,class UClass* ObjectType=NULL,UBOOL bRecurse=FALSE);
     void GetVectorVars(TArray<FVector>& vecVars,const FString& inDesc=TEXT(""));
     void GetObjectVars(TArray<class UObject*>& ObjVars,const FString& inDesc=TEXT(""));
-    void GetInterpDataVars(TArray<class UInterpData*>& outIData,const FString& inDesc=TEXT(""));
-    void GetBoolVars(TArray<BYTE>& boolVars,const FString& inDesc=TEXT(""));
     void GetFloatVars(TArray<FLOAT>& floatVars,const FString& inDesc=TEXT(""));
     UBOOL ActivateOutputLink(INT OutputIdx);
     UBOOL ActivateNamedOutputLink(const FString& LinkDesc);
@@ -616,20 +614,8 @@ public:
         P_FINISH;
         GetObjectVars(ObjVars,inDesc);
     }
-    DECLARE_FUNCTION(execGetInterpDataVars)
-    {
-        P_GET_TARRAY_REF(class UInterpData*,outIData);
-        P_GET_STR_OPTX(inDesc,TEXT(""));
-        P_FINISH;
-        GetInterpDataVars(outIData,inDesc);
-    }
-    DECLARE_FUNCTION(execGetBoolVars)
-    {
-        P_GET_TARRAY_REF(BYTE,boolVars);
-        P_GET_STR_OPTX(inDesc,TEXT(""));
-        P_FINISH;
-        GetBoolVars(boolVars,inDesc);
-    }
+    DECLARE_FUNCTION(execGetInterpDataVars);
+    DECLARE_FUNCTION(execGetBoolVars);
     DECLARE_FUNCTION(execGetFloatVars)
     {
         P_GET_TARRAY_REF(FLOAT,floatVars);
@@ -3712,17 +3698,7 @@ public:
     TArrayNoInit<struct FQueuedActivationInfo> QueuedActivations;
     //## END PROPS SequenceEvent
 
-    UBOOL CheckActivate(class AActor* InOriginator,class AActor* InInstigator,UBOOL bTest=FALSE,const TArray<INT>* ActivateIndices=NULL,UBOOL bPushTop=FALSE);
-    DECLARE_FUNCTION(execCheckActivate)
-    {
-        P_GET_OBJECT(AActor,InOriginator);
-        P_GET_OBJECT(AActor,InInstigator);
-        P_GET_UBOOL_OPTX(bTest,FALSE);
-        P_GET_TARRAY_OPTX_REF(INT,ActivateIndices,TArray<INT>(EC_EventParm));
-        P_GET_UBOOL_OPTX(bPushTop,FALSE);
-        P_FINISH;
-        *(UBOOL*)Result=CheckActivate(InOriginator,InInstigator,bTest,pActivateIndices ? &ActivateIndices : NULL,bPushTop);
-    }
+    DECLARE_FUNCTION(execCheckActivate);
     void eventToggled()
     {
         ProcessEvent(FindFunctionChecked(ENGINE_Toggled),NULL);

@@ -463,7 +463,7 @@ simulated event ReplicatedEvent(name VarName)
 }
 
 // Export UPawn::execIsAliveAndWell(FFrame&, void* const)
-native final simulated function bool IsAliveAndWell();
+native final simulated function bool IsAliveAndWell() const;
 
 // Export UPawn::execAdjustDestination(FFrame&, void* const)
 native final function Vector AdjustDestination(Actor GoalActor, optional Vector Dest);
@@ -475,10 +475,10 @@ native final function bool ValidAnchor();
 native function bool SuggestJumpVelocity(out Vector JumpVelocity, Vector Destination, Vector Start);
 
 // Export UPawn::execIsValidTargetFor(FFrame&, void* const)
-native function bool IsValidTargetFor(const Controller C);
+native function bool IsValidTargetFor(const Controller C) const;
 
 // Export UPawn::execIsValidEnemyTargetFor(FFrame&, void* const)
-native function bool IsValidEnemyTargetFor(const PlayerReplicationInfo PRI, bool bNoPRIisEnemy);
+native function bool IsValidEnemyTargetFor(const PlayerReplicationInfo PRI, bool bNoPRIisEnemy) const;
 
 // Export UPawn::execIsInvisible(FFrame&, void* const)
 native function bool IsInvisible();
@@ -508,7 +508,7 @@ native function SetPushesRigidBodies(bool NewPush);
 native final function bool ReachedDesiredRotation();
 
 // Export UPawn::execGetBoundingCylinder(FFrame&, void* const)
-native function GetBoundingCylinder(out float CollisionRadius, out float CollisionHeight);
+native function GetBoundingCylinder(out float CollisionRadius, out float CollisionHeight) const;
 
 function int SpecialCostForPath(ReachSpec Path)
 {
@@ -1115,7 +1115,7 @@ native final simulated function bool IsHumanControlled();
 native final simulated function bool IsLocallyControlled();
 
 // Export UPawn::execIsPlayerPawn(FFrame&, void* const)
-native simulated function bool IsPlayerPawn();
+native simulated function bool IsPlayerPawn() const;
 
 simulated function bool WasPlayerPawn()
 {

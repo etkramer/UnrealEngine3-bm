@@ -1128,7 +1128,8 @@ void USequenceOp::CheckForErrors()
 					if (ObjectVar != NULL)
 					{
 						AActor* TestActor = Cast<AActor>(ObjectVar->ObjValue);
-						if (TestActor != NULL && !TestActor->SupportsKismetModification(this))
+						FString Reason;
+						if (TestActor != NULL && !TestActor->SupportsKismetModification(this, Reason))
 						{
 							GWarn->MapCheck_Add(MCTYPE_KISMET, TestActor, *FString::Printf(TEXT("Static actor will be modified by kismet object %s through a linked variable"), *GetPathName()));
 						}
@@ -1148,7 +1149,8 @@ void USequenceOp::CheckForErrors()
 						for (INT i = 0; i < ObjArray.Num(); i++)
 						{
 							AActor* TestActor = Cast<AActor>(ObjArray(i));
-							if (TestActor != NULL && !TestActor->SupportsKismetModification(this))
+							FString Reason;
+							if (TestActor != NULL && !TestActor->SupportsKismetModification(this, Reason))
 							{
 								GWarn->MapCheck_Add(MCTYPE_KISMET, TestActor, *FString::Printf(TEXT("Static actor will be modified by kismet object %s through an editable property."), *GetPathName()));
 							}

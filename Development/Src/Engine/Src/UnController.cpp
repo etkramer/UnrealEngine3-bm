@@ -355,19 +355,6 @@ void APlayerController::SetAllowMatureLanguage( UBOOL bAllowMatureLanguge )
 	GEngine->bAllowMatureLanguage = bAllowMatureLanguge;
 }
 
-
-/** Sets the Audio Group to this the value passed in **/
-void APlayerController::SetAudioGroupVolume( FName GroupName, FLOAT Volume )
-{
-	if( ( GEngine->Client != NULL )
-		&& ( GEngine->Client->GetAudioDevice() != NULL )
-		)
-	{
-		GEngine->Client->GetAudioDevice()->SetGroupVolume( GroupName, Volume );
-	}
-}
-
-
 void APlayerController::SetNetSpeed(INT NewSpeed)
 {
 	UNetDriver* Driver = GWorld->GetNetDriver();
@@ -2804,17 +2791,6 @@ UBOOL APlayerController::IsKeyboardAvailable() const
 UBOOL APlayerController::IsMouseAvailable() const
 {
 	return TRUE;
-}
-
-/**
- * Displays a survey over top of the scene
- *
- * @param QuestionId the survey question to show
- * @param Context the context for the question
- */
-void APlayerController::ShowSurvey(const FString& QuestionId, const FString& Context)
-{
-	appSurveyHookShow(*QuestionId, *Context);
 }
 
 /* epic ===============================================

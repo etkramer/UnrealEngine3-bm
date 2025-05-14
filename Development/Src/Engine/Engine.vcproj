@@ -532,10 +532,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\Src\UnCar.cpp"
-				>
-			</File>
-			<File
 				RelativePath="Src\UnCDKey.cpp"
 				>
 			</File>
@@ -873,14 +869,6 @@
 			</File>
 			<File
 				RelativePath=".\Src\UnSubtitleManager.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\Src\UnSVehicle.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\Src\UnTank.cpp"
 				>
 			</File>
 			<File
