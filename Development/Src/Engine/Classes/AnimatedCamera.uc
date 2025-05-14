@@ -1,24 +1,13 @@
-
-/**
-* 	Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
-*/
 class AnimatedCamera extends Camera
-	notplaceable
-	native;
+    native
+    notplaceable;
 
 const MAX_ACTIVE_CAMERA_ANIMS = 8;
 
-/** Pool of anim instance objects available with which to play camera animations */
-var protected CameraAnimInst			AnimInstPool[MAX_ACTIVE_CAMERA_ANIMS];
-
-/** Array of anim instances that are currently playing and in-use */
-var protected array<CameraAnimInst>		ActiveAnims;
-/** Array of anim instances that are not playing and available */
-var protected array<CameraAnimInst>		FreeAnims;
-
-/** Internal.  Receives the output of individual camera animations. */
+var protected CameraAnimInst AnimInstPool[8];
+var protected array<CameraAnimInst> ActiveAnims;
+var protected array<CameraAnimInst> FreeAnims;
 var protected transient DynamicCameraActor AnimCameraActor;
-/** Internal.  Collects and blends the output of all of the camera animations, before being applied to the camera */
 var protected transient DynamicCameraActor AccumulatorCameraActor;
 
 cpptext
@@ -38,60 +27,49 @@ public:
 	virtual void ModifyPostProcessSettings(FPostProcessSettings& PPSettings) const;
 };
 
-
+// Export UAnimatedCamera::execApplyCameraModifiers(FFrame&, void* const)
 native function ApplyCameraModifiers(float DeltaTime, out TPOV OutPOV);
 
 function PostBeginPlay()
 {
-	local int Idx;
+    local int Idx;
 
-	super.PostBeginPlay();
+    super(Actor).PostBeginPlay();
+    Idx = 0;
+    J0x0D:
 
-	// create CameraAnimInsts in pool
-	for (Idx=0; Idx<MAX_ACTIVE_CAMERA_ANIMS; ++Idx)
-	{
-		AnimInstPool[Idx] = new(Self) class'CameraAnimInst';
-		
-		// add everything to the free list initially
-		FreeAnims[Idx] = AnimInstPool[Idx];			
-	}
-
-	// spawn the two temp CameraActors
-	AnimCameraActor = Spawn(class'DynamicCameraActor', self,,,,, TRUE);
-	AccumulatorCameraActor = Spawn(class'DynamicCameraActor', self,,,,, TRUE);
+    // End:0x50 [Loop If]
+    if(Idx < 8)
+    {
+        AnimInstPool[Idx] = new (self) Class'CameraAnimInst';
+        FreeAnims[Idx] = AnimInstPool[Idx];
+        ++Idx;
+        // [Loop Continue]
+        goto J0x0D;
+    }
+    AnimCameraActor = Spawn(Class'DynamicCameraActor', self,,,,, true);
+    AccumulatorCameraActor = Spawn(Class'DynamicCameraActor', self,,,,, true);
+    //return;    
 }
 
 event Destroyed()
 {
-	// clean up the temp camera actors
-	AnimCameraActor.Destroy();
-	AccumulatorCameraActor.Destroy();
+    AnimCameraActor.Destroy();
+    AccumulatorCameraActor.Destroy();
+    //return;    
 }
 
+// Export UAnimatedCamera::execApplyCameraModifiersNative(FFrame&, void* const)
+private native final simulated function ApplyCameraModifiersNative(float DeltaTime, out TPOV OutPOV);
 
-/** Native version of ApplyCameraModifiers */
-simulated private native function ApplyCameraModifiersNative(float DeltaTime, out TPOV OutPOV);
+// Export UAnimatedCamera::execPlayCameraAnim(FFrame&, void* const)
+native simulated function CameraAnimInst PlayCameraAnim(CameraAnim Anim, optional float Rate = 1.0000000, optional float Scale = 1.0000000, optional float BlendInTime, optional float BlendOutTime, optional bool bLoop, optional bool bRandomStartTime, optional float Duration, optional bool bSingleInstance);
 
-/** Play the indicated CameraAnim on this camera.  Returns the CameraAnim instance. */
-simulated native function CameraAnimInst PlayCameraAnim(CameraAnim Anim, optional float Rate=1.f, optional float Scale=1.f, optional float BlendInTime, optional float BlendOutTime, optional bool bLoop, optional bool bRandomStartTime, optional float Duration, optional bool bSingleInstance);
+// Export UAnimatedCamera::execStopAllCameraAnims(FFrame&, void* const)
+native simulated function StopAllCameraAnims(optional bool bImmediate);
 
-/** 
- * Stop playing all instances of the indicated CameraAnim. 
- * bImmediate: TRUE to stop it right now, FALSE to blend it out over BlendOutTime.
- */
-simulated native function StopAllCameraAnims(optional bool bImmediate);
+// Export UAnimatedCamera::execStopAllCameraAnimsByType(FFrame&, void* const)
+native simulated function StopAllCameraAnimsByType(CameraAnim Anim, optional bool bImmediate);
 
-/** 
- * Stop playing all instances of the indicated CameraAnim. 
- * bImmediate: TRUE to stop it right now, FALSE to blend it out over BlendOutTime.
- */
-simulated native function StopAllCameraAnimsByType(CameraAnim Anim, optional bool bImmediate);
-
-/**
- * Stops the given CameraAnim instance from playing.  The given pointer should be considered invalid after this.
- */
-simulated native function StopCameraAnim(CameraAnimInst AnimInst, optional bool bImmediate);
-
-defaultproperties
-{
-}
+// Export UAnimatedCamera::execStopCameraAnim(FFrame&, void* const)
+native simulated function StopCameraAnim(CameraAnimInst AnimInst, optional bool bImmediate);

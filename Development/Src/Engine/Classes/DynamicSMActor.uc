@@ -1,32 +1,18 @@
-//=============================================================================
-// DynamicSMActor.
-// A non-static version of StaticMeshActor. This class is abstract, but used as a
-// base class for things like KActor and InterpActor.
-// Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
-//=============================================================================
-
 class DynamicSMActor extends Actor
-	native
-	abstract;
+    abstract
+    native
+    notplaceable;
 
-var() const editconst StaticMeshComponent	StaticMeshComponent;
-var() const editconst DynamicLightEnvironmentComponent LightEnvironment;
-/** Used to replicate mesh to clients */
+var() const editconst export editinline StaticMeshComponent StaticMeshComponent;
+var() const editconst export editinline DynamicLightEnvironmentComponent LightEnvironment;
 var repnotify transient StaticMesh ReplicatedMesh;
-/** used to replicate the material in index 0 */
 var repnotify MaterialInterface ReplicatedMaterial;
-/** used to replicate StaticMeshComponent.bForceStaticDecals */
 var repnotify bool bForceStaticDecals;
-
-/** If a Pawn can be 'based' on this KActor. If not, they will 'bounce' off when they try to. */
-var() bool	bPawnCanBaseOn;
-/** Pawn can base on this KActor if it is asleep -- Pawn will disable KActor physics while based */
-var() bool	bSafeBaseIfAsleep;
-
-/** Extra component properties to replicate */
-var repnotify vector ReplicatedMeshTranslation;
-var repnotify rotator ReplicatedMeshRotation;
-var repnotify vector ReplicatedMeshScale3D;
+var() bool bPawnCanBaseOn;
+var() bool bSafeBaseIfAsleep;
+var repnotify Vector ReplicatedMeshTranslation;
+var repnotify Rotator ReplicatedMeshRotation;
+var repnotify Vector ReplicatedMeshScale3D;
 
 cpptext
 {
@@ -44,217 +30,232 @@ protected:
 	virtual FString GetDetailedInfoInternal() const;
 }
 
-replication
-{
-	if (bNetDirty)
-		ReplicatedMesh, ReplicatedMaterial, ReplicatedMeshTranslation, ReplicatedMeshRotation, ReplicatedMeshScale3D, bForceStaticDecals;
-}
-
 event PostBeginPlay()
 {
-	Super.PostBeginPlay();
-
-	ReplicatedMesh = StaticMeshComponent.StaticMesh;
-	bForceStaticDecals = StaticMeshComponent.bForceStaticDecals;
+    super.PostBeginPlay();
+    ReplicatedMesh = StaticMeshComponent.StaticMesh;
+    bForceStaticDecals = StaticMeshComponent.bForceStaticDecals;
+    //return;    
 }
 
 simulated event ReplicatedEvent(name VarName)
 {
-	if (VarName == 'ReplicatedMesh')
-	{
-		StaticMeshComponent.SetStaticMesh(ReplicatedMesh);
-	}
-	else if (VarName == 'ReplicatedMaterial')
-	{
-		StaticMeshComponent.SetMaterial(0, ReplicatedMaterial);
-	}
-	else if (VarName == 'ReplicatedMeshTranslation')
-	{
-		StaticMeshComponent.SetTranslation(ReplicatedMeshTranslation);
-	}
-	else if (VarName == 'ReplicatedMeshRotation')
-	{
-		StaticMeshComponent.SetRotation(ReplicatedMeshRotation);
-	}
-	else if (VarName == 'ReplicatedMeshScale3D')
-	{
-		StaticmeshComponent.SetScale3D(ReplicatedMeshScale3D);
-	}
-	else if (VarName == nameof(bForceStaticDecals))
-	{
-		StaticMeshComponent.SetForceStaticDecals(bForceStaticDecals);
-	}
-	else
-	{
-		Super.ReplicatedEvent(VarName);
-	}
+    // End:0x53
+    if(VarName == 'ReplicatedMesh')
+    {
+        LightEnvironment.bCastShadows = false;
+        LightEnvironment.SetEnabled(true);
+        StaticMeshComponent.SetStaticMesh(ReplicatedMesh);        
+    }
+    else
+    {
+        // End:0x83
+        if(VarName == 'ReplicatedMaterial')
+        {
+            StaticMeshComponent.SetMaterial(0, ReplicatedMaterial);            
+        }
+        else
+        {
+            // End:0xB2
+            if(VarName == 'ReplicatedMeshTranslation')
+            {
+                StaticMeshComponent.SetTranslation(ReplicatedMeshTranslation);                
+            }
+            else
+            {
+                // End:0xE1
+                if(VarName == 'ReplicatedMeshRotation')
+                {
+                    StaticMeshComponent.SetRotation(ReplicatedMeshRotation);                    
+                }
+                else
+                {
+                    // End:0x110
+                    if(VarName == 'ReplicatedMeshScale3D')
+                    {
+                        StaticMeshComponent.SetScale3D(ReplicatedMeshScale3D);                        
+                    }
+                    else
+                    {
+                        // End:0x13C
+                        if(VarName == 'bForceStaticDecals')
+                        {
+                            StaticMeshComponent.SetForceStaticDecals(bForceStaticDecals);                            
+                        }
+                        else
+                        {
+                            super.ReplicatedEvent(VarName);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    //return;    
 }
 
 function OnSetStaticMesh(SeqAct_SetStaticMesh Action)
 {
-	local bool bForce;
-	bForce = Action.bIsAllowedToMove == StaticMeshComponent.bForceStaticDecals || Action.bAllowDecalsToReattach;
+    local bool bForce;
 
-	if( (Action.NewStaticMesh != None) &&
-		(Action.NewStaticMesh != StaticMeshComponent.StaticMesh || bForce) )
-	{
-		// Enable the light environment if it is not already
-		LightEnvironment.bCastShadows = false;
-		LightEnvironment.SetEnabled(TRUE);
-		// force decals on this mesh to be treated as movable or not (if False then decals will use fastpath)
-		bForceStaticDecals = !Action.bIsAllowedToMove;
-		StaticMeshComponent.SetForceStaticDecals(bForceStaticDecals);
-		// Don't allow decals to reattach since we are changing the static mesh
-		StaticMeshComponent.bAllowDecalAutomaticReAttach = Action.bAllowDecalsToReattach;
-		StaticMeshComponent.SetStaticMesh( Action.NewStaticMesh, Action.bAllowDecalsToReattach );
-		StaticMeshComponent.bAllowDecalAutomaticReAttach = true;
-		ReplicatedMesh = Action.NewStaticMesh;
-		ForceNetRelevant();
-	}
+    bForce = (Action.bIsAllowedToMove == StaticMeshComponent.bForceStaticDecals) || Action.bAllowDecalsToReattach;
+    // End:0x15A
+    if((Action.NewStaticMesh != none) && (Action.NewStaticMesh != StaticMeshComponent.StaticMesh) || bForce)
+    {
+        LightEnvironment.bCastShadows = false;
+        LightEnvironment.SetEnabled(true);
+        bForceStaticDecals = !Action.bIsAllowedToMove;
+        StaticMeshComponent.SetForceStaticDecals(bForceStaticDecals);
+        StaticMeshComponent.bAllowDecalAutomaticReAttach = Action.bAllowDecalsToReattach;
+        StaticMeshComponent.SetStaticMesh(Action.NewStaticMesh, Action.bAllowDecalsToReattach);
+        StaticMeshComponent.bAllowDecalAutomaticReAttach = true;
+        ReplicatedMesh = Action.NewStaticMesh;
+        ForceNetRelevant();
+    }
+    //return;    
 }
 
 function OnSetMaterial(SeqAct_SetMaterial Action)
 {
-	StaticMeshComponent.SetMaterial( Action.MaterialIndex, Action.NewMaterial );
-	if (Action.MaterialIndex == 0)
-	{
-		ReplicatedMaterial = Action.NewMaterial;
-		ForceNetRelevant();
-	}
+    StaticMeshComponent.SetMaterial(Action.MaterialIndex, Action.NewMaterial);
+    // End:0x66
+    if(Action.MaterialIndex == 0)
+    {
+        ReplicatedMaterial = Action.NewMaterial;
+        ForceNetRelevant();
+    }
+    //return;    
 }
 
-function SetStaticMesh(StaticMesh NewMesh, optional vector NewTranslation, optional rotator NewRotation, optional vector NewScale3D)
+function OnSetMaterialInstance(RSeqAct_SetMaterialInstance Action)
 {
-	StaticMeshComponent.SetStaticMesh(NewMesh);
-	StaticMeshComponent.SetTranslation(NewTranslation);
-	StaticMeshComponent.SetRotation(NewRotation);
-	if (!IsZero(NewScale3D))
-	{
-		StaticMeshComponent.SetScale3D(NewScale3D);
-		ReplicatedMeshScale3D = NewScale3D;
-	}
-	ReplicatedMesh = NewMesh;
-	ReplicatedMeshTranslation = NewTranslation;
-	ReplicatedMeshRotation = NewRotation;
-	ForceNetRelevant();
+    StaticMeshComponent.SetMaterial(Action.MaterialIndex, Action.NewMaterial);
+    //return;    
 }
 
-/**
- *	Query to see if this DynamicSMActor can base the given Pawn
- */
-simulated function bool CanBasePawn( Pawn P )
+function SetStaticMesh(StaticMesh NewMesh, optional Vector NewTranslation, optional Rotator NewRotation, optional Vector NewScale3D)
 {
-	// Can base pawn if...
-	//		Pawns can be based always OR
-	//		Pawns can be based if physics is not awake
-	if( bPawnCanBaseOn ||
-			(bSafeBaseIfAsleep &&
-			 StaticMeshComponent != None &&
-			!StaticMeshComponent.RigidBodyIsAwake()) )
-	{
-		return TRUE;
-	}
-
-	return FALSE;
+    StaticMeshComponent.SetStaticMesh(NewMesh);
+    StaticMeshComponent.SetTranslation(NewTranslation);
+    StaticMeshComponent.SetRotation(NewRotation);
+    // End:0x80
+    if(!IsZero(NewScale3D))
+    {
+        StaticMeshComponent.SetScale3D(NewScale3D);
+        ReplicatedMeshScale3D = NewScale3D;
+    }
+    ReplicatedMesh = NewMesh;
+    ReplicatedMeshTranslation = NewTranslation;
+    ReplicatedMeshRotation = NewRotation;
+    ForceNetRelevant();
+    //return;    
 }
 
-/**
- *	If pawn is attached while asleep, turn off physics while pawn is on it
- */
-event Attach( Actor Other )
+simulated function bool CanBasePawn(Pawn P)
 {
-	local Pawn P;
-
-	super.Attach( Other );
-
-	if( bSafeBaseIfAsleep )
-	{
-		P = Pawn(Other);
-		if( P != None )
-		{
-			SetPhysics( PHYS_None );
-		}
-	}
+    // End:0x3F
+    if(bPawnCanBaseOn || (bSafeBaseIfAsleep && StaticMeshComponent != none) && !StaticMeshComponent.RigidBodyIsAwake())
+    {
+        return true;
+    }
+    return false;
+    //return ReturnValue;    
 }
 
-/**
- *	If pawn is detached, turn back on physics (make sure no other pawns are based on it)
- */
-event Detach( Actor Other )
+event Attach(Actor Other)
 {
-	local int Idx;
-	local Pawn P, Test;
-	local bool bResetPhysics;
+    local Pawn P;
 
-	super.Detach( Other );
-
-	P = Pawn(Other);
-	if( P != None )
-	{
-		bResetPhysics = TRUE;
-		for( Idx = 0; Idx < Attached.Length; Idx++ )
-		{
-			Test = Pawn(Attached[Idx]);
-			if( Test != None && Test != P )
-			{
-				bResetPhysics = FALSE;
-				break;
-			}
-		}
-
-		if( bResetPhysics )
-		{
-			SetPhysics( PHYS_RigidBody );
-		}
-	}
+    super.Attach(Other);
+    // End:0x35
+    if(bSafeBaseIfAsleep)
+    {
+        P = Pawn(Other);
+        // End:0x35
+        if(P != none)
+        {
+            SetPhysics(0);
+        }
+    }
+    //return;    
 }
 
-
-/**
- * This will turn "off" the light environment so it will no longer update.
- * This is useful for having a Timer call this once something has come to a stop and doesn't need 100% correct lighting.
- **/
-simulated final function SetLightEnvironmentToNotBeDynamic()
+event Detach(Actor Other)
 {
-	if( LightEnvironment != none )
-	{
-		LightEnvironment.bDynamic = FALSE;
-	}
+    local int Idx;
+    local Pawn P, Test;
+    local bool bResetPhysics;
+
+    super.Detach(Other);
+    P = Pawn(Other);
+    // End:0x9B
+    if(P != none)
+    {
+        bResetPhysics = true;
+        Idx = 0;
+        J0x35:
+
+        // End:0x8C [Loop If]
+        if(Idx < Attached.Length)
+        {
+            Test = Pawn(Attached[Idx]);
+            // End:0x82
+            if((Test != none) && Test != P)
+            {
+                bResetPhysics = false;
+                // [Explicit Break]
+                goto J0x8C;
+            }
+            Idx++;
+            // [Loop Continue]
+            goto J0x35;
+        }
+        J0x8C:
+
+        // End:0x9B
+        if(bResetPhysics)
+        {
+            SetPhysics(10);
+        }
+    }
+    //return;    
 }
 
+final simulated function SetLightEnvironmentToNotBeDynamic()
+{
+    // End:0x1D
+    if(LightEnvironment != none)
+    {
+        LightEnvironment.bDynamic = false;
+    }
+    //return;    
+}
 
 defaultproperties
 {
-	Begin Object Class=DynamicLightEnvironmentComponent Name=MyLightEnvironment
-		bEnabled=FALSE
-	End Object
-	LightEnvironment=MyLightEnvironment
-	Components.Add(MyLightEnvironment)
-
-
-	Begin Object Class=StaticMeshComponent Name=StaticMeshComponent0
-	    BlockRigidBody=false
-		LightEnvironment=MyLightEnvironment
-		bUsePrecomputedShadows=FALSE
-	End Object
-	CollisionComponent=StaticMeshComponent0
-	StaticMeshComponent=StaticMeshComponent0
-	Components.Add(StaticMeshComponent0)
-
-	bEdShouldSnap=true
-	bWorldGeometry=false
-	bGameRelevant=true
-	RemoteRole=ROLE_SimulatedProxy
-	bPathColliding=true
-
-	// DynamicSMActor do not have collision as a default.  Having collision on them
-	// can be very slow (e.g. matinees where the matinee is controlling where
-	// the actors move and then they are trying to collide also!)
-	// The overall idea is that it is really easy to see when something doesn't
-	// collide correct and rectify it.  On the other hand, it is hard to see
-	// something testing collision when it should not be while you wonder where
-	// your framerate went.
-
-	bCollideActors=false
-	bPawnCanBaseOn=true
+    // Reference: StaticMeshComponent'Default__DynamicSMActor.StaticMeshComponent0'
+    // TemplateOwnerClass: none
+    // TemplateOwnerName: 'StaticMeshComponent0'
+    begin object name="StaticMeshComponent0" class=Class'StaticMeshComponent'
+        LightEnvironment=DynamicLightEnvironmentComponent'Default__DynamicSMActor.MyLightEnvironment'
+        bCastDynamicShadow=false
+        BlockRigidBody=false
+    end object
+    StaticMeshComponent=StaticMeshComponent0
+    // Reference: DynamicLightEnvironmentComponent'Default__DynamicSMActor.MyLightEnvironment'
+    // TemplateOwnerClass: none
+    // TemplateOwnerName: 'MyLightEnvironment'
+    begin object name="MyLightEnvironment" class=Class'DynamicLightEnvironmentComponent'
+        bEnabled=false
+    end object
+    LightEnvironment=MyLightEnvironment
+    bPawnCanBaseOn=true
+    bStasis=true
+    bGameRelevant=true
+    bEdShouldSnap=true
+    bPathColliding=true
+    Components[0]=MyLightEnvironment
+    Components[1]=StaticMeshComponent0
+    RemoteRole=ROLE_SimulatedProxy
+    CollisionComponent=StaticMeshComponent0
 }

@@ -1,49 +1,34 @@
-/**
- * Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
- */
 class ActorComponent extends Component
-	native
-	noexport
-	abstract;
+    abstract
+    native
+    noexport;
 
-var native	transient	const	pointer			Scene{FSceneInterface};
-var 		transient	const	Actor			Owner;
-var	native	transient	const	bool			bAttached;
-var						const 	bool			bTickInEditor;
-
-/** Is this component in need of an update? */
-var	transient	const	bool			bNeedsReattach;
-
-/** Is this component's transform in need of an update? */
-var	transient	const	bool			bNeedsUpdateTransform;
-
+var native const transient Pointer Scene{FSceneInterface};
+var const transient Actor Owner;
+var native const transient bool bAttached;
+var const bool bTickInEditor;
+var const transient bool bNeedsReattach;
+var const transient bool bNeedsUpdateTransform;
 var native transient bool bDisableTick;
 var native transient bool bEnableUpdateChildComponents;
+var const Object.ETickingGroup TickGroup;
 
-/** The ticking group this component belongs to */
-var const ETickingGroup TickGroup;
+// Export UActorComponent::execSetTickGroup(FFrame&, void* const)
+native final function SetTickGroup(Object.ETickingGroup NewTickGroup);
 
-/** Changes the ticking group for this component */
-native final function SetTickGroup(ETickingGroup NewTickGroup);
-
-/**
- *	Sets whether or not the physics for this object should be 'fixed' (ie kinematic) or allowed to move with dynamics.
- *	If bFixed is true, all bodies within this component will be fixed.
- *	If bFixed is false, bodies will be set back to the default defined by their BodySetup.
- */
+// Export UActorComponent::execSetComponentRBFixed(FFrame&, void* const)
 native final function SetComponentRBFixed(bool bFixed);
 
-/** force this component to be updated right now
- * component must be directly attached to its Owner (not attached to another component)
- * @param bTransformOnly - if true, only update transform, otherwise do a full reattachment
- */
+// Export UActorComponent::execForceUpdate(FFrame&, void* const)
 native final function ForceUpdate(bool bTransformOnly);
 
-/** detaches the component from whatever it's attached to */
+// Export UActorComponent::execQueueReattach(FFrame&, void* const)
+native final function QueueReattach(bool bTransformOnly);
+
+// Export UActorComponent::execDetachFromAny(FFrame&, void* const)
 native final function DetachFromAny();
 
 defaultproperties
 {
-	// All things now default to being ticked during async work
-	TickGroup=TG_DuringAsyncWork
+    TickGroup=TG_DuringAsyncWork
 }

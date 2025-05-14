@@ -1,17 +1,10 @@
-//=============================================================================
-// Simplified version of ambient sound used to enhance workflow.
-// Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
-//=============================================================================
 class AmbientSoundSimple extends AmbientSound
-	hidecategories(Audio)
-	native(Sound);
+    native(Sound)
+    placeable;
 
-/** Mirrored property for easier editability, set in Spawned.		*/
-var()	editinline editconst	SoundNodeAmbient	AmbientProperties;
-/** Dummy sound cue property to force instantiation of subobject.	*/
-var		editinline export const SoundCue			SoundCueInstance;
-/** Dummy sound node property to force instantiation of subobject.	*/
-var		editinline export const SoundNodeAmbient	SoundNodeInstance;
+var() editconst editinline SoundNodeAmbient AmbientProperties;
+var const export editinline SoundCue SoundCueInstance;
+var const export editinline SoundNodeAmbient SoundNodeInstance;
 
 cpptext
 {
@@ -55,15 +48,65 @@ cpptext
 
 defaultproperties
 {
-	Begin Object Name=DrawSoundRadius0
-		SphereColor=(R=173,G=239,B=231,A=255)
-	End Object
-
-	Begin Object Class=SoundNodeAmbient Name=SoundNodeAmbient0
-	End Object
-	SoundNodeInstance=SoundNodeAmbient0
-
-	Begin Object Class=SoundCue Name=SoundCue0
-	End Object
-	SoundCueInstance=SoundCue0
+    // Reference: SoundCue'Default__AmbientSoundSimple.SoundCue0'
+    begin object name="SoundCue0" class=Class'SoundCue'
+    end object
+    SoundCueInstance=SoundCue0
+    // Reference: SoundNodeAmbient'Default__AmbientSoundSimple.SoundNodeAmbient0'
+    begin object name="SoundNodeAmbient0" class=Class'SoundNodeAmbient'
+        MinRadius=(Distribution=// Reference: DistributionFloatUniform'Default__AmbientSoundSimple.SoundNodeAmbient0.DistributionMinRadius'
+        // TemplateOwnerClass: none
+        // TemplateOwnerName: 'DistributionMinRadius'
+        // Archetype: DistributionFloatUniform'Default__SoundNodeAmbient.DistributionMinRadius'
+        begin object name="DistributionMinRadius"
+        end object
+        Distribution=DistributionMinRadius)
+        MaxRadius=(Distribution=// Reference: DistributionFloatUniform'Default__AmbientSoundSimple.SoundNodeAmbient0.DistributionMaxRadius'
+        // TemplateOwnerClass: none
+        // TemplateOwnerName: 'DistributionMaxRadius'
+        // Archetype: DistributionFloatUniform'Default__SoundNodeAmbient.DistributionMaxRadius'
+        begin object name="DistributionMaxRadius"
+        end object
+        Distribution=DistributionMaxRadius)
+        LPFMinRadius=(Distribution=// Reference: DistributionFloatUniform'Default__AmbientSoundSimple.SoundNodeAmbient0.DistributionLPFMinRadius'
+        // TemplateOwnerClass: none
+        // TemplateOwnerName: 'DistributionLPFMinRadius'
+        // Archetype: DistributionFloatUniform'Default__SoundNodeAmbient.DistributionLPFMinRadius'
+        begin object name="DistributionLPFMinRadius"
+        end object
+        Distribution=DistributionLPFMinRadius)
+        LPFMaxRadius=(Distribution=// Reference: DistributionFloatUniform'Default__AmbientSoundSimple.SoundNodeAmbient0.DistributionLPFMaxRadius'
+        // TemplateOwnerClass: none
+        // TemplateOwnerName: 'DistributionLPFMaxRadius'
+        // Archetype: DistributionFloatUniform'Default__SoundNodeAmbient.DistributionLPFMaxRadius'
+        begin object name="DistributionLPFMaxRadius"
+        end object
+        Distribution=DistributionLPFMaxRadius)
+        VolumeModulation=(Distribution=// Reference: DistributionFloatUniform'Default__AmbientSoundSimple.SoundNodeAmbient0.DistributionVolume'
+        // TemplateOwnerClass: none
+        // TemplateOwnerName: 'DistributionVolume'
+        // Archetype: DistributionFloatUniform'Default__SoundNodeAmbient.DistributionVolume'
+        begin object name="DistributionVolume"
+        end object
+        Distribution=DistributionVolume)
+        PitchModulation=(Distribution=// Reference: DistributionFloatUniform'Default__AmbientSoundSimple.SoundNodeAmbient0.DistributionPitch'
+        // TemplateOwnerClass: none
+        // TemplateOwnerName: 'DistributionPitch'
+        // Archetype: DistributionFloatUniform'Default__SoundNodeAmbient.DistributionPitch'
+        begin object name="DistributionPitch"
+        end object
+        Distribution=DistributionPitch)
+    end object
+    SoundNodeInstance=SoundNodeAmbient0
+    // Reference: AudioComponent'Default__AmbientSoundSimple.AudioComponent0'
+    // TemplateOwnerClass: none
+    // TemplateOwnerName: 'AudioComponent0'
+    // Archetype: AudioComponent'Default__AmbientSound.AudioComponent0'
+    begin object name="AudioComponent0"
+        PreviewSoundRadius=none
+    end object
+    AudioComponent=AudioComponent0
+    Components[0]=none
+    Components[1]=none
+    Components[2]=AudioComponent0
 }

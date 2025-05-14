@@ -1,160 +1,155 @@
-/**
- * Activated when a certain amount of damage is taken.  Allows the designer to define how much and
- * which types of damage should be be required (or ignored).
- * Originator: the actor that was damaged
- * Instigator: the actor that did the damaging
- * Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
- */
 class SeqEvent_TakeDamage extends SequenceEvent
-	native(Sequence);
+    native(Sequence);
 
-/** Damage must exceed this value to be counted */
 var() float MinDamageAmount;
-
-/** Total amount of damage to take before activating the event */
 var() float DamageThreshold;
-
-/** Types of damage that are counted */
-var() array<class<DamageType> > DamageTypes<AllowAbstract>;
-
-/** Types of damage that are ignored */
-var() array<class<DamageType> > IgnoreDamageTypes<AllowAbstract>;
-
-/** Current damage amount */
+var() array< class<DamageType> > DamageTypes<AllowAbstract>;
+var() array< class<DamageType> > IgnoreDamageTypes<AllowAbstract>;
 var float CurrentDamage;
-
-/** Should the damage counter be reset if this event is toggled? */
 var() bool bResetDamageOnToggle;
 
-/**
- * Searches DamageTypes[] for the specified damage type.
- *
- * Default case is to return true for no damage types listed.  This makes workflow a lot faster as you do not need to
- * add a damage type each time you use this event.
- */
 final function bool IsValidDamageType(class<DamageType> inDamageType)
 {
-	local int Idx;
-	local bool bValidDamageType;
-	// if any damage types are specified, then verify the inDamageType is a child of at least one
-	if (DamageTypes.Length > 0)
-	{
-		bValidDamageType = FALSE;
-		for (Idx = 0; Idx < DamageTypes.Length; Idx++)
-		{
-			if (ClassIsChildOf(inDamageType,DamageTypes[Idx]))
-			{
-				bValidDamageType = TRUE;
-				// no need to keep looking
-				break;
-			}
-		}
-		if (!bValidDamageType)
-		{
-			return FALSE;
-		}
-	}
-	// check to see if the damage type is an ignored type
-	if (IgnoreDamageTypes.Length > 0)
-	{
-		for (Idx = 0; Idx < IgnoreDamageTypes.Length; Idx++)
-		{
-			if (ClassIsChildOf(inDamageType,IgnoreDamageTypes[Idx]))
-			{
-				// should be ignored
-				return FALSE;
-			}
-		}
-	}
-	return TRUE;
+    local int Idx;
+    local bool bValidDamageType;
+
+    // End:0x63
+    if(DamageTypes.Length > 0)
+    {
+        bValidDamageType = false;
+        Idx = 0;
+        J0x1B:
+
+        // End:0x56 [Loop If]
+        if(Idx < DamageTypes.Length)
+        {
+            // End:0x4C
+            if(ClassIsChildOf(inDamageType, DamageTypes[Idx]))
+            {
+                bValidDamageType = true;
+                // [Explicit Break]
+                goto J0x56;
+            }
+            Idx++;
+            // [Loop Continue]
+            goto J0x1B;
+        }
+        J0x56:
+
+        // End:0x63
+        if(!bValidDamageType)
+        {
+            return false;
+        }
+    }
+    // End:0xA8
+    if(IgnoreDamageTypes.Length > 0)
+    {
+        Idx = 0;
+        J0x76:
+
+        // End:0xA8 [Loop If]
+        if(Idx < IgnoreDamageTypes.Length)
+        {
+            // End:0x9E
+            if(ClassIsChildOf(inDamageType, IgnoreDamageTypes[Idx]))
+            {
+                return false;
+            }
+            Idx++;
+            // [Loop Continue]
+            goto J0x76;
+        }
+    }
+    return true;
+    //return ReturnValue;    
 }
 
-/**
- * Applies the damage and checks for activation of the event.
- */
-final function HandleDamage(Actor inOriginator, Actor inInstigator, class<DamageType> inDamageType, int inAmount)
+function HandleDamage(Actor InOriginator, Actor InInstigator, class<DamageType> inDamageType, int inAmount, Vector HitLocation)
 {
-	local SeqVar_Float FloatVar;
-	local bool bAlreadyActivatedThisTick;
+    local SeqVar_Float FloatVar;
+    local SeqVar_Vector VectorVar;
+    local SeqVar_Object ObjectVar;
+    local bool bAlreadyActivatedThisTick;
 
-	if (inOriginator != None &&
-		bEnabled &&
-		inAmount >= MinDamageAmount &&
-		IsValidDamageType(inDamageType) &&
-		(!bPlayerOnly ||
-		 (inInstigator!= None && inInstigator.IsPlayerOwned())))
-	{
-		CurrentDamage += inAmount;
-
-		if (CurrentDamage >= DamageThreshold)
-		{
-			bAlreadyActivatedThisTick = (bActive && ActivationTime ~= GetWorldInfo().TimeSeconds);
-			if (CheckActivate(inOriginator,inInstigator,false))
-			{
-				// write to any variables that want to know the exact damage taken
-				foreach LinkedVariables(class'SeqVar_Float', FloatVar, "Damage Taken")
-				{
-					//@hack carry over damage from multiple hits in the same tick
-					//since Kismet doesn't currently support multiple activations in the same tick
-					if (bAlreadyActivatedThisTick)
-					{
-						FloatVar.FloatValue += CurrentDamage;
-					}
-					else
-					{
-						FloatVar.FloatValue = CurrentDamage;
-					}
-				}
-				// reset the damage counter on activation
-				if (DamageThreshold <= 0.f)
-				{
-					CurrentDamage = 0.f;
-				}
-				else
-				{
-					CurrentDamage -= DamageThreshold;
-				}
-			}
-		}
-	}
+    // End:0x1C0
+    if(((((InOriginator != none) && bEnabled) && float(inAmount) >= MinDamageAmount) && IsValidDamageType(inDamageType)) && !bPlayerOnly || (InInstigator != none) && InInstigator.IsPlayerOwned())
+    {
+        CurrentDamage += float(inAmount);
+        // End:0x1C0
+        if(CurrentDamage >= DamageThreshold)
+        {
+            bAlreadyActivatedThisTick = bActive && ActivationTime ~= GetWorldInfo().TimeSeconds;
+            // End:0x1C0
+            if(CheckActivate(InOriginator, InInstigator, false))
+            {
+                // End:0x121
+                foreach LinkedVariables(Class'SeqVar_Float', FloatVar, "Damage Taken")
+                {
+                    // End:0x10B
+                    if(bAlreadyActivatedThisTick)
+                    {
+                        FloatVar.FloatValue += CurrentDamage;
+                        // End:0x120
+                        continue;
+                    }
+                    FloatVar.FloatValue = CurrentDamage;                    
+                }                
+                // End:0x15C
+                foreach LinkedVariables(Class'SeqVar_Vector', VectorVar, "Damage Location")
+                {
+                    VectorVar.VectValue = HitLocation;                    
+                }                
+                // End:0x196
+                foreach LinkedVariables(Class'SeqVar_Object', ObjectVar, "Originator")
+                {
+                    ObjectVar.SetObjectValue(InOriginator);                    
+                }                
+                // End:0x1B4
+                if(DamageThreshold <= 0.0000000)
+                {
+                    CurrentDamage = 0.0000000;                    
+                }
+                else
+                {
+                    CurrentDamage -= DamageThreshold;
+                }
+            }
+        }
+    }
+    //return;    
 }
 
 function Reset()
 {
-	Super.Reset();
-
-	CurrentDamage = 0.f;
+    super.Reset();
+    CurrentDamage = 0.0000000;
+    //return;    
 }
 
-/**
- * Return the version number for this class.  Child classes should increment this method by calling Super then adding
- * a individual class version to the result.  When a class is first created, the number should be 0; each time one of the
- * link arrays is modified (VariableLinks, OutputLinks, InputLinks, etc.), the number that is added to the result of
- * Super.GetObjClassVersion() should be incremented by 1.
- *
- * @return	the version number for this specific class.
- */
 static event int GetObjClassVersion()
 {
-	return Super.GetObjClassVersion() + 2;
+    return super(SequenceObject).GetObjClassVersion() + 2;
+    //return ReturnValue;    
 }
 
 event Toggled()
 {
-	if (bResetDamageOnToggle)
-	{
-		CurrentDamage = 0.f;
-	}
-	Super.Toggled();
+    // End:0x14
+    if(bResetDamageOnToggle)
+    {
+        CurrentDamage = 0.0000000;
+    }
+    super.Toggled();
+    //return;    
 }
 
 defaultproperties
 {
-	ObjName="Take Damage"
-	ObjCategory="Actor"
-
-	DamageThreshold=100.f
-	VariableLinks(1)=(ExpectedType=class'SeqVar_Float',LinkDesc="Damage Taken",bWriteable=true)
-
-	bResetDamageOnToggle=TRUE
+    DamageThreshold=100.0000000
+    bResetDamageOnToggle=true
+    VariableLinks[0]=(ExpectedType=Class'SeqVar_Object',LinkedVariables=none,LinkDesc="Instigator",LinkVar="None",PropertyName="None",bWriteable=true,bModifiesLinkedObject=false,bHidden=false,MinVars=1,MaxVars=255,DrawX=0,CachedProperty=none)
+    VariableLinks[1]=(ExpectedType=Class'SeqVar_Float',LinkedVariables=none,LinkDesc="Damage Taken",LinkVar="None",PropertyName="None",bWriteable=true,bModifiesLinkedObject=false,bHidden=false,MinVars=1,MaxVars=255,DrawX=0,CachedProperty=none)
+    VariableLinks[2]=(ExpectedType=Class'SeqVar_Vector',LinkedVariables=none,LinkDesc="Damage Location",LinkVar="None",PropertyName="None",bWriteable=true,bModifiesLinkedObject=false,bHidden=false,MinVars=1,MaxVars=255,DrawX=0,CachedProperty=none)
+    VariableLinks[3]=(ExpectedType=Class'SeqVar_Object',LinkedVariables=none,LinkDesc="Originator",LinkVar="None",PropertyName="None",bWriteable=true,bModifiesLinkedObject=false,bHidden=false,MinVars=1,MaxVars=255,DrawX=0,CachedProperty=none)
 }

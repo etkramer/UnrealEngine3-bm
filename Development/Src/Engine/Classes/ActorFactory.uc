@@ -1,13 +1,9 @@
-/**
- * Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
- */
 class ActorFactory extends Object
-	native
-	collapsecategories
-	hidecategories(Object)
-	editinlinenew
-	config(Editor)
-	abstract;
+    abstract
+    native
+    config(Editor)
+    editinlinenew
+    collapsecategories;
 
 cpptext
 {
@@ -45,32 +41,17 @@ cpptext
 
 }
 
-/** class to spawn during gameplay; only used if NewActorClass is left at the default */
 var class<Actor> GameplayActorClass;
-
-/** Name used as basis for 'New Actor' menu. */
-var string			MenuName;
-
-/** Indicates how far up the menu item should be. The higher the number, the higher up the list.*/
-var config int		MenuPriority;
-
-/** Actor subclass this ActorFactory creates. */
-var	class<Actor>	NewActorClass;
-
-/** Whether to appear on menu (or this Factory only used through scripts etc.) */
-var bool			bPlaceable;
-
-// BM1
+var string MenuName;
+var config int MenuPriority;
+var class<Actor> NewActorClass;
+var bool bPlaceable;
 var bool UseActorSelection;
-
-/** If this is associated with a specific game, don't display
-	If this is empty string, display for all games */
-var string			SpecificGameName;
-
+var string SpecificGameName;
 
 defaultproperties
 {
-	MenuName="Add Actor"
-	NewActorClass=class'Engine.Actor'
-	bPlaceable=true
+    MenuName="Add Actor"
+    NewActorClass=Class'Actor'
+    bPlaceable=true
 }

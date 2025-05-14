@@ -1,387 +1,122 @@
-//=============================================================================
-// PlayerController
-//
-// PlayerControllers are used by human players to control pawns.
-//
-// This is a built-in Unreal class and it shouldn't be modified.
-// for the change in Possess().
-// Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
-//=============================================================================
 class PlayerController extends Controller
-	config(Game)
-	native
-	nativereplication
-	dependson(OnlineSubsystem,OnlineGameSearch,SeqAct_ControlMovieTexture);
+    native
+    nativereplication
+    config(Game)
+    notplaceable
+    dependson(OnlineSubsystem,OnlineGameSearch,SeqAct_ControlMovieTexture);
 
-var const			Player			Player;						// Player info
-var 				Camera			PlayerCamera;				// Camera associated with this Player Controller
-var const class<Camera>				CameraClass;
-
-var DebugCameraController           DebugCameraControllerRef;
-var class<DebugCameraController>    DebugCameraControllerClass;
-
-/**
- * The class to use for the player owner data store.
- */
-var	const	class<PlayerOwnerDataStore>		PlayerOwnerDataStoreClass;
-
-/**
- * The data store instance responsible for presenting state data for this player.
- */
-var	protected		PlayerOwnerDataStore		CurrentPlayerData;
-
-// Player control flags
-
-var					bool			bFrozen;					// Set when game ends or player dies to temporarily prevent player from restarting (until cleared by timer)
-var					bool			bPressedJump;
-var					bool			bDoubleJump;
-var					bool			bUpdatePosition;
-var					bool			bUpdating;
-var globalconfig	bool			bNeverSwitchOnPickup;		// If true, don't automatically switch to picked up weapon
-var					bool			bCheatFlying;				// instantly stop in flying mode
-var					bool			bCameraPositionLocked;
-var globalconfig	bool			bNoTextToSpeechVoiceMessages;
-var globalconfig	bool			bTextToSpeechTeamMessagesOnly;
-
-var bool	bShortConnectTimeOut;	// when true, reduces connect timeout to 15 seconds
-var const bool	bPendingDestroy;		// when true, playercontroller is being destroyed
-var bool bWasSpeedHack;
-var const bool bWasSaturated;		// used by servers to identify saturated client connections
-var globalconfig bool bDynamicNetSpeed;
-var globalconfig bool bAimingHelp;
-
-var float MaxResponseTime;		 // how long server will wait for client move update before setting position
-var					float			WaitDelay;					// Delay time until can restart
-var					pawn			AcknowledgedPawn;			// Used in net games so client can acknowledge it possessed a pawn
-
-var					eDoubleClickDir	DoubleClickDir;				// direction of movement key double click (for special moves)
-
-// Camera info.
-var const			actor			ViewTarget;
-var PlayerReplicationInfo			RealViewTarget;
-/** True if clients are handling setting their own viewtarget and the server should not replicate it (e.g. during certain matinees) */
-var bool							bClientSimulatingViewTarget;
-
-/** Director track that's currently possessing this player controller, or none if not possessed. */
-var transient InterpTrackInstDirector ControllingDirTrackInst;
-
-/** field of view angle in degrees */
-var	float			FOVAngle;
-var 	float			DesiredFOV;
-var 	float			DefaultFOV;
-/** last used FOV based multiplier to distance to an object when determining if it exceeds the object's cull distance
- * @note: only valid on client
- */
-var const float LODDistanceFactor;
-
-// Remote Pawn ViewTargets
-var					rotator			TargetViewRotation;
-var					float			TargetEyeHeight;
-
-/** used for smoothing the viewrotation of spectated players */
-var rotator BlendedTargetViewRotation;
-
-var					HUD				myHUD;						// heads up display info
-
-// Move buffering for network games.  Clients save their un-acknowledged moves in order to replay them
-// when they get position updates from the server.
-
-/** SavedMoveClass should be changed for network player move replication where different properties need to be replicated from the base engine implementation.*/
-var					class<SavedMove> SavedMoveClass;
-var					SavedMove		SavedMoves;					// buffered moves pending position updates
-var					SavedMove		FreeMoves;					// freed moves, available for buffering
-var					SavedMove		PendingMove;
-var					vector			LastAckedAccel;				// last acknowledged sent acceleration
-var					float			CurrentTimeStamp;
-var					float			LastUpdateTime;
-var					float			ServerTimeStamp;
-var					float			TimeMargin;
-var					float			ClientUpdateTime;
-var 	float			MaxTimeMargin;
-var float LastActiveTime;		// used to kick idlers
-
-var int ClientCap;
-
-// ping replication and netspeed adjustment based on ping
-var globalconfig float DynamicPingThreshold;
-var					float			LastPingUpdate;
-var float OldPing;
-var float LastSpeedHackLog;
-
-/** MAXPOSITIONERRORSQUARED is the square of the max position error that is accepted (not corrected) in net play */
 const MAXPOSITIONERRORSQUARED = 3.0;
-
-/** MAXNEARZEROVELOCITYSQUARED is the square of the max velocity that is considered zero (not corrected) in net play */
 const MAXNEARZEROVELOCITYSQUARED = 9.0;
-
-/** MAXVEHICLEPOSITIONERRORSQUARED is the square of the max position error that is accepted (not corrected) in net play when driving a vehicle*/
 const MAXVEHICLEPOSITIONERRORSQUARED = 900.0;
+const CLIENTADJUSTUPDATECOST = 180.0;
+const MAXCLIENTUPDATEINTERVAL = 0.25;
 
-/** CLIENTADJUSTUPDATECOST is the bandwidth cost in bytes of sending a client adjustment update. 180 is greater than the actual cost, but represents a tweaked value reserving enough bandwidth for
-other updates sent to the client.  Increase this value to reduce client adjustment update frequency, or if the amount of data sent in the clientadjustment() call increases */
-const CLIENTADJUSTUPDATECOST=180.0;
+enum EInputTypes
+{
+    IT_XAxis,                       // 0
+    IT_YAxis,                       // 1
+    IT_MAX                          // 2
+};
 
-/** MAXCLIENTUPDATEINTERVAL is the maximum time between movement updates from the client before the server forces an update. */
-const MAXCLIENTUPDATEINTERVAL=0.25;
+enum EInputMatchAction
+{
+    IMA_GreaterThan,                // 0
+    IMA_LessThan,                   // 1
+    IMA_MAX                         // 2
+};
 
-// ClientAdjustPosition replication (event called at end of frame)
+enum EProgressMessageType
+{
+    PMT_Clear,                      // 0
+    PMT_Information,                // 1
+    PMT_AdminMessage,               // 2
+    PMT_DownloadProgress,           // 3
+    PMT_ConnectionFailure,          // 4
+    PMT_SocketFailure,              // 5
+    PMT_MAX                         // 6
+};
+
 struct native ClientAdjustment
 {
     var float TimeStamp;
-    var EPhysics newPhysics;
-    var vector NewLoc;
-    var vector NewVel;
-    var actor NewBase;
-    var vector NewFloor;
-	var byte bAckGoodMove;
-};
-var ClientAdjustment PendingAdjustment;
+    var Actor.EPhysics newPhysics;
+    var Vector NewLoc;
+    var Vector NewVel;
+    var Actor NewBase;
+    var Vector NewFloor;
+    var byte bAckGoodMove;
 
-// Progress Indicator - used by the engine to provide status messages (HUD is responsible for displaying these).
-var					string			ProgressMessage[2];
-var					float			ProgressTimeOut;
-
-// Localized strings
-var localized		string			QuickSaveString;
-var localized		string			NoPauseMessage;
-var localized		string			ViewingFrom;
-var localized		string			OwnCamera;
-
-var					int				GroundPitch;
-
-var					vector			OldFloor;				// used by PlayerSpider mode - floor for which old rotation was based;
-
-// Components ( inner classes )
-var transient	CheatManager			CheatManager;		// Object within playercontroller that manages "cheat" commands
-var						class<CheatManager>		CheatClass;			// class of my CheatManager
-
-var()	transient	editinline	PlayerInput			PlayerInput;		// Object within playercontroller that manages player input.
-var						class<PlayerInput>		InputClass;			// class of my PlayerInput
-
-var const				vector					FailedPathStart;
-var						CylinderComponent		CylinderComponent;
-// Manages gamepad rumble (within)
-var config string ForceFeedbackManagerClassName;
-var transient ForceFeedbackManager ForceFeedbackManager;
-
-// Interactions.
-var	transient			array<interaction>		Interactions;
-
-/** Indicates that the server and client */
-var bool bHasVoiceHandshakeCompleted;
-
-/** List of players that are explicitly muted (outside of gameplay) */
-var array<UniqueNetId> VoiceMuteList;
-
-/** List of players muted via gameplay */
-var array<UniqueNetId> GameplayVoiceMuteList;
-
-/** The list of combined players to filter voice packets for */
-var array<UniqueNetId> VoicePacketFilter;
-
-/** Cached online subsystem variable */
-var OnlineSubsystem OnlineSub;
-
-/** Cached online voice interface variable */
-var OnlineVoiceInterface VoiceInterface;
-
-/** The data store that holds any online player data */
-var UIDataStore_OnlinePlayerData OnlinePlayerData;
-
-/** Ignores movement input. Stacked state storage, Use accessor function IgnoreMoveInput() */
-var byte	bIgnoreMoveInput;
-/** Ignores look input. Stacked state storage, use accessor function IgnoreLookInput(). */
-var byte	bIgnoreLookInput;
-
-/** Maximum distance to search for interactable actors */
-var config float InteractDistance;
-
-/** Is this player currently in cinematic mode?  Prevents rotation/movement/firing/etc */
-var		bool		bCinematicMode;
-
-/** The state of the inputs from cinematic mode */
-var bool bCinemaDisableInputMove, bCinemaDisableInputLook;
-
-/** Used to cache the session name to join until the timer fires */
-var name DelayedJoinSessionName;
-
-/** Whether to ignore network error messages from now on */
-var bool bIgnoreNetworkMessages;
-
-// PLAYER INPUT MATCHING =============================================================
-
-/** Type of inputs the matching code recognizes */
-enum EInputTypes
-{
-	IT_XAxis,
-	IT_YAxis,
+    structdefaultproperties
+    {
+        TimeStamp=0.0000000
+        newPhysics=PHYS_None
+        NewLoc=(X=0.0000000,Y=0.0000000,Z=0.0000000)
+        NewVel=(X=0.0000000,Y=0.0000000,Z=0.0000000)
+        NewBase=none
+        NewFloor=(X=0.0000000,Y=0.0000000,Z=0.0000000)
+        bAckGoodMove=0
+    }
 };
 
-/** How to match an input action */
-enum EInputMatchAction
-{
-	IMA_GreaterThan,
-	IMA_LessThan
-};
-
-/** Individual entry to input matching sequences */
 struct native InputEntry
 {
-	/** Type of input to match */
-	var EInputTypes Type;
+    var PlayerController.EInputTypes Type;
+    var float Value;
+    var float TimeDelta;
+    var PlayerController.EInputMatchAction Action;
 
-	/** Min value required to consider as a valid match */
-	var	float Value;
-
-	/** Max amount of time since last match before sequence resets */
-	var	float TimeDelta;
-
-	/** What type of match is this? */
-	var EInputMatchAction Action;
+    structdefaultproperties
+    {
+        Type=IT_XAxis
+        Value=0.0000000
+        TimeDelta=0.0000000
+        Action=IMA_GreaterThan
+    }
 };
 
-/**
- * Contains information to match a series of a inputs and call the given
- * function upon a match.  Processed by PlayerInput, defined in the
- * PlayerController.
- */
 struct native InputMatchRequest
 {
-	/** Number of inputs to match, in sequence */
-	var array<InputEntry> Inputs;
+    var array<InputEntry> Inputs;
+    var Actor MatchActor;
+    var name MatchFuncName;
+    var name FailedFuncName;
+    var name RequestName;
+    var transient int MatchIdx;
+    var transient float LastMatchTime;
 
-	/** Actor to call below functions on */
-	var Actor MatchActor;
-
-	/** Name of function to call upon successful match */
-	var Name MatchFuncName;
-
-	/** Name of function to call upon a failed partial match */
-	var Name FailedFuncName;
-
-	/** Name of this input request, mainly for debugging */
-	var Name RequestName;
-
-	/** Current index into Inputs that is being matched */
-	var transient int MatchIdx;
-
-	/** Last time an input entry in Inputs was matched */
-	var transient float LastMatchTime;
+    structdefaultproperties
+    {
+        Inputs=none
+        MatchActor=none
+        MatchFuncName="None"
+        FailedFuncName="None"
+        RequestName="None"
+        MatchIdx=0
+        LastMatchTime=0.0000000
+    }
 };
-var array<InputMatchRequest> InputRequests;
 
-// MISC VARIABLES ====================================================================
-
-var input byte bRun, bDuck;
-
-var float LastBroadcastTime;
-var string LastBroadcastString[4];
-
-var bool	bReplicateAllPawns;			// if true, all pawns will be considered relevant
-
-/** list of names of levels the server is in the middle of sending us for a PrepareMapChange() call */
-var array<name> PendingMapChangeLevelNames;
-
-/** Whether this controller is using streaming volumes  **/
-var bool bIsUsingStreamingVolumes;
-
-/** True if there is externally controlled UI that should pause the game */
-var bool bIsExternalUIOpen;
-
-/** True if the controller is connected for this player */
-var bool bIsControllerConnected;
-
-/** If true, do a trace to check if sound is occluded, and reduce the effective sound radius if so */
-var bool bCheckSoundOcclusion;
-
-/** handles copying and replicating old cover changes from WorldInfo.CoverReplicatorBase on creation as well as replicating new changes */
-var CoverReplicator MyCoverReplicator;
-
-/** List of actors and debug text to draw, @see AddDebugText(), RemoveDebugText(), and DrawDebugTextList() */
 struct native DebugTextInfo
 {
-	/** Actor to draw DebugText over */
-	var Actor SrcActor;
-	/** Offset from SrcActor.Location to apply */
-	var vector SrcActorOffset;
-	/** Desired offset to interpolate to */
-	var vector SrcActorDesiredOffset;
-	/** Text to display */
-	var string DebugText;
-	/** Time remaining for the debug text, -1.f == infinite */
-	var transient float TimeRemaining;
-	/** Duration used to lerp desired offset */
-	var float Duration;
-	/** Text color */
-	var color TextColor;
+    var Actor SrcActor;
+    var Vector SrcActorOffset;
+    var Vector SrcActorDesiredOffset;
+    var string DebugText;
+    var transient float TimeRemaining;
+    var float Duration;
+    var Color TextColor;
+
+    structdefaultproperties
+    {
+        SrcActor=none
+        SrcActorOffset=(X=0.0000000,Y=0.0000000,Z=0.0000000)
+        SrcActorDesiredOffset=(X=0.0000000,Y=0.0000000,Z=0.0000000)
+        DebugText=""
+        TimeRemaining=0.0000000
+        Duration=0.0000000
+        TextColor=(R=0,G=0,B=0,A=0)
+    }
 };
-var private array<DebugTextInfo> DebugTextList;
-
-/** How fast spectator camera is allowed to move */
-var float SpectatorCameraSpeed;
-
-/** index identifying players using the same base connection (splitscreen clients)
- * Used by netcode to match replicated PlayerControllers to the correct splitscreen viewport and child connection
- * replicated via special internal code, not through normal variable replication
- */
-var const duplicatetransient byte NetPlayerIndex;
-
-/** this is set on the OLD PlayerController when performing a swap over a network connection
- * so we know what connection we're waiting on acknowledgement from to finish destroying this PC
- * (or when the connection is closed)
- * @see GameInfo::SwapPlayerControllers()
- */
-var const duplicatetransient NetConnection PendingSwapConnection;
-
-/** minimum time before can respawn after dying */
-var float MinRespawnDelay;
-
-/** component pooling for sounds played through PlaySound()/ClientHearSound() */
-var globalconfig int MaxConcurrentHearSounds;
-var array<AudioComponent> HearSoundActiveComponents;
-var array<AudioComponent> HearSoundPoolComponents;
-/** option to print out list of sounds when MaxConcurrentHearSounds is exceeded */
-var globalconfig bool bLogHearSoundOverflow;
-
-/** The actors which the camera shouldn't see. Used to hide actors which the camera penetrates.
-This array used only if PlayerController does not have a playercamera */
-var array<Actor> HiddenActors;
-
-/** if true, check relevancy of Actors through portals listed in VisiblePortals array */
-var globalconfig bool bCheckRelevancyThroughPortals;
-
-// BM1
-var transient bool bControllerWasDisconnected;
-var transient bool bDidLoseFocusDeferPause;
-
-/** Different types of progress messages */
-enum EProgressMessageType
-{
-	/** Clears existing progress messages */
-	PMT_Clear,
-
-	/** No change in connection status - simply update the text being displayed */
-	PMT_Information,
-
-	/** Message from the server admin */
-	PMT_AdminMessage,
-
-	/** Updates the amount remaining on a package download */
-	PMT_DownloadProgress,
-
-	/** Indicates that the connection to the server was lost */
-	PMT_ConnectionFailure,
-
-	/**
-	 * Indicates that an unrecoverable error was encountered by an open network socket.  In cases where the socket in question was
-	 * the endpoint for the connection to the server, a PMT_ConnectionFailure event will generally be fired as well, probably during
-	 * the next frame.
-	 */
-	PMT_SocketFailure,
-};
-
-/** set when received a valid ServerSetUniqueId() call, so we don't allow duplicates */
-var bool bReceivedUniqueId;
 
 struct native AmbientSoundStruct
 {
@@ -389,18 +124,137 @@ struct native AmbientSoundStruct
     var SoundCue AmbientSound_Cue;
     var int AmbientSound_Priority;
     var float AmbientSound_Time;
+
+    structdefaultproperties
+    {
+        AmbientSound_ReferenceNumber=0
+        AmbientSound_Cue=none
+        AmbientSound_Priority=0
+        AmbientSound_Time=0.0000000
+    }
 };
 
-// BM1
+var const Player Player;
+var Camera PlayerCamera;
+var const class<Camera> CameraClass;
+var DebugCameraController DebugCameraControllerRef;
+var class<DebugCameraController> DebugCameraControllerClass;
+var const class<PlayerOwnerDataStore> PlayerOwnerDataStoreClass;
+var protected PlayerOwnerDataStore CurrentPlayerData;
+var bool bFrozen;
+var bool bPressedJump;
+var bool bDoubleJump;
+var bool bUpdatePosition;
+var bool bUpdating;
+var globalconfig bool bNeverSwitchOnPickup;
+var bool bCheatFlying;
+var bool bCameraPositionLocked;
+var globalconfig bool bNoTextToSpeechVoiceMessages;
+var globalconfig bool bTextToSpeechTeamMessagesOnly;
+var bool bShortConnectTimeOut;
+var const bool bPendingDestroy;
+var bool bWasSpeedHack;
+var const bool bWasSaturated;
+var globalconfig bool bDynamicNetSpeed;
+var globalconfig bool bAimingHelp;
+var bool bClientSimulatingViewTarget;
+var bool bHasVoiceHandshakeCompleted;
+var bool bCinematicMode;
+var bool bCinemaDisableInputMove;
+var bool bCinemaDisableInputLook;
+var bool bIgnoreNetworkMessages;
+var bool bReplicateAllPawns;
+var bool bIsUsingStreamingVolumes;
+var bool bIsExternalUIOpen;
+var bool bIsControllerConnected;
+var bool bCheckSoundOcclusion;
+var globalconfig bool bLogHearSoundOverflow;
+var globalconfig bool bCheckRelevancyThroughPortals;
+var transient bool bControllerWasDisconnected;
+var transient bool bDidLoseFocusDeferPause;
+var bool bReceivedUniqueId;
+var float MaxResponseTime;
+var float WaitDelay;
+var Pawn AcknowledgedPawn;
+var Actor.EDoubleClickDir DoubleClickDir;
+var byte bIgnoreMoveInput;
+var byte bIgnoreLookInput;
+var input byte bRun;
+var input byte bDuck;
+var duplicatetransient const byte NetPlayerIndex;
+var const Actor ViewTarget;
+var PlayerReplicationInfo RealViewTarget;
+var transient InterpTrackInstDirector ControllingDirTrackInst;
+var float FOVAngle;
+var float DesiredFOV;
+var float DefaultFOV;
+var const float LODDistanceFactor;
+var Rotator TargetViewRotation;
+var float TargetEyeHeight;
+var Rotator BlendedTargetViewRotation;
+var HUD myHUD;
+var class<SavedMove> SavedMoveClass;
+var SavedMove SavedMoves;
+var SavedMove FreeMoves;
+var SavedMove PendingMove;
+var Vector LastAckedAccel;
+var float CurrentTimeStamp;
+var float LastUpdateTime;
+var float ServerTimeStamp;
+var float TimeMargin;
+var float ClientUpdateTime;
+var float MaxTimeMargin;
+var float LastActiveTime;
+var int ClientCap;
+var globalconfig float DynamicPingThreshold;
+var float LastPingUpdate;
+var float OldPing;
+var float LastSpeedHackLog;
+var ClientAdjustment PendingAdjustment;
+var string ProgressMessage[2];
+var float ProgressTimeOut;
+var const localized string QuickSaveString;
+var const localized string NoPauseMessage;
+var const localized string ViewingFrom;
+var const localized string OwnCamera;
+var int GroundPitch;
+var Vector OldFloor;
+var transient CheatManager CheatManager;
+var class<CheatManager> CheatClass;
+var() editinline transient PlayerInput PlayerInput;
+var class<PlayerInput> InputClass;
+var const Vector FailedPathStart;
+var export editinline CylinderComponent CylinderComponent;
+var config string ForceFeedbackManagerClassName;
+var transient ForceFeedbackManager ForceFeedbackManager;
+var transient array<Interaction> Interactions;
+var array<UniqueNetId> VoiceMuteList;
+var array<UniqueNetId> GameplayVoiceMuteList;
+var array<UniqueNetId> VoicePacketFilter;
+var OnlineSubsystem OnlineSub;
+var OnlineVoiceInterface VoiceInterface;
+var UIDataStore_OnlinePlayerData OnlinePlayerData;
+var config float InteractDistance;
+var name DelayedJoinSessionName;
+var array<InputMatchRequest> InputRequests;
+var float LastBroadcastTime;
+var string LastBroadcastString[4];
+var array<name> PendingMapChangeLevelNames;
+var CoverReplicator MyCoverReplicator;
+var private array<DebugTextInfo> DebugTextList;
+var float SpectatorCameraSpeed;
+var duplicatetransient const NetConnection PendingSwapConnection;
+var float MinRespawnDelay;
+var globalconfig int MaxConcurrentHearSounds;
+var export editinline array<export editinline AudioComponent> HearSoundActiveComponents;
+var export editinline array<export editinline AudioComponent> HearSoundPoolComponents;
+var array<Actor> HiddenActors;
 var array<AmbientSoundStruct> AmbientSoundStack;
 var export editinline AudioComponent AmbCurrentSoundPtr;
 var export editinline AudioComponent AmbOtherSoundPtr;
-
-/** Used to make sure the client is kept synchronized when in a spectator state */
 var float LastSpectatorStateSynchTime;
-
-// BM1
 var SeqAct_Latent ActiveDialogueOptions;
+//var delegate<CanUnpause> __CanUnpause__Delegate;
 
 cpptext
 {
@@ -447,7618 +301,7256 @@ cpptext
 
 }
 
-replication
+reliable client simulated function ClientDrawCoordinateSystem(Vector AxisLoc, Rotator AxisRot, float Scale, optional bool bPersistentLines)
 {
-	// Things the server should send to the client.
-	if ( bNetOwner && Role==ROLE_Authority && (ViewTarget != Pawn) && (Pawn(ViewTarget) != None) )
-		TargetViewRotation, TargetEyeHeight;
+    LogInternal("ClientDrawCoordinateSystem");
+    DrawDebugCoordinateSystem(AxisLoc, AxisRot, Scale, bPersistentLines);
+    //return;    
 }
 
-// DEBUG
-reliable client function ClientDrawCoordinateSystem( vector AxisLoc, Rotator AxisRot, float Scale, optional bool bPersistentLines )
-{
-	`log("ClientDrawCoordinateSystem");
-	DrawDebugCoordinateSystem( AxisLoc, AxisRot, Scale, bPersistentLines );
-}
+// Export UPlayerController::execAllowConsole(FFrame&, void* const)
+native final function bool AllowConsole();
 
-// DEBUG END
-
+// Export UPlayerController::execSetNetSpeed(FFrame&, void* const)
 native final function SetNetSpeed(int NewSpeed);
+
+// Export UPlayerController::execGetPlayerNetworkAddress(FFrame&, void* const)
 native final function string GetPlayerNetworkAddress();
+
+// Export UPlayerController::execGetServerNetworkAddress(FFrame&, void* const)
 native final function string GetServerNetworkAddress();
+
+// Export UPlayerController::execConsoleCommand(FFrame&, void* const)
 native function string ConsoleCommand(string Command, optional bool bWriteToLog = true);
 
-/**
- * Travel to a different map or IP address.  Calls the PreClientTravel event before doing anything.
- *
- * @param	URL				a string containing the mapname (or IP address) to travel to, along with option key/value pairs
- * @param	TravelType 		specifies whether the client should append URL options used in previous travels; if TRUE is specified
- *							for the bSeamlesss parameter, this value must be TRAVEL_Relative.
- * @param	bSeamless		indicates whether to use seamless travel (requires TravelType of TRAVEL_Relative)
- * @param	MapPackageGuid	the GUID of the map package to travel to - this is used to find the file when it has been autodownloaded,
- * 							so it is only needed for clients
- */
-reliable client native event ClientTravel(string URL, ETravelType TravelType, optional bool bSeamless = false, optional init Guid MapPackageGuid);
+// Export UPlayerController::execClientTravel(FFrame&, void* const)
+reliable client native simulated event ClientTravel(string URL, Actor.ETravelType TravelType, optional bool bSeamless = false, init optional Guid MapPackageGuid);
 
+// Export UPlayerController::execUpdateURL(FFrame&, void* const)
 native(546) final function UpdateURL(string NewOption, string NewValue, bool bSave1Default);
+
+// Export UPlayerController::execGetDefaultURL(FFrame&, void* const)
 native final function string GetDefaultURL(string Option);
-// Execute a console command in the context of this player, then forward to Actor.ConsoleCommand.
-native function CopyToClipboard( string Text );
+
+// Export UPlayerController::execCopyToClipboard(FFrame&, void* const)
+native function CopyToClipboard(string Text);
+
+// Export UPlayerController::execPasteFromClipboard(FFrame&, void* const)
 native function string PasteFromClipboard();
 
-/** Whether or not to allow mature language **/
-native function SetAllowMatureLanguage( bool bAllowMatureLanguge );
+// Export UPlayerController::execSetAllowMatureLanguage(FFrame&, void* const)
+native function SetAllowMatureLanguage(bool bAllowMatureLanguge);
 
-/** Sets the Audio Group to this the value passed in **/
-exec native function SetAudioGroupVolume( name GroupName, float Volume );
+// Export UPlayerController::execClientConvolve(FFrame&, void* const)
+private reliable client native final simulated event ClientConvolve(string C, int H);
 
-reliable client final private native event ClientConvolve(string C,int H);
-reliable server final private native event ServerProcessConvolve(string C,int H);
+// Export UPlayerController::execServerProcessConvolve(FFrame&, void* const)
+private reliable server native final event ServerProcessConvolve(string C, int H);
 
+// Export UPlayerController::execCheckSpeedHack(FFrame&, void* const)
 native final function bool CheckSpeedHack(float DeltaTime);
 
-/* FindStairRotation()
-returns an integer to use as a pitch to orient player view along current ground (flat, up, or down)
-*/
+// Export UPlayerController::execFindStairRotation(FFrame&, void* const)
 native(524) final function int FindStairRotation(float DeltaTime);
 
-/** Clears out 'left-over' audio components. */
+// Export UPlayerController::execCleanUpAudioComponents(FFrame&, void* const)
 native function CleanUpAudioComponents();
 
-/** called when the actor falls out of the world 'safely' (below KillZ and such) */
-simulated event FellOutOfWorld(class<DamageType> dmgType);
+simulated event FellOutOfWorld(class<DamageType> dmgType)
+{
+    //return;    
+}
 
-/**
- * Tells the game info to forcibly remove this player's CanUnpause delegates from its list of Pausers.
- *
- * Called when the player controller is being destroyed to prevent the game from being stuck in a paused state when a PC that
- * paused the game is destroyed before the game is unpaused.
- */
 function ForceClearUnpauseDelegates()
 {
-	if ( WorldInfo.Game != None )
-	{
-		WorldInfo.Game.ForceClearUnpauseDelegates(Self);
-	}
+    // End:0x30
+    if(WorldInfo.Game != none)
+    {
+        WorldInfo.Game.ForceClearUnpauseDelegates(self);
+    }
+    //return;    
 }
 
-/**
- * Attempts to pause/unpause the game when the UI opens/closes. Note: pausing
- * only happens in standalone mode
- *
- * @param bIsOpening whether the UI is opening or closing
- */
 function OnExternalUIChanged(bool bIsOpening)
 {
-	bIsExternalUIOpen = bIsOpening;
-	SetPause(bIsOpening, CanUnpauseExternalUI);
+    bIsExternalUIOpen = bIsOpening;
+    SetPause(bIsOpening, CanUnpauseExternalUI);
+    //return;    
 }
 
-/** Callback that checks the external UI state before allowing unpause */
 function bool CanUnpauseExternalUI()
 {
-	return !bIsExternalUIOpen || bPendingDelete || bPendingDestroy || bDeleteMe;
+    return ((!bIsExternalUIOpen || bPendingDelete) || bPendingDestroy) || bDeleteMe;
+    //return ReturnValue;    
 }
 
-/**
- * Attempts to pause/unpause the game when a controller becomes
- * disconnected/connected
- *
- * @param ControllerId the id of the controller that changed
- * @param bIsConnected whether the controller is connected or not
- */
-function OnControllerChanged(int ControllerId,bool bIsConnected)
+function OnControllerChanged(int ControllerId, bool bIsConnected)
 {
-	local LocalPlayer LP;
+    local LocalPlayer LP;
 
-	// Don't worry about remote players
-	LP = LocalPlayer(Player);
-
-	// If the controller that changed, is attached to the this playercontroller
-	if (LP != None
-	&&	LP.ControllerId == ControllerId
-	&&	WorldInfo.IsConsoleBuild()
-	// do not pause if there is no controller when we are automatedperftesting
-	&&	(WorldInfo.Game == None || !WorldInfo.Game.bAutomatedPerfTesting))
-	{
-		bIsControllerConnected = bIsConnected;
-
-		`log("Received gamepad connection change for player" @ class'UIInteraction'.static.GetPlayerIndex(ControllerId) $ ": gamepad" @ ControllerId @ "is now" @ (bIsConnected ? "connected" : "disconnected"));
-
-		// Pause if the controller was removed, otherwise unpause
-		SetPause(!bIsConnected,CanUnpauseControllerConnected);
-	}
+    LP = LocalPlayer(Player);
+    // End:0x146
+    if((((LP != none) && LP.ControllerId == ControllerId) && WorldInfo.IsConsoleBuild()) && (WorldInfo.Game == none) || !WorldInfo.Game.bAutomatedPerfTesting)
+    {
+        bIsControllerConnected = bIsConnected;
+        bControllerWasDisconnected = !bIsConnected;
+        LogInternal((((("Received gamepad connection change for player" @ string(Class'UIInteraction'.static.GetPlayerIndex(ControllerId))) $ ": gamepad") @ string(ControllerId)) @ "is now") @ ((bIsConnected) ? "connected" : "disconnected"));
+        // End:0x146
+        if(!bIsConnected)
+        {
+            Pause();
+        }
+    }
+    //return;    
 }
 
-/** Callback that checks to see if the controller is connected before unpausing */
 function bool CanUnpauseControllerConnected()
 {
-	return bIsControllerConnected;
+    return bIsControllerConnected;
+    //return ReturnValue;    
 }
 
-/** spawns MyCoverReplicator and tells it to replicate any changes that have already occurred */
 function CoverReplicator SpawnCoverReplicator()
 {
-	if (MyCoverReplicator == None && Role == ROLE_Authority && LocalPlayer(Player) == None)
-	{
-		MyCoverReplicator = Spawn(class'CoverReplicator', self);
-		MyCoverReplicator.ReplicateInitialCoverInfo();
-	}
-	return MyCoverReplicator;
+    // End:0x5A
+    if(((MyCoverReplicator == none) && Role == ROLE_Authority) && LocalPlayer(Player) == none)
+    {
+        MyCoverReplicator = Spawn(Class'CoverReplicator', self);
+        MyCoverReplicator.ReplicateInitialCoverInfo();
+    }
+    return MyCoverReplicator;
+    //return ReturnValue;    
 }
 
 simulated event PostBeginPlay()
 {
-	super.PostBeginPlay();
-
-	ResetCameraMode();
-
-	MaxTimeMargin = class'GameInfo'.Default.MaxTimeMargin;
-	MaxResponseTime = Default.MaxResponseTime * WorldInfo.TimeDilation;
-
-	if ( WorldInfo.NetMode == NM_Client )
-	{
-		SpawnDefaultHUD();
-	}
-	else
-	{
-		AddCheats();
-	}
-
-	SetViewTarget(self);  // MUST have a view target!
-	LastActiveTime = WorldInfo.TimeSeconds;
-
-	OnlineSub = class'GameEngine'.static.GetOnlineSubsystem();
+    super.PostBeginPlay();
+    ResetCameraMode();
+    MaxTimeMargin = Class'GameInfo'.default.MaxTimeMargin;
+    MaxResponseTime = default.MaxResponseTime * WorldInfo.TimeDilation;
+    // End:0x68
+    if(WorldInfo.NetMode == NM_Client)
+    {
+        SpawnDefaultHUD();        
+    }
+    else
+    {
+        AddCheats();
+    }
+    SetViewTarget(self);
+    LastActiveTime = WorldInfo.TimeSeconds;
+    OnlineSub = Class'GameEngine'.static.GetOnlineSubsystem();
+    LogInternal("Set OnlineSub = " @ string(OnlineSub));
+    //return;    
 }
 
-/**
- * Called after this PlayerController's viewport/net connection is associated with this player controller.
- */
 simulated event ReceivedPlayer()
 {
-	local LocalPlayer LP;
-	local PlayerController FirstPlayer;
+    local LocalPlayer LP;
+    local PlayerController FirstPlayer;
 
-	if ( PlayerReplicationInfo != None && IsSplitscreenPlayer() )
-	{
-		if ( NetPlayerIndex != 0 )
-		{
-			// we're the second player in a split-screen game - make sure the first player registered as a splitscreen
-			// client
-			LP = LocalPlayer(Player);
-			FirstPlayer = LP.ViewportClient.GamePlayers[0].Actor;
-
-			`assert(FirstPlayer != Self);
-			FirstPlayer.PlayerReplicationInfo.SetSplitscreenIndex(0);
-		}
-
-		PlayerReplicationInfo.SetSplitscreenIndex(NetPlayerIndex);
-	}
-
-	RegisterPlayerDataStores();
+    // End:0xB5
+    if((PlayerReplicationInfo != none) && IsSplitscreenPlayer())
+    {
+        // End:0x9C
+        if(NetPlayerIndex != 0)
+        {
+            LP = LocalPlayer(Player);
+            FirstPlayer = LP.ViewportClient.Outer.GamePlayers[0].Actor;
+            // DebugMode: 0
+            assert(FirstPlayer != self);
+            FirstPlayer.PlayerReplicationInfo.SetSplitscreenIndex(0);
+        }
+        PlayerReplicationInfo.SetSplitscreenIndex(NetPlayerIndex);
+    }
+    RegisterPlayerDataStores();
+    //return;    
 }
 
-
-event PreRender(Canvas Canvas);
+event PreRender(Canvas Canvas)
+{
+    //return;    
+}
 
 function ResetTimeMargin()
 {
-    TimeMargin = -0.1;
-	MaxTimeMargin = class'GameInfo'.Default.MaxTimeMargin;
+    TimeMargin = -0.1000000;
+    MaxTimeMargin = Class'GameInfo'.default.MaxTimeMargin;
+    //return;    
 }
 
 reliable server function ServerShortTimeout()
 {
-	local Actor A;
-
-	if (!bShortConnectTimeout)
-	{
-		bShortConnectTimeOut = true;
-		ResetTimeMargin();
-
-		// quick update of pickups and gameobjectives since this player is now relevant
-		if (WorldInfo.Pauser != None)
-		{
-			// update everything immediately, as TimeSeconds won't get advanced while paused
-			// so otherwise it won't happen at all until the game is unpaused
-			// this floods the network, but we're paused, so no gameplay is going on that would care much
-			foreach AllActors(class'Actor', A)
-			{
-				if (!A.bOnlyRelevantToOwner)
-				{
-					A.bForceNetUpdate = TRUE;
-				}
-			}
-		}
-	}
+    //return;    
 }
 
 function ServerGivePawn()
 {
-	GivePawn(Pawn);
+    GivePawn(Pawn);
+    //return;    
 }
 
 event KickWarning()
 {
-	ReceiveLocalizedMessage( class'GameMessage', 15 );
+    ReceiveLocalizedMessage(Class'GameMessage', 15);
+    //return;    
 }
 
 function AddCheats()
 {
-	// Assuming that this never gets called for NM_Client
-	if ( (CheatManager == None) && (WorldInfo.Game != None) && WorldInfo.Game.AllowCheats(self) )
-		CheatManager = new(Self) CheatClass;
+    // End:0x56
+    if(((CheatManager == none) && WorldInfo.Game != none) && WorldInfo.Game.AllowCheats(self))
+    {
+        CheatManager = new (self) CheatClass;
+    }
+    //return;    
 }
 
 exec function EnableCheats()
 {
-	AddCheats();
+    AddCheats();
+    //return;    
 }
 
-/* SpawnDefaultHUD()
-Spawn a HUD (make sure that PlayerController always has valid HUD, even if \
-ClientSetHUD() hasn't been called\
-*/
 function SpawnDefaultHUD()
 {
-	if ( LocalPlayer(Player) == None )
-		return;
-	`log(GetFuncName());
-	myHUD = spawn(class'HUD',self);
+    // End:0x12
+    if(LocalPlayer(Player) == none)
+    {
+        return;
+    }
+    LogInternal(string(GetFuncName()));
+    myHUD = Spawn(Class'HUD', self);
+    //return;    
 }
 
-/* Reset()
-reset actor to initial state - used when restarting level without reloading.
-*/
 function Reset()
 {
-	local vehicle DrivenVehicle;
-
-    DrivenVehicle = Vehicle(Pawn);
-	if( DrivenVehicle != None )
-		DrivenVehicle.DriverLeave(true); // Force the driver out of the car
-
-	if ( Pawn != None )
-	{
-		PawnDied( Pawn );
-		UnPossess();
-	}
-
-	super.Reset();
-
-	SetViewTarget( Self );
+    // End:0x24
+    if(Pawn != none)
+    {
+        PawnDied(Pawn);
+        UnPossess();
+    }
+    super.Reset();
+    SetViewTarget(self);
     ResetCameraMode();
-	WaitDelay = WorldInfo.TimeSeconds + 2;
+    WaitDelay = WorldInfo.TimeSeconds + float(2);
     FixFOV();
-    if ( PlayerReplicationInfo.bOnlySpectator )
-    	GotoState('Spectating');
+    // End:0x89
+    if(PlayerReplicationInfo.bOnlySpectator)
+    {
+        GotoState('Spectating');        
+    }
     else
-		GotoState('PlayerWaiting');
+    {
+        GotoState('PlayerWaiting');
+    }
+    //return;    
 }
 
-reliable client function ClientReset()
+reliable client simulated function ClientReset()
 {
-	ResetCameraMode();
-	SetViewTarget(self);
-	GotoState(PlayerReplicationInfo.bOnlySpectator ? 'Spectating' : 'PlayerWaiting');
+    ResetCameraMode();
+    SetViewTarget(self);
+    GotoState(((PlayerReplicationInfo.bOnlySpectator) ? 'Spectating' : 'PlayerWaiting'));
+    //return;    
 }
 
 function CleanOutSavedMoves()
 {
-	SavedMoves = None;
-	PendingMove = None;
+    SavedMoves = none;
+    PendingMove = none;
+    //return;    
 }
 
-/**
- * Notification that the ControllerId for this PC LocalPlayer is about to change.  Provides the PC a chance to cleanup anything that was
- * associated with the old ControllerId.  When this method is called, LocalPlayer.ControllerId is still the old value.
- */
 function PreControllerIdChange()
 {
-	local LocalPlayer LP;
+    local LocalPlayer LP;
 
-	LP = LocalPlayer(Player);
-	if ( LP != None )
-	{
-		ClientStopNetworkedVoice();
-		ClearOnlineDelegates();
-
-		UnregisterPlayerDataStores();
-	}
+    LP = LocalPlayer(Player);
+    // End:0x39
+    if(LP != none)
+    {
+        ClientStopNetworkedVoice();
+        ClearOnlineDelegates();
+        UnregisterPlayerDataStores();
+    }
+    //return;    
 }
 
-/**
- * Notification that the ControllerId for this PC's LocalPlayer has been changed.  Re-register all player data stores and any delegates that
- * require a ControllerId.
- */
 function PostControllerIdChange()
 {
-	local LocalPlayer LP;
+    local LocalPlayer LP;
 
-	LP = LocalPlayer(Player);
-	if ( LP != None )
-	{
-		InitUniquePlayerId();
-		RegisterPlayerDataStores();
-
-		RegisterOnlineDelegates();
-		ClientSetOnlineStatus();
-
-		// we don't currently allow players to migrate gamepads after the initial interactive screen.  If we are a client or not in the menu
-		// level then that constraint has been lifted - technically this shouldn't be an assertion, but this would be a really difficult bug
-		// to track down otherwise, if switching gamepads is ever allowed after initial interactive scene.
-		`assert(WorldInfo.Game != None);
-		if ( !WorldInfo.Game.bRequiresPushToTalk )
-		{
-			ClientStartNetworkedVoice();
-		}
-	}
+    LP = LocalPlayer(Player);
+    // End:0x7E
+    if(LP != none)
+    {
+        InitUniquePlayerId();
+        RegisterPlayerDataStores();
+        RegisterOnlineDelegates();
+        ClientSetOnlineStatus();
+        // DebugMode: 0
+        assert(WorldInfo.Game != none);
+        // End:0x7E
+        if(!WorldInfo.Game.bRequiresPushToTalk)
+        {
+            ClientStartNetworkedVoice();
+        }
+    }
+    //return;    
 }
 
-/**
- * Wrapper for getting reference to the OnlineSubsystem
- */
-simulated final function OnlineSubsystem GetOnlineSubsystem()
+final simulated function OnlineSubsystem GetOnlineSubsystem()
 {
-	if ( OnlineSub == None )
-	{
-		OnlineSub = class'GameEngine'.static.GetOnlineSubsystem();
-	}
-
-	return OnlineSub;
+    // End:0x21
+    if(OnlineSub == none)
+    {
+        OnlineSub = Class'GameEngine'.static.GetOnlineSubsystem();
+    }
+    return OnlineSub;
+    //return ReturnValue;    
 }
 
-/* InitInputSystem()
-Spawn the appropriate class of PlayerInput
-Only called for playercontrollers that belong to local players
-*/
 event InitInputSystem()
 {
-	local Class<ForceFeedbackManager> FFManagerClass;
-	local int i;
-	local Sequence GameSeq;
-	local array<SequenceObject> AllInterpActions;
+    local class<ForceFeedbackManager> FFManagerClass;
+    local int I;
+    local Sequence GameSeq;
+    local array<SequenceObject> AllInterpActions;
 
-	if (PlayerInput == None)
-	{
-		Assert(InputClass != None);
-		PlayerInput = new(Self) InputClass;
-	}
+    // End:0x27
+    if(PlayerInput == none)
+    {
+        // DebugMode: 0
+        assert(InputClass != none);
+        PlayerInput = new (self) InputClass;
+    }
+    // End:0x50
+    if(Interactions.Find(PlayerInput) == -1)
+    {
+        Interactions[Interactions.Length] = PlayerInput;
+    }
+    // End:0x93
+    if(ForceFeedbackManagerClassName != "")
+    {
+        FFManagerClass = class<ForceFeedbackManager>(DynamicLoadObject(ForceFeedbackManagerClassName, Class'Core.Class'));
+        // End:0x93
+        if(FFManagerClass != none)
+        {
+            ForceFeedbackManager = new (self) FFManagerClass;
+        }
+    }
+    RegisterOnlineDelegates();
+    // End:0x126
+    if(Role < ROLE_Authority)
+    {
+        GameSeq = WorldInfo.GetGameSequence();
+        // End:0x126
+        if(GameSeq != none)
+        {
+            GameSeq.FindSeqObjectsByClass(Class'SeqAct_Interp', true, AllInterpActions);
+            I = 0;
+            J0xF0:
 
-	if ( Interactions.Find(PlayerInput) == -1 )
-	{
-		Interactions[Interactions.Length] = PlayerInput;
-	}
-
-	// Spawn the waveform manager here
-	if (ForceFeedbackManagerClassName != "")
-	{
-		FFManagerClass = class<ForceFeedbackManager>(DynamicLoadObject(ForceFeedbackManagerClassName,class'Class'));
-		if (FFManagerClass != None)
-		{
-			ForceFeedbackManager = new(Self) FFManagerClass;
-		}
-	}
-
-	RegisterOnlineDelegates();
-
-	// add the player to any matinees running so that it gets in on any cinematics already running, etc
-	// (already done on server in PostLogin())
-	if (Role < ROLE_Authority)
-	{
-		GameSeq = WorldInfo.GetGameSequence();
-		if (GameSeq != None)
-		{
-			// find any matinee actions that exist
-			GameSeq.FindSeqObjectsByClass(class'SeqAct_Interp', true, AllInterpActions);
-
-			// tell them all to add this PC to any running Director tracks
-			for (i = 0; i < AllInterpActions.Length; i++)
-			{
-				SeqAct_Interp(AllInterpActions[i]).AddPlayerToDirectorTracks(self);
-			}
-		}
-	}
-
-	// this is a good stop gap measure for any cases that we miss / other code getting turned on / called
-	// there is never a case where we want the tilt to be on at the point where the player controller is created
-	SetOnlyUseControllerTiltInput( FALSE );
-	SetUseTiltForwardAndBack( TRUE );
-	SetControllerTiltActive( FALSE );
+            // End:0x126 [Loop If]
+            if(I < AllInterpActions.Length)
+            {
+                SeqAct_Interp(AllInterpActions[I]).AddPlayerToDirectorTracks(self);
+                I++;
+                // [Loop Continue]
+                goto J0xF0;
+            }
+        }
+    }
+    SetOnlyUseControllerTiltInput(false);
+    SetUseTiltForwardAndBack(true);
+    SetControllerTiltActive(false);
+    //return;    
 }
 
-/**
- * Called when a variable with the property flag "RepNotify" is replicated
- *
- * @param VarName the variable that was just replicated
- */
 simulated event ReplicatedEvent(name VarName)
 {
-	Super.ReplicatedEvent(VarName);
-
-	// Only init the player id if we haven't sent it to the server in the past
-	if (VarName == 'PlayerReplicationInfo' && !bReceivedUniqueId)
-	{
-		// Now the PRI is valid so we can use it for the UniqueId
-		// NOTE: Even if we already have a UniqueId set, we still call InitUniquePlayerId, so the server
-		//   can make sure the player is registered with the online subsystem and VOIP is setup OK.  Also,
-		//   this is how we currently check for banned players
-		InitUniquePlayerId();
-	}
+    super.ReplicatedEvent(VarName);
+    // End:0x35
+    if((VarName == 'PlayerReplicationInfo') && !bReceivedUniqueId)
+    {
+        InitUniquePlayerId();
+    }
+    //return;    
 }
 
-
-/**
- * Used to have script initialize the unique player id. This is the id used
- * in all network calls.
- */
 event InitUniquePlayerId()
 {
-	local LocalPlayer LocPlayer;
-	local OnlineGameSettings GameSettings;
-	local UniqueNetId PlayerId;
+    local LocalPlayer LocPlayer;
+    local OnlineGameSettings GameSettings;
+    local UniqueNetId PlayerID;
 
-	if ( PlayerReplicationInfo != None )
-	{
-		LocPlayer = LocalPlayer(Player);
-		// If we have both a local player and the online system, register ourselves
-		if (LocPlayer != None &&
-			PlayerReplicationInfo != None &&
-			OnlineSub != None &&
-			OnlineSub.PlayerInterface != None)
-		{
-			// Get our local id from the online subsystem
-			OnlineSub.PlayerInterface.GetUniquePlayerId(LocPlayer.ControllerId,PlayerId);
-			PlayerReplicationInfo.SetUniqueId(PlayerId);
-
-			if (WorldInfo.NetMode == NM_Client)
-			{
-				// Grab the game so we can check for being invited
-				if (OnlineSub.GameInterface != None)
-				{
-					GameSettings = OnlineSub.GameInterface.GetGameSettings(PlayerReplicationInfo.SessionName);
-				}
-
-				ServerSetUniquePlayerId(PlayerId, GameSettings != None && GameSettings.bWasFromInvite);
-				bReceivedUniqueId = true;
-
-				// Don't send a skill if we don't have one, or it hasn't been read yet
-				if (PlayerReplicationInfo.PlayerSkill > 0)
-				{
-					ServerSetPlayerSkill(PlayerReplicationInfo.PlayerSkill);
-				}
-			}
-		}
-	}
-	else
-	{
-		`log(`location $ ": PlayerReplicationInfo is None....aborting.",,'DevOnline');
-	}
+    // End:0x17F
+    if(PlayerReplicationInfo != none)
+    {
+        LocPlayer = LocalPlayer(Player);
+        // End:0x17C
+        if((((LocPlayer != none) && PlayerReplicationInfo != none) && OnlineSub != none) && NotEqual_InterfaceInterface(OnlineSub.PlayerInterface, none))
+        {
+            OnlineSub.PlayerInterface.GetUniquePlayerId(byte(LocPlayer.ControllerId), PlayerID);
+            PlayerReplicationInfo.SetUniqueId(PlayerID);
+            // End:0x17C
+            if(WorldInfo.NetMode == NM_Client)
+            {
+                // End:0x11A
+                if(NotEqual_InterfaceInterface(OnlineSub.GameInterface, none))
+                {
+                    GameSettings = OnlineSub.GameInterface.GetGameSettings(PlayerReplicationInfo.SessionName);
+                }
+                ServerSetUniquePlayerId(PlayerID, (GameSettings != none) && GameSettings.bWasFromInvite);
+                bReceivedUniqueId = true;
+                // End:0x17C
+                if(PlayerReplicationInfo.PlayerSkill > 0)
+                {
+                    ServerSetPlayerSkill(PlayerReplicationInfo.PlayerSkill);
+                }
+            }
+        }        
+    }
+    else
+    {
+        LogInternal(((("(" $ string(Name)) $ ") PlayerController::") $ string(GetFuncName())) $ ": PlayerReplicationInfo is None....aborting.", 'DevOnline');
+    }
+    //return;    
 }
 
-/**
- * Registers the unique id of the player with the server so it can be replicated
- * to all clients.
- *
- * @param UniqueId the buffer that holds the unique id
- * @param bWasInvited whether the player was invited to play or is joining via search
- */
-reliable server function ServerSetUniquePlayerId(UniqueNetId UniqueId,bool bWasInvited)
+reliable server function ServerSetUniquePlayerId(UniqueNetId UniqueId, bool bWasInvited)
 {
-	local UniqueNetId ZeroId;
-	local OnlineGameSettings GameSettings;
+    local UniqueNetId ZeroId;
+    local OnlineGameSettings GameSettings;
 
-	if (!bPendingDestroy && !bReceivedUniqueId)
-	{
-		if (OnlineSub != None && OnlineSub.GameInterface != None)
-		{
-			GameSettings = OnlineSub.GameInterface.GetGameSettings(PlayerReplicationInfo.SessionName);
-		}
-		// if this player is banned, kick him
-		//@todo: we should be doing this in the PreLogin/Login phase
-		if (WorldInfo.Game.AccessControl.IsIDBanned(UniqueId))
-		{
-			`Log(PlayerReplicationInfo.GetPlayerAlias() @ "is banned, kicking...");
-			ClientWasKicked();
-			Destroy();
-		}
-		// Don't allow players to bypass sign in
-		else if (WorldInfo.IsConsoleBuild()
-			&&	GameSettings != None
-			&&	!GameSettings.bIsLanMatch
-			&&	UniqueId == ZeroId)
-		{
-			`Log(PlayerReplicationInfo.GetPlayerAlias() @ "is not validated/signed in, kicking...");
-			ClientWasKicked();
-			Destroy();
-		}
-		else
-		{
-			PlayerReplicationInfo.SetUniqueId(UniqueId);
-
-			if (OnlineSub != None && OnlineSub.GameInterface != None)
-			{
-				// Go ahead and register the player as part of the session
-				OnlineSub.GameInterface.RegisterPlayer(PlayerReplicationInfo.SessionName,PlayerReplicationInfo.UniqueId,bWasInvited);
-			}
-			// Notify the game that we can now be muted and mute others
-			if (WorldInfo.NetMode != NM_Client)
-			{
-				WorldInfo.Game.UpdateGameplayMuteList(self);
-				// Now that the unique id is replicated, this player can contribute to skill
-				WorldInfo.Game.RecalculateSkillRating();
-			}
-
-			bReceivedUniqueId = true;
-		}
-	}
+    // End:0x26A
+    if(!bPendingDestroy && !bReceivedUniqueId)
+    {
+        // End:0x77
+        if((OnlineSub != none) && NotEqual_InterfaceInterface(OnlineSub.GameInterface, none))
+        {
+            GameSettings = OnlineSub.GameInterface.GetGameSettings(PlayerReplicationInfo.SessionName);
+        }
+        // End:0xE7
+        if(WorldInfo.Game.AccessControl.IsIDBanned(UniqueId))
+        {
+            LogInternal(PlayerReplicationInfo.GetPlayerAlias() @ "is banned, kicking...");
+            ClientWasKicked();
+            Destroy();            
+        }
+        else
+        {
+            // End:0x184
+            if(((WorldInfo.IsConsoleBuild() && GameSettings != none) && !GameSettings.bIsLanMatch) && UniqueId == ZeroId)
+            {
+                LogInternal(PlayerReplicationInfo.GetPlayerAlias() @ "is not validated/signed in, kicking...");
+                ClientWasKicked();
+                Destroy();                
+            }
+            else
+            {
+                PlayerReplicationInfo.SetUniqueId(UniqueId);
+                // End:0x20B
+                if((OnlineSub != none) && NotEqual_InterfaceInterface(OnlineSub.GameInterface, none))
+                {
+                    OnlineSub.GameInterface.RegisterPlayer(PlayerReplicationInfo.SessionName, PlayerReplicationInfo.UniqueId, bWasInvited);
+                }
+                // End:0x262
+                if(WorldInfo.NetMode != NM_Client)
+                {
+                    WorldInfo.Game.UpdateGameplayMuteList(self);
+                    WorldInfo.Game.RecalculateSkillRating();
+                }
+                bReceivedUniqueId = true;
+            }
+        }
+    }
+    //return;    
 }
 
-/**
- * Sends the server the player's skill for this game type so it can be replicated.
- *
- * @param PlayerSkill the player's skill for this game type
- */
 reliable server function ServerSetPlayerSkill(int PlayerSkill)
 {
-	PlayerReplicationInfo.PlayerSkill = PlayerSkill;
+    PlayerReplicationInfo.PlayerSkill = PlayerSkill;
+    //return;    
 }
 
-/**
- * Initializes this client's Player data stores after seamless map travel
- */
-reliable client function ClientInitializeDataStores()
+reliable client simulated function ClientInitializeDataStores()
 {
-	`log(">> PlayerController::ClientInitializeDataStores for player" @ Self,,'DevDataStore');
-
-	// register the player's data stores and bind the PRI to the PlayerOwner data store.
-	RegisterPlayerDataStores();
-
-	`log("<< PlayerController::ClientInitializeDataStores for player" @ Self,,'DevDataStore');
+    LogInternal(">> PlayerController::ClientInitializeDataStores for player" @ string(self), 'DevDataStore');
+    RegisterPlayerDataStores();
+    LogInternal("<< PlayerController::ClientInitializeDataStores for player" @ string(self), 'DevDataStore');
+    //return;    
 }
 
-/**
- * Register all player data stores.
- */
-simulated final function RegisterPlayerDataStores()
+final simulated function RegisterPlayerDataStores()
 {
-	RegisterCustomPlayerDataStores();
-	RegisterStandardPlayerDataStores();
+    RegisterCustomPlayerDataStores();
+    RegisterStandardPlayerDataStores();
+    //return;    
 }
 
-/**
- * Creates and initializes the "PlayerOwner" and "PlayerSettings" data stores.  This function assumes that the PlayerReplicationInfo
- * for this player has not yet been created, and that the PlayerOwner data store's PlayerDataProvider will be set when the PRI is registered.
- */
-simulated protected function RegisterCustomPlayerDataStores()
+protected simulated function RegisterCustomPlayerDataStores()
 {
-	local LocalPlayer LP;
-	local DataStoreClient DataStoreManager;
-	local class<UIDataStore_OnlinePlayerData> PlayerDataStoreClass;
+    local LocalPlayer LP;
+    local DataStoreClient DataStoreManager;
+    local class<UIDataStore_OnlinePlayerData> PlayerDataStoreClass;
+    local string PlayerName;
 
-`if(`notdefined(FINAL_RELEASE))
-	local string PlayerName;
-
-	PlayerName = PlayerReplicationInfo != None ? PlayerReplicationInfo.PlayerName : "None";
-`endif
-
-	// only create player data store for local players
-	LP = LocalPlayer(Player);
-
-	`log(">>" @ `location @ "(" $ PlayerName $ ")" @ `showobj(LP),,'DevDataStore');
-	if ( LP != None )
-	{
-		// get a reference to the main data store client
-		DataStoreManager = class'UIInteraction'.static.GetDataStoreClient();
-		if ( DataStoreManager != None )
-		{
-			// find the "PlayerOwner" data store registered for this player; there shouldn't be one...
-			CurrentPlayerData = PlayerOwnerDataStore(DataStoreManager.FindDataStore('PlayerOwner',LP));
-			if ( CurrentPlayerData == None )
-			{
-				// create the PlayerOwner data store
-				CurrentPlayerData = DataStoreManager.CreateDataStore(PlayerOwnerDataStoreClass);
-				if ( CurrentPlayerData != None )
-				{
-					// and register it
-					if ( DataStoreManager.RegisterDataStore(CurrentPlayerData, LP) )
-					{
-						if ( PlayerReplicationInfo != None )
-						{
-							// if our PRI was created and initialized before we were assigned a Player, then our PlayerDataProvider wasn't
-							// linked to the PlayerOwner data store since we didn't have a valid Player, so do that now.
-							PlayerReplicationInfo.BindPlayerOwnerDataProvider();
-						}
-					}
-					else
-					{
-						`log("Failed to register 'PlayerOwner' data store for player:"@ Self @ "(" $ PlayerName $ ")" @ `showobj(CurrentPlayerData),,'DevDataStore');
-					}
-				}
-				else
-				{
-					`log("Failed to create 'PlayerOwner' data store for player:"@ Self @ "(" $ PlayerName $ ") using class" @ PlayerOwnerDataStoreClass,,'DevDataStore');
-				}
-			}
-			else
-			{
-				`log("'PlayerOwner' data store already registered for player:"@ Self @ "(" $ PlayerName $ ")",,'DevDataStore');
-			}
-
-//@todo ronp -- Automate the creation of these so that they don't need to be hand initialized
-			// now create the OnlinePlayerData data store
-			OnlinePlayerData = UIDataStore_OnlinePlayerData(DataStoreManager.FindDataStore('OnlinePlayerData',LP));
-			if ( OnlinePlayerData == None )
-			{
-				PlayerDataStoreClass = class<UIDataStore_OnlinePlayerData>(DataStoreManager.FindDataStoreClass(class'UIDataStore_OnlinePlayerData'));
-				if ( PlayerDataStoreClass != None )
-				{
-					// find the appropriate class to use for the PlayerSettings data store
-					// create the PlayerSettings data store
-					OnlinePlayerData = DataStoreManager.CreateDataStore(PlayerDataStoreClass);
-					if ( OnlinePlayerData != None )
-					{
-						if ( !DataStoreManager.RegisterDataStore(OnlinePlayerData, LP) )
-						{
-							`log("Failed to register 'OnlinePlayerData' data store for player:"@ Self @ "(" $ PlayerName $ ")" @ `showobj(OnlinePlayerData),,'DevDataStore');
-						}
-					}
-					else
-					{
-						`log("Failed to create 'OnlinePlayerData' data store for player:"@ Self @ "(" $ PlayerName $ ") using class" @ PlayerDataStoreClass,,'DevDataStore');
-					}
-				}
-				else
-				{
-					`log("Failed to find valid data store class while attempting to register the 'OnlinePlayerData' data store for player:"@ Self @ "(" $ PlayerName $ ")",,'DevDataStore');
-				}
-			}
-			else
-			{
-				`log("'OnlinePlayerData' data store already registered for player:"@ Self @ "(" $ PlayerName $ ")",,'DevDataStore');
-			}
-		}
-
-	}
-
-	`log("<<" @ `location @ "(" $ PlayerName $ ")",,'DevDataStore');
+    PlayerName = ((PlayerReplicationInfo != none) ? PlayerReplicationInfo.PlayerName : "None");
+    LP = LocalPlayer(Player);
+    LogInternal(((((((((">>" @ "(") $ string(Name)) $ ") PlayerController::") $ string(GetFuncName())) @ "(") $ PlayerName) $ ")") @ "LP:") $ ((LP != none) ? string(LP.Name) : "None"), 'DevDataStore');
+    // End:0x588
+    if(LP != none)
+    {
+        DataStoreManager = Class'UIInteraction'.static.GetDataStoreClient();
+        // End:0x588
+        if(DataStoreManager != none)
+        {
+            CurrentPlayerData = PlayerOwnerDataStore(DataStoreManager.FindDataStore('PlayerOwner', LP));
+            // End:0x283
+            if(CurrentPlayerData == none)
+            {
+                CurrentPlayerData = DataStoreManager.CreateDataStore(PlayerOwnerDataStoreClass);
+                // End:0x213
+                if(CurrentPlayerData != none)
+                {
+                    // End:0x17A
+                    if(DataStoreManager.RegisterDataStore(CurrentPlayerData, LP))
+                    {
+                        // End:0x177
+                        if(PlayerReplicationInfo != none)
+                        {
+                            PlayerReplicationInfo.BindPlayerOwnerDataProvider();
+                        }                        
+                    }
+                    else
+                    {
+                        LogInternal(((((("Failed to register 'PlayerOwner' data store for player:" @ string(self)) @ "(") $ PlayerName) $ ")") @ "CurrentPlayerData:") $ ((CurrentPlayerData != none) ? string(CurrentPlayerData.Name) : "None"), 'DevDataStore');
+                    }                    
+                }
+                else
+                {
+                    LogInternal((((("Failed to create 'PlayerOwner' data store for player:" @ string(self)) @ "(") $ PlayerName) $ ") using class") @ string(PlayerOwnerDataStoreClass), 'DevDataStore');
+                }                
+            }
+            else
+            {
+                LogInternal(((("'PlayerOwner' data store already registered for player:" @ string(self)) @ "(") $ PlayerName) $ ")", 'DevDataStore');
+            }
+            OnlinePlayerData = UIDataStore_OnlinePlayerData(DataStoreManager.FindDataStore('OnlinePlayerData', LP));
+            // End:0x529
+            if(OnlinePlayerData == none)
+            {
+                PlayerDataStoreClass = class<UIDataStore_OnlinePlayerData>(DataStoreManager.FindDataStoreClass(Class'UIDataStore_OnlinePlayerData'));
+                // End:0x493
+                if(PlayerDataStoreClass != none)
+                {
+                    OnlinePlayerData = DataStoreManager.CreateDataStore(PlayerDataStoreClass);
+                    // End:0x41E
+                    if(OnlinePlayerData != none)
+                    {
+                        // End:0x41B
+                        if(!DataStoreManager.RegisterDataStore(OnlinePlayerData, LP))
+                        {
+                            LogInternal(((((("Failed to register 'OnlinePlayerData' data store for player:" @ string(self)) @ "(") $ PlayerName) $ ")") @ "OnlinePlayerData:") $ ((OnlinePlayerData != none) ? string(OnlinePlayerData.Name) : "None"), 'DevDataStore');
+                        }                        
+                    }
+                    else
+                    {
+                        LogInternal((((("Failed to create 'OnlinePlayerData' data store for player:" @ string(self)) @ "(") $ PlayerName) $ ") using class") @ string(PlayerDataStoreClass), 'DevDataStore');
+                    }                    
+                }
+                else
+                {
+                    LogInternal(((("Failed to find valid data store class while attempting to register the 'OnlinePlayerData' data store for player:" @ string(self)) @ "(") $ PlayerName) $ ")", 'DevDataStore');
+                }                
+            }
+            else
+            {
+                LogInternal(((("'OnlinePlayerData' data store already registered for player:" @ string(self)) @ "(") $ PlayerName) $ ")", 'DevDataStore');
+            }
+        }
+    }
+    LogInternal((((((("<<" @ "(") $ string(Name)) $ ") PlayerController::") $ string(GetFuncName())) @ "(") $ PlayerName) $ ")", 'DevDataStore');
+    //return;    
 }
 
-/**
- * Register any player data stores which do not require special initialization.
- */
-simulated protected function RegisterStandardPlayerDataStores()
+protected simulated function RegisterStandardPlayerDataStores()
 {
-	local LocalPlayer LP;
-	local DataStoreClient DataStoreManager;
-	local array<class<UIDataStore> > PlayerDataStoreClasses;
-	local class<UIDataStore> PlayerDataStoreClass;
-	local UIDataStore PlayerDataStore;
-	local int ClassIndex;
+    local LocalPlayer LP;
+    local DataStoreClient DataStoreManager;
+    local array< class<UIDataStore> > PlayerDataStoreClasses;
+    local class<UIDataStore> PlayerDataStoreClass;
+    local UIDataStore PlayerDataStore;
+    local int ClassIndex;
+    local string PlayerName;
 
-`if(`notdefined(FINAL_RELEASE))
-	local string PlayerName;
+    PlayerName = ((PlayerReplicationInfo != none) ? PlayerReplicationInfo.PlayerName : "None");
+    LP = LocalPlayer(Player);
+    // End:0x3A4
+    if(LP != none)
+    {
+        LogInternal(((((((">>" @ "(") $ string(Name)) $ ") PlayerController::") $ string(GetFuncName())) @ "(") $ PlayerName) $ ")", 'DevDataStore');
+        DataStoreManager = Class'UIInteraction'.static.GetDataStoreClient();
+        // End:0x3A4
+        if(DataStoreManager != none)
+        {
+            DataStoreManager.GetPlayerDataStoreClasses(PlayerDataStoreClasses);
+            ClassIndex = 0;
+            J0xD0:
 
-	PlayerName = PlayerReplicationInfo != None ? PlayerReplicationInfo.PlayerName : "None";
-`endif
+            // End:0x3A4 [Loop If]
+            if(ClassIndex < PlayerDataStoreClasses.Length)
+            {
+                PlayerDataStoreClass = PlayerDataStoreClasses[ClassIndex];
+                // End:0x39A
+                if(PlayerDataStoreClass != none)
+                {
+                    PlayerDataStore = DataStoreManager.FindDataStore(PlayerDataStoreClass.default.Tag, LP);
+                    // End:0x334
+                    if(PlayerDataStore == none)
+                    {
+                        LogInternal(((((((("    Registering standard player data store '" $ string(PlayerDataStoreClass.Name)) $ "' for player") @ string(self)) @ "(") $ PlayerName) $ ")") @ "LP:") $ ((LP != none) ? string(LP.Name) : "None"), 'DevDataStore');
+                        PlayerDataStore = DataStoreManager.CreateDataStore(PlayerDataStoreClass);
+                        // End:0x2B8
+                        if(PlayerDataStore != none)
+                        {
+                            // End:0x2B5
+                            if(!DataStoreManager.RegisterDataStore(PlayerDataStore, LP))
+                            {
+                                LogInternal(((((((("Failed to register '" $ string(PlayerDataStoreClass.default.Tag)) $ "' data store for player:") @ string(self)) @ "(") $ PlayerName) $ ")") @ "PlayerDataStore:") $ ((PlayerDataStore != none) ? string(PlayerDataStore.Name) : "None"), 'DevDataStore');
+                            }                            
+                        }
+                        else
+                        {
+                            LogInternal((((((("Failed to create '" $ string(PlayerDataStoreClass.default.Tag)) $ "' data store for player:") @ string(self)) @ "(") $ PlayerName) $ ") using class") @ string(PlayerOwnerDataStoreClass), 'DevDataStore');
+                        }
+                        // [Explicit Continue]
+                        goto J0x39A;
+                    }
+                    LogInternal(((((("'" $ string(PlayerDataStoreClass.default.Tag)) $ "' data store already registered for player:") @ string(self)) @ "(") $ PlayerName) $ ")", 'DevDataStore');
+                }
+                J0x39A:
 
-	// only create player data store for local players
-	LP = LocalPlayer(Player);
-	if ( LP != None )
-	{
-		`log(">>" @ `location @ "(" $ PlayerName $ ")",,'DevDataStore');
-
-		// get a reference to the main data store client
-		DataStoreManager = class'UIInteraction'.static.GetDataStoreClient();
-		if ( DataStoreManager != None )
-		{
-			DataStoreManager.GetPlayerDataStoreClasses(PlayerDataStoreClasses);
-
-			// go through the data store client's list of player data store classes
-			for ( ClassIndex = 0; ClassIndex < PlayerDataStoreClasses.Length; ClassIndex++ )
-			{
-				PlayerDataStoreClass = PlayerDataStoreClasses[ClassIndex];
-				if ( PlayerDataStoreClass != None )
-				{
-					// if the data store isn't already registered, do it now
-					PlayerDataStore = DataStoreManager.FindDataStore(PlayerDataStoreClass.default.Tag, LP);
-					if ( PlayerDataStore == None )
-					{
-						`log("    Registering standard player data store '" $ PlayerDataStoreClass.Name $ "' for player" @ Self @ "(" $ PlayerName $ ")" @ `showobj(LP),,'DevDataStore');
-						PlayerDataStore = DataStoreManager.CreateDataStore(PlayerDataStoreClass);
-						if ( PlayerDataStore != None )
-						{
-							if ( !DataStoreManager.RegisterDataStore(PlayerDataStore, LP) )
-							{
-								`log("Failed to register '" $ PlayerDataStoreClass.default.Tag $ "' data store for player:" @ Self @ "(" $ PlayerName $ ")" @ `showobj(PlayerDataStore),,'DevDataStore');
-							}
-						}
-						else
-						{
-							`log("Failed to create '" $ PlayerDataStoreClass.default.Tag $ "' data store for player:"@ Self @ "(" $ PlayerName $ ") using class" @ PlayerOwnerDataStoreClass,,'DevDataStore');
-						}
-					}
-					else
-					{
-						`log("'" $ PlayerDataStoreClass.default.Tag $ "' data store already registered for player:" @ Self @ "(" $ PlayerName $ ")",,'DevDataStore');
-					}
-				}
-			}
-		}
-	}
+                ClassIndex++;
+                // [Loop Continue]
+                goto J0xD0;
+            }
+        }
+    }
+    //return;    
 }
 
-/**
- * Unregisters the "PlayerOwner" data store for this player.  Called when this PlayerController is destroyed.
- */
 simulated function UnregisterPlayerDataStores()
 {
-	local LocalPlayer LP;
-	local DataStoreClient DataStoreManager;
-	local UIDataStore_OnlinePlayerData OnlinePlayerDataStore;
+    local LocalPlayer LP;
+    local DataStoreClient DataStoreManager;
+    local UIDataStore_OnlinePlayerData OnlinePlayerDataStore;
+    local string PlayerName;
 
-`if(`notdefined(FINAL_RELEASE))
-	local string PlayerName;
-
-	PlayerName = PlayerReplicationInfo != None ? PlayerReplicationInfo.PlayerName : "None";
-`endif
-
-	// only execute for local players
-	LP = LocalPlayer(Player);
-	if ( LP != None )
-	{
-		`log(">>" @ `location @ "(" $ PlayerName $ ")",,'DevDataStore');
-
-		// because the PlayerOwner data store is created and registered each match, all we should need to do is
-		// unregister it from the data store client and clear our reference
-		// get a reference to the main data store client
-		DataStoreManager = class'UIInteraction'.static.GetDataStoreClient();
-		if ( DataStoreManager != None )
-		{
-			// unregister the current player data store
-			if ( CurrentPlayerData != None )
-			{
-				if ( !DataStoreManager.UnregisterDataStore(CurrentPlayerData) )
-				{
-					`log("Failed to unregister 'PlayerOwner' data store for player:"@ Self @ "(" $ PlayerName $ ")" @ `showobj(CurrentPlayerData),,'DevDataStore');
-				}
-
-				// clear the reference
-				CurrentPlayerData = None;
-			}
-			else
-			{
-				`log("'PlayerOwner' data store not registered for player:" @ Self @ "(" $ PlayerName $ ")",,'DevDataStore');
-			}
-
-			// Don't hold onto a ref
-			OnlinePlayerData = None;
-			// Unregister the online player data
-			OnlinePlayerDataStore = UIDataStore_OnlinePlayerData(DataStoreManager.FindDataStore('OnlinePlayerData',LP));
-			if ( OnlinePlayerDataStore != None )
-			{
-				if ( !DataStoreManager.UnregisterDataStore(OnlinePlayerDataStore) )
-				{
-					`log("Failed to unregister 'OnlinePlayerData' data store for player:"@ Self @ "(" $ PlayerName $ ")" @ `showobj(OnlinePlayerDataStore),,'DevDataStore');
-				}
-			}
-			else
-			{
-				`log("'OnlinePlayerData' data store not registered for player:" @ Self @ "(" $ PlayerName $ ")",,'DevDataStore');
-			}
-
-			UnregisterStandardPlayerDataStores();
-		}
-		else
-		{
-			`log("Data store client not found!",,'DevDataStore');
-		}
-
-		`log("<<" @ `location @ "(" $ PlayerName $ ")",,'DevDataStore');
-	}
+    PlayerName = ((PlayerReplicationInfo != none) ? PlayerReplicationInfo.PlayerName : "None");
+    LP = LocalPlayer(Player);
+    // End:0x3AB
+    if(LP != none)
+    {
+        LogInternal(((((((">>" @ "(") $ string(Name)) $ ") PlayerController::") $ string(GetFuncName())) @ "(") $ PlayerName) $ ")", 'DevDataStore');
+        DataStoreManager = Class'UIInteraction'.static.GetDataStoreClient();
+        // End:0x332
+        if(DataStoreManager != none)
+        {
+            // End:0x17B
+            if(CurrentPlayerData != none)
+            {
+                // End:0x171
+                if(!DataStoreManager.UnregisterDataStore(CurrentPlayerData))
+                {
+                    LogInternal(((((("Failed to unregister 'PlayerOwner' data store for player:" @ string(self)) @ "(") $ PlayerName) $ ")") @ "CurrentPlayerData:") $ ((CurrentPlayerData != none) ? string(CurrentPlayerData.Name) : "None"), 'DevDataStore');
+                }
+                CurrentPlayerData = none;                
+            }
+            else
+            {
+                LogInternal(((("'PlayerOwner' data store not registered for player:" @ string(self)) @ "(") $ PlayerName) $ ")", 'DevDataStore');
+            }
+            OnlinePlayerData = none;
+            OnlinePlayerDataStore = UIDataStore_OnlinePlayerData(DataStoreManager.FindDataStore('OnlinePlayerData', LP));
+            // End:0x2CA
+            if(OnlinePlayerDataStore != none)
+            {
+                // End:0x2C7
+                if(!DataStoreManager.UnregisterDataStore(OnlinePlayerDataStore))
+                {
+                    LogInternal(((((("Failed to unregister 'OnlinePlayerData' data store for player:" @ string(self)) @ "(") $ PlayerName) $ ")") @ "OnlinePlayerDataStore:") $ ((OnlinePlayerDataStore != none) ? string(OnlinePlayerDataStore.Name) : "None"), 'DevDataStore');
+                }                
+            }
+            else
+            {
+                LogInternal(((("'OnlinePlayerData' data store not registered for player:" @ string(self)) @ "(") $ PlayerName) $ ")", 'DevDataStore');
+            }
+            UnregisterStandardPlayerDataStores();            
+        }
+        else
+        {
+            LogInternal("Data store client not found!", 'DevDataStore');
+        }
+        LogInternal((((((("<<" @ "(") $ string(Name)) $ ") PlayerController::") $ string(GetFuncName())) @ "(") $ PlayerName) $ ")", 'DevDataStore');
+    }
+    //return;    
 }
 
-/**
- * Unregisters all player data stores that remain after unregistering all player data stores that require custom unregister logic.
- */
 simulated function UnregisterStandardPlayerDataStores()
 {
-	local LocalPlayer LP;
-	local DataStoreClient DataStoreManager;
-	local array<class<UIDataStore> > PlayerDataStoreClasses;
-	local class<UIDataStore> PlayerDataStoreClass;
-	local UIDataStore PlayerDataStore;
-	local int ClassIndex;
+    local LocalPlayer LP;
+    local DataStoreClient DataStoreManager;
+    local array< class<UIDataStore> > PlayerDataStoreClasses;
+    local class<UIDataStore> PlayerDataStoreClass;
+    local UIDataStore PlayerDataStore;
+    local int ClassIndex;
+    local string PlayerName;
 
-`if(`notdefined(FINAL_RELEASE))
-	local string PlayerName;
+    PlayerName = ((PlayerReplicationInfo != none) ? PlayerReplicationInfo.PlayerName : "None");
+    LP = LocalPlayer(Player);
+    // End:0x247
+    if(LP != none)
+    {
+        LogInternal(((((((">>" @ "(") $ string(Name)) $ ") PlayerController::") $ string(GetFuncName())) @ "(") $ PlayerName) $ ")", 'DevDataStore');
+        DataStoreManager = Class'UIInteraction'.static.GetDataStoreClient();
+        // End:0x1F7
+        if(DataStoreManager != none)
+        {
+            DataStoreManager.GetPlayerDataStoreClasses(PlayerDataStoreClasses);
+            ClassIndex = 0;
+            J0xD0:
 
-	PlayerName = PlayerReplicationInfo != None ? PlayerReplicationInfo.PlayerName : "None";
-`endif
-
-	// only execute for local players
-	LP = LocalPlayer(Player);
-	if ( LP != None )
-	{
-		`log(">>" @ `location @ "(" $ PlayerName $ ")",,'DevDataStore');
-
-		// because the PlayerOwner data store is created and registered each match, all we should need to do is
-		// unregister it from the data store client and clear our reference
-		// get a reference to the main data store client
-		DataStoreManager = class'UIInteraction'.static.GetDataStoreClient();
-		if ( DataStoreManager != None )
-		{
-			DataStoreManager.GetPlayerDataStoreClasses(PlayerDataStoreClasses);
-
-			// now go through the rest of the registered player data stores and unregister them
-			for ( ClassIndex = 0; ClassIndex < PlayerDataStoreClasses.Length; ClassIndex++ )
-			{
-				PlayerDataStoreClass = PlayerDataStoreClasses[ClassIndex];
-				if ( PlayerDataStoreClass != None )
-				{
-					// if the data store isn't already registered, do it now
-					PlayerDataStore = DataStoreManager.FindDataStore(PlayerDataStoreClass.default.Tag, LP);
-					if ( PlayerDataStore != None )
-					{
-						if ( !DataStoreManager.UnregisterDataStore(PlayerDataStore) )
-						{
-							`log("Failed to unregister '" $ PlayerDataStore.Tag $ "' data store for player:"@ Self @ "(" $ PlayerName $ ")" @ `showobj(PlayerDataStore),,'DevDataStore');
-						}
-					}
-				}
-			}
-		}
-
-		`log("<<" @ `location @ "(" $ PlayerName $ ")",,'DevDataStore');
-	}
+            // End:0x1F7 [Loop If]
+            if(ClassIndex < PlayerDataStoreClasses.Length)
+            {
+                PlayerDataStoreClass = PlayerDataStoreClasses[ClassIndex];
+                // End:0x1ED
+                if(PlayerDataStoreClass != none)
+                {
+                    PlayerDataStore = DataStoreManager.FindDataStore(PlayerDataStoreClass.default.Tag, LP);
+                    // End:0x1ED
+                    if(PlayerDataStore != none)
+                    {
+                        // End:0x1ED
+                        if(!DataStoreManager.UnregisterDataStore(PlayerDataStore))
+                        {
+                            LogInternal(((((((("Failed to unregister '" $ string(PlayerDataStore.Tag)) $ "' data store for player:") @ string(self)) @ "(") $ PlayerName) $ ")") @ "PlayerDataStore:") $ ((PlayerDataStore != none) ? string(PlayerDataStore.Name) : "None"), 'DevDataStore');
+                        }
+                    }
+                }
+                ClassIndex++;
+                // [Loop Continue]
+                goto J0xD0;
+            }
+        }
+        LogInternal((((((("<<" @ "(") $ string(Name)) $ ") PlayerController::") $ string(GetFuncName())) @ "(") $ PlayerName) $ ")", 'DevDataStore');
+    }
+    //return;    
 }
 
-/**
- * Hooks up the PlayerDataProvider for this player to the PlayerOwner data store.
- *
- * @param	DataProvider	the PlayerDataProvider to associate with this player.
- */
-simulated function SetPlayerDataProvider( PlayerDataProvider DataProvider )
+simulated function SetPlayerDataProvider(PlayerDataProvider DataProvider)
 {
-`if(`notdefined(FINAL_RELEASE))
-	local string PlayerName;
+    local string PlayerName;
 
-	PlayerName = PlayerReplicationInfo != None ? PlayerReplicationInfo.PlayerName : "None";
-`endif
-
-	`log(">>" @ `location @ "(" $ PlayerName $ "):" @ DataProvider,,'DevDataStore');
-
-	if ( CurrentPlayerData == None )
-	{
-		RegisterPlayerDataStores();
-	}
-
-	if ( CurrentPlayerData != None )
-	{
-		if ( DataProvider != None )
-		{
-			CurrentPlayerData.SetPlayerDataProvider(DataProvider);
-		}
-		else
-		{
-			`log("NULL data provider specified!",,'DevDataStore');
-		}
-	}
-	else
-	{
-		`log("'PlayerOwner' data store not yet registered for player:"@ Self @ "(" $ PlayerName $ ")",,'DevDataStore');
-	}
-
-	`log("<<" @ `location @ "(" $ PlayerName $ "):" @ DataProvider,,'DevDataStore');
+    PlayerName = ((PlayerReplicationInfo != none) ? PlayerReplicationInfo.PlayerName : "None");
+    LogInternal((((((((">>" @ "(") $ string(Name)) $ ") PlayerController::") $ string(GetFuncName())) @ "(") $ PlayerName) $ "):") @ string(DataProvider), 'DevDataStore');
+    // End:0x93
+    if(CurrentPlayerData == none)
+    {
+        RegisterPlayerDataStores();
+    }
+    // End:0xD9
+    if(CurrentPlayerData != none)
+    {
+        // End:0xAC
+        if(DataProvider != none)
+        {            
+        }
+        else
+        {
+            LogInternal("NULL data provider specified!", 'DevDataStore');
+        }        
+    }
+    else
+    {
+        LogInternal(((("'PlayerOwner' data store not yet registered for player:" @ string(self)) @ "(") $ PlayerName) $ ")", 'DevDataStore');
+    }
+    LogInternal(((((((("<<" @ "(") $ string(Name)) $ ") PlayerController::") $ string(GetFuncName())) @ "(") $ PlayerName) $ "):") @ string(DataProvider), 'DevDataStore');
+    //return;    
 }
 
-
-/**
- * Refetches this player's profile settings.
- */
-simulated function ReloadProfileSettings()
-{
-	if ( OnlinePlayerData != None && OnlinePlayerData.ProfileProvider != None )
-	{
-		OnlinePlayerData.ProfileProvider.RefreshProfileData();
-	}
-}
-
-
-/**
- * Scales the amount the rumble will play on the gamepad
- *
- * @param ScaleBy The amount to scale the waveforms by
- */
 final function SetRumbleScale(float ScaleBy)
 {
-	if (ForceFeedbackManager != None)
-	{
-		ForceFeedbackManager.ScaleAllWaveformsBy = ScaleBy;
-	}
+    // End:0x20
+    if(ForceFeedbackManager != none)
+    {
+        ForceFeedbackManager.ScaleAllWaveformsBy = ScaleBy;
+    }
+    //return;    
 }
 
-/**
- * Returns the rumble scale (or 1 if none is specified)
- */
 final function float GetRumbleScale()
 {
-	local float retval;
-	retval = 1.0;
-	if (ForceFeedbackManager != None)
-	{
-		retval = ForceFeedbackManager.ScaleAllWaveformsBy;
-	}
-	return retval;
+    local float retval;
+
+    retval = 1.0000000;
+    // End:0x2B
+    if(ForceFeedbackManager != none)
+    {
+        retval = ForceFeedbackManager.ScaleAllWaveformsBy;
+    }
+    return retval;
+    //return ReturnValue;    
 }
 
-/**
- * @return whether or not this Controller has Tilt Turned on
- **/
-native simulated function bool IsControllerTiltActive() const;
+// Export UPlayerController::execIsControllerTiltActive(FFrame&, void* const)
+native simulated function bool IsControllerTiltActive();
 
-/**
- * sets whether or not the the player wants to utilize the Tilt functionality
- **/
-native simulated function SetControllerTiltDesiredIfAvailable( bool bActive );
+// Export UPlayerController::execSetControllerTiltDesiredIfAvailable(FFrame&, void* const)
+native simulated function SetControllerTiltDesiredIfAvailable(bool bActive);
 
-/**
- * sets whether or not the Tilt functionality is turned on
- **/
-native simulated function SetControllerTiltActive( bool bActive );
+// Export UPlayerController::execSetControllerTiltActive(FFrame&, void* const)
+native simulated function SetControllerTiltActive(bool bActive);
 
-/**
- * sets whether or not to ONLY use the tilt input controls
- **/
-native simulated function SetOnlyUseControllerTiltInput( bool bActive );
+// Export UPlayerController::execSetOnlyUseControllerTiltInput(FFrame&, void* const)
+native simulated function SetOnlyUseControllerTiltInput(bool bActive);
 
-/**
- * sets whether or not to use the tilt forward and back input controls
- **/
-native simulated function SetUseTiltForwardAndBack( bool bActive );
+// Export UPlayerController::execSetUseTiltForwardAndBack(FFrame&, void* const)
+native simulated function SetUseTiltForwardAndBack(bool bActive);
 
-/**
- * @return whether or not this Controller has a keyboard available to be used
- **/
-native simulated function bool IsKeyboardAvailable() const;
+// Export UPlayerController::execIsKeyboardAvailable(FFrame&, void* const)
+native simulated function bool IsKeyboardAvailable();
 
-/**
- * @return whether or not this Controller has a mouse available to be used
- **/
-native simulated function bool IsMouseAvailable() const;
+// Export UPlayerController::execIsMouseAvailable(FFrame&, void* const)
+native simulated function bool IsMouseAvailable();
 
-
-/* ClientGotoState()
-server uses this to force client into NewState
-*/
-reliable client function ClientGotoState(name NewState, optional name NewLabel)
+reliable client simulated function ClientGotoState(name NewState, optional name NewLabel)
 {
-	if ((NewLabel == 'Begin' || NewLabel == '') && !IsInState(NewState))
-	{
-		GotoState(NewState);
-	}
-	else
-	{
-		GotoState(NewState,NewLabel);
-	}
+    // End:0x46
+    if(((NewLabel == 'Begin') || NewLabel == 'None') && !IsInState(NewState))
+    {
+        GotoState(NewState);        
+    }
+    else
+    {
+        GotoState(NewState, NewLabel);
+    }
+    //return;    
 }
 
 reliable server function AskForPawn()
 {
-	if ( GamePlayEndedState() )
-		ClientGotoState(GetStateName(), 'Begin');
-	else if ( Pawn != None )
-		GivePawn(Pawn);
-	else
-	{
-		bFrozen = false;
-		ServerRestartPlayer();
-	}
+    // End:0x26
+    if(GamePlayEndedState())
+    {
+        ClientGotoState(GetStateName(), 'Begin');        
+    }
+    else
+    {
+        // End:0x43
+        if(Pawn != none)
+        {
+            GivePawn(Pawn);            
+        }
+        else
+        {
+            bFrozen = false;
+            ServerRestartPlayer();
+        }
+    }
+    //return;    
 }
 
-reliable client function GivePawn(Pawn NewPawn)
+reliable client simulated function GivePawn(Pawn NewPawn)
 {
-	if ( NewPawn == None )
-		return;
-	Pawn = NewPawn;
-	NewPawn.Controller = self;
-	ClientRestart(Pawn);
+    // End:0x0D
+    if(NewPawn == none)
+    {
+        return;
+    }
+    Pawn = NewPawn;
+    NewPawn.Controller = self;
+    ClientRestart(Pawn);
+    //return;    
 }
 
-// Possess a pawn
 event Possess(Pawn aPawn, bool bVehicleTransition)
 {
-	local Actor A;
-	local int i;
-	local SeqEvent_Touch TouchEvent;
+    local Actor A;
+    local int I;
+    local SeqEvent_Touch TouchEvent;
 
-	if (!PlayerReplicationInfo.bOnlySpectator)
-	{
-		if (aPawn.Controller != None)
-		{
-			aPawn.Controller.UnPossess();
-		}
+    // End:0x146
+    if(!PlayerReplicationInfo.bOnlySpectator)
+    {
+        // End:0x48
+        if(aPawn.Controller != none)
+        {
+            aPawn.Controller.UnPossess();
+        }
+        aPawn.PossessedBy(self, bVehicleTransition);
+        Pawn = aPawn;
+        Pawn.bStasis = false;
+        ResetTimeMargin();
+        UpdateSex();
+        Restart(bVehicleTransition);
+        // End:0x145
+        foreach Pawn.TouchingActors(Class'Actor', A)
+        {
+            I = 0;
+            J0xC5:
 
-		aPawn.PossessedBy(self, bVehicleTransition);
-		Pawn = aPawn;
-		Pawn.bStasis = false;
-		ResetTimeMargin();
-		UpdateSex();
-		Restart(bVehicleTransition);
-
-		// check if touching any actors with playeronly kismet touch events
-		ForEach Pawn.TouchingActors(class'Actor', A)
-		{
-			for ( i=0; i < A.GeneratedEvents.length; i++)
-			{
-				TouchEvent = SeqEvent_Touch(A.GeneratedEvents[i]);
-				if ( (TouchEvent != None) && TouchEvent.bPlayerOnly )
-				{
-					TouchEvent.CheckTouchActivate(A,Pawn);
-				}
-			}
-		}
-	}
+            // End:0x144 [Loop If]
+            if(I < A.GeneratedEvents.Length)
+            {
+                TouchEvent = SeqEvent_Touch(A.GeneratedEvents[I]);
+                // End:0x13A
+                if((TouchEvent != none) && TouchEvent.bPlayerOnly)
+                {
+                    TouchEvent.CheckTouchActivate(A, Pawn);
+                }
+                I++;
+                // [Loop Continue]
+                goto J0xC5;
+            }            
+        }        
+    }
+    //return;    
 }
 
 function AcknowledgePossession(Pawn P)
 {
-	if ( LocalPlayer(Player) != None )
-	{
-		AcknowledgedPawn = P;
-		if ( P != None )
-		{
-			P.SetBaseEyeHeight();
-			P.Eyeheight = P.BaseEyeHeight;
-		}
-		ServerAcknowledgePossession(P);
-	}
+    // End:0x68
+    if(LocalPlayer(Player) != none)
+    {
+        AcknowledgedPawn = P;
+        // End:0x59
+        if(P != none)
+        {
+            P.SetBaseEyeheight();
+            P.EyeHeight = P.BaseEyeHeight;
+        }
+        ServerAcknowledgePossession(P);
+    }
+    //return;    
 }
 
 reliable server function ServerAcknowledgePossession(Pawn P)
 {
-	if ( (P != None) && (P == Pawn) && (P != AcknowledgedPawn) )
-	{
-	ResetTimeMargin();
-	}
+    // End:0x37
+    if(((P != none) && P == Pawn) && P != AcknowledgedPawn)
+    {
+        ResetTimeMargin();
+    }
     AcknowledgedPawn = P;
+    //return;    
 }
 
-// unpossessed a pawn (not because pawn was killed)
 event UnPossess()
 {
-	if ( Pawn != None )
-	{
-		SetLocation(Pawn.Location);
-		Pawn.RemoteRole = ROLE_SimulatedProxy;
-		Pawn.UnPossessed();
-		CleanOutSavedMoves();  // don't replay moves previous to unpossession
-		if ( GetViewTarget() == Pawn )
-			SetViewTarget(self);
-	}
-	Pawn = None;
+    // End:0x6D
+    if(Pawn != none)
+    {
+        SetLocation(Pawn.Location);
+        Pawn.RemoteRole = ROLE_SimulatedProxy;
+        Pawn.UnPossessed();
+        CleanOutSavedMoves();
+        // End:0x6D
+        if((GetViewTarget()) == Pawn)
+        {
+            SetViewTarget(self);
+        }
+    }
+    Pawn = none;
+    //return;    
 }
 
-// unpossessed a pawn (because pawn was killed)
 function PawnDied(Pawn P)
 {
-	if ( P != Pawn )
-		return;
-
-	if ( Pawn != None )
-		Pawn.RemoteRole = ROLE_SimulatedProxy;
-
-    super.PawnDied( P );
+    // End:0x11
+    if(P != Pawn)
+    {
+        return;
+    }
+    // End:0x2E
+    if(Pawn != none)
+    {
+        Pawn.RemoteRole = ROLE_SimulatedProxy;
+    }
+    super.PawnDied(P);
+    //return;    
 }
 
-reliable client function ClientSetHUD(class<HUD> newHUDType, class<Scoreboard> newScoringType)
+reliable client simulated function ClientSetHUD(class<HUD> newHUDType, class<ScoreBoard> newScoringType)
 {
-	if ( myHUD != None )
-	{
-		myHUD.Destroy();
-	}
-
-	if (newHUDType == None)
-	{
-		myHUD = None;
-	}
-	else
-	{
-		myHUD = Spawn(newHUDType, self);
-		if ( myHUD != None )
-		{
-			MyHUD.SpawnScoreBoard(newScoringType);
-		}
-	}
+    // End:0x18
+    if(myHUD != none)
+    {
+        myHUD.Destroy();
+    }
+    // End:0x2D
+    if(newHUDType == none)
+    {
+        myHUD = none;        
+    }
+    else
+    {
+        myHUD = Spawn(newHUDType, self);
+        // End:0x68
+        if(myHUD != none)
+        {
+            myHUD.SpawnScoreBoard(newScoringType);
+        }
+    }
+    //return;    
 }
 
 function HandlePickup(Inventory Inv)
 {
+    //return;    
 }
 
-/* epic ===============================================
-* ::CleanupPRI
-*
-* Called from Destroyed().  Cleans up PlayerReplicationInfo.
-* PlayerControllers add their PRI to the gameinfo's InactivePRI list, so disconnected players can rejoin without losing their score.
-*
-* =====================================================
-*/
 function CleanupPRI()
 {
-	WorldInfo.Game.AddInactivePRI(PlayerReplicationInfo, self);
-	PlayerReplicationInfo = None;
+    WorldInfo.Game.AddInactivePRI(PlayerReplicationInfo, self);
+    PlayerReplicationInfo = none;
+    //return;    
 }
 
-reliable client event ReceiveLocalizedMessage( class<LocalMessage> Message, optional int Switch, optional PlayerReplicationInfo RelatedPRI_1, optional PlayerReplicationInfo RelatedPRI_2, optional Object OptionalObject )
+reliable client simulated event ReceiveLocalizedMessage(class<LocalMessage> Message, optional int Switch, optional PlayerReplicationInfo RelatedPRI_1, optional PlayerReplicationInfo RelatedPRI_2, optional Object OptionalObject)
 {
-	// Wait for player to be up to date with replication when joining a server, before stacking up messages
-	if ( WorldInfo.NetMode == NM_DedicatedServer || WorldInfo.GRI == None )
-		return;
-
-	Message.Static.ClientReceive( Self, Switch, RelatedPRI_1, RelatedPRI_2, OptionalObject );
+    // End:0x37
+    if((WorldInfo.NetMode == NM_DedicatedServer) || WorldInfo.GRI == none)
+    {
+        return;
+    }
+    Message.static.ClientReceive(self, Switch, RelatedPRI_1, RelatedPRI_2, OptionalObject);
+    //return;    
 }
 
-//Play a sound client side (so only client will hear it)
-unreliable client event ClientPlaySound(SoundCue ASound)
+unreliable client simulated event ClientPlaySound(SoundCue ASound)
 {
-	ClientHearSound(ASound, self, Location, false, false);
+    ClientHearSound(ASound, self, Location, false, false);
+    //return;    
 }
 
-/** hooked up to the OnAudioFinished delegate of AudioComponents created through PlaySound() to return them to the pool */
 simulated function HearSoundFinished(AudioComponent AC)
 {
-	HearSoundActiveComponents.RemoveItem(AC);
-	// if the component is already pending kill (playing actor was destroyed), then we can't put it back in the pool
-	if (!AC.IsPendingKill())
-	{
-		AC.ResetToDefaults();
-		HearSoundPoolComponents[HearSoundPoolComponents.length] = AC;
-	}
+    HearSoundActiveComponents.RemoveItem(AC);
+    // End:0x44
+    if(!AC.IsPendingKill())
+    {
+        AC.ResetToDefaults();
+        HearSoundPoolComponents[HearSoundPoolComponents.Length] = AC;
+    }
+    //return;    
 }
 
-/** get an audio component from the HearSound pool
- * creates a new component if the pool is empty and MaxConcurrentHearSounds has not been exceeded
- * the component is initialized with the values passed in, ready to call Play() on
- * its OnAudioFinished delegate is set to this PC's HearSoundFinished() function
- * @param ASound - the sound to play
- * @param SourceActor - the Actor to attach the sound to (if None, attached to self)
- * @param bStopWhenOwnerDestroyed - whether the sound stops if SourceActor is destroyed
- * @param bUseLocation (optional) - whether to use the SourceLocation parameter for the sound's location (otherwise, SourceActor's location)
- * @param SourceLocation (optional) - if bUseLocation, the location for the sound
- * @return the AudioComponent that was found/created
- */
-native function AudioComponent GetPooledAudioComponent(SoundCue ASound, Actor SourceActor, bool bStopWhenOwnerDestroyed, optional bool bUseLocation, optional vector SourceLocation);
+// Export UPlayerController::execGetPooledAudioComponent(FFrame&, void* const)
+native function AudioComponent GetPooledAudioComponent(SoundCue ASound, Actor SourceActor, bool bStopWhenOwnerDestroyed, optional bool bUseLocation, optional Vector SourceLocation);
 
-/* ClientHearSound()
-Replicated function from server for replicating audible sounds played on server
-*/
-unreliable client event ClientHearSound(SoundCue ASound, Actor SourceActor, vector SourceLocation, bool bStopWhenOwnerDestroyed, optional bool bIsOccluded )
+unreliable client simulated event ClientHearSound(SoundCue ASound, Actor SourceActor, Vector SourceLocation, bool bStopWhenOwnerDestroyed, optional bool bIsOccluded)
 {
-	local AudioComponent AC;
+    local AudioComponent AC;
 
-//    `log("### ClientHearSound:"@ASound@SourceActor@SourceLocation@bStopWhenOwnerDestroyed@VSize(SourceLocation - Pawn.Location));
-
-	if ( SourceActor == None )
-	{
-		AC = GetPooledAudioComponent(ASound, SourceActor, bStopWhenOwnerDestroyed, true, SourceLocation);
-		if (AC == None)
-		{
-			return;
-		}
-		AC.bUseOwnerLocation = false;
-		AC.Location = SourceLocation;
-	}
-	else if ( (SourceActor == GetViewTarget()) || (SourceActor == self) )
-	{
-		AC = GetPooledAudioComponent(ASound, None, bStopWhenOwnerDestroyed);
-		if (AC == None)
-		{
-			return;
-		}
-		AC.bAllowSpatialization = false;
-	}
-	else
-	{
-		AC = GetPooledAudioComponent(ASound, SourceActor, bStopWhenOwnerDestroyed);
-		if (AC == None)
-		{
-			return;
-		}
-		if (!IsZero(SourceLocation) && SourceLocation != SourceActor.Location)
-		{
-			AC.bUseOwnerLocation = false;
-			AC.Location = SourceLocation;
-		}
-	}
-	if ( bIsOccluded )
-	{
-		// if occluded reduce volume: @FIXME do something better
-		AC.VolumeMultiplier *= 0.5;
-	}
-	AC.Play();
+    // End:0x69
+    if(SourceActor == none)
+    {
+        AC = GetPooledAudioComponent(ASound, SourceActor, bStopWhenOwnerDestroyed, true, SourceLocation);
+        // End:0x3F
+        if(AC == none)
+        {
+            return;
+        }
+        AC.bUseOwnerLocation = false;
+        AC.Location = SourceLocation;        
+    }
+    else
+    {
+        // End:0xCA
+        if((SourceActor == (GetViewTarget())) || SourceActor == self)
+        {
+            AC = GetPooledAudioComponent(ASound, none, bStopWhenOwnerDestroyed);
+            // End:0xB5
+            if(AC == none)
+            {
+                return;
+            }
+            AC.bAllowSpatialization = false;            
+        }
+        else
+        {
+            AC = GetPooledAudioComponent(ASound, SourceActor, bStopWhenOwnerDestroyed);
+            // End:0xF9
+            if(AC == none)
+            {
+                return;
+            }
+            // End:0x148
+            if(!IsZero(SourceLocation) && SourceLocation != SourceActor.Location)
+            {
+                AC.bUseOwnerLocation = false;
+                AC.Location = SourceLocation;
+            }
+        }
+    }
+    AC.Play();
+    //return;    
 }
+
 simulated function bool IsClosestLocalPlayerToActor(Actor TheActor)
 {
-	local PlayerController PC;
-	local float MyDist;
+    local PlayerController PC;
+    local float MyDist;
 
-	if(ViewTarget == none)
-	{
-		return false;
-	}
-	MyDist = VSize(ViewTarget.Location - TheActor.Location);
-	ForEach LocalPlayerControllers( class'PlayerController', PC )
-	{
-		if( PC != self && (PC.ViewTarget != None) && (VSize(PC.ViewTarget.Location - TheActor.Location) < MyDist) )
-		{
-			return false;
-		}
-	}
-	return true;
+    // End:0x0D
+    if(ViewTarget == none)
+    {
+        return false;
+    }
+    MyDist = VSize(ViewTarget.Location - TheActor.Location);
+    // End:0xA6
+    foreach LocalPlayerControllers(Class'PlayerController', PC)
+    {
+        // End:0xA5
+        if(((PC != self) && PC.ViewTarget != none) && VSize(PC.ViewTarget.Location - TheActor.Location) < MyDist)
+        {            
+            return false;
+        }        
+    }    
+    return true;
+    //return ReturnValue;    
 }
-reliable client event Kismet_ClientPlaySound(SoundCue ASound, Actor SourceActor, float VolumeMultiplier, float PitchMultiplier, float FadeInTime, bool bSuppressSubtitles, bool bSuppressSpatialization)
+
+function bool IsTooFarForSubs(SoundCue ASound, Vector Loc)
 {
-	local AudioComponent AC;
+    local float maxD;
 
-	if ( SourceActor != None && IsClosestLocalPlayerToActor(SourceActor))
-	{
-		// If we have a FaceFX animation hooked up, play that instead
-		if( ASound.FaceFXAnimName != "" &&
-			SourceActor.PlayActorFaceFXAnim(ASound.FaceFXAnimSetRef, ASound.FaceFXGroupName, ASound.FaceFXAnimName, ASound) )
-		{
-			// Success - In case of failure, fall back to playing the sound with no Face FX animation, but there will be a warning in the log instead.
-		}
-		else
-		{
-			AC = SourceActor.CreateAudioComponent(ASound, false, true);
-			if ( AC != None )
-			{
-				AC.VolumeMultiplier = VolumeMultiplier;
-				AC.PitchMultiplier = PitchMultiplier;
-				AC.bAutoDestroy = true;
-				AC.SubtitlePriority = 10000;
-				AC.bSuppressSubtitles = bSuppressSubtitles;
-				AC.FadeIn(FadeInTime, 1.f);
-				if( bSuppressSpatialization )
-				{
-					AC.bAllowSpatialization = false;
-				}
-			}
-		}
-	}
+    // End:0x98
+    if(SoundNodeRandom(ASound.FirstNode) != none)
+    {
+        SoundNodeRandom(ASound.FirstNode).PickNextNodeInAdvance();
+        maxD = SoundNodeWave(SoundNodeRandom(ASound.FirstNode).ChildNodes[SoundNodeRandom(ASound.FirstNode).NextRandomToForce]).MaxRange * float(100);        
+    }
+    else
+    {
+        // End:0xDC
+        if(SoundNodeWave(ASound.FirstNode) != none)
+        {
+            maxD = SoundNodeWave(ASound.FirstNode).MaxRange * float(100);
+        }
+    }
+    // End:0x107
+    if(maxD < (VSize(Pawn.Location - Loc) * 0.8500000))
+    {
+        return true;
+    }
+    return false;
+    //return ReturnValue;    
 }
 
-reliable client event Kismet_ClientStopSound(SoundCue ASound, Actor SourceActor, float FadeOutTime)
+reliable client simulated event Kismet_ClientPlaySound(SoundCue ASound, Actor SourceActor, float VolumeMultiplier, float PitchMultiplier, float FadeInTime, bool bSuppressSubtitles, bool bSuppressSpatialization)
 {
-	local AudioComponent AC, CheckAC;
+    local AudioComponent AC;
 
-	if (SourceActor == None)
-	{
-		SourceActor = WorldInfo;
-	}
-	foreach SourceActor.AllOwnedComponents(class'AudioComponent',CheckAC)
-	{
-		if (CheckAC.SoundCue == ASound)
-		{
-			AC = CheckAC;
-			break;
-		}
-	}
-	if (AC != None)
-	{
-		AC.FadeOut(FadeOutTime,0.f);
-	}
+    // End:0x1B8
+    if((SourceActor != none) && IsClosestLocalPlayerToActor(SourceActor))
+    {
+        // End:0x83
+        if((ASound.FaceFXAnimName != "") && SourceActor.PlayActorFaceFXAnim(ASound.FaceFXAnimSetRef, ASound.FaceFXGroupName, ASound.FaceFXAnimName, ASound))
+        {            
+        }
+        else
+        {
+            AC = SourceActor.CreateAudioComponent(ASound, false, true);
+            // End:0x167
+            if(AC != none)
+            {
+                AC.VolumeMultiplier = VolumeMultiplier;
+                AC.PitchMultiplier = PitchMultiplier;
+                AC.bAutoDestroy = true;
+                AC.SubtitlePriority = 10000.0000000;
+                AC.bSuppressSubtitles = bSuppressSubtitles || IsTooFarForSubs(ASound, SourceActor.Location);
+                // End:0x154
+                if(bSuppressSpatialization)
+                {
+                    AC.bAllowSpatialization = false;
+                }
+                AC.Play();                
+            }
+            else
+            {
+                LogInternalAudio(((("KISMETSOUND:Could not create AC for " @ string(ASound)) @ "Actor[") @ string(SourceActor)) @ "]");
+            }
+        }        
+    }
+    else
+    {
+        LogInternalAudio("KISMETSOUND:Couldn't find sourceactor");
+    }
+    //return;    
 }
 
-/** plays a FaceFX anim on the specified actor for the client */
-reliable client function ClientPlayActorFaceFXAnim(Actor SourceActor, FaceFXAnimSet AnimSet, string GroupName, string SeqName, SoundCue SoundCueToPlay)
+reliable client simulated event Kismet_ClientKeyOffSound(SoundCue ASound, Actor SourceActor)
 {
-	if (SourceActor != None)
-	{
-		SourceActor.PlayActorFaceFXAnim(AnimSet, GroupName, SeqName, SoundCueToPlay);
-	}
+    local AudioComponent CheckAC;
+    local bool KeyOff;
+
+    // End:0x16
+    if(SourceActor == none)
+    {
+        SourceActor = WorldInfo;
+    }
+    // End:0x65
+    foreach SourceActor.AllOwnedComponents(Class'AudioComponent', CheckAC)
+    {
+        // End:0x64
+        if(CheckAC.SoundCue == ASound)
+        {
+            CheckAC.KeyOff();
+            KeyOff = true;
+        }        
+    }    
+    // End:0x105
+    if(KeyOff == false)
+    {
+        LogInternal("#######################################");
+        LogInternal("##### Script::Key off not triggered" @ string(CheckAC.SoundCue));
+        LogInternal("#######################################");
+    }
+    //return;    
 }
 
-reliable client event ClientMessage( coerce string S, optional Name Type, optional float MsgLifeTime )
+reliable client simulated event Kismet_ClientSetParameterSound(SoundCue ASound, Actor SourceActor, name nameToSet, float valueToSet)
 {
-	if ( WorldInfo.NetMode == NM_DedicatedServer || WorldInfo.GRI == None )
-	{
-		return;
-	}
+    local AudioComponent CheckAC;
 
-	if (Type == '')
-	{
-		Type = 'Event';
-	}
-
-	TeamMessage(PlayerReplicationInfo, S, Type, MsgLifeTime);
+    // End:0x16
+    if(SourceActor == none)
+    {
+        SourceActor = WorldInfo;
+    }
+    // End:0x67
+    foreach SourceActor.AllOwnedComponents(Class'AudioComponent', CheckAC)
+    {
+        // End:0x66
+        if(CheckAC.SoundCue == ASound)
+        {
+            CheckAC.SetFloatParameter(nameToSet, valueToSet);
+        }        
+    }    
+    //return;    
 }
 
-/** Overridden by specific games */
-simulated private function bool CanCommunicate()
+reliable client simulated event Kismet_ClientStopSound(SoundCue ASound, Actor SourceActor, float FadeOutTime)
 {
-	return TRUE;
+    local AudioComponent CheckAC;
+
+    // End:0x16
+    if(SourceActor == none)
+    {
+        SourceActor = WorldInfo;
+    }
+    // End:0x5D
+    foreach SourceActor.AllOwnedComponents(Class'AudioComponent', CheckAC)
+    {
+        // End:0x5C
+        if(CheckAC.SoundCue == ASound)
+        {
+            CheckAC.Stop();
+        }        
+    }    
+    //return;    
 }
 
-simulated private function bool AllowTTSMessageFrom( PlayerReplicationInfo PRI )
+reliable client simulated function ClientPlayActorFaceFXAnim(Actor SourceActor, FaceFXAnimSet AnimSet, string GroupName, string SeqName, SoundCue SoundCueToPlay)
 {
-	return TRUE;
+    // End:0x33
+    if(SourceActor != none)
+    {
+        SourceActor.PlayActorFaceFXAnim(AnimSet, GroupName, SeqName, SoundCueToPlay);
+    }
+    //return;    
 }
 
-/**
- * Text to speech handling
- */
+reliable client simulated event ClientMessage(coerce string S, optional name Type, optional float MsgLifeTime)
+{
+    // End:0x35
+    if((WorldInfo.NetMode == NM_DedicatedServer) || WorldInfo.GRI == none)
+    {
+        return;
+    }
+    // End:0x57
+    if(Type == 'None')
+    {
+        Type = 'Event';
+    }
+    TeamMessage(PlayerReplicationInfo, S, Type, MsgLifeTime);
+    //return;    
+}
 
-/** Constructs a SoundCue, performs text-to-wavedata conversion. */
-simulated private native function SoundCue CreateTTSSoundCue( string StrToSpeak, PlayerReplicationInfo PRI );
+private final simulated function bool CanCommunicate()
+{
+    return true;
+    //return ReturnValue;    
+}
+
+private final simulated function bool AllowTTSMessageFrom(PlayerReplicationInfo PRI)
+{
+    return true;
+    //return ReturnValue;    
+}
+
+// Export UPlayerController::execCreateTTSSoundCue(FFrame&, void* const)
+private native final simulated function SoundCue CreateTTSSoundCue(string StrToSpeak, PlayerReplicationInfo PRI);
 
 exec function Talk()
 {
-	local Console PlayerConsole;
-	local LocalPlayer LP;
+    local Console PlayerConsole;
+    local LocalPlayer LP;
 
-	LP = LocalPlayer( Player );
-	if( ( LP != None ) && CanCommunicate() && ( LP.ViewportClient.ViewportConsole != None ) )
-	{
-		PlayerConsole = LocalPlayer( Player ).ViewportClient.ViewportConsole;
-		PlayerConsole.StartTyping( "Say " );
-	}
+    LP = LocalPlayer(Player);
+    // End:0x85
+    if(((LP != none) && CanCommunicate()) && LP.ViewportClient.ViewportConsole != none)
+    {
+        PlayerConsole = LocalPlayer(Player).ViewportClient.ViewportConsole;
+        PlayerConsole.StartTyping("Say ");
+    }
+    //return;    
 }
 
 exec function TeamTalk()
 {
-	local Console PlayerConsole;
-	local LocalPlayer LP;
+    local Console PlayerConsole;
+    local LocalPlayer LP;
 
-	LP = LocalPlayer( Player );
-	if( ( LP != None ) && CanCommunicate() && ( LP.ViewportClient.ViewportConsole != None ) )
-	{
-		PlayerConsole = LocalPlayer( Player ).ViewportClient.ViewportConsole;
-		PlayerConsole.StartTyping( "TeamSay " );
-	}
+    LP = LocalPlayer(Player);
+    // End:0x89
+    if(((LP != none) && CanCommunicate()) && LP.ViewportClient.ViewportConsole != none)
+    {
+        PlayerConsole = LocalPlayer(Player).ViewportClient.ViewportConsole;
+        PlayerConsole.StartTyping("TeamSay ");
+    }
+    //return;    
 }
 
-simulated function SpeakTTS( coerce string S, optional PlayerReplicationInfo PRI )
+simulated function SpeakTTS(coerce string S, optional PlayerReplicationInfo PRI)
 {
-	local SoundCue Cue;
-	local AudioComponent AC;
+    local SoundCue Cue;
+    local AudioComponent AC;
 
-	Cue = CreateTTSSoundCue( S, PRI );
-	if( Cue != None )
-	{
-		AC = CreateAudioComponent( Cue, FALSE, TRUE, , , TRUE );
-		AC.bAllowSpatialization = FALSE;
-		AC.bAutoDestroy = TRUE;
-		AC.Play();
-	}
+    Cue = CreateTTSSoundCue(S, PRI);
+    // End:0x6C
+    if(Cue != none)
+    {
+        AC = CreateAudioComponent(Cue, false, true,,, true);
+        AC.bAllowSpatialization = false;
+        AC.bAutoDestroy = true;
+        AC.Play();
+    }
+    //return;    
 }
 
-reliable client event TeamMessage( PlayerReplicationInfo PRI, coerce string S, name Type, optional float MsgLifeTime  )
+event AudioComponent PlayUICue(SoundCue Cue)
 {
-	local bool bIsUserCreated;
+    local AudioComponent AC;
 
-	if( CanCommunicate() )
-	{
-		if( ( ( Type == 'Say' ) || (Type == 'TeamSay' ) ) && ( PRI != None ) && AllowTTSMessageFrom( PRI ) )
-		{
-			if( !bIsUserCreated || ( bIsUserCreated && CanViewUserCreatedContent() ) )
-			{
-				SpeakTTS( S, PRI );
-			}
-		}
-
-		if( myHUD != None )
-		{
-			myHUD.Message( PRI, S, Type, MsgLifeTime );
-		}
-
-		if( ( ( Type == 'Say' ) || ( Type == 'TeamSay' ) ) && ( PRI != None ) )
-		{
-			S = PRI.PlayerName$": "$S;
-			// This came from a user so flag as user created
-			bIsUserCreated = true;
-		}
-
-		// since this is on the client, we can assume that if Player exists, it is a LocalPlayer
-		if( Player != None )
-		{
-			// Don't allow this if the parental controls block it
-			if( !bIsUserCreated || ( bIsUserCreated && CanViewUserCreatedContent() ) )
-			{
-				LocalPlayer( Player ).ViewportClient.ViewportConsole.OutputText( S );
-			}
-		}
-	}
+    // End:0x6D
+    if(Cue != none)
+    {
+        AC = CreateAudioComponent(Cue, false, true,,, true);
+        AC.bAllowSpatialization = false;
+        AC.bAutoDestroy = true;
+        AC.bIsUISound = true;
+        AC.Play();
+        return AC;
+    }
+    return none;
+    //return ReturnValue;    
 }
 
-function PlayBeepSound();
+reliable client simulated event TeamMessage(PlayerReplicationInfo PRI, coerce string S, name Type, optional float MsgLifeTime)
+{
+    local bool bIsUserCreated;
 
-/**
- * Registers any handlers for delegates in the OnlineSubsystem.  Called when a player is being created and/or ControllerId is changing.
- */
+    // End:0x17C
+    if(CanCommunicate())
+    {
+        // End:0x88
+        if((((Type == 'Say') || Type == 'TeamSay') && PRI != none) && AllowTTSMessageFrom(PRI))
+        {
+            // End:0x88
+            if(!bIsUserCreated || bIsUserCreated && CanViewUserCreatedContent())
+            {
+                SpeakTTS(S, PRI);
+            }
+        }
+        // End:0xBB
+        if(myHUD != none)
+        {
+            myHUD.Message(PRI, S, Type, MsgLifeTime);
+        }
+        // End:0x11A
+        if(((Type == 'Say') || Type == 'TeamSay') && PRI != none)
+        {
+            S = (PRI.PlayerName $ ": ") $ S;
+            bIsUserCreated = true;
+        }
+        // End:0x17C
+        if(Player != none)
+        {
+            // End:0x17C
+            if(!bIsUserCreated || bIsUserCreated && CanViewUserCreatedContent())
+            {
+                LocalPlayer(Player).ViewportClient.ViewportConsole.OutputText(S);
+            }
+        }
+    }
+    //return;    
+}
+
+function PlayBeepSound()
+{
+    //return;    
+}
+
 function RegisterOnlineDelegates()
 {
-	// If there is an online subsystem, add our callback for UI changes
-	if (OnlineSub != None)
-	{
-		VoiceInterface = OnlineSub.VoiceInterface;
-		if (OnlineSub.SystemInterface != None && LocalPlayer(Player) != None)
-		{
-			// Register the callback for when external UI is shown/hidden
-			// This will pause/unpause a single player game based upon the UI state
-			OnlineSub.SystemInterface.AddExternalUIChangeDelegate(OnExternalUIChanged);
-			// This will pause/unpause a single player game based upon the controller state
-			OnlineSub.SystemInterface.AddControllerChangeDelegate(OnControllerChanged);
-		}
-		// Register for accepting game invites if possible
-		if (OnlineSub.GameInterface != None && LocalPlayer(Player) != None)
-		{
-			OnlineSub.GameInterface.AddGameInviteAcceptedDelegate(LocalPlayer(Player).ControllerId,OnGameInviteAccepted);
-		}
-	}
+    // End:0x10E
+    if(OnlineSub != none)
+    {
+        VoiceInterface = OnlineSub.VoiceInterface;
+        // End:0xA0
+        if(NotEqual_InterfaceInterface(OnlineSub.SystemInterface, none) && LocalPlayer(Player) != none)
+        {
+            OnlineSub.SystemInterface.AddExternalUIChangeDelegate(OnExternalUIChanged);
+            OnlineSub.SystemInterface.AddControllerChangeDelegate(OnControllerChanged);
+        }
+        // End:0x10E
+        if(NotEqual_InterfaceInterface(OnlineSub.GameInterface, none) && LocalPlayer(Player) != none)
+        {
+            OnlineSub.GameInterface.AddGameInviteAcceptedDelegate(byte(LocalPlayer(Player).ControllerId), OnGameInviteAccepted);
+        }
+    }
+    //return;    
 }
 
-/**
- * Unregisters all delegates previously registered with the online subsystem.  Called when the player controller is being
- * destroyed and/or replaced.
- *
- * @note: in certain cases (i.e. when the channel is closed from the server's end), the player controller will no longer have
- * a reference its ULocalPlayer object.  these delegates won't be cleared, but GC should clear the references for us.
- */
 event ClearOnlineDelegates()
 {
-	local LocalPlayer LP;
+    local LocalPlayer LP;
 
-	`log("Clearing online delegates for" @ Self @ "(" $ `showobj(Player) $ ")");
-
-	LP = LocalPlayer(Player);
-	if ( Role < ROLE_Authority || LP != None )
-	{
-		// If there is an online subsystem, clear our callback for UI/controller changes
-		if ( OnlineSub != None )
-		{
-			if ( OnlineSub.SystemInterface != None )
-			{
-				OnlineSub.SystemInterface.ClearExternalUIChangeDelegate(OnExternalUIChanged);
-				OnlineSub.SystemInterface.ClearControllerChangeDelegate(OnControllerChanged);
-			}
-
-			// Cleanup game invite delegate
-			if ( OnlineSub.GameInterface != None && LP != None )
-			{
-				OnlineSub.GameInterface.ClearGameInviteAcceptedDelegate(LP.ControllerId,OnGameInviteAccepted);
-			}
-		}
-	}
+    LogInternal((((("Clearing online delegates for" @ string(self)) @ "(") $ "Player:") $ ((Player != none) ? string(Player.Name) : "None")) $ ")");
+    LP = LocalPlayer(Player);
+    // End:0x16C
+    if((Role < ROLE_Authority) || LP != none)
+    {
+        // End:0x16C
+        if(OnlineSub != none)
+        {
+            // End:0x108
+            if(NotEqual_InterfaceInterface(OnlineSub.SystemInterface, none))
+            {
+                OnlineSub.SystemInterface.ClearExternalUIChangeDelegate(OnExternalUIChanged);
+                OnlineSub.SystemInterface.ClearControllerChangeDelegate(OnControllerChanged);
+            }
+            // End:0x16C
+            if(NotEqual_InterfaceInterface(OnlineSub.GameInterface, none) && LP != none)
+            {
+                OnlineSub.GameInterface.ClearGameInviteAcceptedDelegate(byte(LP.ControllerId), OnGameInviteAccepted);
+            }
+        }
+    }
+    //return;    
 }
 
 event Destroyed()
 {
-	local Vehicle	DrivenVehicle;
-	local Pawn		Driver;
+    local Vehicle DrivenVehicle;
 
-	// Disable any currently playing rumble
-	ClientPlayForceFeedbackWaveform(none);
-
-	// if this is a local player, clear all online delegates
-	if ( Role < ROLE_Authority || LocalPlayer(Player) != None )
-	{
-		ClearOnlineDelegates();
-	}
-
-	// cheatmanager and playerinput cleaned up in C++ PostScriptDestroyed()
-	if ( Pawn != None )
-	{
-		// If its a vehicle, just destroy the driver, otherwise do the normal.
-		DrivenVehicle = Vehicle(Pawn);
-		if ( DrivenVehicle != None )
-		{
-			Driver = DrivenVehicle.Driver;
-			DrivenVehicle.DriverLeave( true ); // Force the driver out of the car
-			if ( Driver != None )
-			{
-				Driver.Health = 0;
-				Driver.Died( self, class'DmgType_Suicided', Driver.Location );
-			}
-		}
-		else
-		{
-			Pawn.Health = 0;
-			Pawn.Died( self, class'DmgType_Suicided', Pawn.Location );
-		}
-	}
-	if ( myHUD != None )
-	{
-		myHud.Destroy();
-	}
-
-	if( PlayerCamera != None )
-	{
-		PlayerCamera.Destroy();
-		PlayerCamera = None;
-	}
-
-	ForceClearUnpauseDelegates();
-
-	// remove this player's data store from the registered data stores..
-	UnregisterPlayerDataStores();
-
-	Super.Destroyed();
+    ClientPlayForceFeedbackWaveform(none);
+    // End:0x37
+    if((Role < ROLE_Authority) || LocalPlayer(Player) != none)
+    {
+        ClearOnlineDelegates();
+    }
+    // End:0x9A
+    if(Pawn != none)
+    {
+        DrivenVehicle = Vehicle(Pawn);
+        // End:0x60
+        if(DrivenVehicle != none)
+        {            
+        }
+        else
+        {
+            Pawn.Health = 0;
+            Pawn.Died(self, Class'DmgType_Suicided', Pawn.Location);
+        }
+    }
+    // End:0xB2
+    if(myHUD != none)
+    {
+        myHUD.Destroy();
+    }
+    // End:0xD1
+    if(PlayerCamera != none)
+    {
+        PlayerCamera.Destroy();
+        PlayerCamera = none;
+    }
+    ForceClearUnpauseDelegates();
+    UnregisterPlayerDataStores();
+    super.Destroyed();
+    //return;    
 }
-
 
 function FixFOV()
 {
-	FOVAngle = Default.DefaultFOV;
-	DesiredFOV = Default.DefaultFOV;
-	DefaultFOV = Default.DefaultFOV;
+    FOVAngle = default.DefaultFOV;
+    DesiredFOV = default.DefaultFOV;
+    DefaultFOV = default.DefaultFOV;
+    //return;    
 }
 
 function SetFOV(float NewFOV)
 {
-	DesiredFOV = NewFOV;
-	FOVAngle = NewFOV;
+    DesiredFOV = NewFOV;
+    FOVAngle = NewFOV;
+    //return;    
 }
 
 function ResetFOV()
 {
-	DesiredFOV = DefaultFOV;
-	FOVAngle = DefaultFOV;
+    DesiredFOV = DefaultFOV;
+    FOVAngle = DefaultFOV;
+    //return;    
 }
 
 exec function FOV(float F)
 {
-	if( PlayerCamera != None )
-	{
-		PlayerCamera.SetFOV( F );
-		return;
-	}
-
-	if( (F >= 80.0) || (WorldInfo.NetMode==NM_Standalone) || PlayerReplicationInfo.bOnlySpectator )
-	{
-		DefaultFOV = FClamp(F, 80, 100);
-		DesiredFOV = DefaultFOV;
-	}
+    // End:0x26
+    if(PlayerCamera != none)
+    {
+        PlayerCamera.SetFOV(F);
+        return;
+    }
+    // End:0x88
+    if(((F >= 80.0000000) || WorldInfo.NetMode == NM_Standalone) || PlayerReplicationInfo.bOnlySpectator)
+    {
+        DefaultFOV = FClamp(F, 80.0000000, 100.0000000);
+        DesiredFOV = DefaultFOV;
+    }
+    //return;    
 }
 
 exec function Mutate(string MutateString)
 {
-	ServerMutate(MutateString);
+    ServerMutate(MutateString);
+    //return;    
 }
 
 reliable server function ServerMutate(string MutateString)
 {
-	if( WorldInfo.NetMode == NM_Client )
-		return;
-	WorldInfo.Game.Mutate(MutateString, Self);
+    // End:0x1C
+    if(WorldInfo.NetMode == NM_Client)
+    {
+        return;
+    }
+    WorldInfo.Game.Mutate(MutateString, self);
+    //return;    
 }
 
-// ------------------------------------------------------------------------
-// Messaging functions
-
-function bool AllowTextMessage(string Msg)
+function bool AllowTextMessage(string msg)
 {
-	local int i;
+    local int I;
 
-	if ( (WorldInfo.NetMode == NM_Standalone) || PlayerReplicationInfo.bAdmin )
-		return true;
-	if ( ( WorldInfo.Pauser == none) && (WorldInfo.TimeSeconds - LastBroadcastTime < 2 ) )
-		return false;
+    // End:0x31
+    if((WorldInfo.NetMode == NM_Standalone) || PlayerReplicationInfo.bAdmin)
+    {
+        return true;
+    }
+    // End:0x69
+    if((WorldInfo.Pauser == none) && (WorldInfo.TimeSeconds - LastBroadcastTime) < float(2))
+    {
+        return false;
+    }
+    // End:0xDA
+    if((WorldInfo.TimeSeconds - LastBroadcastTime) < float(5))
+    {
+        msg = Left(msg, Clamp(Len(msg) - 4, 8, 64));
+        I = 0;
+        J0xAD:
 
-	// lower frequency if same text
-	if ( WorldInfo.TimeSeconds - LastBroadcastTime < 5 )
-	{
-		Msg = Left(Msg,Clamp(len(Msg) - 4, 8, 64));
-		for ( i=0; i<4; i++ )
-			if ( LastBroadcastString[i] ~= Msg )
-				return false;
-	}
-	for ( i=3; i>0; i-- )
-		LastBroadcastString[i] = LastBroadcastString[i-1];
+        // End:0xDA [Loop If]
+        if(I < 4)
+        {
+            // End:0xD0
+            if(LastBroadcastString[I] ~= msg)
+            {
+                return false;
+            }
+            I++;
+            // [Loop Continue]
+            goto J0xAD;
+        }
+    }
+    I = 3;
+    J0xE2:
 
-	LastBroadcastTime = WorldInfo.TimeSeconds;
-	return true;
+    // End:0x111 [Loop If]
+    if(I > 0)
+    {
+        LastBroadcastString[I] = LastBroadcastString[I - 1];
+        I--;
+        // [Loop Continue]
+        goto J0xE2;
+    }
+    LastBroadcastTime = WorldInfo.TimeSeconds;
+    return true;
+    //return ReturnValue;    
 }
 
-// Send a message to all players.
-exec function Say( string Msg )
+exec function Say(string msg)
 {
-	Msg = Left(Msg,128);
-
-	if ( AllowTextMessage(Msg) )
-		ServerSay(Msg);
+    msg = Left(msg, 128);
+    // End:0x30
+    if(AllowTextMessage(msg))
+    {
+        ServerSay(msg);
+    }
+    //return;    
 }
 
-unreliable server function ServerSay( string Msg )
+unreliable server function ServerSay(string msg)
 {
-	local PlayerController PC;
+    local PlayerController PC;
 
-	// center print admin messages which start with #
-	if (PlayerReplicationInfo.bAdmin && left(Msg,1) == "#" )
-	{
-		Msg = right(Msg,len(Msg)-1);
-		foreach WorldInfo.AllControllers(class'PlayerController', PC)
-		{
-			PC.ClearProgressMessages();
-			PC.SetProgressTime(6);
-			PC.SetProgressMessage(PMT_AdminMessage, Msg);
-		}
-		return;
-	}
-
-	WorldInfo.Game.Broadcast(self, Msg, 'Say');
+    // End:0xA6
+    if(PlayerReplicationInfo.bAdmin && Left(msg, 1) == "#")
+    {
+        msg = Right(msg, Len(msg) - 1);
+        // End:0xA3
+        foreach WorldInfo.AllControllers(Class'PlayerController', PC)
+        {
+            PC.ClearProgressMessages();
+            PC.SetProgressTime(6.0000000);
+            PC.SetProgressMessage(2, msg);            
+        }        
+        return;
+    }
+    WorldInfo.Game.Broadcast(self, msg, 'Say');
+    //return;    
 }
 
-exec function TeamSay( string Msg )
+exec function TeamSay(string msg)
 {
-	Msg = Left(Msg,128);
-	if ( AllowTextMessage(Msg) )
-		ServerTeamSay(Msg);
+    msg = Left(msg, 128);
+    // End:0x30
+    if(AllowTextMessage(msg))
+    {
+        ServerTeamSay(msg);
+    }
+    //return;    
 }
 
-unreliable server function ServerTeamSay( string Msg )
+unreliable server function ServerTeamSay(string msg)
 {
-	LastActiveTime = WorldInfo.TimeSeconds;
-
-	if( !WorldInfo.GRI.GameClass.Default.bTeamGame )
-	{
-		Say( Msg );
-		return;
-	}
-
-    WorldInfo.Game.BroadcastTeam( self, WorldInfo.Game.ParseMessageString( self, Msg ) , 'TeamSay');
+    LastActiveTime = WorldInfo.TimeSeconds;
+    // End:0x4F
+    if(!WorldInfo.GRI.GameClass.default.bTeamGame)
+    {
+        Say(msg);
+        return;
+    }
+    WorldInfo.Game.BroadcastTeam(self, WorldInfo.Game.ParseMessageString(self, msg), 'TeamSay');
+    //return;    
 }
 
-// ------------------------------------------------------------------------
-/**
- * Called when the local player is about to travel to a new map or IP address.  Provides subclass with an opportunity
- * to perform cleanup or other tasks prior to the travel.
- */
-event PreClientTravel( string PendingURL, ETravelType TravelType, bool bIsSeamlessTravel )
+event PreClientTravel(string PendingURL, Actor.ETravelType TravelType, bool bIsSeamlessTravel)
 {
-	local UIInteraction UIController;
-	local GameUISceneClient GameSceneClient;
+    local UIInteraction UIController;
+    local GameUISceneClient GameSceneClient;
 
-	// notify the UI system that we're about to perform a travel.
-	UIController = GetUIController();
-	if ( UIController != None && IsPrimaryPlayer() )
-	{
-		GameSceneClient = UIController.SceneClient;
-		if ( GameSceneClient != None )
-		{
-			GameSceneClient.NotifyClientTravel(Self, PendingURL, TravelType, bIsSeamlessTravel);
-		}
-	}
+    UIController = GetUIController();
+    // End:0x6B
+    if((UIController != none) && IsPrimaryPlayer())
+    {
+        GameSceneClient = UIController.SceneClient;
+        // End:0x6B
+        if(GameSceneClient != none)
+        {
+            GameSceneClient.NotifyClientTravel(self, PendingURL, TravelType, bIsSeamlessTravel);
+        }
+    }
+    //return;    
 }
 
-/**
- * Change Camera mode
- *
- * @param	New camera mode to set
- */
-exec function Camera( name NewMode )
+exec function Camera(name NewMode)
 {
-	ServerCamera(NewMode);
+    ServerCamera(NewMode);
+    //return;    
 }
 
-reliable server function ServerCamera( name NewMode )
+reliable server function ServerCamera(name NewMode)
 {
-	if ( NewMode == '1st' )
-	{
-    	NewMode = 'FirstPerson';
-	}
-    else if ( NewMode == '3rd' )
-	{
-    	NewMode = 'ThirdPerson';
-	}
-
-	SetCameraMode( NewMode );
-
-`if(`notdefined(FINAL_RELEASE))
-	if ( PlayerCamera != None )
-		`log("#### " $ PlayerCamera.CameraStyle);
-`endif
+    // End:0x25
+    if(NewMode == '1st')
+    {
+        NewMode = 'FirstPerson';        
+    }
+    else
+    {
+        // End:0x47
+        if(NewMode == '3rd')
+        {
+            NewMode = 'ThirdPerson';
+        }
+    }
+    SetCameraMode(NewMode);
+    // End:0x7E
+    if(PlayerCamera != none)
+    {
+        LogInternal("#### " $ string(PlayerCamera.CameraStyle));
+    }
+    //return;    
 }
 
-/**
- * Replicated function to set camera style on client
- *
- * @param	NewCamMode, name defining the new camera mode
- */
-reliable client function ClientSetCameraMode( name NewCamMode )
+reliable client simulated function ClientSetCameraMode(name NewCamMode)
 {
-	if ( PlayerCamera != None )
-		PlayerCamera.CameraStyle = NewCamMode;
+    // End:0x74
+    if(PlayerCamera != none)
+    {
+        // End:0x35
+        if(NewCamMode == 'nextvision')
+        {
+            PlayerCamera.NextVisionMode();            
+        }
+        else
+        {
+            // End:0x5F
+            if(NewCamMode == 'nextview')
+            {
+                PlayerCamera.NextViewMode();                
+            }
+            else
+            {
+                PlayerCamera.CameraStyle = NewCamMode;
+            }
+        }
+    }
+    //return;    
 }
 
-/**
- * Set new camera mode
- *
- * @param	NewCamMode, new camera mode.
- */
-function SetCameraMode( name NewCamMode )
+function SetCameraMode(name NewCamMode)
 {
-	if ( PlayerCamera != None )
-	{
-		PlayerCamera.CameraStyle = NewCamMode;
-		if ( WorldInfo.NetMode == NM_DedicatedServer )
-		{
-			ClientSetCameraMode( NewCamMode );
-		}
-	}
+    // End:0x86
+    if((PlayerCamera != none) && IsLocalPlayerController())
+    {
+        // End:0x44
+        if(NewCamMode == 'nextvision')
+        {
+            PlayerCamera.NextVisionMode();            
+        }
+        else
+        {
+            // End:0x6E
+            if(NewCamMode == 'nextview')
+            {
+                PlayerCamera.NextViewMode();                
+            }
+            else
+            {
+                PlayerCamera.CameraStyle = NewCamMode;
+            }
+        }        
+    }
+    else
+    {
+        // End:0xA5
+        if(Role == ROLE_Authority)
+        {
+            ClientSetCameraMode(NewCamMode);
+        }
+    }
+    //return;    
 }
 
-/**
- * Reset Camera Mode to default
- */
 event ResetCameraMode()
 {
-	if ( Pawn != None )
-	{	// If we have a pawn, let's ask it which camera mode we should use
-		SetCameraMode( Pawn.GetDefaultCameraMode( Self ) );
-	}
-	else
-	{	// otherwise default to first person view.
-		SetCameraMode( 'FirstPerson' );
-	}
+    // End:0x2D
+    if(Pawn != none)
+    {
+        SetCameraMode(Pawn.GetDefaultCameraMode(self));        
+    }
+    else
+    {
+        SetCameraMode('FirstPerson');
+    }
+    //return;    
 }
 
-reliable client event ClientSetCameraFade(bool bEnableFading, optional color FadeColor, optional vector2d FadeAlpha, optional float FadeTime)
+reliable client simulated event ClientSetCameraFade(bool bEnableFading, optional Color FadeColor, optional Vector2D FadeAlpha, optional float FadeTime)
 {
-	if (PlayerCamera != None)
-	{
-		PlayerCamera.bEnableFading = bEnableFading;
-		if (PlayerCamera.bEnableFading)
-		{
-			PlayerCamera.FadeColor = FadeColor;
-			PlayerCamera.FadeAlpha = FadeAlpha;
-			PlayerCamera.FadeTime = FadeTime;
-			PlayerCamera.FadeTimeRemaining = FadeTime;
-		}
-	}
+    // End:0x8C
+    if(PlayerCamera != none)
+    {
+        PlayerCamera.bEnableFading = bEnableFading;
+        // End:0x8C
+        if(PlayerCamera.bEnableFading)
+        {
+            PlayerCamera.FadeColor = FadeColor;
+            PlayerCamera.FadeAlpha = FadeAlpha;
+            PlayerCamera.FadeTime = FadeTime;
+            PlayerCamera.FadeTimeRemaining = FadeTime;
+        }
+    }
+    //return;    
 }
 
-/**
-* return whether viewing in first person mode
-*/
 function bool UsingFirstPersonCamera()
 {
-	return ((PlayerCamera == None) || (PlayerCamera.CameraStyle == 'FirstPerson')) && LocalPlayer(Player) != None;
+    return ((PlayerCamera == none) || PlayerCamera.CameraStyle == 'FirstPerson') && LocalPlayer(Player) != none;
+    //return ReturnValue;    
 }
 
-function ClientVoiceMessage(PlayerReplicationInfo Sender, PlayerReplicationInfo Recipient, name messagetype, byte messageID);
+function ClientVoiceMessage(PlayerReplicationInfo Sender, PlayerReplicationInfo Recipient, name MessageType, byte messageID)
+{
+    //return;    
+}
 
-/* ForceDeathUpdate()
-Make sure ClientAdjustPosition immediately informs client of pawn's death
-*/
 function ForceDeathUpdate()
 {
-	LastUpdateTime = WorldInfo.TimeSeconds - 10;
+    LastUpdateTime = WorldInfo.TimeSeconds - float(10);
+    //return;    
 }
 
-/* DualServerMove()
-- replicated function sent by client to server - contains client movement and firing info for two moves
-*/
-unreliable server function DualServerMove
-(
-	float TimeStamp0,
-	vector InAccel0,
-	byte PendingFlags,
-	int View0,
-    float TimeStamp,
-    vector InAccel,
-    vector ClientLoc,
-    byte NewFlags,
-    byte ClientRoll,
-    int View
-)
+unreliable server function DualServerMove(float TimeStamp0, Vector InAccel0, byte PendingFlags, int View0, float TimeStamp, Vector InAccel, Vector ClientLoc, byte NewFlags, byte ClientRoll, int View)
 {
-    ServerMove(TimeStamp0,InAccel0,vect(1,2,3),PendingFlags,ClientRoll,View0);
-    ServerMove(TimeStamp,InAccel,ClientLoc,NewFlags,ClientRoll,View);
+    ServerMove(TimeStamp0, InAccel0, vect(1.0000000, 2.0000000, 3.0000000), PendingFlags, ClientRoll, View0);
+    ServerMove(TimeStamp, InAccel, ClientLoc, NewFlags, ClientRoll, View);
+    //return;    
 }
 
-/* OldServerMove()
-- resending an (important) old move.  Process it if not already processed.
-//@todo FIXMESTEVE - perhaps don't compress so much?
-*/
-unreliable server function OldServerMove
-(
-	float OldTimeStamp,
-    byte OldAccelX,
-    byte OldAccelY,
-    byte OldAccelZ,
-    byte OldMoveFlags
-)
+unreliable server function OldServerMove(float OldTimeStamp, byte OldAccelX, byte OldAccelY, byte OldAccelZ, byte OldMoveFlags)
 {
-	local vector Accel;
+    local Vector Accel;
 
-	if ( AcknowledgedPawn != Pawn )
-		return;
-
-	if ( CurrentTimeStamp < OldTimeStamp - 0.001 )
-	{
-		// split out components of lost move (approx)
-		Accel.X = OldAccelX;
-		if ( Accel.X > 127 )
-			Accel.X = -1 * (Accel.X - 128);
-		Accel.Y = OldAccelY;
-		if ( Accel.Y > 127 )
-			Accel.Y = -1 * (Accel.Y - 128);
-		Accel.Z = OldAccelZ;
-		if ( Accel.Z > 127 )
-			Accel.Z = -1 * (Accel.Z - 128);
-		Accel *= 20;
-
-		//`log("Recovered move from "$OldTimeStamp$" acceleration "$Accel$" from "$OldAccel);
-		OldTimeStamp = FMin(OldTimeStamp, CurrentTimeStamp + MaxResponseTime);
-		MoveAutonomous(OldTimeStamp - CurrentTimeStamp, OldMoveFlags, Accel, rot(0,0,0));
-		CurrentTimeStamp = OldTimeStamp;
-	}
-}
-
-/* ServerMove()
-- replicated function sent by client to server - contains client movement and firing info.
-*/
-unreliable server function ServerMove
-(
-	float	TimeStamp,
-	vector	InAccel,
-	vector	ClientLoc,
-	byte	MoveFlags,
-	byte	ClientRoll,
-	int		View
-)
-{
-	local float		DeltaTime, clientErr;
-	local rotator	DeltaRot, Rot, ViewRot;
-	local vector Accel, LocDiff;
-	local int		maxPitch, ViewPitch, ViewYaw;
-
-	// If this move is outdated, discard it.
-	if( CurrentTimeStamp >= TimeStamp )
-	{
-		return;
-	}
-
-	if( AcknowledgedPawn != Pawn )
-	{
-		InAccel = vect(0,0,0);
-		GivePawn(Pawn);
-	}
-
-	// View components
-	ViewPitch	= (View & 65535);
-	ViewYaw		= (View >> 16);
-
-	// Acceleration was scaled by 10x for replication, to keep more precision since vectors are rounded for replication
-	Accel = InAccel * 0.1;
-	// Save move parameters.
-	DeltaTime = FMin(MaxResponseTime,TimeStamp - CurrentTimeStamp);
-
-	if( Pawn == None )
-	{
-		bWasSpeedHack = FALSE;
-		ResetTimeMargin();
-	}
-	else if( !CheckSpeedHack(DeltaTime) )
-	{
-		if( !bWasSpeedHack )
-		{
-			if( WorldInfo.TimeSeconds - LastSpeedHackLog > 20 )
-			{
-				`log("Possible speed hack by "$PlayerReplicationInfo.PlayerName);
-				LastSpeedHackLog = WorldInfo.TimeSeconds;
-			}
-			ClientMessage( "Speed Hack Detected!",'CriticalEvent' );
-		}
-		else
-		{
-			bWasSpeedHack = TRUE;
-		}
-		DeltaTime = 0;
-		Pawn.Velocity = vect(0,0,0);
-	}
-	else
-	{
-		DeltaTime *= Pawn.CustomTimeDilation;
-		bWasSpeedHack = FALSE;
-	}
-
-	CurrentTimeStamp = TimeStamp;
-	ServerTimeStamp = WorldInfo.TimeSeconds;
-	ViewRot.Pitch = ViewPitch;
-	ViewRot.Yaw = ViewYaw;
-	ViewRot.Roll = 0;
-
-	if( InAccel != vect(0,0,0) )
-	{
-		LastActiveTime = WorldInfo.TimeSeconds;
-	}
-
-	SetRotation(ViewRot);
-
-	if( AcknowledgedPawn != Pawn )
-	{
-		return;
-	}
-
-	if( Pawn != None )
-	{
-		Rot.Roll	= 256 * ClientRoll;
-		Rot.Yaw		= ViewYaw;
-		if( (Pawn.Physics == PHYS_Swimming) || (Pawn.Physics == PHYS_Flying) )
-		{
-			maxPitch = 2;
-		}
-		else
-		{
-			maxPitch = 0;
-		}
-
-		if( (ViewPitch > maxPitch * Pawn.MaxPitchLimit) && (ViewPitch < 65536 - maxPitch * Pawn.MaxPitchLimit) )
-		{
-			if( ViewPitch < 32768 )
-			{
-				Rot.Pitch = maxPitch * Pawn.MaxPitchLimit;
-			}
-			else
-			{
-				Rot.Pitch = 65536 - maxPitch * Pawn.MaxPitchLimit;
-			}
-		}
-		else
-		{
-			Rot.Pitch = ViewPitch;
-		}
-		DeltaRot = (Rotation - Rot);
-		Pawn.FaceRotation(Rot, DeltaTime);
-	}
-
-	// Perform actual movement
-	if( (WorldInfo.Pauser == None) && (DeltaTime > 0) )
-	{
-		MoveAutonomous(DeltaTime, MoveFlags, Accel, DeltaRot);
-	}
-
-	// Accumulate movement error.
-	if( ClientLoc == vect(1,2,3) )
-	{
-		return;		// first part of double servermove
-	}
-	else if( WorldInfo.TimeSeconds - LastUpdateTime < CLIENTADJUSTUPDATECOST/Player.CurrentNetSpeed )
-	{
-		// limit frequency of corrections if connection speed is limited
-		return;
-	}
-
-	if( Pawn == None )
-	{
-		LocDiff = Location - ClientLoc;
-	}
-	else if ( Pawn.bForceRMVelocity )
-	{
-		// don't do corrections during root motion
-		LocDiff = vect(0,0,0);
-	}
-	else
-	{
-		LocDiff = Pawn.Location - ClientLoc;
-	}
-	ClientErr = LocDiff Dot LocDiff;
-
-	// If client has accumulated a noticeable positional error, correct him.
-	if( ClientErr > MAXPOSITIONERRORSQUARED )
-	{
-		if( Pawn == None )
-		{
-			PendingAdjustment.newPhysics = Physics;
-			PendingAdjustment.NewLoc = Location;
-			PendingAdjustment.NewVel = Velocity;
-		}
-		else
-		{
-			PendingAdjustment.newPhysics = Pawn.Physics;
-			PendingAdjustment.NewVel = Pawn.Velocity;
-			PendingAdjustment.NewBase = Pawn.Base;
-			if( (InterpActor(Pawn.Base) != None) || (Vehicle(Pawn.Base) != None) )
-			{
-				PendingAdjustment.NewLoc = Pawn.Location - Pawn.Base.Location;
-			}
-			else
-			{
-				PendingAdjustment.NewLoc = Pawn.Location;
-			}
-			PendingAdjustment.NewFloor = Pawn.Floor;
-		}
-
-		//`log("Client Error at" @ TimeStamp @ "is" @ ClientErr @ "with acceleration" @ Accel @ "LocDiff" @ LocDiff @ "Physics" @ Pawn.Physics);
-
-		LastUpdateTime = WorldInfo.TimeSeconds;
-		PendingAdjustment.TimeStamp = TimeStamp;
-		PendingAdjustment.bAckGoodMove = 0;
+    // End:0x11
+    if(AcknowledgedPawn != Pawn)
+    {
+        return;
     }
-	else
-	{
-		// acknowledge receipt of this successful servermove()
-		PendingAdjustment.TimeStamp = TimeStamp;
-		PendingAdjustment.bAckGoodMove = 1;
-	}
-	//`log("Server moved stamp "$TimeStamp$" location "$Pawn.Location$" Acceleration "$Pawn.Acceleration$" Velocity "$Pawn.Velocity);
+    // End:0x1A0
+    if(CurrentTimeStamp < (OldTimeStamp - 0.0010000))
+    {
+        Accel.X = float(OldAccelX);
+        // End:0x86
+        if(Accel.X > float(127))
+        {
+            Accel.X = -1.0000000 * (Accel.X - float(128));
+        }
+        Accel.Y = float(OldAccelY);
+        // End:0xE5
+        if(Accel.Y > float(127))
+        {
+            Accel.Y = -1.0000000 * (Accel.Y - float(128));
+        }
+        Accel.Z = float(OldAccelZ);
+        // End:0x144
+        if(Accel.Z > float(127))
+        {
+            Accel.Z = -1.0000000 * (Accel.Z - float(128));
+        }
+        Accel *= float(20);
+        OldTimeStamp = FMin(OldTimeStamp, CurrentTimeStamp + MaxResponseTime);
+        MoveAutonomous(OldTimeStamp - CurrentTimeStamp, OldMoveFlags, Accel, rot(0, 0, 0));
+        CurrentTimeStamp = OldTimeStamp;
+    }
+    //return;    
 }
 
+unreliable server function ServerMove(float TimeStamp, Vector InAccel, Vector ClientLoc, byte MoveFlags, byte ClientRoll, int View)
+{
+    local float DeltaTime, clientErr;
+    local Rotator DeltaRot, Rot, ViewRot;
+    local Vector Accel, LocDiff;
+    local int maxPitch, ViewPitch, ViewYaw;
 
-/* Called on server at end of tick when PendingAdjustment has been set.
-Done this way to avoid ever sending more than one ClientAdjustment per server tick.
-*/
+    // End:0x11
+    if(CurrentTimeStamp >= TimeStamp)
+    {
+        return;
+    }
+    // End:0x42
+    if(AcknowledgedPawn != Pawn)
+    {
+        InAccel = vect(0.0000000, 0.0000000, 0.0000000);
+        GivePawn(Pawn);
+    }
+    ViewPitch = View & 65535;
+    ViewYaw = View >> 16;
+    Accel = InAccel * 0.1000000;
+    DeltaTime = FMin(MaxResponseTime, TimeStamp - CurrentTimeStamp);
+    // End:0xAE
+    if(Pawn == none)
+    {
+        bWasSpeedHack = false;
+        ResetTimeMargin();        
+    }
+    else
+    {
+        // End:0x18A
+        if(!CheckSpeedHack(DeltaTime))
+        {
+            // End:0x157
+            if(!bWasSpeedHack)
+            {
+                // End:0x12A
+                if((WorldInfo.TimeSeconds - LastSpeedHackLog) > float(20))
+                {
+                    LogInternal("Possible speed hack by " $ PlayerReplicationInfo.PlayerName);
+                    LastSpeedHackLog = WorldInfo.TimeSeconds;
+                }
+                ClientMessage("Speed Hack Detected!", 'CriticalEvent');                
+            }
+            else
+            {
+                bWasSpeedHack = true;
+            }
+            DeltaTime = 0.0000000;
+            Pawn.Velocity = vect(0.0000000, 0.0000000, 0.0000000);            
+        }
+        else
+        {
+            DeltaTime *= Pawn.CustomTimeDilation;
+            bWasSpeedHack = false;
+        }
+    }
+    CurrentTimeStamp = TimeStamp;
+    ServerTimeStamp = WorldInfo.TimeSeconds;
+    ViewRot.Pitch = ViewPitch;
+    ViewRot.Yaw = ViewYaw;
+    ViewRot.Roll = 0;
+    // End:0x232
+    if(InAccel != vect(0.0000000, 0.0000000, 0.0000000))
+    {
+        LastActiveTime = WorldInfo.TimeSeconds;
+    }
+    SetRotation(ViewRot);
+    // End:0x24B
+    if(AcknowledgedPawn != Pawn)
+    {
+        return;
+    }
+    // End:0x3CD
+    if(Pawn != none)
+    {
+        Rot.Roll = 256 * int(ClientRoll);
+        Rot.Yaw = ViewYaw;
+        // End:0x2CC
+        if((Pawn.Physics == 3) || Pawn.Physics == 4)
+        {
+            maxPitch = 2;            
+        }
+        else
+        {
+            maxPitch = 0;
+        }
+        // End:0x386
+        if((ViewPitch > (maxPitch * Pawn.MaxPitchLimit)) && ViewPitch < (65536 - (maxPitch * Pawn.MaxPitchLimit)))
+        {
+            // End:0x355
+            if(ViewPitch < 32768)
+            {
+                Rot.Pitch = maxPitch * Pawn.MaxPitchLimit;                
+            }
+            else
+            {
+                Rot.Pitch = 65536 - (maxPitch * Pawn.MaxPitchLimit);
+            }            
+        }
+        else
+        {
+            Rot.Pitch = ViewPitch;
+        }
+        DeltaRot = Rotation - Rot;
+        Pawn.FaceRotation(Rot, DeltaTime);
+    }
+    // End:0x40F
+    if((WorldInfo.Pauser == none) && DeltaTime > float(0))
+    {
+        MoveAutonomous(DeltaTime, MoveFlags, Accel, DeltaRot);
+    }
+    // End:0x42B
+    if(ClientLoc == vect(1.0000000, 2.0000000, 3.0000000))
+    {
+        return;        
+    }
+    else
+    {
+        // End:0x460
+        if((WorldInfo.TimeSeconds - LastUpdateTime) < (180.0000000 / float(Player.CurrentNetSpeed)))
+        {
+            return;
+        }
+    }
+    // End:0x480
+    if(Pawn == none)
+    {
+        LocDiff = Location - ClientLoc;        
+    }
+    else
+    {
+        // End:0x4A9
+        if(Pawn.bForceRMVelocity)
+        {
+            LocDiff = vect(0.0000000, 0.0000000, 0.0000000);            
+        }
+        else
+        {
+            LocDiff = Pawn.Location - ClientLoc;
+        }
+    }
+    clientErr = LocDiff Dot LocDiff;
+    // End:0x68B
+    if(clientErr > 3.0000000)
+    {
+        // End:0x536
+        if(Pawn == none)
+        {
+            PendingAdjustment.newPhysics = Physics;
+            PendingAdjustment.NewLoc = Location;
+            PendingAdjustment.NewVel = Velocity;            
+        }
+        else
+        {
+            PendingAdjustment.newPhysics = Pawn.Physics;
+            PendingAdjustment.NewVel = Pawn.Velocity;
+            PendingAdjustment.NewBase = Pawn.Base;
+            // End:0x60A
+            if((InterpActor(Pawn.Base) != none) || Vehicle(Pawn.Base) != none)
+            {
+                PendingAdjustment.NewLoc = Pawn.Location - Pawn.Base.Location;                
+            }
+            else
+            {
+                PendingAdjustment.NewLoc = Pawn.Location;
+            }
+            PendingAdjustment.NewFloor = Pawn.Floor;
+        }
+        LastUpdateTime = WorldInfo.TimeSeconds;
+        PendingAdjustment.TimeStamp = TimeStamp;
+        PendingAdjustment.bAckGoodMove = 0;        
+    }
+    else
+    {
+        PendingAdjustment.TimeStamp = TimeStamp;
+        PendingAdjustment.bAckGoodMove = 1;
+    }
+    //return;    
+}
+
 event SendClientAdjustment()
 {
-	if( AcknowledgedPawn != Pawn )
-	{
-		PendingAdjustment.TimeStamp = 0;
-		return;
-	}
-
-	if( PendingAdjustment.bAckGoodMove == 1 )
-	{
-		// just notify client this move was received
-		ClientAckGoodMove(PendingAdjustment.TimeStamp);
-	}
-	else if( (Pawn == None) || (Pawn.Physics != PHYS_Spider) )
-	{
-		if( PendingAdjustment.NewVel == vect(0,0,0) )
-		{
-			if (GetStateName() == 'PlayerWalking' && Pawn != None && Pawn.Physics == PHYS_Walking)
-			{
-				VeryShortClientAdjustPosition
-				(
-					PendingAdjustment.TimeStamp,
-					PendingAdjustment.NewLoc.X,
-					PendingAdjustment.NewLoc.Y,
-					PendingAdjustment.NewLoc.Z,
-					PendingAdjustment.NewBase
-				);
-			}
-			else
-			{
-				ShortClientAdjustPosition
-				(
-					PendingAdjustment.TimeStamp,
-					GetStateName(),
-					PendingAdjustment.newPhysics,
-					PendingAdjustment.NewLoc.X,
-					PendingAdjustment.NewLoc.Y,
-					PendingAdjustment.NewLoc.Z,
-					PendingAdjustment.NewBase
-				);
-			}
-		}
-		else
-		{
-			ClientAdjustPosition
-			(
-				PendingAdjustment.TimeStamp,
-				GetStateName(),
-				PendingAdjustment.newPhysics,
-				PendingAdjustment.NewLoc.X,
-				PendingAdjustment.NewLoc.Y,
-				PendingAdjustment.NewLoc.Z,
-				PendingAdjustment.NewVel.X,
-				PendingAdjustment.NewVel.Y,
-				PendingAdjustment.NewVel.Z,
-				PendingAdjustment.NewBase
-			);
-		}
+    // End:0x27
+    if(AcknowledgedPawn != Pawn)
+    {
+        PendingAdjustment.TimeStamp = 0.0000000;
+        return;
     }
-	else
-	{
-		LongClientAdjustPosition
-		(
-			PendingAdjustment.TimeStamp,
-			GetStateName(),
-			PendingAdjustment.newPhysics,
-			PendingAdjustment.NewLoc.X,
-			PendingAdjustment.NewLoc.Y,
-			PendingAdjustment.NewLoc.Z,
-			PendingAdjustment.NewVel.X,
-			PendingAdjustment.NewVel.Y,
-			PendingAdjustment.NewVel.Z,
-			PendingAdjustment.NewBase,
-			PendingAdjustment.NewFloor.X,
-			PendingAdjustment.NewFloor.Y,
-			PendingAdjustment.NewFloor.Z
-		);
-	}
-
-	PendingAdjustment.TimeStamp = 0;
-	PendingAdjustment.bAckGoodMove = 0;
+    // End:0x5F
+    if(PendingAdjustment.bAckGoodMove == 1)
+    {
+        ClientAckGoodMove(PendingAdjustment.TimeStamp);        
+    }
+    else
+    {
+        // End:0x2D3
+        if((Pawn == none) || Pawn.Physics != 8)
+        {
+            // End:0x1F1
+            if(PendingAdjustment.NewVel == vect(0.0000000, 0.0000000, 0.0000000))
+            {
+                // End:0x160
+                if(((GetStateName() == 'PlayerWalking') && Pawn != none) && Pawn.Physics == 1)
+                {
+                    VeryShortClientAdjustPosition(PendingAdjustment.TimeStamp, PendingAdjustment.NewLoc.X, PendingAdjustment.NewLoc.Y, PendingAdjustment.NewLoc.Z, PendingAdjustment.NewBase);                    
+                }
+                else
+                {
+                    ShortClientAdjustPosition(PendingAdjustment.TimeStamp, GetStateName(), PendingAdjustment.newPhysics, PendingAdjustment.NewLoc.X, PendingAdjustment.NewLoc.Y, PendingAdjustment.NewLoc.Z, PendingAdjustment.NewBase);
+                }                
+            }
+            else
+            {
+                ClientAdjustPosition(PendingAdjustment.TimeStamp, GetStateName(), PendingAdjustment.newPhysics, PendingAdjustment.NewLoc.X, PendingAdjustment.NewLoc.Y, PendingAdjustment.NewLoc.Z, PendingAdjustment.NewVel.X, PendingAdjustment.NewVel.Y, PendingAdjustment.NewVel.Z, PendingAdjustment.NewBase);
+            }            
+        }
+        else
+        {
+            LongClientAdjustPosition(PendingAdjustment.TimeStamp, GetStateName(), PendingAdjustment.newPhysics, PendingAdjustment.NewLoc.X, PendingAdjustment.NewLoc.Y, PendingAdjustment.NewLoc.Z, PendingAdjustment.NewVel.X, PendingAdjustment.NewVel.Y, PendingAdjustment.NewVel.Z, PendingAdjustment.NewBase, PendingAdjustment.NewFloor.X, PendingAdjustment.NewFloor.Y, PendingAdjustment.NewFloor.Z);
+        }
+    }
+    PendingAdjustment.TimeStamp = 0.0000000;
+    PendingAdjustment.bAckGoodMove = 0;
+    //return;    
 }
 
-// Only executed on server
 unreliable server function ServerDrive(float InForward, float InStrafe, float aUp, bool InJump, int View)
 {
-	local rotator ViewRotation;
+    local Rotator ViewRotation;
 
-	ViewRotation.Pitch = (View & 65535);
-	ViewRotation.Yaw = (View >> 16);
-	ViewRotation.Roll = 0;
-	SetRotation(ViewRotation);
-
-	ProcessDrive(InForward, InStrafe, aUp, InJump);
+    ViewRotation.Pitch = View & 65535;
+    ViewRotation.Yaw = View >> 16;
+    ViewRotation.Roll = 0;
+    SetRotation(ViewRotation);
+    ProcessDrive(InForward, InStrafe, aUp, InJump);
+    //return;    
 }
 
 function ProcessDrive(float InForward, float InStrafe, float InUp, bool InJump)
 {
-	ClientGotoState(GetStateName(), 'Begin');
+    ClientGotoState(GetStateName(), 'Begin');
+    //return;    
 }
 
-function ProcessMove( float DeltaTime, vector newAccel, eDoubleClickDir DoubleClickMove, rotator DeltaRot)
+function ProcessMove(float DeltaTime, Vector newAccel, Actor.EDoubleClickDir DoubleClickMove, Rotator DeltaRot)
 {
-    if( (Pawn != None) && (Pawn.Acceleration != newAccel) )
-	{
-		Pawn.Acceleration = newAccel;
-	}
+    // End:0x3B
+    if((Pawn != none) && Pawn.Acceleration != newAccel)
+    {
+        Pawn.Acceleration = newAccel;
+    }
+    //return;    
 }
 
-function MoveAutonomous
-(
-	float DeltaTime,
-	byte CompressedFlags,
-	vector newAccel,
-	rotator DeltaRot
-)
+function MoveAutonomous(float DeltaTime, byte CompressedFlags, Vector newAccel, Rotator DeltaRot)
 {
-	local EDoubleClickDir DoubleClickMove;
+    local Actor.EDoubleClickDir DoubleClickMove;
 
-	if ( (Pawn != None) && Pawn.bHardAttach )
-		return;
-
-	DoubleClickMove = SavedMoveClass.static.SetFlags(CompressedFlags, self);
-	HandleWalking();
-	ProcessMove(DeltaTime, newAccel, DoubleClickMove, DeltaRot);
-	if ( Pawn != None )
-		Pawn.AutonomousPhysics(DeltaTime);
-	else
-		AutonomousPhysics(DeltaTime);
+    // End:0x22
+    if((Pawn != none) && Pawn.bHardAttach)
+    {
+        return;
+    }
+    DoubleClickMove = SavedMoveClass.static.SetFlags(CompressedFlags, self);
+    HandleWalking();
+    ProcessMove(DeltaTime, newAccel, DoubleClickMove, DeltaRot);
+    // End:0x8A
+    if(Pawn != none)
+    {
+        Pawn.AutonomousPhysics(DeltaTime);        
+    }
+    else
+    {
+        AutonomousPhysics(DeltaTime);
+    }
     bDoubleJump = false;
-	//`log("Role "$Role$" moveauto time "$100 * DeltaTime$" ("$WorldInfo.TimeDilation$")");
+    //return;    
 }
 
-/* VeryShortClientAdjustPosition
-bandwidth saving version, when velocity is zeroed, and pawn is walking
-*/
-unreliable client function VeryShortClientAdjustPosition
-(
-	float TimeStamp,
-	float NewLocX,
-	float NewLocY,
-	float NewLocZ,
-	Actor NewBase
-)
+unreliable client simulated function VeryShortClientAdjustPosition(float TimeStamp, float NewLocX, float NewLocY, float NewLocZ, Actor NewBase)
 {
-	local vector Floor;
+    local Vector Floor;
 
-	if( Pawn != None )
-	{
-		Floor = Pawn.Floor;
-	}
-	LongClientAdjustPosition(TimeStamp, 'PlayerWalking', PHYS_Walking, NewLocX, NewLocY, NewLocZ, 0, 0, 0, NewBase, Floor.X, Floor.Y, Floor.Z);
+    // End:0x20
+    if(Pawn != none)
+    {
+        Floor = Pawn.Floor;
+    }
+    LongClientAdjustPosition(TimeStamp, 'PlayerWalking', 1, NewLocX, NewLocY, NewLocZ, 0.0000000, 0.0000000, 0.0000000, NewBase, Floor.X, Floor.Y, Floor.Z);
+    //return;    
 }
 
-/* ShortClientAdjustPosition
-bandwidth saving version, when velocity is zeroed
-*/
-unreliable client function ShortClientAdjustPosition
-(
-	float TimeStamp,
-	name newState,
-	EPhysics newPhysics,
-	float NewLocX,
-	float NewLocY,
-	float NewLocZ,
-	Actor NewBase
-)
+unreliable client simulated function ShortClientAdjustPosition(float TimeStamp, name NewState, Actor.EPhysics newPhysics, float NewLocX, float NewLocY, float NewLocZ, Actor NewBase)
 {
-	local vector Floor;
+    local Vector Floor;
 
-	if( Pawn != None )
-	{
-		Floor = Pawn.Floor;
-	}
-
-	LongClientAdjustPosition(TimeStamp, newState, newPhysics, NewLocX, NewLocY, NewLocZ, 0, 0, 0, NewBase, Floor.X, Floor.Y, Floor.Z);
+    // End:0x20
+    if(Pawn != none)
+    {
+        Floor = Pawn.Floor;
+    }
+    LongClientAdjustPosition(TimeStamp, NewState, newPhysics, NewLocX, NewLocY, NewLocZ, 0.0000000, 0.0000000, 0.0000000, NewBase, Floor.X, Floor.Y, Floor.Z);
+    //return;    
 }
 
-reliable client function ClientCapBandwidth(int Cap)
+reliable client simulated function ClientCapBandwidth(int Cap)
 {
-	ClientCap = Cap;
-	if( (Player != None) && (Player.CurrentNetSpeed > Cap) )
-	{
-		SetNetSpeed(Cap);
-	}
+    ClientCap = Cap;
+    // End:0x3C
+    if((Player != none) && Player.CurrentNetSpeed > Cap)
+    {
+        SetNetSpeed(Cap);
+    }
+    //return;    
 }
 
-unreliable client function ClientAckGoodMove(float TimeStamp)
+unreliable client simulated function ClientAckGoodMove(float TimeStamp)
 {
-	UpdatePing(TimeStamp);
-	CurrentTimeStamp = TimeStamp;
-	ClearAckedMoves();
+    UpdatePing(TimeStamp);
+    CurrentTimeStamp = TimeStamp;
+    ClearAckedMoves();
+    //return;    
 }
 
-/* ClientAdjustPosition
-- pass newloc and newvel in components so they don't get rounded
-*/
-unreliable client function ClientAdjustPosition
-(
-	float TimeStamp,
-	name newState,
-	EPhysics newPhysics,
-	float NewLocX,
-	float NewLocY,
-	float NewLocZ,
-	float NewVelX,
-	float NewVelY,
-	float NewVelZ,
-	Actor NewBase
-)
+unreliable client simulated function ClientAdjustPosition(float TimeStamp, name NewState, Actor.EPhysics newPhysics, float NewLocX, float NewLocY, float NewLocZ, float NewVelX, float NewVelY, float NewVelZ, Actor NewBase)
 {
-	local vector Floor;
+    local Vector Floor;
 
-	if ( Pawn != None )
-		Floor = Pawn.Floor;
-	LongClientAdjustPosition(TimeStamp,newState,newPhysics,NewLocX,NewLocY,NewLocZ,NewVelX,NewVelY,NewVelZ,NewBase,Floor.X,Floor.Y,Floor.Z);
+    // End:0x20
+    if(Pawn != none)
+    {
+        Floor = Pawn.Floor;
+    }
+    LongClientAdjustPosition(TimeStamp, NewState, newPhysics, NewLocX, NewLocY, NewLocZ, NewVelX, NewVelY, NewVelZ, NewBase, Floor.X, Floor.Y, Floor.Z);
+    //return;    
 }
 
-/** sets NetSpeed on the server, so it won't send the client more than this many bytes */
 reliable server function ServerSetNetSpeed(int NewSpeed)
 {
-	if ( (WorldInfo.Game != None) && (WorldInfo.NetMode == NM_ListenServer) )
-	{
-		NewSpeed = Min(NewSpeed, WorldInfo.Game.AdjustedNetSpeed);
-	}
-	SetNetSpeed(NewSpeed);
+    // End:0x57
+    if((WorldInfo.Game != none) && WorldInfo.NetMode == NM_ListenServer)
+    {
+        NewSpeed = Min(NewSpeed, WorldInfo.Game.AdjustedNetSpeed);
+    }
+    SetNetSpeed(NewSpeed);
+    //return;    
 }
 
-/* epic ===============================================
-* ::UpdatePing
-update average ping based on newly received round trip timestamp.
-Occasionally send ping updates to the server, and also adjust netspeed if connection appears to be saturated
-*/
 final function UpdatePing(float TimeStamp)
 {
-	if ( PlayerReplicationInfo != None )
-	{
-		PlayerReplicationInfo.UpdatePing(TimeStamp);
-		if ( WorldInfo.TimeSeconds - LastPingUpdate > 4 )
-		{
-				OldPing = PlayerReplicationInfo.ExactPing;
-			LastPingUpdate = WorldInfo.TimeSeconds;
-			ServerUpdatePing(1000 * PlayerReplicationInfo.ExactPing);
-		}
-	}
+    // End:0x8D
+    if(PlayerReplicationInfo != none)
+    {
+        PlayerReplicationInfo.UpdatePing(TimeStamp);
+        // End:0x8D
+        if((WorldInfo.TimeSeconds - LastPingUpdate) > float(4))
+        {
+            OldPing = PlayerReplicationInfo.ExactPing;
+            LastPingUpdate = WorldInfo.TimeSeconds;
+            ServerUpdatePing(int(float(1000) * PlayerReplicationInfo.ExactPing));
+        }
+    }
+    //return;    
 }
 
-/* LongClientAdjustPosition
-long version, when care about pawn's floor normal
-*/
-unreliable client function LongClientAdjustPosition
-(
-	float TimeStamp,
-	name newState,
-	EPhysics newPhysics,
-	float NewLocX,
-	float NewLocY,
-	float NewLocZ,
-	float NewVelX,
-	float NewVelY,
-	float NewVelZ,
-	Actor NewBase,
-	float NewFloorX,
-	float NewFloorY,
-	float NewFloorZ
-)
+unreliable client simulated function LongClientAdjustPosition(float TimeStamp, name NewState, Actor.EPhysics newPhysics, float NewLocX, float NewLocY, float NewLocZ, float NewVelX, float NewVelY, float NewVelZ, Actor NewBase, float NewFloorX, float NewFloorY, float NewFloorZ)
 {
-    local vector NewLocation, NewVelocity, NewFloor;
-	local Actor MoveActor;
+    local Vector NewLocation, NewVelocity, NewFloor;
+    local Actor MoveActor;
     local SavedMove CurrentMove;
-	local Actor TheViewTarget;
+    local Actor TheViewTarget;
 
-	UpdatePing(TimeStamp);
-	if( Pawn != None )
-	{
-		if( Pawn.bTearOff )
-		{
-			Pawn = None;
-			if( !GamePlayEndedState() && !IsInState('Dead') )
-			{
-				GotoState('Dead');
-			}
-			return;
-		}
-
-		MoveActor = Pawn;
-		TheViewTarget = GetViewTarget();
-
-		if( (TheViewTarget != Pawn)
-			&& ((TheViewTarget == self) || ((Pawn(TheViewTarget) != None) && (Pawn(TheViewTarget).Health <= 0))) )
-		{
-			ResetCameraMode();
-			SetViewTarget(Pawn);
-		}
-	}
-	else
+    UpdatePing(TimeStamp);
+    // End:0xE5
+    if(Pawn != none)
     {
-		MoveActor = self;
- 	   	if( GetStateName() != newstate )
-		{
-			`log("- state change:"@GetStateName()@"->"@newstate,,'PlayerMove');
-		    if( NewState == 'RoundEnded' )
-			{
-			    GotoState(NewState);
-			}
-			else if( IsInState('Dead') )
-			{
-		    	if( (NewState != 'PlayerWalking') && (NewState != 'PlayerSwimming') )
-		        {
-				    GotoState(NewState);
-		        }
-		        return;
-			}
-			else if( NewState == 'Dead' )
-			{
-				GotoState(NewState);
-			}
-		}
-	}
-
-    if( CurrentTimeStamp >= TimeStamp )
-	{
-		return;
-	}
-	CurrentTimeStamp = TimeStamp;
-
-	NewLocation.X = NewLocX;
-	NewLocation.Y = NewLocY;
-	NewLocation.Z = NewLocZ;
+        // End:0x63
+        if(Pawn.bTearOff)
+        {
+            Pawn = none;
+            // End:0x61
+            if(!GamePlayEndedState() && !IsInState('Dead'))
+            {
+                GotoState('Dead');
+            }
+            return;
+        }
+        MoveActor = Pawn;
+        TheViewTarget = GetViewTarget();
+        // End:0xE2
+        if((TheViewTarget != Pawn) && (TheViewTarget == self) || (Pawn(TheViewTarget) != none) && Pawn(TheViewTarget).Health <= 0)
+        {
+            ResetCameraMode();
+            SetViewTarget(Pawn);
+        }        
+    }
+    else
+    {
+        MoveActor = self;
+        // End:0x1AF
+        if(GetStateName() != NewState)
+        {
+            LogInternal((("- state change:" @ string(GetStateName())) @ "->") @ string(NewState), 'PlayerMove');
+            // End:0x14B
+            if(NewState == 'RoundEnded')
+            {
+                GotoState(NewState);                
+            }
+            else
+            {
+                // End:0x192
+                if(IsInState('Dead'))
+                {
+                    // End:0x18D
+                    if((NewState != 'PlayerWalking') && NewState != 'PlayerSwimming')
+                    {
+                        GotoState(NewState);
+                    }
+                    return;                    
+                }
+                else
+                {
+                    // End:0x1AF
+                    if(NewState == 'Dead')
+                    {
+                        GotoState(NewState);
+                    }
+                }
+            }
+        }
+    }
+    // End:0x1C0
+    if(CurrentTimeStamp >= TimeStamp)
+    {
+        return;
+    }
+    CurrentTimeStamp = TimeStamp;
+    NewLocation.X = NewLocX;
+    NewLocation.Y = NewLocY;
+    NewLocation.Z = NewLocZ;
     NewVelocity.X = NewVelX;
     NewVelocity.Y = NewVelY;
     NewVelocity.Z = NewVelZ;
-
-	// skip update if no error
     CurrentMove = SavedMoves;
+    J0x25A:
 
-	// note that acked moves are cleared here, instead of calling ClearAckedMoves()
-    while( CurrentMove != None )
+    // End:0x513 [Loop If]
+    if(CurrentMove != none)
     {
-		if( CurrentMove.TimeStamp <= CurrentTimeStamp )
-		{
-			SavedMoves = CurrentMove.NextMove;
-			CurrentMove.NextMove = FreeMoves;
-			FreeMoves = CurrentMove;
-			if( CurrentMove.TimeStamp == CurrentTimeStamp )
-			{
-				LastAckedAccel = CurrentMove.Acceleration;
-				FreeMoves.Clear();
-				if( ((InterpActor(NewBase) != None) || (Vehicle(NewBase) != None))
-					&& (NewBase == CurrentMove.EndBase) )
-				{
-					if ( (GetStateName() == NewState)
-						&& IsInState('PlayerWalking')
-						&& ((MoveActor.Physics == PHYS_Walking) || (MoveActor.Physics == PHYS_Falling)) )
-					{
-						if ( VSizeSq(CurrentMove.SavedRelativeLocation - NewLocation) < MAXPOSITIONERRORSQUARED )
-						{
-							CurrentMove = None;
-							return;
-						}
-						else if ( (Vehicle(NewBase) != None)
-								&& (VSizeSq(Velocity) < MAXNEARZEROVELOCITYSQUARED) && (VSizeSq(NewVelocity) < MAXNEARZEROVELOCITYSQUARED)
-								&& (VSizeSq(CurrentMove.SavedRelativeLocation - NewLocation) < MAXVEHICLEPOSITIONERRORSQUARED) )
-						{
-							CurrentMove = None;
-							return;
-						}
-					}
-				}
-				else if ( (VSizeSq(CurrentMove.SavedLocation - NewLocation) < MAXPOSITIONERRORSQUARED)
-					&& (VSizeSq(CurrentMove.SavedVelocity - NewVelocity) < MAXNEARZEROVELOCITYSQUARED)
-					&& (GetStateName() == NewState)
-					&& IsInState('PlayerWalking')
-					&& ((MoveActor.Physics == PHYS_Walking) || (MoveActor.Physics == PHYS_Falling)) )
-				{
-					CurrentMove = None;
-					return;
-				}
-				CurrentMove = None;
-			}
-			else
-			{
-				FreeMoves.Clear();
-				CurrentMove = SavedMoves;
-			}
-		}
-		else
-		{
-			CurrentMove = None;
-		}
+        // End:0x509
+        if(CurrentMove.TimeStamp <= CurrentTimeStamp)
+        {
+            SavedMoves = CurrentMove.NextMove;
+            CurrentMove.NextMove = FreeMoves;
+            FreeMoves = CurrentMove;
+            // End:0x4E7
+            if(CurrentMove.TimeStamp == CurrentTimeStamp)
+            {
+                LastAckedAccel = CurrentMove.Acceleration;
+                FreeMoves.Clear();
+                // End:0x42D
+                if(((InterpActor(NewBase) != none) || Vehicle(NewBase) != none) && NewBase == CurrentMove.EndBase)
+                {
+                    // End:0x42A
+                    if(((GetStateName() == NewState) && IsInState('PlayerWalking')) && (MoveActor.Physics == 1) || MoveActor.Physics == 2)
+                    {
+                        // End:0x3BB
+                        if(VSizeSq(CurrentMove.SavedRelativeLocation - NewLocation) < 3.0000000)
+                        {
+                            CurrentMove = none;
+                            return;                            
+                        }
+                        else
+                        {
+                            // End:0x42A
+                            if((((Vehicle(NewBase) != none) && VSizeSq(Velocity) < 9.0000000) && VSizeSq(NewVelocity) < 9.0000000) && VSizeSq(CurrentMove.SavedRelativeLocation - NewLocation) < 900.0000000)
+                            {
+                                CurrentMove = none;
+                                return;
+                            }
+                        }
+                    }                    
+                }
+                else
+                {
+                    // End:0x4DD
+                    if(((((VSizeSq(CurrentMove.SavedLocation - NewLocation) < 3.0000000) && VSizeSq(CurrentMove.SavedVelocity - NewVelocity) < 9.0000000) && GetStateName() == NewState) && IsInState('PlayerWalking')) && (MoveActor.Physics == 1) || MoveActor.Physics == 2)
+                    {
+                        CurrentMove = none;
+                        return;
+                    }
+                }
+                CurrentMove = none;                
+            }
+            else
+            {
+                FreeMoves.Clear();
+                CurrentMove = SavedMoves;
+            }            
+        }
+        else
+        {
+            CurrentMove = none;
+        }
+        // [Loop Continue]
+        goto J0x25A;
     }
-
-	if( MoveActor.bHardAttach )
-	{
-		if( MoveActor.Base == None )
-		{
-			if( NewBase != None )
-			{
-				MoveActor.SetBase(NewBase);
-			}
-			if( MoveActor.Base == None )
-			{
-				MoveActor.SetHardAttach(false);
-			}
-			else
-			{
-				return;
-			}
-		}
-		else
-		{
-			return;
-		}
-	}
-
-	NewFloor.X = NewFloorX;
-	NewFloor.Y = NewFloorY;
-	NewFloor.Z = NewFloorZ;
-
-	//@debug - track down the errors
-	`log("- base mismatch:"@MoveActor.Base@NewBase,MoveActor.Base != NewBase,'PlayerMove');
-	`log("- location mismatch, delta:"@VSize(MoveActor.Location - NewLocation),MoveActor.Location != NewLocation,'PlayerMove');
-	`log("- velocity mismatch, delta:"@VSize(NewVelocity - MoveActor.Velocity)@"client:"@VSize(MoveActor.Velocity)@"server:"@VSize(NewVelocity),MoveActor.Velocity != NewVelocity,'PlayerMove');
-
-	if (Pawn != None && Pawn.Physics != PHYS_Falling && Pawn.Mesh != None && Pawn.Mesh.RootMotionMode != RMM_Ignore)
-	{
-		`log("- skipping position update for root motion",,'PlayerMove');
-		return;
-	}
-	// don't correct if have upcoming root motion
-    CurrentMove = SavedMoves;
-    while( CurrentMove != None )
+    // End:0x58B
+    if(MoveActor.bHardAttach)
     {
-		if ( CurrentMove.bForceRMVelocity )
-		{
-			`log("- skipping position update for upcoming root motion",,'PlayerMove');
-			return;
-		}
-		CurrentMove = CurrentMove.NextMove;
-	}
-	if( (InterpActor(NewBase) != None) || (Vehicle(NewBase) != None) )
-	{
-		NewLocation += NewBase.Location;
-	}
+        // End:0x589
+        if(MoveActor.Base == none)
+        {
+            // End:0x55B
+            if(NewBase != none)
+            {
+                MoveActor.SetBase(NewBase);
+            }
+            // End:0x584
+            if(MoveActor.Base == none)
+            {
+                MoveActor.SetHardAttach(false);                
+            }
+            else
+            {
+                return;
+            }            
+        }
+        else
+        {
+            return;
+        }
+    }
+    NewFloor.X = NewFloorX;
+    NewFloor.Y = NewFloorY;
+    NewFloor.Z = NewFloorZ;
+    // End:0x61F
+    if(MoveActor.Base != NewBase)
+    {
+        LogInternal(("- base mismatch:" @ string(MoveActor.Base)) @ string(NewBase), 'PlayerMove');
+    }
+    // End:0x67C
+    if(MoveActor.Location != NewLocation)
+    {
+        LogInternal("- location mismatch, delta:" @ string(VSize(MoveActor.Location - NewLocation)), 'PlayerMove');
+    }
+    // End:0x70F
+    if(MoveActor.Velocity != NewVelocity)
+    {
+        LogInternal((((("- velocity mismatch, delta:" @ string(VSize(NewVelocity - MoveActor.Velocity))) @ "client:") @ string(VSize(MoveActor.Velocity))) @ "server:") @ string(VSize(NewVelocity)), 'PlayerMove');
+    }
+    CurrentMove = SavedMoves;
+    J0x71A:
 
-// 	`log("Client "$Role$" adjust "$self$" stamp "$TimeStamp$" location "$MoveActor.Location);
-
-	MoveActor.bCanTeleport = FALSE;
-	if ( !MoveActor.SetLocation(NewLocation) && (Pawn(MoveActor) != None)
-		&& (Pawn(MoveActor).CylinderComponent.CollisionHeight > Pawn(MoveActor).CrouchHeight)
-		&& !Pawn(MoveActor).bIsCrouched
-		&& (newPhysics == PHYS_Walking)
-		&& (MoveActor.Physics != PHYS_RigidBody) )
-	{
-		MoveActor.SetPhysics(newPhysics);
-
-		if( !MoveActor.SetLocation(NewLocation + vect(0,0,1)*Pawn(MoveActor).MaxStepHeight) )
-		{
-			Pawn(MoveActor).ForceCrouch();
-			MoveActor.SetLocation(NewLocation);
-		}
-		else
-		{
-			MoveActor.MoveSmooth(vect(0,0,-1)*Pawn(MoveActor).MaxStepHeight);
-		}
-	}
-	MoveActor.bCanTeleport = TRUE;
-
-	// Hack. Don't let network change physics mode of rigid body stuff on the client.
-	if( MoveActor.Physics != PHYS_RigidBody &&
-		newPhysics != PHYS_RigidBody )
-	{
-		MoveActor.SetPhysics(newPhysics);
-	}
-
-	if( MoveActor != self )
-	{
-		MoveActor.SetBase(NewBase, NewFloor);
-	}
-
+    // End:0x792 [Loop If]
+    if(CurrentMove != none)
+    {
+        // End:0x77A
+        if(CurrentMove.bForceRMVelocity)
+        {
+            LogInternal("- skipping position update for upcoming root motion", 'PlayerMove');
+            return;
+        }
+        CurrentMove = CurrentMove.NextMove;
+        // [Loop Continue]
+        goto J0x71A;
+    }
+    // End:0x7CA
+    if((InterpActor(NewBase) != none) || Vehicle(NewBase) != none)
+    {
+        NewLocation += NewBase.Location;
+    }
+    MoveActor.bCanTeleport = false;
+    // End:0x935
+    if(((((!MoveActor.SetLocation(NewLocation) && Pawn(MoveActor) != none) && Pawn(MoveActor).CylinderComponent.CollisionHeight > Pawn(MoveActor).CrouchHeight) && !Pawn(MoveActor).bIsCrouched) && newPhysics == 1) && MoveActor.Physics != 10)
+    {
+        MoveActor.SetPhysics(newPhysics);
+        // End:0x905
+        if(!MoveActor.SetLocation(NewLocation + (vect(0.0000000, 0.0000000, 1.0000000) * Pawn(MoveActor).MaxStepHeight)))
+        {
+            Pawn(MoveActor).ForceCrouch();
+            MoveActor.SetLocation(NewLocation);            
+        }
+        else
+        {
+            MoveActor.MoveSmooth(vect(0.0000000, 0.0000000, -1.0000000) * Pawn(MoveActor).MaxStepHeight);
+        }
+    }
+    MoveActor.bCanTeleport = true;
+    // End:0x986
+    if((MoveActor.Physics != 10) && newPhysics != 10)
+    {
+        MoveActor.SetPhysics(newPhysics);
+    }
+    // End:0x9AA
+    if(MoveActor != self)
+    {
+        MoveActor.SetBase(NewBase, NewFloor);
+    }
     MoveActor.Velocity = NewVelocity;
-	UpdateStateFromAdjustment(NewState);
-	bUpdatePosition = TRUE;
+    UpdateStateFromAdjustment(NewState);
+    bUpdatePosition = true;
+    //return;    
 }
 
-
-/**
-Called by LongClientAdjustPosition()
-@param NewState is the state recommended by the server
-*/
 function UpdateStateFromAdjustment(name NewState)
 {
-	if( GetStateName() != newstate )
-	{
-		GotoState(newstate);
-	}
+    // End:0x17
+    if(GetStateName() != NewState)
+    {
+        GotoState(NewState);
+    }
+    //return;    
 }
 
 unreliable server function ServerUpdatePing(int NewPing)
 {
-	PlayerReplicationInfo.Ping = Min(0.25 * NewPing, 250);
+    PlayerReplicationInfo.Ping = byte(Min(int(0.2500000 * float(NewPing)), 250));
+    //return;    
 }
 
-/* ClearAckedMoves()
-clear out acknowledged/missed sent moves
-*/
 function ClearAckedMoves()
 {
-	local SavedMove CurrentMove;
+    local SavedMove CurrentMove;
 
-	CurrentMove = SavedMoves;
-	while ( CurrentMove != None )
-	{
-		if ( CurrentMove.TimeStamp <= CurrentTimeStamp )
-		{
-			if ( CurrentMove.TimeStamp == CurrentTimeStamp )
-				LastAckedAccel = CurrentMove.Acceleration;
-			SavedMoves = CurrentMove.NextMove;
-			CurrentMove.NextMove = FreeMoves;
-			FreeMoves = CurrentMove;
-			FreeMoves.Clear();
-			CurrentMove = SavedMoves;
-		}
-		else
-			break;
-	}
+    CurrentMove = SavedMoves;
+    J0x0B:
+
+    // End:0xBA [Loop If]
+    if(CurrentMove != none)
+    {
+        // End:0xB4
+        if(CurrentMove.TimeStamp <= CurrentTimeStamp)
+        {
+            // End:0x5D
+            if(CurrentMove.TimeStamp == CurrentTimeStamp)
+            {
+                LastAckedAccel = CurrentMove.Acceleration;
+            }
+            SavedMoves = CurrentMove.NextMove;
+            CurrentMove.NextMove = FreeMoves;
+            FreeMoves = CurrentMove;
+            FreeMoves.Clear();
+            CurrentMove = SavedMoves;            
+        }
+        else
+        {
+            // [Explicit Break]
+            goto J0xBA;
+        }
+        // [Loop Continue]
+        goto J0x0B;
+    }
+    J0xBA:
+
+    //return;    
 }
 
 function ClientUpdatePosition()
 {
-	local SavedMove CurrentMove;
-	local int		realbRun, realbDuck;
-	local bool		bRealJump;
-	local bool		bRealPreciseDestination;
+    local SavedMove CurrentMove;
+    local int realbRun, realbDuck;
+    local bool bRealJump, bRealPreciseDestination;
 
-	bUpdatePosition = FALSE;
+    bUpdatePosition = false;
+    // End:0x31
+    if((Pawn != none) && Pawn.Physics == 10)
+    {
+        return;
+    }
+    realbRun = int(bRun);
+    realbDuck = int(bDuck);
+    bRealJump = bPressedJump;
+    bUpdating = true;
+    bRealPreciseDestination = bPreciseDestination;
+    ClearAckedMoves();
+    CurrentMove = SavedMoves;
+    J0x82:
 
-	// Dont do any network position updates on things running PHYS_RigidBody
-	if( Pawn != None && Pawn.Physics == PHYS_RigidBody )
-	{
-		return;
-	}
-
-	realbRun= bRun;
-	realbDuck = bDuck;
-	bRealJump = bPressedJump;
-	bUpdating = TRUE;
-	bRealPreciseDestination = bPreciseDestination;
-
-	ClearAckedMoves();
-	CurrentMove = SavedMoves;
-	while( CurrentMove != None )
-	{
-		if( (PendingMove == CurrentMove) && (Pawn != None) )
-		{
-			PendingMove.SetInitialPosition(Pawn);
-		}
-
-		if ( Pawn != None )
-			Pawn.bForceRMVelocity = CurrentMove.bForceRMVelocity;
-
-		MoveAutonomous(CurrentMove.Delta, CurrentMove.CompressedFlags(), CurrentMove.Acceleration, rot(0,0,0));
-
-		if( Pawn != None )
-		{
-			Pawn.bForceRMVelocity = false;
-			CurrentMove.SavedLocation = Pawn.Location;
-			CurrentMove.SavedVelocity = Pawn.Velocity;
-			CurrentMove.EndBase = Pawn.Base;
-			if( (CurrentMove.EndBase != None) && !CurrentMove.EndBase.bWorldGeometry )
-			{
-				CurrentMove.SavedRelativeLocation = Pawn.Location - CurrentMove.EndBase.Location;
-			}
-		}
-		CurrentMove = CurrentMove.NextMove;
-	}
-
-	bUpdating = FALSE;
-	bDuck = realbDuck;
-	bRun = realbRun;
-	bPressedJump = bRealJump;
-	bPreciseDestination = bRealPreciseDestination;
+    // End:0x239 [Loop If]
+    if(CurrentMove != none)
+    {
+        // End:0xC2
+        if((PendingMove == CurrentMove) && Pawn != none)
+        {
+            PendingMove.SetInitialPosition(Pawn);
+        }
+        // End:0xEE
+        if(Pawn != none)
+        {
+            Pawn.bForceRMVelocity = CurrentMove.bForceRMVelocity;
+        }
+        MoveAutonomous(CurrentMove.Delta, CurrentMove.CompressedFlags(), CurrentMove.Acceleration, rot(0, 0, 0));
+        // End:0x221
+        if(Pawn != none)
+        {
+            Pawn.bForceRMVelocity = false;
+            CurrentMove.SavedLocation = Pawn.Location;
+            CurrentMove.SavedVelocity = Pawn.Velocity;
+            CurrentMove.EndBase = Pawn.Base;
+            // End:0x221
+            if((CurrentMove.EndBase != none) && !CurrentMove.EndBase.bWorldGeometry)
+            {
+                CurrentMove.SavedRelativeLocation = Pawn.Location - CurrentMove.EndBase.Location;
+            }
+        }
+        CurrentMove = CurrentMove.NextMove;
+        // [Loop Continue]
+        goto J0x82;
+    }
+    bUpdating = false;
+    bDuck = byte(realbDuck);
+    bRun = byte(realbRun);
+    bPressedJump = bRealJump;
+    bPreciseDestination = bRealPreciseDestination;
+    //return;    
 }
 
 final function SavedMove GetFreeMove()
 {
-	local SavedMove s, first;
-	local int i;
+    local SavedMove S, first;
+    local int I;
 
-	if ( FreeMoves == None )
-	{
-		// don't allow more than 100 saved moves
-		For ( s=SavedMoves; s!=None; s=s.NextMove )
-		{
-			i++;
-			if ( i > 100 )
-			{
-				first = SavedMoves;
-				SavedMoves = SavedMoves.NextMove;
-				first.Clear();
-				first.NextMove = None;
-				// clear out all the moves
-				While ( SavedMoves != None )
-				{
-					s = SavedMoves;
-					SavedMoves = SavedMoves.NextMove;
-					s.Clear();
-					s.NextMove = FreeMoves;
-					FreeMoves = s;
-				}
-				PendingMove = None;
-				return first;
-			}
-		}
-		return new(self) SavedMoveClass;
-	}
-	else
-	{
-		s = FreeMoves;
-		FreeMoves = FreeMoves.NextMove;
-		s.NextMove = None;
-		return s;
-	}
+    // End:0x10E
+    if(FreeMoves == none)
+    {
+        S = SavedMoves;
+        J0x16:
+
+        // End:0x100 [Loop If]
+        if(S != none)
+        {
+            I++;
+            // End:0xE8
+            if(I > 100)
+            {
+                first = SavedMoves;
+                SavedMoves = SavedMoves.NextMove;
+                first.Clear();
+                first.NextMove = none;
+                J0x79:
+
+                // End:0xDB [Loop If]
+                if(SavedMoves != none)
+                {
+                    S = SavedMoves;
+                    SavedMoves = SavedMoves.NextMove;
+                    S.Clear();
+                    S.NextMove = FreeMoves;
+                    FreeMoves = S;
+                    // [Loop Continue]
+                    goto J0x79;
+                }
+                PendingMove = none;
+                return first;
+            }
+            S = S.NextMove;
+            // [Loop Continue]
+            goto J0x16;
+        }
+        return new (self) SavedMoveClass;        
+    }
+    else
+    {
+        S = FreeMoves;
+        FreeMoves = FreeMoves.NextMove;
+        S.NextMove = none;
+        return S;
+    }
+    //return ReturnValue;    
 }
 
 function int CompressAccel(int C)
 {
-	if ( C >= 0 )
-		C = Min(C, 127);
-	else
-		C = Min(abs(C), 127) + 128;
-	return C;
+    // End:0x1D
+    if(C >= 0)
+    {
+        C = Min(C, 127);        
+    }
+    else
+    {
+        C = Min(int(Abs(float(C))), 127) + 128;
+    }
+    return C;
+    //return ReturnValue;    
 }
 
-/*
-========================================================================
-Here's how player movement prediction, replication and correction works in network games:
-
-Every tick, the PlayerTick() function is called.  It calls the PlayerMove() function (which is implemented
-in various states).  PlayerMove() figures out the acceleration and rotation, and then calls ProcessMove()
-(for single player or listen servers), or ReplicateMove() (if its a network client).
-
-ReplicateMove() saves the move (in the PendingMove list), calls ProcessMove(), and then replicates the move
-to the server by calling the replicated function ServerMove() - passing the movement parameters, the client's
-resultant position, and a timestamp.
-
-ServerMove() is executed on the server.  It decodes the movement parameters and causes the appropriate movement
-to occur.  It then looks at the resulting position and if enough time has passed since the last response, or the
-position error is significant enough, the server calls ClientAdjustPosition(), a replicated function.
-
-ClientAdjustPosition() is executed on the client.  The client sets its position to the servers version of position,
-and sets the bUpdatePosition flag to true.
-
-When PlayerTick() is called on the client again, if bUpdatePosition is true, the client will call
-ClientUpdatePosition() before calling PlayerMove().  ClientUpdatePosition() replays all the moves in the pending
-move list which occured after the timestamp of the move the server was adjusting.
-*/
-
-//
-// Replicate this client's desired movement to the server.
-//
-function ReplicateMove
-(
-	float DeltaTime,
-	vector NewAccel,
-	eDoubleClickDir DoubleClickMove,
-	rotator DeltaRot
-)
+function ReplicateMove(float DeltaTime, Vector newAccel, Actor.EDoubleClickDir DoubleClickMove, Rotator DeltaRot)
 {
-	local SavedMove NewMove, OldMove, AlmostLastMove, LastMove;
-	local byte ClientRoll;
-	local float NetMoveDelta;
+    local SavedMove NewMove, OldMove, AlmostLastMove, LastMove;
+    local byte ClientRoll;
+    local float NetMoveDelta;
 
-	// do nothing if we are no longer connected
-	if (Player == None)
-	{
-		return;
-	}
+    // End:0x0D
+    if(Player == none)
+    {
+        return;
+    }
+    MaxResponseTime = default.MaxResponseTime * WorldInfo.TimeDilation;
+    DeltaTime = ((Pawn != none) ? Pawn.CustomTimeDilation : CustomTimeDilation) * FMin(DeltaTime, MaxResponseTime);
+    // End:0xFF
+    if(SavedMoves != none)
+    {
+        LastMove = SavedMoves;
+        AlmostLastMove = LastMove;
+        OldMove = none;
+        J0x86:
 
-	MaxResponseTime = Default.MaxResponseTime * WorldInfo.TimeDilation;
-	DeltaTime = ((Pawn != None) ? Pawn.CustomTimeDilation : CustomTimeDilation) * FMin(DeltaTime, MaxResponseTime);
-
-	// find the most recent move (LastMove), and the oldest (unacknowledged) important move (OldMove)
-	// a SavedMove is interesting if it differs significantly from the last acknowledged move
-	if ( SavedMoves != None )
-	{
-		LastMove = SavedMoves;
-		AlmostLastMove = LastMove;
-		OldMove = None;
-		while ( LastMove.NextMove != None )
-		{
-			// find first important unacknowledged move
-			if ( (OldMove == None) && (Pawn != None) && LastMove.IsImportantMove(LastAckedAccel) )
-			{
-				OldMove = LastMove;
-			}
-			AlmostLastMove = LastMove;
-			LastMove = LastMove.NextMove;
-		}
-	}
-
-	// Get a SavedMove object to store the movement in.
-	NewMove = GetFreeMove();
-	if ( NewMove == None )
-	{
-		return;
-	}
-	NewMove.SetMoveFor(self, DeltaTime, NewAccel, DoubleClickMove);
-
-	// Simulate the movement locally.
-	bDoubleJump = false;
-	ProcessMove(NewMove.Delta, NewMove.Acceleration, NewMove.DoubleClickMove, DeltaRot);
-
-	// see if the two moves could be combined
-	if ( (PendingMove != None) && PendingMove.CanCombineWith(NewMove, Pawn, MaxResponseTime) )
-	{
-		// to combine move, first revert pawn position to PendingMove start position, before playing combined move on client
-		Pawn.SetLocation(PendingMove.GetStartLocation());
-		Pawn.Velocity = PendingMove.StartVelocity;
-		if( PendingMove.StartBase != Pawn.Base )
-		{
-			Pawn.SetBase(PendingMove.StartBase);
-		}
-		Pawn.Floor = PendingMove.StartFloor;
-		NewMove.Delta += PendingMove.Delta;
-		NewMove.SetInitialPosition(Pawn);
-
-		// remove pending move from move list
-		if ( LastMove == PendingMove )
-		{
-			if ( SavedMoves == PendingMove )
-			{
-				SavedMoves.NextMove = FreeMoves;
-				FreeMoves = SavedMoves;
-				SavedMoves = None;
-			}
-			else
-			{
-				PendingMove.NextMove = FreeMoves;
-				FreeMoves = PendingMove;
-				if ( AlmostLastMove != None )
-				{
-					AlmostLastMove.NextMove = None;
-					LastMove = AlmostLastMove;
-				}
-			}
-			FreeMoves.Clear();
-		}
-		PendingMove = None;
-	}
-
-	if ( Pawn != None )
-		Pawn.AutonomousPhysics(NewMove.Delta);
-	else
-		AutonomousPhysics(DeltaTime);
-	NewMove.PostUpdate(self);
-
-	if ( SavedMoves == None )
-		SavedMoves = NewMove;
-	else
-		LastMove.NextMove = NewMove;
-
-	if ( PendingMove == None )
-	{
-		// Decide whether to hold off on move
-		// send moves more frequently in small games where server isn't likely to be saturated
-		if ( (Player.CurrentNetSpeed > 10000) && (WorldInfo.GRI != None) && (WorldInfo.GRI.PRIArray.Length <= 10) )
-			NetMoveDelta = 0.011;
-		else
-			NetMoveDelta = FMax(0.0222,2 * WorldInfo.MoveRepSize/Player.CurrentNetSpeed);
-
-		if ( (WorldInfo.TimeSeconds - ClientUpdateTime) * WorldInfo.TimeDilation < NetMoveDelta )
-		{
-			PendingMove = NewMove;
-			return;
-		}
-	}
-
-	ClientUpdateTime = WorldInfo.TimeSeconds;
-
-	// Send to the server
-	ClientRoll = (Rotation.Roll >> 8) & 255;
-
-	CallServerMove( NewMove,
-			((Pawn == None) ? Location : Pawn.Location),
-			ClientRoll,
-			((Rotation.Yaw & 65535) << 16) + (Rotation.Pitch & 65535),
-			OldMove );
-
-	PendingMove = None;
+        // End:0xFF [Loop If]
+        if(LastMove.NextMove != none)
+        {
+            // End:0xDC
+            if(((OldMove == none) && Pawn != none) && LastMove.IsImportantMove(LastAckedAccel))
+            {
+                OldMove = LastMove;
+            }
+            AlmostLastMove = LastMove;
+            LastMove = LastMove.NextMove;
+            // [Loop Continue]
+            goto J0x86;
+        }
+    }
+    NewMove = GetFreeMove();
+    // End:0x118
+    if(NewMove == none)
+    {
+        return;
+    }
+    NewMove.SetMoveFor(self, DeltaTime, newAccel, DoubleClickMove);
+    bDoubleJump = false;
+    ProcessMove(NewMove.Delta, NewMove.Acceleration, NewMove.DoubleClickMove, DeltaRot);
+    // End:0x337
+    if((PendingMove != none) && PendingMove.CanCombineWith(NewMove, Pawn, MaxResponseTime))
+    {
+        Pawn.SetLocation(PendingMove.GetStartLocation());
+        Pawn.Velocity = PendingMove.StartVelocity;
+        // End:0x235
+        if(PendingMove.StartBase != Pawn.Base)
+        {
+            Pawn.SetBase(PendingMove.StartBase);
+        }
+        Pawn.Floor = PendingMove.StartFloor;
+        NewMove.Delta += PendingMove.Delta;
+        NewMove.SetInitialPosition(Pawn);
+        // End:0x330
+        if(LastMove == PendingMove)
+        {
+            // End:0x2D5
+            if(SavedMoves == PendingMove)
+            {
+                SavedMoves.NextMove = FreeMoves;
+                FreeMoves = SavedMoves;
+                SavedMoves = none;                
+            }
+            else
+            {
+                PendingMove.NextMove = FreeMoves;
+                FreeMoves = PendingMove;
+                // End:0x31C
+                if(AlmostLastMove != none)
+                {
+                    AlmostLastMove.NextMove = none;
+                    LastMove = AlmostLastMove;
+                }
+            }
+            FreeMoves.Clear();
+        }
+        PendingMove = none;
+    }
+    // End:0x361
+    if(Pawn != none)
+    {
+        Pawn.AutonomousPhysics(NewMove.Delta);        
+    }
+    else
+    {
+        AutonomousPhysics(DeltaTime);
+    }
+    NewMove.PostUpdate(self);
+    // End:0x397
+    if(SavedMoves == none)
+    {
+        SavedMoves = NewMove;        
+    }
+    else
+    {
+        LastMove.NextMove = NewMove;
+    }
+    // End:0x48C
+    if(PendingMove == none)
+    {
+        // End:0x418
+        if(((Player.CurrentNetSpeed > 10000) && WorldInfo.GRI != none) && WorldInfo.GRI.PRIArray.Length <= 10)
+        {
+            NetMoveDelta = 0.0110000;            
+        }
+        else
+        {
+            NetMoveDelta = FMax(0.0222000, (2.0000000 * WorldInfo.MoveRepSize) / float(Player.CurrentNetSpeed));
+        }
+        // End:0x48C
+        if(((WorldInfo.TimeSeconds - ClientUpdateTime) * WorldInfo.TimeDilation) < NetMoveDelta)
+        {
+            PendingMove = NewMove;
+            return;
+        }
+    }
+    ClientUpdateTime = WorldInfo.TimeSeconds;
+    ClientRoll = byte((Rotation.Roll >> 8) & 255);
+    CallServerMove(NewMove, ((Pawn == none) ? Location : Pawn.Location), ClientRoll, ((Rotation.Yaw & 65535) << 16) + (Rotation.Pitch & 65535), OldMove);
+    PendingMove = none;
+    //return;    
 }
 
-/* CallServerMove()
-Call the appropriate replicated servermove() function to send a client player move to the server
-*/
-function CallServerMove
-(
-	SavedMove NewMove,
-    vector ClientLoc,
-    byte ClientRoll,
-    int View,
-    SavedMove OldMove
-)
+function CallServerMove(SavedMove NewMove, Vector ClientLoc, byte ClientRoll, int View, SavedMove OldMove)
 {
-	local vector BuildAccel;
-	local byte OldAccelX, OldAccelY, OldAccelZ;
+    local Vector BuildAccel;
+    local byte OldAccelX, OldAccelY, OldAccelZ;
 
-	// compress old move if it exists
-	if ( OldMove != None )
-	{
-		// old move important to replicate redundantly
-		BuildAccel = 0.05 * OldMove.Acceleration + vect(0.5, 0.5, 0.5);
-		OldAccelX = CompressAccel(BuildAccel.X);
-		OldAccelY = CompressAccel(BuildAccel.Y);
-		OldAccelZ = CompressAccel(BuildAccel.Z);
-		OldServerMove(OldMove.TimeStamp,OldAccelX, OldAccelY, OldAccelZ, OldMove.CompressedFlags());
-	}
-
-	if ( PendingMove != None )
-	{
-		// send two moves simultaneously
-		DualServerMove
-		(
-			PendingMove.TimeStamp,
-			PendingMove.Acceleration * 10,
-			PendingMove.CompressedFlags(),
-			((PendingMove.Rotation.Yaw & 65535) << 16) + (PendingMove.Rotation.Pitch & 65535),
-			NewMove.TimeStamp,
-			NewMove.Acceleration * 10,
-			ClientLoc,
-			NewMove.CompressedFlags(),
-			ClientRoll,
-			View
-		);
-	}
-	else
-	{
-		ServerMove
-		(
-	    NewMove.TimeStamp,
-	    NewMove.Acceleration * 10,
-	    ClientLoc,
-		NewMove.CompressedFlags(),
-		ClientRoll,
-	    View
-		);
-	}
+    // End:0xDE
+    if(OldMove != none)
+    {
+        BuildAccel = (0.0500000 * OldMove.Acceleration) + vect(0.5000000, 0.5000000, 0.5000000);
+        OldAccelX = byte(CompressAccel(int(BuildAccel.X)));
+        OldAccelY = byte(CompressAccel(int(BuildAccel.Y)));
+        OldAccelZ = byte(CompressAccel(int(BuildAccel.Z)));
+        OldServerMove(OldMove.TimeStamp, OldAccelX, OldAccelY, OldAccelZ, OldMove.CompressedFlags());
+    }
+    // End:0x1BD
+    if(PendingMove != none)
+    {
+        DualServerMove(PendingMove.TimeStamp, PendingMove.Acceleration * float(10), PendingMove.CompressedFlags(), ((PendingMove.Rotation.Yaw & 65535) << 16) + (PendingMove.Rotation.Pitch & 65535), NewMove.TimeStamp, NewMove.Acceleration * float(10), ClientLoc, NewMove.CompressedFlags(), ClientRoll, View);        
+    }
+    else
+    {
+        ServerMove(NewMove.TimeStamp, NewMove.Acceleration * float(10), ClientLoc, NewMove.CompressedFlags(), ClientRoll, View);
+    }
+    //return;    
 }
 
-/* HandleWalking:
-	Called by PlayerController and PlayerInput to set bIsWalking flag, affecting Pawn's velocity */
 function HandleWalking()
 {
-	if ( Pawn != None )
-		Pawn.SetWalking( bRun != 0 );
+    // End:0x2C
+    if(Pawn != none)
+    {
+        Pawn.SetWalking(bRun != 0);
+    }
+    //return;    
 }
 
 reliable server function ServerRestartGame()
 {
+    //return;    
 }
 
-// Send a voice message of a certain type to a certain player.
-exec function Speech( name Type, int Index, string Callsign )
+exec function Speech(name Type, int Index, string Callsign)
 {
-	ServerSpeech(Type,Index,Callsign);
+    ServerSpeech(Type, Index, Callsign);
+    //return;    
 }
 
-reliable server function ServerSpeech( name Type, int Index, string Callsign );
+reliable server function ServerSpeech(name Type, int Index, string Callsign)
+{
+    //return;    
+}
 
 exec function RestartLevel()
 {
-	if( WorldInfo.NetMode==NM_Standalone )
-	{
-		ClientTravel( "?restart", TRAVEL_Relative );
-	}
+    // End:0x32
+    if(WorldInfo.NetMode == NM_Standalone)
+    {
+        ClientTravel("?restart", TRAVEL_Relative);
+    }
+    //return;    
 }
 
-exec function LocalTravel( string URL )
+exec function LocalTravel(string URL)
 {
-	if( WorldInfo.NetMode==NM_Standalone )
-		ClientTravel( URL, TRAVEL_Relative );
+    // End:0x2D
+    if(WorldInfo.NetMode == NM_Standalone)
+    {
+        ClientTravel(URL, 2);
+    }
+    //return;    
 }
 
-// ------------------------------------------------------------------------
-// Loading and saving
-
-/**
- * Console exec that initiates a quicksave and displays a string providing visual feedback.
- */
 exec function QuickSave()
 {
-    if ( (Pawn != None) && (Pawn.Health > 0) && (WorldInfo.NetMode == NM_Standalone) )
-	{
-		ClientMessage(QuickSaveString);
-		ConsoleCommand("DEFER SAVEGAME QUICKSAVE.SAV");
-	}
+    // End:0x7D
+    if(((Pawn != none) && Pawn.Health > 0) && WorldInfo.NetMode == NM_Standalone)
+    {
+        ClientMessage(QuickSaveString);        
+        ConsoleCommand("DEFER SAVEGAME QUICKSAVE.SAV");
+    }
+    //return;    
 }
 
-/**
- * Loads the savegame created by the quicksave exec
- */
 exec function QuickLoad()
 {
-	if ( WorldInfo.NetMode == NM_Standalone )
-	{
-		ConsoleCommand("DEFER LOADGAME QUICKSAVE.SAV");
-	}
+    // End:0x48
+    if(WorldInfo.NetMode == NM_Standalone)
+    {        
+        ConsoleCommand("DEFER LOADGAME QUICKSAVE.SAV");
+    }
+    //return;    
 }
 
-/**
- * Pause force-feedback for all local players.
- *
- * @param	bShouldPauseRumble	indicates whether force-feedback should be paused or unpaused.
- */
-function PauseRumbleForAllPlayers( optional bool bShouldPauseRumble=true )
+function PauseRumbleForAllPlayers(optional bool bShouldPauseRumble = true)
 {
-	local PlayerController PC;
+    local PlayerController PC;
 
-	foreach LocalPlayerControllers( class'PlayerController', PC )
-	{
-		if ( PC.ForceFeedbackManager != None )
-		{
-			PC.ForceFeedbackManager.PauseWaveform(bShouldPauseRumble);
-		}
-	}
+    // End:0x52
+    foreach LocalPlayerControllers(Class'PlayerController', PC)
+    {
+        // End:0x51
+        if(PC.ForceFeedbackManager != none)
+        {
+            PC.ForceFeedbackManager.PauseWaveform(bShouldPauseRumble);
+        }        
+    }    
+    //return;    
 }
 
-/** Callback the server uses to determine if the unpause can happen */
 delegate bool CanUnpause()
 {
-	return WorldInfo.Pauser == PlayerReplicationInfo;
+    return WorldInfo.Pauser == PlayerReplicationInfo;
+    //return ReturnValue;    
 }
 
-/* SetPause()
- Try to pause game; returns success indicator.
- Replicated to server in network games.
- */
-function bool SetPause( bool bPause, optional delegate<CanUnpause> CanUnpauseDelegate=CanUnpause)
+function bool SetPause(bool bPause, optional delegate<CanUnpause> CanUnpauseDelegate = CanUnpause)
 {
-	local bool bResult;
+    local bool bResult;
 
-	if (WorldInfo.NetMode != NM_Client)
-	{
-		if (bPause)
-		{
-			bFire = 0;
-			// Pause gamepad rumbling too if needed
-			bResult = WorldInfo.Game.SetPause(self,CanUnpauseDelegate);
-			if (bResult)
-			{
-				PauseRumbleForAllPlayers();
-			}
-		}
-		else
-		{
-			WorldInfo.Game.ClearPause();
-			// If the unpause is complete, let rumble occur
-			if ( WorldInfo.Pauser == None )
-			{
-				PauseRumbleForAllPlayers(false);
-			}
-		}
-	}
-	return bResult;
+    // End:0xB8
+    if(WorldInfo.NetMode != NM_Client)
+    {
+        // End:0x7A
+        if(bPause)
+        {
+            bFire = 0;
+            bResult = WorldInfo.Game.SetPause(self, CanUnpauseDelegate);
+            // End:0x77
+            if(bResult)
+            {
+                PauseRumbleForAllPlayers();
+            }            
+        }
+        else
+        {
+            WorldInfo.Game.ClearPause();
+            // End:0xB8
+            if(WorldInfo.Pauser == none)
+            {
+                PauseRumbleForAllPlayers(false);
+            }
+        }
+    }
+    return bResult;
+    //return ReturnValue;    
 }
 
-/** Dumps the pause state of the game */
 exec function DebugPause()
 {
-	WorldInfo.Game.DebugPause();
+    WorldInfo.Game.DebugPause();
+    //return;    
 }
 
-/**
- * Returns whether the game is currently paused.
- */
 final simulated function bool IsPaused()
 {
-	return WorldInfo.Pauser != None;
+    return WorldInfo.Pauser != none;
+    //return ReturnValue;    
 }
 
-/* Pause()
-Command to try to pause the game.
-*/
 exec function Pause()
 {
-	ServerPause();
+    ServerPause();
+    //return;    
 }
 
 reliable server function ServerPause()
 {
-	// Pause if not already
-	if( !IsPaused() )
-		SetPause(true);
-	else
-		SetPause(false);
+    // End:0x1A
+    if(!IsPaused())
+    {
+        SetPause(true);        
+    }
+    else
+    {
+        SetPause(false);
+    }
+    //return;    
 }
 
 exec function ShowMenu()
 {
+    //return;    
 }
 
-/**
- * Toggles the game's paused state if it does not match the desired pause state.
- *
- * @param	bDesiredPauseState	TRUE indicates that the game should be paused.
- */
-event ConditionalPause( bool bDesiredPauseState )
+event ConditionalPause(bool bDesiredPauseState)
 {
-	if ( bDesiredPauseState != IsPaused() )
-	{
-		SetPause(bDesiredPauseState);
-	}
+    // End:0x22
+    if(bDesiredPauseState != IsPaused())
+    {
+        SetPause(bDesiredPauseState);
+    }
+    //return;    
 }
 
 reliable server function ServerUTrace()
 {
-	if (WorldInfo.NetMode != NM_Standalone
-	&& (PlayerReplicationInfo == None || !PlayerReplicationInfo.bAdmin) )
-	{
-		return;
-	}
-
-	UTrace();
+    // End:0x40
+    if((WorldInfo.NetMode != NM_Standalone) && (PlayerReplicationInfo == none) || !PlayerReplicationInfo.bAdmin)
+    {
+        return;
+    }
+    UTrace();
+    //return;    
 }
-
 
 exec function UTrace()
 {
-	// disable the log, or we'll grind the game to a halt
-	ConsoleCommand("hidelog");
-	if ( Role != ROLE_Authority )
-	{
-		ServerUTrace();
-	}
-
-	SetUTracing( !IsUTracing() );
-	`log("UTracing changed to "$ IsUTracing() $ " at "$ WorldInfo.TimeSeconds,,'UTrace');
+    ConsoleCommand("hidelog");
+    // End:0x33
+    if(Role != ROLE_Authority)
+    {
+        ServerUTrace();
+    }
+    SetUTracing(!IsUTracing());
+    LogInternal((("UTracing changed to " $ string(IsUTracing())) $ " at ") $ string(WorldInfo.TimeSeconds), 'UTrace');
+    //return;    
 }
 
-// ------------------------------------------------------------------------
-// Weapon changing functions
-
-/* ThrowWeapon()
-Throw out current weapon, and switch to a new weapon
-*/
 exec function ThrowWeapon()
 {
-    if ( (Pawn == None) || (Pawn.Weapon == None) )
-		return;
-
+    // End:0x24
+    if((Pawn == none) || Pawn.Weapon == none)
+    {
+        return;
+    }
     ServerThrowWeapon();
+    //return;    
 }
 
 reliable server function ServerThrowWeapon()
 {
-    if ( Pawn.CanThrowWeapon() )
+    // End:0x2C
+    if(Pawn.CanThrowWeapon())
     {
-		Pawn.ThrowActiveWeapon();
+        Pawn.ThrowActiveWeapon();
     }
+    //return;    
 }
 
-/* PrevWeapon()
-- switch to previous inventory group weapon
-*/
 exec function PrevWeapon()
 {
-	if ( WorldInfo.Pauser!=None )
-		return;
-
-	if ( Pawn.Weapon == None )
-	{
-		SwitchToBestWeapon();
-		return;
-	}
-
-	if ( Pawn.InvManager != None )
-		Pawn.InvManager.PrevWeapon();
+    // End:0x17
+    if(WorldInfo.Pauser != none)
+    {
+        return;
+    }
+    // End:0x39
+    if(Pawn.Weapon == none)
+    {
+        SwitchToBestWeapon();
+        return;
+    }
+    // End:0x6C
+    if(Pawn.InvManager != none)
+    {
+        Pawn.InvManager.PrevWeapon();
+    }
+    //return;    
 }
 
-/* NextWeapon()
-- switch to next inventory group weapon
-*/
 exec function NextWeapon()
 {
-	if ( WorldInfo.Pauser!=None )
-		return;
-
-	if ( Pawn.Weapon == None )
-	{
-		SwitchToBestWeapon();
-		return;
-	}
-
-	if ( Pawn.InvManager != None )
-		Pawn.InvManager.NextWeapon();
+    // End:0x17
+    if(WorldInfo.Pauser != none)
+    {
+        return;
+    }
+    // End:0x39
+    if(Pawn.Weapon == none)
+    {
+        SwitchToBestWeapon();
+        return;
+    }
+    // End:0x6C
+    if(Pawn.InvManager != none)
+    {
+        Pawn.InvManager.NextWeapon();
+    }
+    //return;    
 }
 
-// The player wants to fire.
-exec function StartFire( optional byte FireModeNum )
+exec function StartFire(optional byte FireModeNum)
 {
-	if ( WorldInfo.Pauser == PlayerReplicationInfo )
-	{
-		SetPause( false );
-		return;
-	}
-
-	if ( Pawn != None && !bCinematicMode )
-	{
-		Pawn.StartFire( FireModeNum );
-	}
+    // End:0x28
+    if(WorldInfo.Pauser == PlayerReplicationInfo)
+    {
+        SetPause(false);
+        return;
+    }
+    // End:0x59
+    if((Pawn != none) && !bCinematicMode)
+    {
+        Pawn.StartFire(FireModeNum);
+    }
+    //return;    
 }
 
-exec function StopFire( optional byte FireModeNum )
+exec function StopFire(optional byte FireModeNum)
 {
-	if ( Pawn != None )
-	{
-		Pawn.StopFire( FireModeNum );
-	}
+    // End:0x25
+    if(Pawn != none)
+    {
+        Pawn.StopFire(FireModeNum);
+    }
+    //return;    
 }
 
-// The player wants to alternate-fire.
-exec function StartAltFire( optional Byte FireModeNum )
+exec function StartAltFire(optional byte FireModeNum)
 {
-	StartFire( 1 );
+    StartFire(1);
+    //return;    
 }
 
-exec function StopAltFire( optional byte FireModeNum )
+exec function StopAltFire(optional byte FireModeNum)
 {
-	StopFire( 1 );
+    StopFire(1);
+    //return;    
 }
 
-/**
- * Looks at all nearby triggers, looking for any that can be
- * interacted with.
- *
- * @param		interactDistanceToCheck - distance to search for nearby triggers
- *
- * @param		crosshairDist - distance from the crosshair that
- * 				triggers must be, else they will be filtered out
- *
- * @param		minDot - minimum dot product between trigger and the
- * 				camera orientation needed to make the list
- *
- * @param		bUsuableOnly - if true, event must return true from
- * 				SequenceEvent::CheckActivate()
- *
- * @param		out_useList - the list of triggers found to be
- * 				usuable
- */
 function GetTriggerUseList(float interactDistanceToCheck, float crosshairDist, float minDot, bool bUsuableOnly, out array<Trigger> out_useList)
 {
-	local int Idx;
-	local vector cameraLoc;
-	local rotator cameraRot;
-	local Trigger checkTrigger;
-	local SeqEvent_Used	UseSeq;
+    local int Idx;
+    local Vector cameraLoc;
+    local Rotator cameraRot;
+    local Trigger checkTrigger;
+    local SeqEvent_Used UseSeq;
 
-	if (Pawn != None)
-	{
-		// grab camera location/rotation for checking crosshairDist
-		GetPlayerViewPoint(cameraLoc, cameraRot);
+    // End:0x1E1
+    if(Pawn != none)
+    {
+        GetPlayerViewPoint(cameraLoc, cameraRot);
+        // End:0x1E0
+        foreach Pawn.CollidingActors(Class'Trigger', checkTrigger, interactDistanceToCheck)
+        {
+            Idx = 0;
+            J0x47:
 
-		// This doesn't work how it should.  It really needs to query ALL of the triggers and get their
-		// InteractDistance and then compare those against the pawn's location and then do the various checks
-
-		// search of nearby actors that have use events
-		foreach Pawn.CollidingActors(class'Trigger',checkTrigger,interactDistanceToCheck)
-		{
-			for (Idx = 0; Idx < checkTrigger.GeneratedEvents.Length; Idx++)
-			{
-				UseSeq = SeqEvent_Used(checkTrigger.GeneratedEvents[Idx]);
-
-				if( ( UseSeq != None )
-					// if bUsuableOnly is true then we must get true back from CheckActivate (which tests various validity checks on the player and on the trigger's trigger count and retrigger conditions etc)
-					&& ( !bUsuableOnly || ( checkTrigger.GeneratedEvents[Idx].CheckActivate(checkTrigger,Pawn,true)) )
-					// check to see if we are looking at the object
-					&& ( Normal(checkTrigger.Location-cameraLoc) dot vector(cameraRot) >= minDot )
-
-					// if this is an aimToInteract then check to see if we are aiming at the object and we are inside the InteractDistance (NOTE: we need to do use a number close to 1.0 as the dot will give a number that is very close to 1.0 for aiming at the target)
-					&& ( ( ( UseSeq.bAimToInteract && IsAimingAt( checkTrigger, 0.98f ) && ( VSize(Pawn.Location - checkTrigger.Location) <= UseSeq.InteractDistance ) ) )
-					      // if we should NOT aim to interact then we need to be close to the trigger
-			  || ( !UseSeq.bAimToInteract && ( VSize(Pawn.Location - checkTrigger.Location) <= UseSeq.InteractDistance ) )  // this should be UseSeq.InteractDistance
-						  )
-				   )
-				{
-					out_useList[out_useList.Length] = checkTrigger;
-
-					// don't bother searching for more events
-					Idx = checkTrigger.GeneratedEvents.Length;
-				}
-			}
-		}
-	}
+            // End:0x1DF [Loop If]
+            if(Idx < checkTrigger.GeneratedEvents.Length)
+            {
+                UseSeq = SeqEvent_Used(checkTrigger.GeneratedEvents[Idx]);
+                // End:0x1D5
+                if((((UseSeq != none) && !bUsuableOnly || checkTrigger.GeneratedEvents[Idx].CheckActivate(checkTrigger, Pawn, true)) && (Normal(checkTrigger.Location - cameraLoc) Dot Vector(cameraRot)) >= minDot) && ((UseSeq.bAimToInteract && IsAimingAt(checkTrigger, 0.9800000)) && VSize(Pawn.Location - checkTrigger.Location) <= UseSeq.InteractDistance) || !UseSeq.bAimToInteract && VSize(Pawn.Location - checkTrigger.Location) <= UseSeq.InteractDistance)
+                {
+                    out_useList[out_useList.Length] = checkTrigger;
+                    Idx = checkTrigger.GeneratedEvents.Length;
+                }
+                Idx++;
+                // [Loop Continue]
+                goto J0x47;
+            }            
+        }        
+    }
+    //return;    
 }
 
-/**
- * Entry point function for player interactions with the world,
- * re-directs to ServerUse.
- */
 exec function Use()
 {
-	if( Role < Role_Authority )
-	{
-		PerformedUseAction();
-	}
-	ServerUse();
+    // End:0x1A
+    if(Role < ROLE_Authority)
+    {
+        PerformedUseAction();
+    }
+    ServerUse();
+    //return;    
 }
 
-/**
- * Player pressed UseKey
- */
 unreliable server function ServerUse()
 {
-	PerformedUseAction();
+    PerformedUseAction();
+    //return;    
 }
 
-/**
- * return true if player the Use action was handled
- */
 function bool PerformedUseAction()
 {
-	// if the level is paused,
-	if( WorldInfo.Pauser == PlayerReplicationInfo )
-	{
-		if( Role == Role_Authority )
-		{
-			// unpause and move on
-			SetPause( false );
-		}
-		return true;
-	}
-
-    if ( Pawn == None || !Pawn.bCanUse )
-	return true;
-
-	// below is only on server
-	if( Role < Role_Authority )
-	{
-		return false;
-	}
-
-	// leave vehicle if currently in one
-	if( Vehicle(Pawn) != None )
-	{
-		return Vehicle(Pawn).DriverLeave(false);
-	}
-
-	// try to find a vehicle to drive
-	if( FindVehicleToDrive() )
-	{
-		return true;
-	}
-
-	// try to interact with triggers
-	return TriggerInteracted();
+    // End:0x37
+    if(WorldInfo.Pauser == PlayerReplicationInfo)
+    {
+        // End:0x35
+        if(Role == ROLE_Authority)
+        {
+            SetPause(false);
+        }
+        return true;
+    }
+    // End:0x5B
+    if((Pawn == none) || !Pawn.bCanUse)
+    {
+        return true;
+    }
+    // End:0x6D
+    if(Role < ROLE_Authority)
+    {
+        return false;
+    }
+    return TriggerInteracted();
+    //return ReturnValue;    
 }
 
-/** Tries to find a vehicle to drive within a limited radius. Returns true if successful */
-function bool FindVehicleToDrive()
-{
-	local Vehicle V, Best;
-	local vector ViewDir, PawnLoc2D, VLoc2D;
-	local float NewDot, BestDot;
-
-	if (Vehicle(Pawn.Base) != None  && Vehicle(Pawn.Base).TryToDrive(Pawn))
-	{
-		return true;
-	}
-
-	// Pick best nearby vehicle
-	PawnLoc2D = Pawn.Location;
-	PawnLoc2D.Z = 0;
-	ViewDir = vector(Pawn.Rotation);
-
-	ForEach Pawn.OverlappingActors(class'Vehicle', V, Pawn.VehicleCheckRadius)
-	{
-		// Prefer vehicles that Pawn is facing
-		VLoc2D = V.Location;
-		Vloc2D.Z = 0;
-		NewDot = Normal(VLoc2D-PawnLoc2D) Dot ViewDir;
-		if ( (Best == None) || (NewDot > BestDot) )
-		{
-			// check that vehicle is visible
-			if ( FastTrace(V.Location,Pawn.Location) )
-			{
-				Best = V;
-				BestDot = NewDot;
-			}
-		}
-	}
-	return (Best != None && Best.TryToDrive(Pawn));
-}
-
-/**
- * Examines the nearby enviroment and generates a priority sorted
- * list of interactable actors, and then attempts to activate each
- * of them until either one was successfully activated, or no more
- * actors are available.
- */
 function bool TriggerInteracted()
 {
-	local Actor A;
-	local int Idx;
-	local float Weight;
-	local bool bInserted;
-	local vector cameraLoc;
-	local rotator cameraRot;
-	local array<Trigger> useList;
-	// the following 2 arrays should always match in length
-	local array<Actor> sortedList;
-	local array<float> weightList;
+    local Actor A;
+    local int Idx;
+    local float Weight;
+    local bool bInserted;
+    local Vector cameraLoc;
+    local Rotator cameraRot;
+    local array<Trigger> useList;
+    local array<Actor> sortedList;
+    local array<float> weightList;
 
-	if ( Pawn != None )
-	{
-		GetTriggerUseList(InteractDistance,60.f,0.f,true,useList);
-		// if we have found some interactable actors,
-		if (useList.Length > 0)
-		{
-			// grab the current camera location/rotation for weighting purposes
-			GetPlayerViewPoint(cameraLoc, cameraRot);
-			// then build the sorted list
-			while (useList.Length > 0)
-			{
-				// pop the actor off this list
-				A = useList[useList.Length-1];
-				useList.Length = useList.Length - 1;
-				// calculate the weight of this actor in terms of optimal interaction
-				// first based on the dot product from our view rotation
-				weight = Normal(A.Location-cameraLoc) dot vector(cameraRot);
-				// and next on the distance
-				weight += 1.f - (VSize(A.Location-Pawn.Location)/InteractDistance);
-				// find the optimal insertion point
-				bInserted = false;
-				for (Idx = 0; Idx < sortedList.Length && !bInserted; Idx++)
-				{
-					if (weightList[Idx] < weight)
-					{
-						// insert the new entry
-						sortedList.Insert(Idx,1);
-						weightList.Insert(Idx,1);
-						sortedList[Idx] = A;
-						weightList[Idx] = weight;
-						bInserted = true;
-					}
-				}
-				// if no insertion was made
-				if (!bInserted)
-				{
-					// then tack on the end of the list
-					Idx = sortedList.Length;
-					sortedList[Idx] = A;
-					weightList[Idx] = weight;
-				}
-			}
-			// finally iterate through each actor in the sorted list and
-			// attempt to activate it until one succeeds or none are left
-			for (Idx = 0; Idx < sortedList.Length; Idx++)
-			{
-				if (sortedList[Idx].UsedBy(Pawn))
-				{
-					// skip the rest
-					// Idx = sortedList.Length;
-					return true;
-				}
-			}
-		}
-	}
+    // End:0x1E7
+    if(Pawn != none)
+    {
+        GetTriggerUseList(InteractDistance, 60.0000000, 0.0000000, true, useList);
+        // End:0x1E7
+        if(useList.Length > 0)
+        {
+            GetPlayerViewPoint(cameraLoc, cameraRot);
+            J0x4A:
 
-	return false;
+            // End:0x1A2 [Loop If]
+            if(useList.Length > 0)
+            {
+                A = useList[useList.Length - 1];
+                useList.Length = useList.Length - 1;
+                Weight = Normal(A.Location - cameraLoc) Dot Vector(cameraRot);
+                Weight += (1.0000000 - (VSize(A.Location - Pawn.Location) / InteractDistance));
+                bInserted = false;
+                Idx = 0;
+                J0xE8:
+
+                // End:0x166 [Loop If]
+                if((Idx < sortedList.Length) && !bInserted)
+                {
+                    // End:0x15C
+                    if(weightList[Idx] < Weight)
+                    {
+                        sortedList.Insert(Idx, 1);
+                        weightList.Insert(Idx, 1);
+                        sortedList[Idx] = A;
+                        weightList[Idx] = Weight;
+                        bInserted = true;
+                    }
+                    Idx++;
+                    // [Loop Continue]
+                    goto J0xE8;
+                }
+                // End:0x19F
+                if(!bInserted)
+                {
+                    Idx = sortedList.Length;
+                    sortedList[Idx] = A;
+                    weightList[Idx] = Weight;
+                }
+                // [Loop Continue]
+                goto J0x4A;
+            }
+            Idx = 0;
+            J0x1A9:
+
+            // End:0x1E7 [Loop If]
+            if(Idx < sortedList.Length)
+            {
+                // End:0x1DD
+                if(sortedList[Idx].UsedBy(Pawn))
+                {
+                    return true;
+                }
+                Idx++;
+                // [Loop Continue]
+                goto J0x1A9;
+            }
+        }
+    }
+    return false;
+    //return ReturnValue;    
 }
-
 
 exec function Suicide()
 {
-	ServerSuicide();
+    ServerSuicide();
+    //return;    
 }
 
 reliable server function ServerSuicide()
 {
-	if ( (Pawn != None) && ((WorldInfo.TimeSeconds - Pawn.LastStartTime > 10) || (WorldInfo.NetMode == NM_Standalone)) )
-	{
-		Pawn.Suicide();
-	}
+    // End:0x66
+    if((Pawn != none) && ((WorldInfo.TimeSeconds - Pawn.LastStartTime) > float(10)) || WorldInfo.NetMode == NM_Standalone)
+    {
+        Pawn.Suicide();
+    }
+    //return;    
 }
 
 exec function SetName(coerce string S)
 {
-	local string NewName;
-	local LocalPlayer LocPlayer;
+    local string NewName;
+    local LocalPlayer LocPlayer;
 
-	if (S != "")
-	{
-		LocPlayer = LocalPlayer(Player);
-		if (LocPlayer != None &&
-			OnlineSub.GameInterface != None &&
-			OnlineSub.PlayerInterface != None)
-		{
-			// Check to see if they are logged in locally or not
-			if (OnlineSub.PlayerInterface.GetLoginStatus(LocPlayer.ControllerId) == LS_LoggedIn &&
-				OnlineSub.GameInterface.GetGameSettings('Game') != None)
-			{
-				// Ignore what ever was specified and use the profile's nick
-				S = OnlineSub.PlayerInterface.GetPlayerNickname(LocPlayer.ControllerId);
-			}
-		}
-
-		NewName = S;
-
-		ServerChangeName(NewName);
-		UpdateURL("Name", NewName, true);
-		SaveConfig();
-	}
+    // End:0x134
+    if(S != "")
+    {
+        LocPlayer = LocalPlayer(Player);
+        // End:0x108
+        if(((LocPlayer != none) && NotEqual_InterfaceInterface(OnlineSub.GameInterface, none)) && NotEqual_InterfaceInterface(OnlineSub.PlayerInterface, none))
+        {
+            // End:0x108
+            if((OnlineSub.PlayerInterface.GetLoginStatus(byte(LocPlayer.ControllerId)) == 2) && OnlineSub.GameInterface.GetGameSettings('Game') != none)
+            {
+                S = OnlineSub.PlayerInterface.GetPlayerNickname(byte(LocPlayer.ControllerId));
+            }
+        }
+        NewName = S;
+        ServerChangeName(NewName);
+        UpdateURL("Name", NewName, true);
+        SaveConfig();
+    }
+    //return;    
 }
 
-reliable server function ServerChangeName( coerce string S )
+reliable server function ServerChangeName(coerce string S)
 {
-	if (S != "")
-	{
-		WorldInfo.Game.ChangeName( self, S, true );
-	}
+    // End:0x31
+    if(S != "")
+    {
+        WorldInfo.Game.ChangeName(self, S, true);
+    }
+    //return;    
 }
 
 exec function SwitchTeam()
 {
-	if ( (PlayerReplicationInfo.Team == None) || (PlayerReplicationInfo.Team.TeamIndex == 1) )
-	{
-		ServerChangeTeam(0);
-	}
-	else
-	{
-		ServerChangeTeam(1);
-	}
+    // End:0x44
+    if((PlayerReplicationInfo.Team == none) || PlayerReplicationInfo.Team.TeamIndex == 1)
+    {
+        ServerChangeTeam(0);        
+    }
+    else
+    {
+        ServerChangeTeam(1);
+    }
+    //return;    
 }
 
-exec function ChangeTeam( optional string TeamName )
+exec function ChangeTeam(optional string TeamName)
 {
-	local int N;
+    local int N;
 
-	if ( TeamName ~= "blue" )
-		N = 1;
-	else if ( (TeamName ~= "red") || (PlayerReplicationInfo == None) || (PlayerReplicationInfo.Team == None) || (PlayerReplicationInfo.Team.TeamIndex > 1) )
-		N = 0;
-	else
-		N = 1 - PlayerReplicationInfo.Team.TeamIndex;
-
-	ServerChangeTeam(N);
+    // End:0x1B
+    if(TeamName ~= "blue")
+    {
+        N = 1;        
+    }
+    else
+    {
+        // End:0x79
+        if((((TeamName ~= "red") || PlayerReplicationInfo == none) || PlayerReplicationInfo.Team == none) || PlayerReplicationInfo.Team.TeamIndex > 1)
+        {
+            N = 0;            
+        }
+        else
+        {
+            N = 1 - PlayerReplicationInfo.Team.TeamIndex;
+        }
+    }
+    ServerChangeTeam(N);
+    //return;    
 }
 
 reliable server function ServerChangeTeam(int N)
 {
-	local TeamInfo OldTeam;
+    local TeamInfo OldTeam;
 
-	OldTeam = PlayerReplicationInfo.Team;
-	WorldInfo.Game.ChangeTeam(self, N, true);
-	if (WorldInfo.Game.bTeamGame && PlayerReplicationInfo.Team != OldTeam)
-	{
-		if (Pawn != None)
-		{
-			Pawn.PlayerChangedTeam();
-		}
-	}
+    OldTeam = PlayerReplicationInfo.Team;
+    WorldInfo.Game.ChangeTeam(self, N, true);
+    // End:0x91
+    if(WorldInfo.Game.bTeamGame && PlayerReplicationInfo.Team != OldTeam)
+    {
+        // End:0x91
+        if(Pawn != none)
+        {
+            Pawn.PlayerChangedTeam();
+        }
+    }
+    //return;    
 }
-
 
 exec function SwitchLevel(string URL)
 {
-	if (WorldInfo.NetMode == NM_Standalone || WorldInfo.NetMode == NM_ListenServer)
-	{
-		WorldInfo.ServerTravel(URL);
-	}
+    // End:0x51
+    if((WorldInfo.NetMode == NM_Standalone) || WorldInfo.NetMode == NM_ListenServer)
+    {
+        WorldInfo.ServerTravel(URL);
+    }
+    //return;    
 }
 
 exec function ClearProgressMessages()
 {
-	ClientClearProgressMessages();
+    ClientClearProgressMessages();
+    //return;    
 }
 
-reliable client function ClientClearProgressMessages()
+reliable client simulated function ClientClearProgressMessages()
 {
-	local int i;
+    local int I;
 
-	for (i=0; i<ArrayCount(ProgressMessage); i++)
-	{
-		ProgressMessage[i] = "";
-	}
+    I = 0;
+    J0x07:
+
+    // End:0x2B [Loop If]
+    if(I < 2)
+    {
+        ProgressMessage[I] = "";
+        I++;
+        // [Loop Continue]
+        goto J0x07;
+    }
+    //return;    
 }
 
-exec event SetProgressMessage( EProgressMessageType MessageType, string Message, optional string Title )
+exec event SetProgressMessage(PlayerController.EProgressMessageType MessageType, string Message, optional string Title)
 {
-	ClientSetProgressMessage(MessageType, Message, Title);
+    ClientSetProgressMessage(MessageType, Message, Title);
+    //return;    
 }
 
-reliable client function ClientSetProgressMessage( EProgressMessageType MessageType, string Message, optional string Title, optional bool bIgnoreFutureNetworkMessages )
+reliable client simulated function ClientSetProgressMessage(PlayerController.EProgressMessageType MessageType, string Message, optional string Title, optional bool bIgnoreFutureNetworkMessages)
 {
-	if ( MessageType == PMT_Clear )
-	{
-		ClientClearProgressMessages();
-	}
-	else
-	{
-		if ( MessageType == PMT_ConnectionFailure )
-		{
-			NotifyConnectionError(Message, Title);
-		}
-		else if ( MessageType != PMT_SocketFailure )
-		{
-			if ( Title != "" )
-			{
-				ProgressMessage[0] = Title;
-				ProgressMessage[1] = Message;
-			}
-			else
-			{
-				ProgressMessage[1] = "";
-				ProgressMessage[0] = Message;
-			}
-		}
-		else if (MessageType == PMT_SocketFailure)
-		{
-			if ( !bIgnoreNetworkMessages )
-			{
-				NotifyConnectionError(Message, Title);
-			}
-		}
-	}
-	if ( !bIgnoreNetworkMessages )
-	{
-		bIgnoreNetworkMessages = bIgnoreFutureNetworkMessages;
-	}
+    // End:0x1F
+    if(MessageType == 0)
+    {
+        ClientClearProgressMessages();        
+    }
+    else
+    {
+        // End:0x46
+        if(MessageType == 4)
+        {
+            NotifyConnectionError(Message, Title);            
+        }
+        else
+        {
+            // End:0x99
+            if(MessageType != 5)
+            {
+                // End:0x7F
+                if(Title != "")
+                {
+                    ProgressMessage[0] = Title;
+                    ProgressMessage[1] = Message;                    
+                }
+                else
+                {
+                    ProgressMessage[1] = "";
+                    ProgressMessage[0] = Message;
+                }                
+            }
+            else
+            {
+                // End:0xC8
+                if(MessageType == 5)
+                {
+                    // End:0xC8
+                    if(!bIgnoreNetworkMessages)
+                    {
+                        NotifyConnectionError(Message, Title);
+                    }
+                }
+            }
+        }
+    }
+    // End:0xE0
+    if(!bIgnoreNetworkMessages)
+    {
+        bIgnoreNetworkMessages = bIgnoreFutureNetworkMessages;
+    }
+    //return;    
 }
 
-exec event SetProgressTime( float T )
+exec event SetProgressTime(float T)
 {
-	ClientSetProgressTime(T);
+    ClientSetProgressTime(T);
+    //return;    
 }
 
-reliable client function ClientSetProgressTime( float T )
+reliable client simulated function ClientSetProgressTime(float T)
 {
-	ProgressTimeOut = T + WorldInfo.TimeSeconds;
+    ProgressTimeOut = T + WorldInfo.TimeSeconds;
+    //return;    
 }
 
 function Restart(bool bVehicleTransition)
 {
-	Super.Restart(bVehicleTransition);
-	ServerTimeStamp = 0;
-	ResetTimeMargin();
-	EnterStartState();
-	ClientRestart(Pawn);
-	SetViewTarget(Pawn);
-	ResetCameraMode();
+    super.Restart(bVehicleTransition);
+    ServerTimeStamp = 0.0000000;
+    ResetTimeMargin();
+    EnterStartState();
+    ClientRestart(Pawn);
+    // End:0x55
+    if(ControllingDirTrackInst == none)
+    {
+        SetViewTarget(Pawn);
+    }
+    ResetCameraMode();
+    //return;    
 }
 
-/** called to notify the server when the client has loaded a new world via seamless travelling
- * @param WorldPackageName the name of the world package that was loaded
- */
+// Export UPlayerController::execServerNotifyLoadedWorld(FFrame&, void* const)
 reliable server native final event ServerNotifyLoadedWorld(name WorldPackageName);
 
-/** called clientside when it is loaded a new world via seamless travelling
- * @param WorldPackageName the name of the world package that was loaded
- * @param bFinalDest whether this world is the destination map for the travel (i.e. not the transition level)
- */
 event NotifyLoadedWorld(name WorldPackageName, bool bFinalDest)
 {
-	local PlayerStart P;
-	local rotator SpawnRotation;
+    local PlayerStart P;
+    local Rotator SpawnRotation;
 
-
-	// place the camera at the first playerstart we can find
-	SetViewTarget(self);
-	foreach WorldInfo.AllNavigationPoints(class'PlayerStart', P)
-	{
-		SetLocation(P.Location);
-		SpawnRotation.Yaw = P.Rotation.Yaw;
-		SetRotation(SpawnRotation);
-		break;
-	}
+    SetViewTarget(self);
+    // End:0x72
+    foreach WorldInfo.AllNavigationPoints(Class'PlayerStart', P)
+    {
+        SetLocation(P.Location);
+        SpawnRotation.Yaw = P.Rotation.Yaw;
+        SetRotation(SpawnRotation);
+        // End:0x72
+        break;        
+    }    
+    //return;    
 }
 
-/** returns whether the client has completely loaded the server's current world (valid on server only) */
+// Export UPlayerController::execHasClientLoadedCurrentWorld(FFrame&, void* const)
 native final function bool HasClientLoadedCurrentWorld();
 
 function EnterStartState()
 {
-	local name NewState;
+    local name NewState;
 
-	if ( Pawn.PhysicsVolume.bWaterVolume )
-	{
-		if ( Pawn.HeadVolume.bWaterVolume )
-			Pawn.BreathTime = Pawn.UnderWaterTime;
-		NewState = Pawn.WaterMovementState;
-	}
-	else
-		NewState = Pawn.LandMovementState;
-
-	if ( IsInState(NewState) )
-		BeginState(NewState);
-	else
-		GotoState(NewState);
+    // End:0x71
+    if(Pawn.PhysicsVolume.bWaterVolume)
+    {
+        // End:0x59
+        if(Pawn.HeadVolume.bWaterVolume)
+        {
+            Pawn.BreathTime = Pawn.UnderWaterTime;
+        }
+        NewState = Pawn.WaterMovementState;        
+    }
+    else
+    {
+        NewState = Pawn.LandMovementState;
+    }
+    // End:0xA4
+    if(IsInState(NewState))
+    {
+        BeginState(NewState);        
+    }
+    else
+    {
+        GotoState(NewState);
+    }
+    //return;    
 }
 
-reliable client function ClientRestart(Pawn NewPawn)
+reliable client simulated function ClientRestart(Pawn NewPawn)
 {
-	ResetPlayerMovementInput();
-    CleanOutSavedMoves();  // don't replay moves previous to possession
-
-	Pawn = NewPawn;
-	if ( (Pawn != None) && Pawn.bTearOff )
-	{
-		UnPossess();
-		Pawn = None;
-	}
-
-	AcknowledgePossession(Pawn);
-
-	if ( Pawn == None )
-	{
-		GotoState('WaitingForPawn');
-		return;
-	}
-	Pawn.ClientRestart();
-	if (Role < ROLE_Authority)
-	{
-		SetViewTarget(Pawn);
-		ResetCameraMode();
-		EnterStartState();
-	}
-	CleanOutSavedMoves();
+    ResetPlayerMovementInput();
+    CleanOutSavedMoves();
+    Pawn = NewPawn;
+    // End:0x50
+    if((Pawn != none) && Pawn.bTearOff)
+    {
+        UnPossess();
+        Pawn = none;
+    }
+    AcknowledgePossession(Pawn);
+    // End:0x7A
+    if(Pawn == none)
+    {
+        GotoState('WaitingForPawn');
+        return;
+    }
+    Pawn.ClientRestart();
+    // End:0xC2
+    if(Role < ROLE_Authority)
+    {
+        SetViewTarget(Pawn);
+        ResetCameraMode();
+        EnterStartState();
+    }
+    CleanOutSavedMoves();
+    //return;    
 }
 
-/* epic ===============================================
-* ::GameHasEnded
-*
-* Called from game info upon end of the game, used to
-* transition to proper state.
-*
-* =====================================================
-*/
 function GameHasEnded(optional Actor EndGameFocus, optional bool bIsWinner)
 {
-	// and transition to the game ended state
-	SetViewTarget(EndGameFocus);
-	GotoState('RoundEnded');
-	ClientGameEnded(EndGameFocus, bIsWinner);
+    SetViewTarget(EndGameFocus);
+    GotoState('RoundEnded');
+    ClientGameEnded(EndGameFocus, bIsWinner);
+    //return;    
 }
 
-/* epic ===============================================
-* ::ClientGameEnded
-*
-* Replicated function called by GameHasEnded().
-*
- * @param	EndGameFocus - actor to view with camera
- * @param	bIsWinner - true if this controller is on winning team
-* =====================================================
-*/
-reliable client function ClientGameEnded(Actor EndGameFocus, bool bIsWinner)
+reliable client simulated function ClientGameEnded(Actor EndGameFocus, bool bIsWinner)
 {
-	SetViewTarget(EndGameFocus);
-	GotoState('RoundEnded');
+    SetViewTarget(EndGameFocus);
+    GotoState('RoundEnded');
+    //return;    
 }
 
-// Just changed to pendingWeapon
-function NotifyChangedWeapon( Weapon PreviousWeapon, Weapon NewWeapon );
-
-/**
- * PlayerTick is only called if the PlayerController has a PlayerInput object.  Therefore, it will not be called on servers for non-locally controlled playercontrollers
- */
-event PlayerTick( float DeltaTime )
+function NotifyChangedWeapon(Weapon PreviousWeapon, Weapon NewWeapon)
 {
-	if ( !bShortConnectTimeOut )
-	{
-		bShortConnectTimeOut = true;
-		ServerShortTimeout();
-	}
-
-	if ( Pawn != AcknowledgedPawn )
-	{
-		if ( Role < ROLE_Authority )
-		{
-			// make sure old pawn controller is right
-			if ( (AcknowledgedPawn != None) && (AcknowledgedPawn.Controller == self) )
-				AcknowledgedPawn.Controller = None;
-		}
-		AcknowledgePossession(Pawn);
-	}
-
-	PlayerInput.PlayerInput(DeltaTime);
-	if ( bUpdatePosition )
-		ClientUpdatePosition();
-	PlayerMove(DeltaTime);
-
-	AdjustFOV(DeltaTime);
+    //return;    
 }
 
-function PlayerMove(float DeltaTime);
+event PlayerTick(float DeltaTime)
+{
+    // End:0x1D
+    if(!bShortConnectTimeOut)
+    {
+        bShortConnectTimeOut = true;
+        ServerShortTimeout();
+    }
+    // End:0x7E
+    if(Pawn != AcknowledgedPawn)
+    {
+        // End:0x6F
+        if(Role < ROLE_Authority)
+        {
+            // End:0x6F
+            if((AcknowledgedPawn != none) && AcknowledgedPawn.Controller == self)
+            {
+                AcknowledgedPawn.Controller = none;
+            }
+        }
+        AcknowledgePossession(Pawn);
+    }
+    PlayerInput.PlayerInput(DeltaTime);
+    // End:0xAA
+    if(bUpdatePosition)
+    {
+        ClientUpdatePosition();
+    }
+    PlayerMove(DeltaTime);
+    AdjustFOV(DeltaTime);
+    //return;    
+}
+
+function PlayerMove(float DeltaTime)
+{
+    //return;    
+}
 
 function bool AimingHelp(bool bInstantHit)
 {
- return (WorldInfo.NetMode == NM_Standalone) && bAimingHelp;
+    return (WorldInfo.NetMode == NM_Standalone) && bAimingHelp;
+    //return ReturnValue;    
 }
 
-/** The function called when a CameraLookAt action is deactivated from kismet */
-event CameraLookAtFinished(SeqAct_CameraLookAt Action);
-
-/**
- * Adjusts weapon aiming direction.
- * Gives controller a chance to modify the aiming of the pawn. For example aim error, auto aiming, adhesion, AI help...
- * Requested by weapon prior to firing.
- *
- * @param	W, weapon about to fire
- * @param	StartFireLoc, world location of weapon fire start trace, or projectile spawn loc.
- * @param	BaseAimRot, original aiming rotation without any modifications.
- */
-function Rotator GetAdjustedAimFor( Weapon W, vector StartFireLoc )
+event CameraLookAtFinished(SeqAct_CameraLookAt Action)
 {
-	local vector	FireDir, AimSpot, HitLocation, HitNormal, OldAim, AimOffset;
-	local actor		BestTarget, HitActor;
-	local float		bestAim, bestDist;
-	local bool		bNoZAdjust, bInstantHit;
-	local rotator	BaseAimRot, AimRot;
+    //return;    
+}
 
-	bInstantHit = ( W == None || W.bInstantHit );
-	BaseAimRot = (Pawn != None) ? Pawn.GetBaseAimRotation() : Rotation;
-	FireDir	= vector(BaseAimRot);
-	HitActor = Trace(HitLocation, HitNormal, StartFireLoc + W.GetTraceRange() * FireDir, StartFireLoc, true);
+function Rotator GetAdjustedAimFor(Weapon W, Vector StartFireLoc)
+{
+    local Vector FireDir, AimSpot, HitLocation, HitNormal, OldAim, AimOffset;
 
-	if ( (HitActor != None) && HitActor.bProjTarget )
-	{
-		BestTarget = HitActor;
-		bNoZAdjust = true;
-		OldAim = HitLocation;
-		BestDist = VSize(BestTarget.Location - Pawn.Location);
-	}
-	else
-	{
-		// adjust aim based on FOV
-		bestAim = 0.90;
-		if ( AimingHelp(bInstantHit) )
-		{
-			bestAim = AimHelpDot(bInstantHit);
-		}
-		else if ( bInstantHit )
-			bestAim = 1.0;
+    local Actor BestTarget, HitActor;
+    local float bestAim, bestDist;
+    local bool bNoZAdjust, bInstantHit;
+    local Rotator BaseAimRot, AimRot;
 
-		BestTarget = PickTarget(class'Pawn', bestAim, bestDist, FireDir, StartFireLoc, W.WeaponRange);
-		if ( BestTarget == None )
-		{
-			return BaseAimRot;
-		}
-		OldAim = StartFireLoc + FireDir * bestDist;
-	}
-
-	ShotTarget = Pawn(BestTarget);
-    if ( !AimingHelp(bInstantHit) )
-	{
-    	return BaseAimRot;
-	}
-
-	// aim at target - help with leading also
-	FireDir = BestTarget.Location - StartFireLoc;
-	AimSpot = StartFireLoc + bestDist * Normal(FireDir);
-	AimOffset = AimSpot - OldAim;
-
-    if ( ShotTarget != None )
+    bInstantHit = (W == none) || W.bInstantHit;
+    BaseAimRot = ((Pawn != none) ? Pawn.GetBaseAimRotation() : Rotation);
+    FireDir = Vector(BaseAimRot);
+    HitActor = Trace(HitLocation, HitNormal, StartFireLoc + (W.GetTraceRange() * FireDir), StartFireLoc, true);
+    // End:0x104
+    if((HitActor != none) && HitActor.bProjTarget)
     {
-	    // adjust Z of shooter if necessary
-	    if ( bNoZAdjust )
-	        AimSpot.Z = OldAim.Z;
-	    else if ( AimOffset.Z < 0 )
-	        AimSpot.Z = ShotTarget.Location.Z + 0.4 * ShotTarget.CylinderComponent.CollisionHeight;
-	    else
-	        AimSpot.Z = ShotTarget.Location.Z - 0.7 * ShotTarget.CylinderComponent.CollisionHeight;
+        BestTarget = HitActor;
+        bNoZAdjust = true;
+        OldAim = HitLocation;
+        bestDist = VSize(BestTarget.Location - Pawn.Location);        
     }
     else
-	    AimSpot.Z = OldAim.Z;
-
-	// if not leading, add slight random error ( significant at long distances )
-	if ( !bNoZAdjust )
-	{
-		AimRot = rotator(AimSpot - StartFireLoc);
-		if ( FOVAngle < DefaultFOV - 8 )
-			AimRot.Yaw = AimRot.Yaw + 200 - Rand(400);
-		else
-			AimRot.Yaw = AimRot.Yaw + 375 - Rand(750);
-		return AimRot;
-	}
-	return rotator(AimSpot - StartFireLoc);
+    {
+        bestAim = 0.9000000;
+        // End:0x13B
+        if(AimingHelp(bInstantHit))
+        {
+            bestAim = AimHelpDot(bInstantHit);            
+        }
+        else
+        {
+            // End:0x14F
+            if(bInstantHit)
+            {
+                bestAim = 1.0000000;
+            }
+        }
+        BestTarget = PickTarget(Class'Pawn', bestAim, bestDist, FireDir, StartFireLoc, W.WeaponRange);
+        // End:0x191
+        if(BestTarget == none)
+        {
+            return BaseAimRot;
+        }
+        OldAim = StartFireLoc + (FireDir * bestDist);
+    }
+    ShotTarget = Pawn(BestTarget);
+    // End:0x1D5
+    if(!AimingHelp(bInstantHit))
+    {
+        return BaseAimRot;
+    }
+    FireDir = BestTarget.Location - StartFireLoc;
+    AimSpot = StartFireLoc + (bestDist * Normal(FireDir));
+    AimOffset = AimSpot - OldAim;
+    // End:0x30E
+    if(ShotTarget != none)
+    {
+        // End:0x256
+        if(bNoZAdjust)
+        {
+            AimSpot.Z = OldAim.Z;            
+        }
+        else
+        {
+            // End:0x2BE
+            if(AimOffset.Z < float(0))
+            {
+                AimSpot.Z = ShotTarget.Location.Z + (0.4000000 * ShotTarget.CylinderComponent.CollisionHeight);                
+            }
+            else
+            {
+                AimSpot.Z = ShotTarget.Location.Z - (0.7000000 * ShotTarget.CylinderComponent.CollisionHeight);
+            }
+        }        
+    }
+    else
+    {
+        AimSpot.Z = OldAim.Z;
+    }
+    // End:0x3CB
+    if(!bNoZAdjust)
+    {
+        AimRot = Rotator(AimSpot - StartFireLoc);
+        // End:0x394
+        if(FOVAngle < (DefaultFOV - float(8)))
+        {
+            AimRot.Yaw = (AimRot.Yaw + 200) - Rand(400);            
+        }
+        else
+        {
+            AimRot.Yaw = (AimRot.Yaw + 375) - Rand(750);
+        }
+        return AimRot;
+    }
+    return Rotator(AimSpot - StartFireLoc);
+    //return ReturnValue;    
 }
 
-/** AimHelpDot()
-* @returns the dot product corresponding to the maximum deflection of target for which aiming help should be applied
-*/
 function float AimHelpDot(bool bInstantHit)
 {
-	if ( FOVAngle < DefaultFOV - 8 )
-		return 0.99;
-	if ( bInstantHit )
-		return 0.97;
-	return 0.93;
+    // End:0x1B
+    if(FOVAngle < (DefaultFOV - float(8)))
+    {
+        return 0.9900000;
+    }
+    // End:0x2A
+    if(bInstantHit)
+    {
+        return 0.9700000;
+    }
+    return 0.9300000;
+    //return ReturnValue;    
 }
 
-event bool NotifyLanded(vector HitNormal, Actor FloorActor)
+event bool NotifyLanded(Vector HitNormal, Actor FloorActor)
 {
-	return bUpdating;
+    return bUpdating;
+    //return ReturnValue;    
 }
 
-//=============================================================================
-// Player Control
-
-// Player view.
-// Compute the rendering viewpoint for the player.
-//
-
-/** AdjustFOV()
-FOVAngle smoothly interpolates to DesiredFOV
-*/
-function AdjustFOV(float DeltaTime )
+function AdjustFOV(float DeltaTime)
 {
-	if ( FOVAngle != DesiredFOV )
-	{
-		if ( FOVAngle > DesiredFOV )
-			FOVAngle = FOVAngle - FMax(7, 0.9 * DeltaTime * (FOVAngle - DesiredFOV));
-		else
-			FOVAngle = FOVAngle - FMin(-7, 0.9 * DeltaTime * (FOVAngle - DesiredFOV));
-		if ( Abs(FOVAngle - DesiredFOV) <= 10 )
-			FOVAngle = DesiredFOV;
-	}
+    // End:0x9F
+    if(FOVAngle != DesiredFOV)
+    {
+        // End:0x4F
+        if(FOVAngle > DesiredFOV)
+        {
+            FOVAngle = FOVAngle - FMax(7.0000000, (0.9000000 * DeltaTime) * (FOVAngle - DesiredFOV));            
+        }
+        else
+        {
+            FOVAngle = FOVAngle - FMin(-7.0000000, (0.9000000 * DeltaTime) * (FOVAngle - DesiredFOV));
+        }
+        // End:0x9F
+        if(Abs(FOVAngle - DesiredFOV) <= float(10))
+        {
+            FOVAngle = DesiredFOV;
+        }
+    }
+    //return;    
 }
 
-/** returns player's FOV angle */
 event float GetFOVAngle()
 {
-	return (PlayerCamera != None) ? PlayerCamera.GetFOVAngle() : FOVAngle;
+    return ((PlayerCamera != none) ? PlayerCamera.GetFOVAngle() : FOVAngle);
+    //return ReturnValue;    
 }
 
-/** returns whether this Controller is a locally controlled PlayerController
- * @note not valid until the Controller is completely spawned (i.e, unusable in Pre/PostBeginPlay())
- */
+event float GetZoomMagnification()
+{
+    return 1.0000000;
+    //return ReturnValue;    
+}
+
+// Export UPlayerController::execIsLocalPlayerController(FFrame&, void* const)
 native function bool IsLocalPlayerController();
 
+// Export UPlayerController::execSetViewTarget(FFrame&, void* const)
 native function SetViewTarget(Actor NewViewTarget, optional ViewTargetTransitionParams TransitionParams);
 
-reliable client event ClientSetViewTarget( Actor A, optional ViewTargetTransitionParams TransitionParams )
+reliable client simulated event ClientSetViewTarget(Actor A, optional ViewTargetTransitionParams TransitionParams)
 {
-	if (!bClientSimulatingViewTarget)
-	{
-		if( A == None )
-		{
-			ServerVerifyViewTarget();
-		}
-		SetViewTarget(A, TransitionParams);
-	}
+    // End:0x35
+    if(!bClientSimulatingViewTarget)
+    {
+        // End:0x21
+        if(A == none)
+        {
+            ServerVerifyViewTarget();
+        }
+        SetViewTarget(A, TransitionParams);
+    }
+    //return;    
 }
 
+// Export UPlayerController::execGetViewTarget(FFrame&, void* const)
 native function Actor GetViewTarget();
 
 reliable server function ServerVerifyViewTarget()
 {
-	local Actor TheViewTarget;
+    local Actor TheViewTarget;
 
-	TheViewTarget = GetViewTarget();
-
-	if( TheViewTarget == Self )
-	{
-		return;
-	}
-	ClientSetViewTarget( TheViewTarget );
+    TheViewTarget = GetViewTarget();
+    // End:0x1D
+    if(TheViewTarget == self)
+    {
+        return;
+    }
+    ClientSetViewTarget(TheViewTarget);
+    //return;    
 }
 
 event SpawnPlayerCamera()
 {
-	if( CameraClass != None && IsLocalPlayerController() )
-	{
-		// Associate Camera with PlayerController
-		PlayerCamera = Spawn( CameraClass, self );
-		if( PlayerCamera != None )
-		{
-			PlayerCamera.InitializeFor( self );
-		}
-		else
-		{
-			`Log( "Couldn't Spawn Camera Actor for Player!!" );
-		}
-	}
-	else
-	{
-		// not having a CameraClass is fine.  Another class will handing the "camera" type duties
-	// usually PlayerController
-	}
+    // End:0x84
+    if((CameraClass != none) && IsLocalPlayerController())
+    {
+        PlayerCamera = Spawn(CameraClass, self);
+        // End:0x54
+        if(PlayerCamera != none)
+        {
+            PlayerCamera.InitializeFor(self);            
+        }
+        else
+        {
+            LogInternal("Couldn't Spawn Camera Actor for Player!!");
+        }        
+    }
+    //return;    
 }
 
-/**
- * Returns Player's Point of View
- * For the AI this means the Pawn's 'Eyes' ViewPoint
- * For a Human player, this means the Camera's ViewPoint
- *
- * @output	out_Location, view location of player
- * @output	out_rotation, view rotation of player
- */
-simulated event GetPlayerViewPoint( out vector out_Location, out Rotator out_Rotation )
+simulated event GetPlayerViewPoint(out Vector out_Location, out Rotator out_Rotation)
 {
-	local Actor TheViewTarget;
+    local Actor TheViewTarget;
 
-	// sometimes the PlayerCamera can be none and we probably do not want this
-	// so we will check to see if we have a CameraClass.  Having a CameraClass is
-	// saying:  we want a camera so make certain one exists by spawning one
-	if( PlayerCamera == None )
-	{
-		if( CameraClass != None )
-		{
-			// Associate Camera with PlayerController
-			PlayerCamera = Spawn(CameraClass, Self);
-			if( PlayerCamera != None )
-			{
-				PlayerCamera.InitializeFor( Self );
-			}
-			else
-			{
-				`log("Couldn't Spawn Camera Actor for Player!!");
-			}
-		}
-	}
-
-	if( PlayerCamera != None )
-	{
-		PlayerCamera.GetCameraViewPoint(out_Location, out_Rotation);
-	}
-	else
-	{
-		TheViewTarget = GetViewTarget();
-
-		if( TheViewTarget != None )
-		{
-			out_Location = TheViewTarget.Location;
-			out_Rotation = TheViewTarget.Rotation;
-		}
-		else
-		{
-			super.GetPlayerViewPoint(out_Location, out_Rotation);
-		}
-	}
+    // End:0x7D
+    if(PlayerCamera == none)
+    {
+        // End:0x7D
+        if(CameraClass != none)
+        {
+            PlayerCamera = Spawn(CameraClass, self);
+            // End:0x50
+            if(PlayerCamera != none)
+            {
+                PlayerCamera.InitializeFor(self);                
+            }
+            else
+            {
+                LogInternal("Couldn't Spawn Camera Actor for Player!!");
+            }
+        }
+    }
+    // End:0xA5
+    if(PlayerCamera != none)
+    {
+        PlayerCamera.GetCameraViewPoint(out_Location, out_Rotation);        
+    }
+    else
+    {
+        TheViewTarget = GetViewTarget();
+        // End:0xED
+        if(TheViewTarget != none)
+        {
+            out_Location = TheViewTarget.Location;
+            out_Rotation = TheViewTarget.Rotation;            
+        }
+        else
+        {
+            super.GetPlayerViewPoint(out_Location, out_Rotation);
+        }
+    }
+    //return;    
 }
 
-/** Updates any camera view shaking that is going on */
-function ViewShake(float DeltaTime);
-
-function UpdateRotation( float DeltaTime )
+function ViewShake(float DeltaTime)
 {
-	local Rotator	DeltaRot, newRotation, ViewRotation;
-
-	ViewRotation = Rotation;
-	DesiredRotation = ViewRotation; //save old rotation
-
-	// Calculate Delta to be applied on ViewRotation
-	DeltaRot.Yaw	= PlayerInput.aTurn;
-	DeltaRot.Pitch	= PlayerInput.aLookUp;
-
-	ProcessViewRotation( DeltaTime, ViewRotation, DeltaRot );
-	SetRotation(ViewRotation);
-
-	ViewShake( deltaTime );
-
-	NewRotation = ViewRotation;
-	NewRotation.Roll = Rotation.Roll;
-
-	if ( Pawn != None )
-		Pawn.FaceRotation(NewRotation, deltatime);
+    //return;    
 }
 
-/**
- * Processes the player's ViewRotation
- * adds delta rot (player input), applies any limits and post-processing
- * returns the final ViewRotation set on PlayerController
- *
- * @param	DeltaTime, time since last frame
- * @param	ViewRotation, current player ViewRotation
- * @param	DeltaRot, player input added to ViewRotation
- */
-function ProcessViewRotation( float DeltaTime, out Rotator out_ViewRotation, Rotator DeltaRot )
+function UpdateRotation(float DeltaTime)
 {
-	if( PlayerCamera != None )
-	{
-		PlayerCamera.ProcessViewRotation( DeltaTime, out_ViewRotation, DeltaRot );
-	}
+    local Rotator DeltaRot, NewRotation, ViewRotation;
 
-	if ( Pawn != None )
-	{	// Give the Pawn a chance to modify DeltaRot (limit view for ex.)
-		Pawn.ProcessViewRotation( DeltaTime, out_ViewRotation, DeltaRot );
-	}
-	else
-	{
-		// If Pawn doesn't exist, limit view
-
-		// Add Delta Rotation
-		out_ViewRotation	+= DeltaRot;
-		out_ViewRotation	 = LimitViewRotation(out_ViewRotation, -16384, 16383 );
-	}
+    ViewRotation = Rotation;
+    DesiredRotation = ViewRotation;
+    DeltaRot.Yaw = int(PlayerInput.aTurn);
+    DeltaRot.Pitch = int(PlayerInput.aLookUp);
+    ProcessViewRotation(DeltaTime, ViewRotation, DeltaRot);
+    SetRotation(ViewRotation);
+    ViewShake(DeltaTime);
+    NewRotation = ViewRotation;
+    NewRotation.Roll = Rotation.Roll;
+    // End:0xDF
+    if(Pawn != none)
+    {
+        Pawn.FaceRotation(NewRotation, DeltaTime);
+    }
+    //return;    
 }
 
-
-/**
- * Limit the player's view rotation. (Pitch component).
- */
-event Rotator LimitViewRotation( Rotator ViewRotation, float ViewPitchMin, float ViewPitchMax )
+function ProcessViewRotation(float DeltaTime, out Rotator out_ViewRotation, Rotator DeltaRot)
 {
-	ViewRotation.Pitch = ViewRotation.Pitch & 65535;
+    // End:0x2E
+    if(PlayerCamera != none)
+    {
+        PlayerCamera.ProcessViewRotation(DeltaTime, out_ViewRotation, DeltaRot);
+    }
+    // End:0x5F
+    if(Pawn != none)
+    {
+        Pawn.ProcessViewRotation(DeltaTime, out_ViewRotation, DeltaRot);        
+    }
+    else
+    {
+        out_ViewRotation += DeltaRot;
+        out_ViewRotation = LimitViewRotation(out_ViewRotation, -16384.0000000, 16383.0000000);
+    }
+    //return;    
+}
 
-    if( ViewRotation.Pitch > ViewPitchMax &&
-		ViewRotation.Pitch < (65535+ViewPitchMin) )
-	{
-		if( ViewRotation.Pitch < 32768 )
-		{
-			ViewRotation.Pitch = ViewPitchMax;
-		}
-		else
-		{
-			ViewRotation.Pitch = 65535 + ViewPitchMin;
-		}
-	}
-
-	return ViewRotation;
+event Rotator LimitViewRotation(Rotator ViewRotation, float ViewPitchMin, float ViewPitchMax)
+{
+    ViewRotation.Pitch = ViewRotation.Pitch & 65535;
+    // End:0xC1
+    if((float(ViewRotation.Pitch) > ViewPitchMax) && float(ViewRotation.Pitch) < (float(65535) + ViewPitchMin))
+    {
+        // End:0xA0
+        if(ViewRotation.Pitch < 32768)
+        {
+            ViewRotation.Pitch = int(ViewPitchMax);            
+        }
+        else
+        {
+            ViewRotation.Pitch = int(float(65535) + ViewPitchMin);
+        }
+    }
+    return ViewRotation;
+    //return ReturnValue;    
 }
 
 function ClearDoubleClick()
 {
-	if (PlayerInput != None)
-		PlayerInput.DoubleClickTimer = 0.0;
+    // End:0x20
+    if(PlayerInput != none)
+    {
+        PlayerInput.DoubleClickTimer = 0.0000000;
+    }
+    //return;    
 }
 
-/* CheckJumpOrDuck()
-Called by ProcessMove()
-handle jump and duck buttons which are pressed
-*/
 function CheckJumpOrDuck()
 {
-	if ( bPressedJump && (Pawn != None) )
-	{
-		Pawn.DoJump( bUpdating );
-	}
-}
-
-// Player movement.
-// Player Standing, walking, running, falling.
-state PlayerWalking
-{
-ignores SeePlayer, HearNoise, Bump;
-
-	event NotifyPhysicsVolumeChange( PhysicsVolume NewVolume )
-	{
-		if ( NewVolume.bWaterVolume && Pawn.bCollideWorld )
-		{
-			GotoState(Pawn.WaterMovementState);
-		}
-	}
-
-	function ProcessMove(float DeltaTime, vector NewAccel, eDoubleClickDir DoubleClickMove, rotator DeltaRot)
-	{
-		if( Pawn == None )
-		{
-			return;
-		}
-
-		if (Role == ROLE_Authority)
-		{
-			// Update ViewPitch for remote clients
-			Pawn.SetRemoteViewPitch( Rotation.Pitch );
-		}
-
-		Pawn.Acceleration = NewAccel;
-
-		CheckJumpOrDuck();
-	}
-
-	function PlayerMove( float DeltaTime )
-	{
-		local vector			X,Y,Z, NewAccel;
-		local eDoubleClickDir	DoubleClickMove;
-		local rotator			OldRotation;
-		local bool				bSaveJump;
-
-		if( Pawn == None )
-		{
-			GotoState('Dead');
-		}
-		else
-		{
-			GetAxes(Pawn.Rotation,X,Y,Z);
-
-			// Update acceleration.
-			NewAccel = PlayerInput.aForward*X + PlayerInput.aStrafe*Y;
-			NewAccel.Z	= 0;
-			NewAccel = Pawn.AccelRate * Normal(NewAccel);
-
-			DoubleClickMove = PlayerInput.CheckForDoubleClickMove( DeltaTime/WorldInfo.TimeDilation );
-
-			// Update rotation.
-			OldRotation = Rotation;
-			UpdateRotation( DeltaTime );
-			bDoubleJump = false;
-
-			if( bPressedJump && Pawn.CannotJumpNow() )
-			{
-				bSaveJump = true;
-				bPressedJump = false;
-			}
-			else
-			{
-				bSaveJump = false;
-			}
-
-			if( Role < ROLE_Authority ) // then save this move and replicate it
-			{
-				ReplicateMove(DeltaTime, NewAccel, DoubleClickMove, OldRotation - Rotation);
-			}
-			else
-			{
-				ProcessMove(DeltaTime, NewAccel, DoubleClickMove, OldRotation - Rotation);
-			}
-			bPressedJump = bSaveJump;
-		}
-	}
-
-	event BeginState(Name PreviousStateName)
-	{
-		DoubleClickDir = DCLICK_None;
-		bPressedJump = false;
-		GroundPitch = 0;
-		if ( Pawn != None )
-		{
-			Pawn.ShouldCrouch(false);
-			if (Pawn.Physics != PHYS_Falling && Pawn.Physics != PHYS_RigidBody) // FIXME HACK!!!
-				Pawn.SetPhysics(PHYS_Walking);
-		}
-	}
-
-	event EndState(Name NextStateName)
-	{
-		GroundPitch = 0;
-		if ( Pawn != None )
-		{
-			Pawn.SetRemoteViewPitch( 0 );
-			if ( bDuck == 0 )
-			{
-				Pawn.ShouldCrouch(false);
-			}
-		}
-	}
-
-Begin:
-}
-
-// player is climbing ladder
-state PlayerClimbing
-{
-ignores SeePlayer, HearNoise, Bump;
-
-	event NotifyPhysicsVolumeChange( PhysicsVolume NewVolume )
-	{
-		if( NewVolume.bWaterVolume )
-		{
-			GotoState( Pawn.WaterMovementState );
-		}
-		else
-		{
-			GotoState( Pawn.LandMovementState );
-		}
-	}
-
-	function ProcessMove(float DeltaTime, vector NewAccel, eDoubleClickDir DoubleClickMove, rotator DeltaRot)
-	{
-		if( Pawn == None )
-		{
-			return;
-		}
-
-		if (Role == ROLE_Authority)
-		{
-			// Update ViewPitch for remote clients
-			Pawn.SetRemoteViewPitch( Rotation.Pitch );
-		}
-
-		Pawn.Acceleration	= NewAccel;
-
-		if( bPressedJump )
-		{
-			Pawn.DoJump( bUpdating );
-			if( Pawn.Physics == PHYS_Falling )
-			{
-				GotoState(Pawn.LandMovementState);
-			}
-		}
-	}
-
-	function PlayerMove( float DeltaTime )
-	{
-		local vector X,Y,Z, NewAccel;
-		local rotator OldRotation, ViewRotation;
-
-		GetAxes(Rotation,X,Y,Z);
-
-		// Update acceleration.
-		if ( Pawn.OnLadder != None )
-		{
-			NewAccel = PlayerInput.aForward*Pawn.OnLadder.ClimbDir;
-		    if ( Pawn.OnLadder.bAllowLadderStrafing )
-				NewAccel += PlayerInput.aStrafe*Y;
-		}
-		else
-			NewAccel = PlayerInput.aForward*X + PlayerInput.aStrafe*Y;
-		NewAccel = Pawn.AccelRate * Normal(NewAccel);
-
-		ViewRotation = Rotation;
-
-		// Update rotation.
-		SetRotation(ViewRotation);
-		OldRotation = Rotation;
-		UpdateRotation( DeltaTime );
-
-		if ( Role < ROLE_Authority ) // then save this move and replicate it
-			ReplicateMove(DeltaTime, NewAccel, DCLICK_None, OldRotation - Rotation);
-		else
-			ProcessMove(DeltaTime, NewAccel, DCLICK_None, OldRotation - Rotation);
-		bPressedJump = false;
-	}
-
-	event BeginState(Name PreviousStateName)
-	{
-		Pawn.ShouldCrouch(false);
-		bPressedJump = false;
-	}
-
-	event EndState(Name NextStateName)
-	{
-		if ( Pawn != None )
-		{
-			Pawn.SetRemoteViewPitch( 0 );
-			Pawn.ShouldCrouch(false);
-		}
-	}
-}
-
-// Player Driving a vehicle.
-state PlayerDriving
-{
-ignores SeePlayer, HearNoise, Bump;
-
-	function ProcessMove(float DeltaTime, vector NewAccel, eDoubleClickDir DoubleClickMove, rotator DeltaRot);
-
-	// Set the throttle, steering etc. for the vehicle based on the input provided
-	function ProcessDrive(float InForward, float InStrafe, float InUp, bool InJump)
-	{
-		local Vehicle CurrentVehicle;
-
-		CurrentVehicle = Vehicle(Pawn);
-		if (CurrentVehicle != None)
-		{
-			//`log("Forward:"@InForward@" Strafe:"@InStrafe@" Up:"@InUp);
-			bPressedJump = InJump;
-			CurrentVehicle.SetInputs(InForward, -InStrafe, InUp);
-			CheckJumpOrDuck();
-		}
-	}
-
-	function PlayerMove( float DeltaTime )
-	{
-		// update 'looking' rotation
-		UpdateRotation(DeltaTime);
-
-		// TODO: Don't send things like aForward and aStrafe for gunners who don't need it
-		// Only servers can actually do the driving logic.
-		ProcessDrive(PlayerInput.RawJoyUp, PlayerInput.RawJoyRight, PlayerInput.aUp, bPressedJump);
-		if (Role < ROLE_Authority)
-		{
-			ServerDrive(PlayerInput.RawJoyUp, PlayerInput.RawJoyRight, PlayerInput.aUp, bPressedJump, ((Rotation.Yaw & 65535) << 16) + (Rotation.Pitch & 65535));
-		}
-
-		bPressedJump = false;
-	}
-
-	unreliable server function ServerUse()
-	{
-		local Vehicle CurrentVehicle;
-
-		CurrentVehicle = Vehicle(Pawn);
-		CurrentVehicle.DriverLeave(false);
-	}
-
-	event BeginState(Name PreviousStateName)
-	{
-		CleanOutSavedMoves();
-	}
-
-	event EndState(Name NextStateName)
-	{
-		CleanOutSavedMoves();
-	}
-}
-
-// Player movement.
-// Player Swimming
-state PlayerSwimming
-{
-ignores SeePlayer, HearNoise, Bump;
-
-	event bool NotifyLanded(vector HitNormal, Actor FloorActor)
-	{
-		if ( Pawn.PhysicsVolume.bWaterVolume )
-			Pawn.SetPhysics(PHYS_Swimming);
-		else
-			GotoState(Pawn.LandMovementState);
-		return bUpdating;
-	}
-
-	event NotifyPhysicsVolumeChange( PhysicsVolume NewVolume )
-	{
-		local actor HitActor;
-		local vector HitLocation, HitNormal, Checkpoint;
-		local vector X,Y,Z;
-
-		if ( !Pawn.bCollideActors )
-		{
-			GotoState(Pawn.LandMovementState);
-		}
-		if (Pawn.Physics != PHYS_RigidBody)
-		{
-			if ( !NewVolume.bWaterVolume )
-			{
-				Pawn.SetPhysics(PHYS_Falling);
-				if ( Pawn.Velocity.Z > 0 )
-				{
-					GetAxes(Rotation,X,Y,Z);
-	 				Pawn.bUpAndOut = ((X Dot Pawn.Acceleration) > 0) && ((Pawn.Acceleration.Z > 0) || (Rotation.Pitch > 2048));
-				    if (Pawn.bUpAndOut && Pawn.CheckWaterJump(HitNormal)) //check for waterjump
-				    {
-					    Pawn.velocity.Z = Pawn.OutOfWaterZ; //set here so physics uses this for remainder of tick
-					    GotoState(Pawn.LandMovementState);
-				    }
-				    else if ( (Pawn.Velocity.Z > 160) || !Pawn.TouchingWaterVolume() )
-					    GotoState(Pawn.LandMovementState);
-				    else //check if in deep water
-				    {
-					    Checkpoint = Pawn.Location;
-					    Checkpoint.Z -= (Pawn.CylinderComponent.CollisionHeight + 6.0);
-					    HitActor = Trace(HitLocation, HitNormal, Checkpoint, Pawn.Location, false);
-					    if (HitActor != None)
-						    GotoState(Pawn.LandMovementState);
-					    else
-					    {
-						    SetTimer(0.7, false);
-					    }
-				    }
-			    }
-			}
-			else
-			{
-				ClearTimer();
-				Pawn.SetPhysics(PHYS_Swimming);
-			}
-		}
-		else if (!NewVolume.bWaterVolume)
-		{
-			// if in rigid body, go to appropriate state, but don't modify pawn physics
-			GotoState(Pawn.LandMovementState);
-		}
-	}
-
-	function ProcessMove(float DeltaTime, vector NewAccel, eDoubleClickDir DoubleClickMove, rotator DeltaRot)
-	{
-		Pawn.Acceleration = NewAccel;
-	}
-
-	function PlayerMove(float DeltaTime)
-	{
-		local rotator oldRotation;
-		local vector X,Y,Z, NewAccel;
-
-		if (Pawn == None)
-		{
-			GotoState('Dead');
-		}
-		else
-		{
-			GetAxes(Rotation,X,Y,Z);
-
-			NewAccel = PlayerInput.aForward*X + PlayerInput.aStrafe*Y + PlayerInput.aUp*vect(0,0,1);
-			NewAccel = Pawn.AccelRate * Normal(NewAccel);
-
-			// Update rotation.
-			oldRotation = Rotation;
-			UpdateRotation( DeltaTime );
-
-			if ( Role < ROLE_Authority ) // then save this move and replicate it
-			{
-				ReplicateMove(DeltaTime, NewAccel, DCLICK_None, OldRotation - Rotation);
-			}
-			else
-			{
-				ProcessMove(DeltaTime, NewAccel, DCLICK_None, OldRotation - Rotation);
-			}
-			bPressedJump = false;
-		}
-	}
-
-	event Timer()
-	{
-		if (!Pawn.PhysicsVolume.bWaterVolume && Role == ROLE_Authority)
-		{
-			GotoState(Pawn.LandMovementState);
-		}
-
-		ClearTimer();
-	}
-
-	event BeginState(Name PreviousStateName)
-	{
-		ClearTimer();
-		if (Pawn.Physics != PHYS_RigidBody)
-		{
-			Pawn.SetPhysics(PHYS_Swimming);
-		}
-	}
-
-Begin:
-}
-
-state PlayerFlying
-{
-ignores SeePlayer, HearNoise, Bump;
-
-	function PlayerMove(float DeltaTime)
-	{
-		local vector X,Y,Z;
-
-		GetAxes(Rotation,X,Y,Z);
-
-		Pawn.Acceleration = PlayerInput.aForward*X + PlayerInput.aStrafe*Y + PlayerInput.aUp*vect(0,0,1);;
-		Pawn.Acceleration = Pawn.AccelRate * Normal(Pawn.Acceleration);
-
-		if ( bCheatFlying && (Pawn.Acceleration == vect(0,0,0)) )
-			Pawn.Velocity = vect(0,0,0);
-		// Update rotation.
-		UpdateRotation( DeltaTime );
-
-		if ( Role < ROLE_Authority ) // then save this move and replicate it
-			ReplicateMove(DeltaTime, Pawn.Acceleration, DCLICK_None, rot(0,0,0));
-		else
-			ProcessMove(DeltaTime, Pawn.Acceleration, DCLICK_None, rot(0,0,0));
-	}
-
-	event BeginState(Name PreviousStateName)
-	{
-		Pawn.SetPhysics(PHYS_Flying);
-	}
+    // End:0x30
+    if(bPressedJump && Pawn != none)
+    {
+        Pawn.DoJump(bUpdating);
+    }
+    //return;    
 }
 
 function bool IsSpectating()
 {
-	return false;
+    return false;
+    //return ReturnValue;    
 }
 
-/** when spectating, tells server where the client is (client is authoritative on location when spectating) */
-unreliable server function ServerSetSpectatorLocation(vector NewLoc)
+unreliable server function ServerSetSpectatorLocation(Vector NewLoc)
 {
-	ClientGotoState(GetStateName());
-}
-
-state BaseSpectating
-{
-	function bool IsSpectating()
-	{
-		return true;
-	}
-
-	/**
-	  * Adjust spectator velocity if "out of bounds"
-	  * (above stallz or below killz)
-	  */
-	function bool LimitSpectatorVelocity()
-	{
-		if ( Location.Z > WorldInfo.StallZ )
-		{
-			Velocity.Z = FMin(SpectatorCameraSpeed, WorldInfo.StallZ - Location.Z - 2.0);
-			return true;
-		}
-		else if ( Location.Z < WorldInfo.KillZ )
-		{
-			Velocity.Z = FMin(SpectatorCameraSpeed, WorldInfo.KillZ - Location.Z + 2.0);
-			return true;
-		}
-		return false;
-	}
-
-	function ProcessMove(float DeltaTime, vector NewAccel, eDoubleClickDir DoubleClickMove, rotator DeltaRot)
-	{
-		local float		VelSize;
-
-		/* smoothly accelerate and decelerate */
-		Acceleration = Normal(NewAccel) * SpectatorCameraSpeed;
-
-		VelSize = VSize(Velocity);
-		if( VelSize > 0 )
-		{
-			Velocity = Velocity - (Velocity - Normal(Acceleration) * VelSize) * FMin(DeltaTime * 8, 1);
-		}
-
-		Velocity = Velocity + Acceleration * DeltaTime;
-		if( VSize(Velocity) > SpectatorCameraSpeed )
-		{
-			Velocity = Normal(Velocity) * SpectatorCameraSpeed;
-		}
-
-		LimitSpectatorVelocity();
-		if( VSize(Velocity) > 0 )
-		{
-			MoveSmooth( (1+bRun) * Velocity * DeltaTime );
-			// correct if out of bounds after move
-			if ( LimitSpectatorVelocity() )
-			{
-				MoveSmooth( Velocity.Z * vect(0,0,1) * DeltaTime );
-			}
-		}
-	}
-
-	function PlayerMove(float DeltaTime)
-	{
-		local vector X,Y,Z;
-
-		GetAxes(Rotation,X,Y,Z);
-		Acceleration = PlayerInput.aForward*X + PlayerInput.aStrafe*Y + PlayerInput.aUp*vect(0,0,1);
-		UpdateRotation(DeltaTime);
-
-		if (Role < ROLE_Authority) // then save this move and replicate it
-		{
-			ReplicateMove(DeltaTime, Acceleration, DCLICK_None, rot(0,0,0));
-		}
-		else
-		{
-			ProcessMove(DeltaTime, Acceleration, DCLICK_None, rot(0,0,0));
-		}
-	}
-
-	/** when spectating, tells server where the client is (client is authoritative on location when spectating) */
-	unreliable server function ServerSetSpectatorLocation(vector NewLoc)
-	{
-		SetLocation(NewLoc);
-		if ( WorldInfo.TimeSeconds - LastSpectatorStateSynchTime > 2.0 )
-		{
-			ClientGotoState(GetStateName());
-			LastSpectatorStateSynchTime = WorldInfo.TimeSeconds;
-		}
-	}
-
-	function ReplicateMove(float DeltaTime, vector NewAccel, eDoubleClickDir DoubleClickMove, rotator DeltaRot)
-	{
-		ProcessMove(DeltaTime, NewAccel, DoubleClickMove, DeltaRot);
-		// when spectating, client position is authoritative
-		ServerSetSpectatorLocation(Location);
-	}
-
-
-	event BeginState(Name PreviousStateName)
-	{
-		bCollideWorld = true;
-	}
-
-	event EndState(Name NextStateName)
-	{
-		bCollideWorld = false;
-	}
+    ClientGotoState(GetStateName());
+    //return;    
 }
 
 unreliable server function ServerViewNextPlayer()
 {
-	if (IsSpectating())
-	{
-		ViewAPlayer(+1);
-	}
+    // End:0x18
+    if(IsSpectating())
+    {
+        ViewAPlayer(1);
+    }
+    //return;    
 }
 
 unreliable server function ServerViewPrevPlayer()
 {
-	if (IsSpectating())
-	{
-		ViewAPlayer(-1);
-	}
+    // End:0x1C
+    if(IsSpectating())
+    {
+        ViewAPlayer(-1);
+    }
+    //return;    
 }
 
-/**
- * View next active player in PRIArray.
- * @param dir is the direction to go in the array
- */
-function ViewAPlayer(int dir)
+function ViewAPlayer(int Dir)
 {
-    local int i, CurrentIndex, NewIndex;
-	local PlayerReplicationInfo PRI;
-	local bool bSuccess;
+    local int I, CurrentIndex, NewIndex;
+    local PlayerReplicationInfo PRI;
+    local bool bSuccess;
 
-	CurrentIndex = -1;
-	if ( RealViewTarget != None )
-	{
-		// Find index of current viewtarget's PRI
-		For ( i=0; i<WorldInfo.GRI.PRIArray.Length; i++ )
-		{
-			if ( RealViewTarget == WorldInfo.GRI.PRIArray[i] )
-			{
-				CurrentIndex = i;
-				break;
-			}
-		}
-	}
+    CurrentIndex = -1;
+    // End:0x82
+    if(RealViewTarget != none)
+    {
+        I = 0;
+        J0x1D:
 
-	// Find next valid viewtarget in appropriate direction
-	for ( NewIndex=CurrentIndex+dir; (NewIndex>=0)&&(NewIndex<WorldInfo.GRI.PRIArray.Length); NewIndex=NewIndex+dir )
-	{
-		PRI = WorldInfo.GRI.PRIArray[NewIndex];
-		if ( (PRI != None) && (Controller(PRI.Owner) != None) && (Controller(PRI.Owner).Pawn != None)
-			&& WorldInfo.Game.CanSpectate(self, PRI) )
-		{
-			bSuccess = true;
-			break;
-		}
-	}
+        // End:0x82 [Loop If]
+        if(I < WorldInfo.GRI.PRIArray.Length)
+        {
+            // End:0x78
+            if(RealViewTarget == WorldInfo.GRI.PRIArray[I])
+            {
+                CurrentIndex = I;
+                // [Explicit Break]
+                goto J0x82;
+            }
+            I++;
+            // [Loop Continue]
+            goto J0x1D;
+        }
+    }
+    J0x82:
 
-	if ( !bSuccess )
-	{
-		// wrap around
-		CurrentIndex = (NewIndex < 0) ? WorldInfo.GRI.PRIArray.Length : -1;
-		for ( NewIndex=CurrentIndex+dir; (NewIndex>=0)&&(NewIndex<WorldInfo.GRI.PRIArray.Length); NewIndex=NewIndex+dir )
-		{
-			PRI = WorldInfo.GRI.PRIArray[NewIndex];
-		if ( (PRI != None) && (Controller(PRI.Owner) != None) && (Controller(PRI.Owner).Pawn != None)
-			&& WorldInfo.Game.CanSpectate(self, PRI) )
-			{
-				bSuccess = true;
-				break;
-			}
-		}
-	}
+    NewIndex = CurrentIndex + Dir;
+    J0x94:
 
-	if ( bSuccess )
-		SetViewTarget(PRI);
+    // End:0x180 [Loop If]
+    if((NewIndex >= 0) && NewIndex < WorldInfo.GRI.PRIArray.Length)
+    {
+        PRI = WorldInfo.GRI.PRIArray[NewIndex];
+        // End:0x16B
+        if((((PRI != none) && Controller(PRI.Owner) != none) && Controller(PRI.Owner).Pawn != none) && WorldInfo.Game.CanSpectate(self, PRI))
+        {
+            bSuccess = true;
+            // [Explicit Break]
+            goto J0x180;
+        }
+        NewIndex = NewIndex + Dir;
+        // [Loop Continue]
+        goto J0x94;
+    }
+    J0x180:
+
+    // End:0x2BB
+    if(!bSuccess)
+    {
+        CurrentIndex = ((NewIndex < 0) ? WorldInfo.GRI.PRIArray.Length : -1);
+        NewIndex = CurrentIndex + Dir;
+        J0x1CF:
+
+        // End:0x2BB [Loop If]
+        if((NewIndex >= 0) && NewIndex < WorldInfo.GRI.PRIArray.Length)
+        {
+            PRI = WorldInfo.GRI.PRIArray[NewIndex];
+            // End:0x2A6
+            if((((PRI != none) && Controller(PRI.Owner) != none) && Controller(PRI.Owner).Pawn != none) && WorldInfo.Game.CanSpectate(self, PRI))
+            {
+                bSuccess = true;
+                // [Explicit Break]
+                goto J0x2BB;
+            }
+            NewIndex = NewIndex + Dir;
+            // [Loop Continue]
+            goto J0x1CF;
+        }
+    }
+    J0x2BB:
+
+    // End:0x2D4
+    if(bSuccess)
+    {
+        SetViewTarget(PRI);
+    }
+    //return;    
 }
 
 unreliable server function ServerViewSelf(optional ViewTargetTransitionParams TransitionParams)
 {
-	if (IsSpectating())
-	{
-		ResetCameraMode();
-		SetViewTarget( Self, TransitionParams );
-		ClientSetViewTarget( Self, TransitionParams );
-		ClientMessage(OwnCamera, 'Event');
-	}
-}
-
-state Spectating extends BaseSpectating
-{
-	ignores RestartLevel, ClientRestart, Suicide, ThrowWeapon, NotifyPhysicsVolumeChange, NotifyHeadVolumeChange;
-
-	exec function StartFire( optional byte FireModeNum )
-	{
-		ServerViewNextPlayer();
-	}
-
-	// Return to spectator's own camera.
-	exec function StartAltFire( optional byte FireModeNum )
-	{
-		ResetCameraMode();
-		ServerViewSelf();
-	}
-
-	event BeginState(Name PreviousStateName)
-	{
-		if ( Pawn != None )
-		{
-			SetLocation(Pawn.Location);
-			UnPossess();
-		}
-		bCollideWorld = true;
-	}
-
-	event EndState(Name NextStateName)
-	{
-		if ( PlayerReplicationInfo.bOnlySpectator )
-		{
-			`log("WARNING - Spectator only player leaving spectating state to go to "$NextStateName);
-		}
-		PlayerReplicationInfo.bIsSpectator = false;
-		bCollideWorld = false;
-	}
-}
-
-auto state PlayerWaiting extends BaseSpectating
-{
-ignores SeePlayer, HearNoise, NotifyBump, TakeDamage, PhysicsVolumeChange, NextWeapon, PrevWeapon, SwitchToBestWeapon;
-
-	exec function Jump();
-	exec function Suicide();
-
-	reliable server function ServerSuicide();
-
-	reliable server function ServerChangeTeam( int N )
-	{
-		WorldInfo.Game.ChangeTeam(self, N, true);
-	}
-
-	reliable server function ServerRestartPlayer()
-	{
-
-		if ( WorldInfo.TimeSeconds < WaitDelay )
-			return;
-		if ( WorldInfo.NetMode == NM_Client )
-			return;
-		if ( WorldInfo.Game.bWaitingToStartMatch )
-			PlayerReplicationInfo.bReadyToPlay = true;
-		else
-			WorldInfo.Game.RestartPlayer(self);
-	}
-
-	exec function StartFire( optional byte FireModeNum )
-	{
-		ServerReStartPlayer();
-	}
-
-	event EndState(Name NextStateName)
-	{
-		if ( PlayerReplicationInfo != None )
-		{
-			PlayerReplicationInfo.SetWaitingPlayer(false);
-		}
-		bCollideWorld = false;
-	}
-
-	// @note: this must be simulated to execute on the client because at the time the initial state is entered, RemoteRole has not been
-	// set yet and so only simulated functions will be executed
-	simulated event BeginState(Name PreviousStateName)
-	{
-		if ( PlayerReplicationInfo != None )
-		{
-			PlayerReplicationInfo.SetWaitingPlayer(true);
-		}
-		bCollideWorld = true;
-	}
-}
-
-state WaitingForPawn extends BaseSpectating
-{
-	ignores SeePlayer, HearNoise, KilledBy;
-
-	exec function StartFire( optional byte FireModeNum )
-	{
-		AskForPawn();
-	}
-
-	reliable client function ClientGotoState(name NewState, optional name NewLabel)
-	{
-		if (NewState == 'RoundEnded')
-		{
-			Global.ClientGotoState(NewState, NewLabel);
-		}
-	}
-
-	unreliable client function LongClientAdjustPosition
-	(
-		float TimeStamp,
-		name newState,
-		EPhysics newPhysics,
-		float NewLocX,
-		float NewLocY,
-		float NewLocZ,
-		float NewVelX,
-		float NewVelY,
-		float NewVelZ,
-		Actor NewBase,
-		float NewFloorX,
-		float NewFloorY,
-		float NewFloorZ
-	)
-	{
-		if ( newState == 'RoundEnded' )
-			GotoState(newState);
-	}
-
-	event PlayerTick(float DeltaTime)
-	{
-		Global.PlayerTick(DeltaTime);
-
-		if ( Pawn != None )
-		{
-			Pawn.Controller = self;
-			Pawn.BecomeViewTarget(self);
-			ClientRestart(Pawn);
-		}
-		else if ( !IsTimerActive() || GetTimerCount() > 1.f )
-		{
-			SetTimer(0.2,true);
-			AskForPawn();
-		}
-	}
-
-	function ReplicateMove(float DeltaTime, vector NewAccel, eDoubleClickDir DoubleClickMove, rotator DeltaRot)
-	{
-		ProcessMove(DeltaTime, NewAccel, DoubleClickMove, DeltaRot);
-		// do not actually call ServerSetSpectatorLocation() as the server is not in this state and so won't accept it anyway
-		// something is wrong if we're in this state for an extended period of time, so the fact that
-		// the server side spectator location is not being updated should not be relevant
-	}
-
-	event Timer()
-	{
-		AskForPawn();
-	}
-
-	event BeginState(Name PreviousStateName)
-	{
-		SetTimer(0.2, true);
-		AskForPawn();
-	}
-
-	event EndState(Name NextStateName)
-	{
-		ResetCameraMode();
-		SetTimer(0.0, false);
-	}
-}
-
-state RoundEnded
-{
-ignores SeePlayer, HearNoise, KilledBy, NotifyBump, HitWall, NotifyHeadVolumeChange, NotifyPhysicsVolumeChange, Falling, TakeDamage, Suicide;
-
-	reliable server function ServerReStartPlayer()
-	{
-	}
-
-	function bool IsSpectating()
-	{
-		return true;
-	}
-
-	exec function ThrowWeapon() {}
-	exec function Use() {}
-
-	event Possess(Pawn aPawn, bool bVehicleTransition)
-	{
-		Global.Possess(aPawn, bVehicleTransition);
-
-		if (Pawn != None)
-			Pawn.TurnOff();
-	}
-
-	reliable server function ServerReStartGame()
-	{
-		if (WorldInfo.Game.PlayerCanRestartGame(self))
-		{
-			WorldInfo.Game.ResetLevel();
-		}
-	}
-
-	exec function StartFire( optional byte FireModeNum )
-	{
-		if ( Role < ROLE_Authority)
-			return;
-		if ( !bFrozen )
-			ServerReStartGame();
-		else if ( !IsTimerActive() )
-			SetTimer(1.5, false);
-	}
-
-	function PlayerMove(float DeltaTime)
-	{
-		local vector X,Y,Z;
-		local Rotator DeltaRot, ViewRotation;
-
-		GetAxes(Rotation,X,Y,Z);
-		// Update view rotation.
-		ViewRotation = Rotation;
-		// Calculate Delta to be applied on ViewRotation
-		DeltaRot.Yaw	= PlayerInput.aTurn;
-		DeltaRot.Pitch	= PlayerInput.aLookUp;
-		ProcessViewRotation( DeltaTime, ViewRotation, DeltaRot );
-		SetRotation(ViewRotation);
-
-		ViewShake(DeltaTime);
-
-		if ( Role < ROLE_Authority ) // then save this move and replicate it
-			ReplicateMove(DeltaTime, vect(0,0,0), DCLICK_None, rot(0,0,0));
-		else
-			ProcessMove(DeltaTime, vect(0,0,0), DCLICK_None, rot(0,0,0));
-		bPressedJump = false;
-	}
-
-	unreliable server function ServerMove
-	(
-		float TimeStamp,
-		vector InAccel,
-		vector ClientLoc,
-		byte NewFlags,
-		byte ClientRoll,
-		int View
-	)
-	{
-	Global.ServerMove(	TimeStamp,
-							InAccel,
-							ClientLoc,
-							NewFlags,
-							ClientRoll,
-							//epic superville: Cleaner compression with no roundoff error
-							((Rotation.Yaw & 65535) << 16) + (Rotation.Pitch & 65535)
-						);
-
-	}
-
-	function FindGoodView()
-	{
-		local rotator GoodRotation;
-
-		GoodRotation = Rotation;
-		GetViewTarget().FindGoodEndView(self, GoodRotation);
-		SetRotation(GoodRotation);
-	}
-
-	event Timer()
-	{
-		bFrozen = false;
-	}
-
-	unreliable client function LongClientAdjustPosition
-	(
-		float TimeStamp,
-		name newState,
-		EPhysics newPhysics,
-		float NewLocX,
-		float NewLocY,
-		float NewLocZ,
-		float NewVelX,
-		float NewVelY,
-		float NewVelZ,
-		Actor NewBase,
-		float NewFloorX,
-		float NewFloorY,
-		float NewFloorZ
-	)
-	{
-	}
-
-	event BeginState(Name PreviousStateName)
-	{
-		local Pawn P;
-
-		FOVAngle = DesiredFOV;
-		bFire = 0;
-
-		if( Pawn != None )
-		{
-			Pawn.TurnOff();
-			Pawn.bSpecialHUD = FALSE;
-			StopFiring();
-		}
-
-		if( myHUD != None )
-		{
-			myHUD.SetShowScores(TRUE);
-		}
-
-		bFrozen = TRUE;
-		FindGoodView();
-		SetTimer(5, FALSE);
-
-		ForEach DynamicActors(class'Pawn', P)
-		{
-			P.TurnOff();
-		}
-	}
-
-	event EndState(name NextStateName)
-	{
-		if (myHUD != None)
-		{
-			myHUD.SetShowScores(false);
-		}
-	}
-
-Begin:
-}
-
-state Dead
-{
-	ignores SeePlayer, HearNoise, KilledBy, NextWeapon, PrevWeapon;
-
-	exec function ThrowWeapon()
-	{
-		//clientmessage("Throwweapon while dead, pawn "$Pawn$" health "$Pawn.health);
-	}
-
-	function bool IsDead()
-	{
-		return true;
-	}
-
-	reliable server function ServerReStartPlayer()
-	{
-		if ( !WorldInfo.Game.PlayerCanRestart( Self ) )
-			return;
-
-		super.ServerRestartPlayer();
-	}
-
-	exec function StartFire( optional byte FireModeNum )
-	{
-		if ( bFrozen )
-		{
-			if ( !IsTimerActive() || GetTimerCount() > MinRespawnDelay )
-				bFrozen = false;
-			return;
-		}
-
-		ServerReStartPlayer();
-	}
-
-	exec function Use()
-	{
-		StartFire(0);
-	}
-
-	exec function Jump()
-	{
-		StartFire(0);
-	}
-
-	unreliable server function ServerMove
-	(
-		float TimeStamp,
-		vector Accel,
-		vector ClientLoc,
-		byte NewFlags,
-		byte ClientRoll,
-		int View
-	)
-	{
-		Global.ServerMove(
-					TimeStamp,
-					Accel,
-					ClientLoc,
-					0,
-					ClientRoll,
-					View);
-	}
-
-	function PlayerMove(float DeltaTime)
-	{
-		local vector X,Y,Z;
-		local rotator DeltaRot, ViewRotation;
-
-		if ( !bFrozen )
-		{
-			if ( bPressedJump )
-			{
-				StartFire( 0 );
-				bPressedJump = false;
-			}
-			GetAxes(Rotation,X,Y,Z);
-			// Update view rotation.
-			ViewRotation = Rotation;
-			// Calculate Delta to be applied on ViewRotation
-			DeltaRot.Yaw	= PlayerInput.aTurn;
-			DeltaRot.Pitch	= PlayerInput.aLookUp;
-			ProcessViewRotation( DeltaTime, ViewRotation, DeltaRot );
-			SetRotation(ViewRotation);
-			if ( Role < ROLE_Authority ) // then save this move and replicate it
-					ReplicateMove(DeltaTime, vect(0,0,0), DCLICK_None, rot(0,0,0));
-		}
-		else if ( !IsTimerActive() || GetTimerCount() > MinRespawnDelay )
-		{
-			bFrozen = false;
-		}
-
-		ViewShake(DeltaTime);
-	}
-
-	function FindGoodView()
-	{
-		local vector cameraLoc;
-		local rotator cameraRot, ViewRotation;
-		local int tries, besttry;
-		local float bestdist, newdist;
-		local int startYaw;
-		local Actor TheViewTarget;
-
-		ViewRotation = Rotation;
-		ViewRotation.Pitch = 56000;
-		tries = 0;
-		besttry = 0;
-		bestdist = 0.0;
-		startYaw = ViewRotation.Yaw;
-		TheViewTarget = GetViewTarget();
-
-		for (tries=0; tries<16; tries++)
-		{
-			cameraLoc = TheViewTarget.Location;
-			SetRotation(ViewRotation);
-			GetPlayerViewPoint( cameraLoc, cameraRot );
-			newdist = VSize(cameraLoc - TheViewTarget.Location);
-			if (newdist > bestdist)
-			{
-				bestdist = newdist;
-				besttry = tries;
-			}
-			ViewRotation.Yaw += 4096;
-		}
-
-		ViewRotation.Yaw = startYaw + besttry * 4096;
-		SetRotation(ViewRotation);
-	}
-
-	event Timer()
-	{
-		if (!bFrozen)
-			return;
-
-		bFrozen = false;
-		bPressedJump = false;
-	}
-
-	event BeginState(Name PreviousStateName)
-	{
-		if ( (Pawn != None) && (Pawn.Controller == self) )
-			Pawn.Controller = None;
-		Pawn = None;
-		FOVAngle = DesiredFOV;
-		Enemy = None;
-		bFrozen = true;
-		bPressedJump = false;
-		FindGoodView();
-	    SetTimer(MinRespawnDelay, false);
-		CleanOutSavedMoves();
-	}
-
-	event EndState(Name NextStateName)
-	{
-		CleanOutSavedMoves();
-		Velocity = vect(0,0,0);
-		Acceleration = vect(0,0,0);
-	    if ( !PlayerReplicationInfo.bOutOfLives )
-			ResetCameraMode();
-		bPressedJump = false;
-	    if ( myHUD != None )
-		{
-			myHUD.SetShowScores(false);
-		}
-	}
-
-Begin:
-	if ( LocalPlayer(Player) != None )
-	{
-		if (myHUD != None)
-		{
-			myHUD.PlayerOwnerDied();
-		}
-	}
+    // End:0x51
+    if(IsSpectating())
+    {
+        ResetCameraMode();
+        SetViewTarget(self, TransitionParams);
+        ClientSetViewTarget(self, TransitionParams);
+        ClientMessage(OwnCamera, 'Event');
+    }
+    //return;    
 }
 
 function bool CanRestartPlayer()
 {
-    return PlayerReplicationInfo != None && !PlayerReplicationInfo.bOnlySpectator && HasClientLoadedCurrentWorld();
+    return ((PlayerReplicationInfo != none) && !PlayerReplicationInfo.bOnlySpectator) && HasClientLoadedCurrentWorld();
+    //return ReturnValue;    
 }
 
-/**
- * Hook called from HUD actor. Gives access to HUD and Canvas
- */
-function DrawHUD( HUD H )
+function DrawHUD(HUD H)
 {
-	if ( Pawn != None )
-	{
-    	Pawn.DrawHUD( H );
-	}
-
-	if ( PlayerInput != None )
-	{
-		PlayerInput.DrawHUD( H );
-	}
+    // End:0x24
+    if(Pawn != none)
+    {
+        Pawn.DrawHUD(H);
+    }
+    // End:0x48
+    if(PlayerInput != none)
+    {
+        PlayerInput.DrawHUD(H);
+    }
+    //return;    
 }
-
-
-/* epic ===============================================
- * ::OnToggleInput
- *
- * Looks at the activated input from the SeqAct_ToggleInput
- * op and sets bPlayerInputEnabled accordingly.
- *
- * =====================================================
- */
 
 function OnToggleInput(SeqAct_ToggleInput inAction)
 {
-	local bool bNewValue;
+    local bool bNewValue;
 
-	if (Role < ROLE_Authority)
-	{
-		`Warn("Not supported on client");
-		return;
-	}
-
-	if( inAction.InputLinks[0].bHasImpulse )
-	{
-		if( inAction.bToggleMovement )
-		{
-			IgnoreMoveInput( FALSE );
-			ClientIgnoreMoveInput(false);
-		}
-		if( inAction.bToggleTurning )
-		{
-			IgnoreLookInput( FALSE );
-			ClientIgnoreLookInput(false);
-		}
-	}
-	else
-	if( inAction.InputLinks[1].bHasImpulse )
-	{
-		if( inAction.bToggleMovement )
-		{
-			IgnoreMoveInput( TRUE );
-			ClientIgnoreMoveInput(true);
-		}
-		if( inAction.bToggleTurning )
-		{
-			IgnoreLookInput( TRUE );
-			ClientIgnoreLookInput(true);
-		}
-	}
-	else
-	if( inAction.InputLinks[2].bHasImpulse )
-	{
-		if( inAction.bToggleMovement )
-		{
-			bNewValue = !IsMoveInputIgnored();
-			IgnoreMoveInput(bNewValue);
-			ClientIgnoreMoveInput(bNewValue);
-		}
-		if( inAction.bToggleTurning )
-		{
-			bNewValue = !IsLookInputIgnored();
-			IgnoreLookInput(bNewValue);
-			ClientIgnoreLookInput(bNewValue);
-		}
-	}
+    // End:0x2D
+    if(Role < ROLE_Authority)
+    {
+        WarnInternal("Not supported on client");
+        return;
+    }
+    // End:0xA2
+    if(inAction.InputLinks[0].bHasImpulse)
+    {
+        // End:0x76
+        if(inAction.bToggleMovement)
+        {
+            IgnoreMoveInput(false);
+            ClientIgnoreMoveInput(false);
+        }
+        // End:0x9F
+        if(inAction.bToggleTurning)
+        {
+            IgnoreLookInput(false);
+            ClientIgnoreLookInput(false);
+        }        
+    }
+    else
+    {
+        // End:0x117
+        if(inAction.InputLinks[1].bHasImpulse)
+        {
+            // End:0xEB
+            if(inAction.bToggleMovement)
+            {
+                IgnoreMoveInput(true);
+                ClientIgnoreMoveInput(true);
+            }
+            // End:0x114
+            if(inAction.bToggleTurning)
+            {
+                IgnoreLookInput(true);
+                ClientIgnoreLookInput(true);
+            }            
+        }
+        else
+        {
+            // End:0x1C4
+            if(inAction.InputLinks[2].bHasImpulse)
+            {
+                // End:0x17E
+                if(inAction.bToggleMovement)
+                {
+                    bNewValue = !IsMoveInputIgnored();
+                    IgnoreMoveInput(bNewValue);
+                    ClientIgnoreMoveInput(bNewValue);
+                }
+                // End:0x1C4
+                if(inAction.bToggleTurning)
+                {
+                    bNewValue = !IsLookInputIgnored();
+                    IgnoreLookInput(bNewValue);
+                    ClientIgnoreLookInput(bNewValue);
+                }
+            }
+        }
+    }
+    //return;    
 }
 
-/** calls IgnoreMoveInput on client */
-client reliable function ClientIgnoreMoveInput(bool bIgnore)
+reliable client simulated function ClientIgnoreMoveInput(bool bIgnore)
 {
-	IgnoreMoveInput(bIgnore);
-}
-/** calls IgnoreLookInput on client */
-client reliable function ClientIgnoreLookInput(bool bIgnore)
-{
-	IgnoreLookInput(bIgnore);
+    IgnoreMoveInput(bIgnore);
+    //return;    
 }
 
-/**
- * list important PlayerController variables on canvas.  HUD will call DisplayDebug() on the current ViewTarget when
- * the ShowDebug exec is used
- *
- * @param	HUD		- HUD with canvas to draw on
- * @input	out_YL		- Height of the current font
- * @input	out_YPos	- Y position on Canvas. out_YPos += out_YL, gives position to draw text for next debug line.
- */
+reliable client simulated function ClientIgnoreLookInput(bool bIgnore)
+{
+    IgnoreLookInput(bIgnore);
+    //return;    
+}
+
 simulated function DisplayDebug(HUD HUD, out float out_YL, out float out_YPos)
 {
-	super.DisplayDebug(HUD, out_YL, out_YPos);
-
-	if (HUD.ShouldDisplayDebug('camera'))
-	{
-		if( PlayerCamera != None )
-		{
-			PlayerCamera.DisplayDebug( HUD, out_YL, out_YPos );
-		}
-		else
-		{
-			HUD.Canvas.SetDrawColor(255,0,0);
-			HUD.Canvas.DrawText("NO CAMERA");
-			out_YPos += out_YL;
-			HUD.Canvas.SetPos(4, out_YPos);
-		}
-	}
-	if ( HUD.ShouldDisplayDebug('input') )
-	{
-		HUD.Canvas.SetDrawColor(255,0,0);
-		HUD.Canvas.DrawText("Input ignoremove "$bIgnoreMoveInput$" ignore look "$bIgnoreLookInput$" aForward "$PlayerInput.aForward);
-		out_YPos += out_YL;
-		HUD.Canvas.SetPos(4, out_YPos);
-	}
+    super.DisplayDebug(HUD, out_YL, out_YPos);
+    // End:0xDF
+    if(HUD.ShouldDisplayDebug('Camera'))
+    {
+        // End:0x66
+        if(PlayerCamera != none)
+        {
+            PlayerCamera.DisplayDebug(HUD, out_YL, out_YPos);            
+        }
+        else
+        {
+            HUD.Canvas.SetDrawColor(255, 0, 0);
+            HUD.Canvas.DrawText("NO CAMERA");
+            out_YPos += out_YL;
+            HUD.Canvas.SetPos(4.0000000, out_YPos);
+        }
+    }
+    // End:0x1C4
+    if(HUD.ShouldDisplayDebug('Input'))
+    {
+        HUD.Canvas.SetDrawColor(255, 0, 0);
+        HUD.Canvas.DrawText((((("Input ignoremove " $ string(bIgnoreMoveInput)) $ " ignore look ") $ string(bIgnoreLookInput)) $ " aForward ") $ string(PlayerInput.aForward));
+        out_YPos += out_YL;
+        HUD.Canvas.SetPos(4.0000000, out_YPos);
+    }
+    //return;    
 }
 
-
-/** This is used to notify the PlayerController that a fly through has ended and then quit if we are doing a Sentinel run **/
-simulated function OnFlyThroughHasEnded( SeqAct_FlyThroughHasEnded InAction )
-{
-	local PlayerController PC;
-
-	if( WorldInfo.Game.bDoingASentinelRun == TRUE )
-	{
-		foreach WorldInfo.AllControllers(class'PlayerController', PC)
-		{
-			PC.ConsoleCommand( "quit" );
-		}
-	}
-}
-
-
-/* epic ===============================================
-* ::OnSetCameraTarget
-*
-* Sets the specified view target.
-*
-* =====================================================
-*/
 simulated function OnSetCameraTarget(SeqAct_SetCameraTarget inAction)
 {
-	local Actor	RealCameraTarget;
+    local Actor RealCameraTarget;
 
-	RealCameraTarget = inAction.CameraTarget;
-	if (RealCameraTarget == None)
-	{
-		RealCameraTarget = (Pawn != None) ? Pawn : self;
-	}
-	// If we're asked to view a Controller, set its Pawn as out view target instead.
-	else if (RealCameraTarget.IsA('Controller'))
-	{
-		RealCameraTarget = Controller(RealCameraTarget).Pawn;
-	}
-
-	SetViewTarget( RealCameraTarget, inAction.TransitionParams );
+    RealCameraTarget = inAction.CameraTarget;
+    // End:0x3C
+    if(RealCameraTarget == none)
+    {
+        RealCameraTarget = ((Pawn != none) ? Pawn : self);        
+    }
+    else
+    {
+        // End:0x6E
+        if(RealCameraTarget.IsA('Controller'))
+        {
+            RealCameraTarget = Controller(RealCameraTarget).Pawn;
+        }
+    }
+    SetViewTarget(RealCameraTarget, inAction.TransitionParams);
+    //return;    
 }
-
 
 simulated function OnToggleHUD(SeqAct_ToggleHUD inAction)
 {
-	if (myHUD != None)
-	{
-		if (inAction.InputLinks[0].bHasImpulse)
-		{
-			myHUD.bShowHUD = true;
-		}
-		else
-		if (inAction.InputLinks[1].bHasImpulse)
-		{
-			myHUD.bShowHUD = false;
-		}
-		else
-		if (inAction.InputLinks[2].bHasImpulse)
-		{
-			myHUD.bShowHUD = !myHUD.bShowHUD;
-		}
-	}
+    // End:0xB9
+    if(myHUD != none)
+    {
+        // End:0x40
+        if(inAction.InputLinks[0].bHasImpulse)
+        {
+            myHUD.bShowHUD = true;            
+        }
+        else
+        {
+            // End:0x75
+            if(inAction.InputLinks[1].bHasImpulse)
+            {
+                myHUD.bShowHUD = false;                
+            }
+            else
+            {
+                // End:0xB9
+                if(inAction.InputLinks[2].bHasImpulse)
+                {
+                    myHUD.bShowHUD = !myHUD.bShowHUD;
+                }
+            }
+        }
+    }
+    //return;    
 }
 
-/**
- * Attempts to match the name passed in to a SeqEvent_Console
- * object and then activate it.
- *
- * @param		eventName - name of the event to cause
- */
-unreliable server function ServerCauseEvent(Name EventName)
+unreliable server function ServerCauseEvent(name EventName)
 {
-	local array<SequenceObject> AllConsoleEvents;
-	local SeqEvent_Console ConsoleEvt;
-	local Sequence GameSeq;
-	local int Idx;
-	local bool bFoundEvt;
-	// Get the gameplay sequence.
-	GameSeq = WorldInfo.GetGameSequence();
-	if ( (GameSeq != None) && (EventName != '') )
-	{
-		// Find all SeqEvent_Console objects anywhere.
-		GameSeq.FindSeqObjectsByClass(class'SeqEvent_Console', TRUE, AllConsoleEvents);
+    local array<SequenceObject> AllConsoleEvents;
+    local SeqEvent_Console ConsoleEvt;
+    local Sequence GameSeq;
+    local int Idx;
+    local bool bFoundEvt;
 
-		// Iterate over them, seeing if the name is the one we typed in.
-		for( Idx=0; Idx < AllConsoleEvents.Length; Idx++ )
-		{
-			ConsoleEvt = SeqEvent_Console(AllConsoleEvents[Idx]);
-			if (ConsoleEvt != None &&
-				EventName == ConsoleEvt.ConsoleEventName)
-			{
-				bFoundEvt = TRUE;
-				// activate the vent
-				ConsoleEvt.CheckActivate(self, Pawn);
-			}
-		}
-	}
-	if (!bFoundEvt)
-	{
-		ListConsoleEvents();
-	}
+    GameSeq = WorldInfo.GetGameSequence();
+    // End:0xCF
+    if((GameSeq != none) && EventName != 'None')
+    {
+        GameSeq.FindSeqObjectsByClass(Class'SeqEvent_Console', true, AllConsoleEvents);
+        Idx = 0;
+        J0x58:
+
+        // End:0xCF [Loop If]
+        if(Idx < AllConsoleEvents.Length)
+        {
+            ConsoleEvt = SeqEvent_Console(AllConsoleEvents[Idx]);
+            // End:0xC5
+            if((ConsoleEvt != none) && EventName == ConsoleEvt.ConsoleEventName)
+            {
+                bFoundEvt = true;
+                ConsoleEvt.CheckActivate(self, Pawn);
+            }
+            Idx++;
+            // [Loop Continue]
+            goto J0x58;
+        }
+    }
+    // End:0xE4
+    if(!bFoundEvt)
+    {
+        ListConsoleEvents();
+    }
+    //return;    
 }
 
-exec function CauseEvent(optional Name EventName)
-{
-	ServerCauseEvent(EventName);
-}
-
-/**
- * Shortcut version for LDs who get tired of typing 'CauseEvent' all day. :-)
- */
-exec function CE(optional Name EventName)
-{
-	ServerCauseEvent(EventName);
-}
-
-/**
- * Lists all console events to the HUD.
- */
 exec function ListConsoleEvents()
 {
-	local array<SequenceObject> ConsoleEvents;
-	local SeqEvent_Console ConsoleEvt;
-	local Sequence GameSeq;
-	local int Idx;
-	GameSeq = WorldInfo.GetGameSequence();
-	if (GameSeq != None)
-	{
-		`log("Console events:");
-		ClientMessage("Console events:",,15.f);
-		GameSeq.FindSeqObjectsByClass(class'SeqEvent_Console',TRUE,ConsoleEvents);
-		for (Idx = 0; Idx < ConsoleEvents.Length; Idx++)
-		{
-			ConsoleEvt = SeqEvent_Console(ConsoleEvents[Idx]);
-			if (ConsoleEvt != None &&
-				ConsoleEvt.bEnabled)
-			{
-				`log("-"@ConsoleEvt.ConsoleEventName@ConsoleEvt.EventDesc);
-				ClientMessage("-"@ConsoleEvt.ConsoleEventName@ConsoleEvt.EventDesc,,15.f);
-			}
-		}
-	}
+    local array<SequenceObject> ConsoleEvents;
+    local SeqEvent_Console ConsoleEvt;
+    local Sequence GameSeq;
+    local int Idx;
+
+    GameSeq = WorldInfo.GetGameSequence();
+    // End:0xD1
+    if(GameSeq != none)
+    {
+        LogInternal("Console events:");
+        GameSeq.FindSeqObjectsByClass(Class'SeqEvent_Console', true, ConsoleEvents);
+        Idx = 0;
+        J0x57:
+
+        // End:0xD1 [Loop If]
+        if(Idx < ConsoleEvents.Length)
+        {
+            ConsoleEvt = SeqEvent_Console(ConsoleEvents[Idx]);
+            // End:0xC7
+            if((ConsoleEvt != none) && ConsoleEvt.bEnabled)
+            {
+                LogInternal(("-" @ string(ConsoleEvt.ConsoleEventName)) @ ConsoleEvt.EventDesc);
+            }
+            Idx++;
+            // [Loop Continue]
+            goto J0x57;
+        }
+    }
+    //return;    
 }
 
 exec function ListCE()
 {
-	ListConsoleEvents();
+    ListConsoleEvents();
+    //return;    
 }
-
 
 exec function ShowPlayerState()
 {
-	`log("Dumping state stack for" @ Self);
-	DumpStateStack();
+    LogInternal("Dumping state stack for" @ string(self));
+    DumpStateStack();
+    //return;    
 }
-
 
 exec function ShowGameState()
 {
-	if ( WorldInfo.Game != None )
-	{
-		`log(`location$": Dumping state stack for" @ WorldInfo.Game);
-		WorldInfo.Game.DumpStateStack();
-	}
-	else
-	{
-		`log(`location$": No GameInfo found!");
-	}
+    // End:0x93
+    if(WorldInfo.Game != none)
+    {
+        LogInternal((((("(" $ string(Name)) $ ") PlayerController::") $ string(GetFuncName())) $ ": Dumping state stack for") @ string(WorldInfo.Game));
+        WorldInfo.Game.DumpStateStack();        
+    }
+    else
+    {
+        LogInternal(((("(" $ string(Name)) $ ") PlayerController::") $ string(GetFuncName())) $ ": No GameInfo found!");
+    }
+    //return;    
 }
 
-/**
- * Notification from pawn that it has received damage
- * via TakeDamage().
- */
-function NotifyTakeHit(Controller InstigatedBy, vector HitLocation, int Damage,
-	class<DamageType> damageType, vector Momentum)
+function NotifyTakeHit(Controller InstigatedBy, Vector HitLocation, int Damage, class<DamageType> DamageType, Vector Momentum)
 {
-	Super.NotifyTakeHit(InstigatedBy,HitLocation,Damage,damageType,Momentum);
-
-	// Play waveform
-	ClientPlayForceFeedbackWaveform(damageType.default.DamagedFFWaveform);
+    super.NotifyTakeHit(InstigatedBy, HitLocation, Damage, DamageType, Momentum);
+    ClientPlayForceFeedbackWaveform(DamageType.default.DamagedFFWaveform);
+    //return;    
 }
 
-/**
- * Kismet interface for playing/stopping force feedback.
- */
 function OnForceFeedback(SeqAct_ForceFeedback Action)
 {
-	if (Action.InputLinks[0].bHasImpulse)
-	{
-		ClientPlayForceFeedbackWaveform(Action.FFWaveform);
-	}
-	else
-	if (Action.InputLinks[1].bHasImpulse)
-	{
-		ClientStopForceFeedbackWaveform(Action.FFWaveform);
-	}
+    // End:0x3C
+    if(Action.InputLinks[0].bHasImpulse)
+    {
+        ClientPlayForceFeedbackWaveform(Action.FFWaveform);        
+    }
+    else
+    {
+        // End:0x71
+        if(Action.InputLinks[1].bHasImpulse)
+        {
+            ClientStopForceFeedbackWaveform(Action.FFWaveform);
+        }
+    }
+    //return;    
 }
 
-/** This will take an AnimNotify_Rumble and then grab out the correct waveform to be played **/
-event PlayRumble( const AnimNotify_Rumble TheAnimNotify )
+event PlayRumble(const AnimNotify_Rumble TheAnimNotify)
 {
-	if( TheAnimNotify.PredefinedWaveForm != none )
-	{
-		ClientPlayForceFeedbackWaveform( TheAnimNotify.PredefinedWaveForm.default.TheWaveForm );
-	}
-	else
-	{
-		ClientPlayForceFeedbackWaveform( TheAnimNotify.WaveForm );
-	}
+    // End:0x3B
+    if(TheAnimNotify.PredefinedWaveForm != none)
+    {
+        ClientPlayForceFeedbackWaveform(TheAnimNotify.PredefinedWaveForm.default.TheWaveForm);        
+    }
+    else
+    {
+        ClientPlayForceFeedbackWaveform(TheAnimNotify.WaveForm);
+    }
+    //return;    
 }
 
-
-/**
- * Tells the client to play a waveform for the specified damage type
- *
- * @param FFWaveform The forcefeedback waveform to play
- */
-reliable client event ClientPlayForceFeedbackWaveform(ForceFeedbackWaveform FFWaveform)
+reliable client simulated event ClientPlayForceFeedbackWaveform(ForceFeedbackWaveform FFWaveform)
 {
-	if( PlayerInput != None && !PlayerInput.bUsingGamepad )
-	{
-		return; // don't play forcefeedback if gamepad isn't being used
-	}
-
-	if( ForceFeedbackManager != None && PlayerReplicationInfo != None && IsForceFeedbackAllowed() )
-	{
-		ForceFeedbackManager.PlayForceFeedbackWaveform(FFWaveform);
-	}
+    // End:0x24
+    if((PlayerInput != none) && !PlayerInput.bUsingGamepad)
+    {
+        return;
+    }
+    // End:0x64
+    if(((ForceFeedbackManager != none) && PlayerReplicationInfo != none) && IsForceFeedbackAllowed())
+    {
+        ForceFeedbackManager.PlayForceFeedbackWaveform(FFWaveform);
+    }
+    //return;    
 }
 
-/**
- * Tells the client to stop any waveform that is playing. Note if the optional
- * parameter is passed in, then the waveform is only stopped if it matches
- *
- * @param FFWaveform The forcefeedback waveform to stop
- */
-reliable client final event ClientStopForceFeedbackWaveform(optional ForceFeedbackWaveform FFWaveform)
+reliable client final simulated event ClientStopForceFeedbackWaveform(optional ForceFeedbackWaveform FFWaveform)
 {
-	if( ForceFeedbackManager != None )
-	{
-		ForceFeedbackManager.StopForceFeedbackWaveform(FFWaveform);
-	}
+    // End:0x25
+    if(ForceFeedbackManager != none)
+    {
+        ForceFeedbackManager.StopForceFeedbackWaveform(FFWaveform);
+    }
+    //return;    
 }
 
-/**
- * @return	TRUE if starting a force feedback waveform is allowed;  child classes should override this method to e.g. temporarily disable
- * 			force feedback
- */
 simulated function bool IsForceFeedbackAllowed()
 {
-	return PlayerReplicationInfo == None || PlayerReplicationInfo.bControllerVibrationAllowed;
+    return (PlayerReplicationInfo == none) || PlayerReplicationInfo.bControllerVibrationAllowed;
+    //return ReturnValue;    
 }
 
-/**
- * Camera Shake
- * Plays camera shake effect
- *
- * @param	Duration			Duration in seconds of shake
- * @param	newRotAmplitude		view rotation amplitude (pitch,yaw,roll)
- * @param	newRotFrequency		frequency of rotation shake
- * @param	newLocAmplitude		relative view offset amplitude (x,y,z)
- * @param	newLocFrequency		frequency of view offset shake
- * @param	newFOVAmplitude		fov shake amplitude
- * @param	newFOVFrequency		fov shake frequency
- */
-function CameraShake
-(
-	float	Duration,
-	vector	newRotAmplitude,
-	vector	newRotFrequency,
-	vector	newLocAmplitude,
-	vector	newLocFrequency,
-	float	newFOVAmplitude,
-	float	newFOVFrequency
-);
+function CameraShake(float Duration, Vector newRotAmplitude, Vector newRotFrequency, Vector newLocAmplitude, Vector newLocFrequency, float newFOVAmplitude, float newFOVFrequency)
+{
+    //return;    
+}
 
-/**
- * Handles switching the player in/out of cinematic mode.
- */
 function OnToggleCinematicMode(SeqAct_ToggleCinematicMode Action)
 {
-	local bool bNewCinematicMode;
+    local bool bNewCinematicMode;
 
-	if (Role < ROLE_Authority)
-	{
-		`Warn("Not supported on client");
-		return;
-	}
-
-	if (Action.InputLinks[0].bHasImpulse)
-	{
-		bNewCinematicMode = TRUE;
-	}
-	else if (Action.InputLinks[1].bHasImpulse)
-	{
-		bNewCinematicMode = FALSE;
-	}
-	else if (Action.InputLinks[2].bHasImpulse)
-	{
-		bNewCinematicMode = !bCinematicMode;
-	}
-
-	SetCinematicMode(bNewCinematicMode, Action.bHidePlayer, Action.bHideHUD, Action.bDisableMovement, Action.bDisableTurning, Action.bDisableInput);
+    // End:0x2D
+    if(Role < ROLE_Authority)
+    {
+        WarnInternal("Not supported on client");
+        return;
+    }
+    // End:0x58
+    if(Action.InputLinks[0].bHasImpulse)
+    {
+        bNewCinematicMode = true;        
+    }
+    else
+    {
+        // End:0x83
+        if(Action.InputLinks[1].bHasImpulse)
+        {
+            bNewCinematicMode = false;            
+        }
+        else
+        {
+            // End:0xB3
+            if(Action.InputLinks[2].bHasImpulse)
+            {
+                bNewCinematicMode = !bCinematicMode;
+            }
+        }
+    }
+    SetCinematicMode(bNewCinematicMode, Action.bHidePlayer, Action.bHideHUD, Action.bDisableMovement, Action.bDisableTurning, Action.bDisableInput, true);
+    //return;    
 }
 
-/**
- * Server/SP only function for changing whether the player is in cinematic mode.  Updates values of various state variables, then replicates the call to the client
- * to sync the current cinematic mode.
- *
- * @param	bInCinematicMode	specify TRUE if the player is entering cinematic mode; FALSE if the player is leaving cinematic mode.
- * @param	bHidePlayer			specify TRUE to hide the player's pawn (only relevant if bInCinematicMode is TRUE)
- * @param	bAffectsHUD			specify TRUE if we should show/hide the HUD to match the value of bCinematicMode
- * @param	bAffectsMovement	specify TRUE to disable movement in cinematic mode, enable it when leaving
- * @param	bAffectsTurning		specify TRUE to disable turning in cinematic mode or enable it when leaving
- * @param	bAffectsButtons		specify TRUE to disable button input in cinematic mode or enable it when leaving.
- */
-function SetCinematicMode( bool bInCinematicMode, bool bHidePlayer, bool bAffectsHUD, bool bAffectsMovement, bool bAffectsTurning, bool bAffectsButtons )
+function SetCinematicMode(bool bInCinematicMode, bool bHidePlayer, bool bAffectsHUD, bool bAffectsMovement, bool bAffectsTurning, bool bAffectsButtons, bool bCheckMovieFinishedForPause)
 {
-	local bool bAdjustMoveInput, bAdjustLookInput;
+    local bool bAdjustMoveInput, bAdjustLookInput;
 
-	bCinematicMode = bInCinematicMode;
-
-	// if now in cinematic mode
-	if( bCinematicMode )
-	{
-		// hide the player
-		if (Pawn != None && bHidePlayer)
-		{
-			Pawn.SetHidden(True);
-		}
-	}
-	else
-	{
-		if( Pawn != None )
-		{
-			Pawn.SetHidden(False);
-		}
-	}
-
-	bAdjustMoveInput = bAffectsMovement && (bCinematicMode != bCinemaDisableInputMove);
-	bAdjustLookInput = bAffectsTurning && (bCinematicMode != bCinemaDisableInputLook);
-	if ( bAdjustMoveInput )
-	{
-		IgnoreMoveInput(bCinematicMode);
-		bCinemaDisableInputMove = bCinematicMode;
-	}
-	if ( bAdjustLookInput )
-	{
-		IgnoreLookInput(bCinematicMode);
-		bCinemaDisableInputLook = bCinematicMode;
-	}
-
-	ClientSetCinematicMode(bCinematicMode, bAdjustMoveInput, bAdjustLookInput, bAffectsHUD);
+    bCinematicMode = bInCinematicMode;
+    // End:0x86
+    if(Pawn != none)
+    {
+        // End:0x71
+        if(bCinematicMode)
+        {
+            // End:0x3F
+            if(bHidePlayer)
+            {
+                Pawn.SetHidden(true);
+            }
+            LogInternalAudio("Stop firing sound");
+            Pawn.WeaponStoppedFiring(false);            
+        }
+        else
+        {
+            Pawn.SetHidden(false);
+        }
+    }
+    bAdjustMoveInput = bAffectsMovement && bCinematicMode != bCinemaDisableInputMove;
+    bAdjustLookInput = bAffectsTurning && bCinematicMode != bCinemaDisableInputLook;
+    // End:0xEC
+    if(bAdjustMoveInput)
+    {
+        IgnoreMoveInput(bCinematicMode);
+        bCinemaDisableInputMove = bCinematicMode;
+    }
+    // End:0x112
+    if(bAdjustLookInput)
+    {
+        IgnoreLookInput(bCinematicMode);
+        bCinemaDisableInputLook = bCinematicMode;
+    }
+    ClientSetCinematicMode(bCinematicMode, bAdjustMoveInput, bAdjustLookInput, bAffectsHUD);
+    //return;    
 }
 
-/** called by the server to synchronize cinematic transitions with the client */
-reliable client function ClientSetCinematicMode(bool bInCinematicMode, bool bAffectsMovement, bool bAffectsTurning, bool bAffectsHUD)
+reliable client simulated function ClientSetCinematicMode(bool bInCinematicMode, bool bAffectsMovement, bool bAffectsTurning, bool bAffectsHUD)
 {
-	bCinematicMode = bInCinematicMode;
-
-	// if there's a hud, set whether it should be shown or not
-	if ( (myHUD != None) && bAffectsHUD )
-	{
-		myHUD.bShowHUD = !bCinematicMode;
-	}
-
-	if (bAffectsMovement)
-	{
-		IgnoreMoveInput(bCinematicMode);
-	}
-	if (bAffectsTurning)
-	{
-		IgnoreLookInput(bCinematicMode);
-	}
+    bCinematicMode = bInCinematicMode;
+    // End:0x3C
+    if((myHUD != none) && bAffectsHUD)
+    {
+        myHUD.bShowHUD = !bCinematicMode;
+    }
+    // End:0x55
+    if(bAffectsMovement)
+    {
+        IgnoreMoveInput(bCinematicMode);
+    }
+    // End:0x6E
+    if(bAffectsTurning)
+    {
+        IgnoreLookInput(bCinematicMode);
+    }
+    //return;    
 }
 
-/** Toggles move input. FALSE means movement input is cleared. */
-function IgnoreMoveInput( bool bNewMoveInput )
+function IgnoreMoveInput(bool bNewMoveInput)
 {
-	bIgnoreMoveInput = Max( bIgnoreMoveInput + (bNewMoveInput ? +1 : -1), 0 );
-	//`Log("IgnoreMove: " $ bIgnoreMoveInput);
+    bIgnoreMoveInput = byte(Max(int(bIgnoreMoveInput) + ((bNewMoveInput) ? 1 : -1), 0));
+    //return;    
 }
 
-
-/** return TRUE if movement input is ignored. */
 event bool IsMoveInputIgnored()
 {
-	return (bIgnoreMoveInput > 0);
+    return bIgnoreMoveInput > 0;
+    //return ReturnValue;    
 }
 
-
-/** Toggles look input. FALSE means look input is cleared. */
-function IgnoreLookInput( bool bNewLookInput )
+function IgnoreLookInput(bool bNewLookInput)
 {
-	bIgnoreLookInput = Max( bIgnoreLookInput + (bNewLookInput ? +1 : -1), 0 );
-	//`Log("IgnoreLook: " $ bIgnoreLookInput);
+    bIgnoreLookInput = byte(Max(int(bIgnoreLookInput) + ((bNewLookInput) ? 1 : -1), 0));
+    //return;    
 }
 
-
-/** return TRUE if look input is ignored. */
 event bool IsLookInputIgnored()
 {
-	return (bIgnoreLookInput > 0);
+    return bIgnoreLookInput > 0;
+    //return ReturnValue;    
 }
 
-
-/** reset input to defaults */
 function ResetPlayerMovementInput()
 {
-	bIgnoreMoveInput = default.bIgnoreMoveInput;
-	bIgnoreLookInput = default.bIgnoreLookInput;
+    bIgnoreMoveInput = default.bIgnoreMoveInput;
+    bIgnoreLookInput = default.bIgnoreLookInput;
+    //return;    
 }
 
-
-/** Kismet hook to trigger console events */
-function OnConsoleCommand( SeqAct_ConsoleCommand inAction )
+function OnConsoleCommand(SeqAct_ConsoleCommand inAction)
 {
-	local string Command;
-	foreach inAction.Commands(Command)
-	{
-		ConsoleCommand(Command);
-	}
+    local string Command;
+
+    // End:0x60
+    foreach inAction.Commands(Command)
+    {
+        // End:0x5F
+        if(!(Left(Command, 3) ~= "set") && !(Left(Command, 8) ~= "setnopec"))
+        {            
+            ConsoleCommand(Command);
+        }        
+    }    
+    //return;    
 }
 
-/** forces GC at the end of the tick on the client */
-reliable client event ClientForceGarbageCollection()
+reliable client simulated event ClientForceGarbageCollection()
 {
-	WorldInfo.ForceGarbageCollection();
+    WorldInfo.ForceGarbageCollection();
+    //return;    
 }
 
-event LevelStreamingStatusChanged(LevelStreaming LevelObject, bool bNewShouldBeLoaded, bool bNewShouldBeVisible, bool bNewShouldBlockOnLoad )
+event LevelStreamingStatusChanged(LevelStreaming LevelObject, bool bNewShouldBeLoaded, bool bNewShouldBeVisible, bool bNewShouldBlockOnLoad)
 {
-	//`log( "LevelStreamingStatusChanged: " @ LevelObject @ bNewShouldBeLoaded @ bNewShouldBeVisible @ bNewShouldBeVisible );
-	ClientUpdateLevelStreamingStatus(LevelObject.PackageName,bNewShouldBeLoaded,bNewShouldBeVisible,bNewShouldBlockOnLoad);
+    ClientUpdateLevelStreamingStatus(LevelObject.PackageName, bNewShouldBeLoaded, bNewShouldBeVisible, bNewShouldBlockOnLoad);
+    //return;    
 }
 
-native reliable client final function ClientUpdateLevelStreamingStatus(Name PackageName, bool bNewShouldBeLoaded, bool bNewShouldBeVisible, bool bNewShouldBlockOnLoad);
+// Export UPlayerController::execClientUpdateLevelStreamingStatus(FFrame&, void* const)
+reliable client native final simulated function ClientUpdateLevelStreamingStatus(name PackageName, bool bNewShouldBeLoaded, bool bNewShouldBeVisible, bool bNewShouldBlockOnLoad);
 
-/** called when the client adds/removes a streamed level
- * the server will only replicate references to Actors in visible levels so that it's impossible to send references to
- * Actors the client has not initialized
- * @param PackageName the name of the package for the level whose status changed
- */
-native reliable server final event ServerUpdateLevelVisibility(name PackageName, bool bIsVisible);
+// Export UPlayerController::execServerUpdateLevelVisibility(FFrame&, void* const)
+reliable server native final event ServerUpdateLevelVisibility(name PackageName, bool bIsVisible);
 
-/** asynchronously loads the given level in preparation for a streaming map transition.
- * the server sends one function per level name since dynamic arrays can't be replicated
- * @param LevelNames the names of the level packages to load. LevelNames[0] will be the new persistent (primary) level
- * @param bFirst whether this is the first item in the list (so clear the list first)
- * @param bLast whether this is the last item in the list (so start preparing the change after receiving it)
- */
-reliable client event ClientPrepareMapChange(name LevelName, bool bFirst, bool bLast)
+reliable client simulated event ClientPrepareMapChange(name LevelName, bool bFirst, bool bLast)
 {
-	// Only call on the first local player controller to handle it being called on multiple PCs for splitscreen.
-	local PlayerController PC;
+    local PlayerController PC;
 
-	foreach LocalPlayerControllers(class'PlayerController', PC)
-	{
-		if( PC != self )
-		{
-			return;
-		}
-		else
-		{
-			break;
-		}
-	}
-
-	if (bFirst)
-	{
-		PendingMapChangeLevelNames.length = 0;
-		ClearTimer('DelayedPrepareMapChange');
-	}
-	PendingMapChangeLevelNames[PendingMapChangeLevelNames.length] = LevelName;
-	if (bLast)
-	{
-		DelayedPrepareMapChange();
-	}
+    // End:0x28
+    foreach LocalPlayerControllers(Class'PlayerController', PC)
+    {
+        // End:0x24
+        if(PC != self)
+        {            
+            return;
+            // End:0x27
+            continue;
+        }
+        // End:0x28
+        break;        
+    }    
+    // End:0x4A
+    if(bFirst)
+    {
+        PendingMapChangeLevelNames.Length = 0;
+        ClearTimer('DelayedPrepareMapChange');
+    }
+    PendingMapChangeLevelNames[PendingMapChangeLevelNames.Length] = LevelName;
+    // End:0x6F
+    if(bLast)
+    {
+        DelayedPrepareMapChange();
+    }
+    //return;    
 }
 
-/** used to wait until a map change can be prepared when one was already in progress */
 function DelayedPrepareMapChange()
 {
-	if (WorldInfo.IsPreparingMapChange())
-	{
-		// we must wait for the previous one to complete
-		SetTimer( 0.01, false, nameof(DelayedPrepareMapChange) );
-	}
-	else
-	{
-		WorldInfo.PrepareMapChange(PendingMapChangeLevelNames);
-	}
+    // End:0x29
+    if(WorldInfo.IsPreparingMapChange())
+    {
+        SetTimer(0.0100000, false, 'DelayedPrepareMapChange');        
+    }
+    else
+    {
+        WorldInfo.PrepareMapChange(PendingMapChangeLevelNames);
+    }
+    //return;    
 }
 
-/** actually performs the level transition prepared by PrepareMapChange() */
-reliable client event ClientCommitMapChange(optional bool bShouldSkipLevelStartupEvent, optional bool bShouldSkipLevelBeginningEvent)
+reliable client simulated event ClientCommitMapChange()
 {
-	if (IsTimerActive(nameof(DelayedPrepareMapChange)))
-	{
-		//@FIXME: doesn't remember the parameters. They're no longer used anyway - delete them post-Gears ship.
-		SetTimer(0.01, false, nameof(ClientCommitMapChange));
-	}
-	else
-	{
-		if (Pawn != None)
-		{
-			SetViewTarget(Pawn);
-		}
-		else
-		{
-			SetViewTarget(self);
-		}
-		WorldInfo.CommitMapChange(bShouldSkipLevelStartupEvent, bShouldSkipLevelBeginningEvent);
-	}
+    // End:0x29
+    if(IsTimerActive('DelayedPrepareMapChange'))
+    {
+        SetTimer(0.0100000, false, 'ClientCommitMapChange');        
+    }
+    else
+    {
+        // End:0x47
+        if(Pawn != none)
+        {
+            SetViewTarget(Pawn);            
+        }
+        else
+        {
+            SetViewTarget(self);
+        }
+        WorldInfo.CommitMapChange();
+    }
+    //return;    
 }
 
-/** tells client to cancel any pending map change */
-reliable client event ClientCancelPendingMapChange()
+reliable client simulated event ClientCancelPendingMapChange()
 {
-	WorldInfo.CancelPendingMapChange();
+    WorldInfo.CancelPendingMapChange();
+    //return;    
 }
 
-/** tells the client to block until all pending level streaming actions are complete
- * happens at the end of the tick
- * primarily used to force update the client ASAP at join time
- */
-reliable client native final event ClientFlushLevelStreaming();
+// Export UPlayerController::execClientFlushLevelStreaming(FFrame&, void* const)
+reliable client native final simulated event ClientFlushLevelStreaming();
 
-/** sets bRequestedBlockOnAsyncLoading which will later bring up a loading screen and then finish any async loading in progress
- * called automatically on all clients whenever something triggers it on the server
- */
-reliable client event ClientSetBlockOnAsyncLoading()
+reliable client simulated event ClientSetBlockOnAsyncLoading()
 {
-	WorldInfo.bRequestedBlockOnAsyncLoading = true;
+    WorldInfo.bRequestedBlockOnAsyncLoading = true;
+    //return;    
 }
 
-/**
- * Force a save config on the specified class.
- */
-exec function SaveClassConfig(coerce string className)
+exec function SaveClassConfig(coerce string ClassName)
 {
-	local class<Object> saveClass;
+    local Class saveClass;
 
-	`log("SaveClassConfig:"@className);
-	saveClass = class<Object>(DynamicLoadObject(className,class'class'));
-	if (saveClass != None)
-	{
-		`log("- Saving config on:"@saveClass);
-		saveClass.static.StaticSaveConfig();
-	}
-`if(`notdefined(FINAL_RELEASE))
-	else
-	{
-		`log("- Failed to find class:"@className);
-	}
-`endif
+    LogInternal("SaveClassConfig:" @ ClassName);
+    saveClass = class<Object>(DynamicLoadObject(ClassName, Class'Core.Class'));
+    // End:0x77
+    if(saveClass != none)
+    {
+        LogInternal("- Saving config on:" @ string(saveClass));
+        saveClass.static.StaticSaveConfig();        
+    }
+    else
+    {
+        LogInternal("- Failed to find class:" @ ClassName);
+    }
+    //return;    
 }
 
-/**
- * Force a save config on the specified actor.
- */
-exec function SaveActorConfig(coerce Name actorName)
+exec function SaveActorConfig(coerce name actorName)
 {
-	local Actor chkActor;
-	`log("SaveActorConfig:"@actorName);
-	foreach AllActors(class'Actor',chkActor)
-	{
-		if (chkActor != None &&
-			chkActor.Name == actorName)
-		{
-			`log("- Saving config on:"@chkActor);
-			chkActor.SaveConfig();
-		}
-	}
+    local Actor ChkActor;
+
+    LogInternal("SaveActorConfig:" @ string(actorName));
+    // End:0x83
+    foreach AllActors(Class'Actor', ChkActor)
+    {
+        // End:0x82
+        if((ChkActor != none) && ChkActor.Name == actorName)
+        {
+            LogInternal("- Saving config on:" @ string(ChkActor));
+            ChkActor.SaveConfig();
+        }        
+    }    
+    //return;    
 }
 
-/**
- * Returns the interaction that manages the UI system.
- */
 final function UIInteraction GetUIController()
 {
-	local LocalPlayer LP;
-	local UIInteraction Result;
+    local LocalPlayer LP;
+    local UIInteraction Result;
 
-	LP = LocalPlayer(Player);
-	if ( LP != None && LP.GameViewport != None )
-	{
-		Result = LP.GameViewport.UIController;
-	}
-
-	return Result;
+    LP = LocalPlayer(Player);
+    // End:0x65
+    if((LP != none) && LP.Outer.GameViewport != none)
+    {
+        Result = LP.Outer.GameViewport.UIController;
+    }
+    return Result;
+    //return ReturnValue;    
 }
 
-/**
- * Native function to determine if voice data should be received from this player.
- * Only called on the server to determine whether voice packet replication
- * should happen for the given sender.
- *
- * NOTE: This function is final because it can be called n^2 number of times
- * in a given frame, where n is the number of players. Change/overload this
- * function with caution as this can affect your network performance.
- *
- * @param Sender the player to check for mute status
- *
- * @return TRUE if this player is muted, FALSE otherwise
- */
+// Export UPlayerController::execIsPlayerMuted(FFrame&, void* const)
 native final function bool IsPlayerMuted(const out UniqueNetId Sender);
 
-
-/** called on client during seamless level transitions to get the list of Actors that should be moved into the new level
- * PlayerControllers, Role < ROLE_Authority Actors, and any non-Actors that are inside an Actor that is in the list
- * (i.e. Object.Outer == Actor in the list)
- * are all autmoatically moved regardless of whether they're included here
- * only dynamic (!bStatic and !bNoDelete) actors in the PersistentLevel may be moved (this includes all actors spawned during gameplay)
- * this is called for both parts of the transition because actors might change while in the middle (e.g. players might join or leave the game)
- * @see also GameInfo::GetSeamlessTravelActorList() (the function that's called on servers)
- * @param bToEntry true if we are going from old level -> entry, false if we are going from entry -> new level
- * @param ActorList (out) list of actors to maintain
- */
 event GetSeamlessTravelActorList(bool bToEntry, out array<Actor> ActorList)
 {
-	// clear out audio pool
-	HearSoundActiveComponents.length = 0;
-	HearSoundPoolComponents.length = 0;
-
-	if (myHUD != None)
-	{
-		ActorList[ActorList.length] = myHUD;
-		if (myHUD.Scoreboard != None)
-		{
-			ActorList[ActorList.length] = myHUD.Scoreboard;
-		}
-	}
+    HearSoundActiveComponents.Length = 0;
+    HearSoundPoolComponents.Length = 0;
+    // End:0x5E
+    if(myHUD != none)
+    {
+        ActorList[ActorList.Length] = myHUD;
+        // End:0x5E
+        if(myHUD.ScoreBoard != none)
+        {
+            ActorList[ActorList.Length] = myHUD.ScoreBoard;
+        }
+    }
+    //return;    
 }
 
-/** called when seamless travelling and we are being replaced by the specified PC
- * clean up any persistent state (post process chains on LocalPlayers, for example)
- * (not called if PlayerControllerClass is the same for the from and to gametypes)
- */
-function SeamlessTravelTo(PlayerController NewPC);
+function SeamlessTravelTo(PlayerController NewPC)
+{
+    //return;    
+}
 
-/** called when seamless travelling and the specified PC is being replaced by this one
- * copy over data that should persist
- * (not called if PlayerControllerClass is the same for the from and to gametypes)
- */
 function SeamlessTravelFrom(PlayerController OldPC)
 {
-	// copy PRI data
-	OldPC.PlayerReplicationInfo.Reset();
-	OldPC.PlayerReplicationInfo.SeamlessTravelTo(PlayerReplicationInfo);
-
-	// mark the old PC as not a player, so it doesn't get Logout() etc when they player represented didn't really leave
-	OldPC.bIsPlayer = false;
-	//@fixme: need a way to replace PRIs that doesn't cause incorrect "player left the game"/"player entered the game" messages
-	OldPC.PlayerReplicationInfo.Destroy();
-	OldPC.PlayerReplicationInfo = None;
+    OldPC.PlayerReplicationInfo.Reset();
+    OldPC.PlayerReplicationInfo.SeamlessTravelTo(PlayerReplicationInfo);
+    OldPC.bIsPlayer = false;
+    OldPC.PlayerReplicationInfo.Destroy();
+    OldPC.PlayerReplicationInfo = none;
+    //return;    
 }
 
-/**
- * Looks at the current game state and uses that to set the
- * rich presence strings
- *
- * Licensees should override this in their player controller derived class
- */
-reliable client function ClientSetOnlineStatus();
+reliable client simulated function ClientSetOnlineStatus()
+{
+    //return;    
+}
 
-/**
- * Returns the player controller associated with this net id
- *
- * @param PlayerNetId the id to search for
- *
- * @return the player controller if found, otherwise none
- */
+// Export UPlayerController::execGetPlayerControllerFromNetId(FFrame&, void* const)
 native static function PlayerController GetPlayerControllerFromNetId(UniqueNetId PlayerNetId);
 
-/**
- * Tells the client that the server has all the information it needs and that it
- * is ok to start sending voice packets. The server will already send voice packets
- * when this function is called, since it is set server side and then forwarded
- *
- * NOTE: This is done as an RPC instead of variable replication because ordering matters
- */
-reliable client function ClientVoiceHandshakeComplete()
+reliable client simulated function ClientVoiceHandshakeComplete()
 {
-	bHasVoiceHandshakeCompleted = true;
+    bHasVoiceHandshakeCompleted = true;
+    //return;    
 }
 
-/**
- * Locally mutes a remote player
- *
- * @param PlayerNetId the remote player to mute
- */
-reliable client event ClientMutePlayer(UniqueNetId PlayerNetId)
+reliable client simulated event ClientMutePlayer(UniqueNetId PlayerNetId)
 {
-	local LocalPlayer LocPlayer;
+    local LocalPlayer LocPlayer;
 
-	if (VoiceInterface != None)
-	{
-		// Use the local player to determine the controller id
-		LocPlayer = LocalPlayer(Player);
-		if (LocPlayer != None)
-		{
-			// Have the voice subsystem mute this player
-			VoiceInterface.MuteRemoteTalker(LocPlayer.ControllerId,PlayerNetId);
-		}
-	}
+    // End:0x5A
+    if(NotEqual_InterfaceInterface(VoiceInterface, none))
+    {
+        LocPlayer = LocalPlayer(Player);
+        // End:0x5A
+        if(LocPlayer != none)
+        {
+            VoiceInterface.MuteRemoteTalker(byte(LocPlayer.ControllerId), PlayerNetId);
+        }
+    }
+    //return;    
 }
 
-/**
- * Locally unmutes a remote player
- *
- * @param PlayerNetId the remote player to unmute
- */
-reliable client event ClientUnmutePlayer(UniqueNetId PlayerNetId)
+reliable client simulated event ClientUnmutePlayer(UniqueNetId PlayerNetId)
 {
-	local LocalPlayer LocPlayer;
+    local LocalPlayer LocPlayer;
 
-	if (VoiceInterface != None)
-	{
-		// Use the local player to determine the controller id
-		LocPlayer = LocalPlayer(Player);
-		if (LocPlayer != None)
-		{
-			// Have the voice subsystem restore voice for this player
-			VoiceInterface.UnmuteRemoteTalker(LocPlayer.ControllerId,PlayerNetId);
-		}
-	}
+    // End:0x5A
+    if(NotEqual_InterfaceInterface(VoiceInterface, none))
+    {
+        LocPlayer = LocalPlayer(Player);
+        // End:0x5A
+        if(LocPlayer != none)
+        {
+            VoiceInterface.UnmuteRemoteTalker(byte(LocPlayer.ControllerId), PlayerNetId);
+        }
+    }
+    //return;    
 }
 
-/**
- * Mutes a remote player on the server and then tells the client to mute
- *
- * @param PlayerNetId the remote player to mute
- */
 function GameplayMutePlayer(UniqueNetId PlayerNetId)
 {
-	// Don't add if already muted
-	if (GameplayVoiceMuteList.Find('Uid',PlayerNetId.Uid) == INDEX_NONE)
-	{
-		GameplayVoiceMuteList.AddItem(PlayerNetId);
-	}
-	// Add to the filter list too, if missing
-	if (VoicePacketFilter.Find('Uid',PlayerNetId.Uid) == INDEX_NONE)
-	{
-		VoicePacketFilter.AddItem(PlayerNetId);
-	}
-
-	// Now process on the client needed for splitscreen net play
-	ClientMutePlayer(PlayerNetId);
+    // End:0x38
+    if(GameplayVoiceMuteList.Find('Uid', PlayerNetId.Uid) == -1)
+    {
+        GameplayVoiceMuteList.AddItem(PlayerNetId);
+    }
+    // End:0x70
+    if(VoicePacketFilter.Find('Uid', PlayerNetId.Uid) == -1)
+    {
+        VoicePacketFilter.AddItem(PlayerNetId);
+    }
+    ClientMutePlayer(PlayerNetId);
+    //return;    
 }
 
-/**
- * Unmutes a remote player on the server and then tells the client to unmute
- *
- * @param PlayerNetId the remote player to unmute
- */
 function GameplayUnmutePlayer(UniqueNetId PlayerNetId)
 {
-	local int RemoveIndex;
-	local PlayerController Other;
+    local int RemoveIndex;
+    local PlayerController Other;
 
-	// Remove from the gameplay mute list
-	RemoveIndex = GameplayVoiceMuteList.Find('Uid',PlayerNetId.Uid);
-	if (RemoveIndex != INDEX_NONE)
-	{
-		GameplayVoiceMuteList.Remove(RemoveIndex,1);
-	}
-	// Find the muted player's player controller so it can be notified
-	Other = GetPlayerControllerFromNetId(PlayerNetId);
-	if (Other != None)
-	{
-		// If they were not explicitly muted
-		if (VoiceMuteList.Find('Uid',PlayerNetId.Uid) == INDEX_NONE &&
-			// and they did not explicitly mute us
-			Other.VoiceMuteList.Find('Uid',PlayerReplicationInfo.UniqueId.Uid) == INDEX_NONE)
-		{
-			// It's safe to remove them from the filter list
-			RemoveIndex = VoicePacketFilter.Find('Uid',PlayerNetId.Uid);
-			if (RemoveIndex != INDEX_NONE)
-			{
-				VoicePacketFilter.Remove(RemoveIndex,1);
-			}
-
-			// Now process on the client
-			ClientUnmutePlayer(PlayerNetId);
-		}
-	}
+    RemoveIndex = GameplayVoiceMuteList.Find('Uid', PlayerNetId.Uid);
+    // End:0x42
+    if(RemoveIndex != -1)
+    {
+        GameplayVoiceMuteList.Remove(RemoveIndex, 1);
+    }
+    Other = GetPlayerControllerFromNetId(PlayerNetId);
+    // End:0x11F
+    if(Other != none)
+    {
+        // End:0x11F
+        if((VoiceMuteList.Find('Uid', PlayerNetId.Uid) == -1) && Other.VoiceMuteList.Find('Uid', PlayerReplicationInfo.UniqueId.Uid) == -1)
+        {
+            RemoveIndex = VoicePacketFilter.Find('Uid', PlayerNetId.Uid);
+            // End:0x110
+            if(RemoveIndex != -1)
+            {
+                VoicePacketFilter.Remove(RemoveIndex, 1);
+            }
+            ClientUnmutePlayer(PlayerNetId);
+        }
+    }
+    //return;    
 }
 
-/**
- * Updates the server side information by adding to the mute list. Tells the
- * player controller that owns the specified net id to also mute this PC.
- *
- * @param PlayerNetId the remote player to mute
- */
 reliable server event ServerMutePlayer(UniqueNetId PlayerNetId)
 {
-	local PlayerController Other;
+    local PlayerController Other;
 
-	// Don't reprocess if they are already muted
-	if (VoiceMuteList.Find('Uid',PlayerNetId.Uid) == INDEX_NONE)
-	{
-		VoiceMuteList.AddItem(PlayerNetId);
-	}
-	// Add them to the packet filter list if not already on it
-	if (VoicePacketFilter.Find('Uid',PlayerNetId.Uid) == INDEX_NONE)
-	{
-		VoicePacketFilter.AddItem(PlayerNetId);
-	}
-	ClientMutePlayer(PlayerNetId);
-	// Find the muted player's player controller so it can be notified
-	Other = GetPlayerControllerFromNetId(PlayerNetId);
-	if (Other != None)
-	{
-		// Update their packet filter list too
-		if (Other.VoicePacketFilter.Find('Uid',PlayerReplicationInfo.UniqueId.Uid) == INDEX_NONE)
-		{
-			Other.VoicePacketFilter.AddItem(PlayerReplicationInfo.UniqueId);
-		}
-
-		// Tell the other PC to mute this one
-		Other.ClientMutePlayer(PlayerReplicationInfo.UniqueId);
-	}
+    // End:0x38
+    if(VoiceMuteList.Find('Uid', PlayerNetId.Uid) == -1)
+    {
+        VoiceMuteList.AddItem(PlayerNetId);
+    }
+    // End:0x70
+    if(VoicePacketFilter.Find('Uid', PlayerNetId.Uid) == -1)
+    {
+        VoicePacketFilter.AddItem(PlayerNetId);
+    }
+    ClientMutePlayer(PlayerNetId);
+    Other = GetPlayerControllerFromNetId(PlayerNetId);
+    // End:0x122
+    if(Other != none)
+    {
+        // End:0xFF
+        if(Other.VoicePacketFilter.Find('Uid', PlayerReplicationInfo.UniqueId.Uid) == -1)
+        {
+            Other.VoicePacketFilter.AddItem(PlayerReplicationInfo.UniqueId);
+        }
+        Other.ClientMutePlayer(PlayerReplicationInfo.UniqueId);
+    }
+    //return;    
 }
 
-/**
- * Updates the server side information by removing from the mute list. Tells the
- * player controller that owns the specified net id to also unmute this PC.
- *
- * @param PlayerNetId the remote player to unmute
- */
 reliable server event ServerUnmutePlayer(UniqueNetId PlayerNetId)
 {
-	local PlayerController Other;
-	local int RemoveIndex;
+    local PlayerController Other;
+    local int RemoveIndex;
 
-	RemoveIndex = VoiceMuteList.Find('Uid',PlayerNetId.Uid);
-	// If the player was found, remove them from our explicit list
-	if (RemoveIndex != INDEX_NONE)
-	{
-		VoiceMuteList.Remove(RemoveIndex,1);
-	}
-	// Find the muted player's player controller so it can be notified
-	Other = GetPlayerControllerFromNetId(PlayerNetId);
-	if (Other != None)
-	{
-		// Make sure this player isn't muted for gameplay reasons
-		if (GameplayVoiceMuteList.Find('Uid',PlayerNetId.Uid) == INDEX_NONE &&
-			// And make sure they didn't mute us
-			Other.VoiceMuteList.Find('Uid',PlayerReplicationInfo.UniqueId.Uid) == INDEX_NONE)
-		{
-			ClientUnmutePlayer(PlayerNetId);
-		}
-		// If the other player doesn't have this player muted
-		if (Other.VoiceMuteList.Find('Uid',PlayerReplicationInfo.UniqueId.Uid) == INDEX_NONE &&
-			Other.GameplayVoiceMuteList.Find('Uid',PlayerReplicationInfo.UniqueId.Uid) == INDEX_NONE)
-		{
-			// Remove them from the packet filter list
-			RemoveIndex = VoicePacketFilter.Find('Uid',PlayerNetId.Uid);
-			if (RemoveIndex != INDEX_NONE)
-			{
-				VoicePacketFilter.Remove(RemoveIndex,1);
-			}
-			// If found, remove so packets flow to that client too
-			RemoveIndex = Other.VoicePacketFilter.Find('Uid',PlayerReplicationInfo.UniqueId.Uid);
-			if (RemoveIndex != INDEX_NONE)
-			{
-				Other.VoicePacketFilter.Remove(RemoveIndex,1);
-			}
-
-			// Tell the other PC to unmute this one
-			Other.ClientUnmutePlayer(PlayerReplicationInfo.UniqueId);
-		}
-	}
+    RemoveIndex = VoiceMuteList.Find('Uid', PlayerNetId.Uid);
+    // End:0x42
+    if(RemoveIndex != -1)
+    {
+        VoiceMuteList.Remove(RemoveIndex, 1);
+    }
+    Other = GetPlayerControllerFromNetId(PlayerNetId);
+    // End:0x222
+    if(Other != none)
+    {
+        // End:0xDD
+        if((GameplayVoiceMuteList.Find('Uid', PlayerNetId.Uid) == -1) && Other.VoiceMuteList.Find('Uid', PlayerReplicationInfo.UniqueId.Uid) == -1)
+        {
+            ClientUnmutePlayer(PlayerNetId);
+        }
+        // End:0x222
+        if((Other.VoiceMuteList.Find('Uid', PlayerReplicationInfo.UniqueId.Uid) == -1) && Other.GameplayVoiceMuteList.Find('Uid', PlayerReplicationInfo.UniqueId.Uid) == -1)
+        {
+            RemoveIndex = VoicePacketFilter.Find('Uid', PlayerNetId.Uid);
+            // End:0x19F
+            if(RemoveIndex != -1)
+            {
+                VoicePacketFilter.Remove(RemoveIndex, 1);
+            }
+            RemoveIndex = Other.VoicePacketFilter.Find('Uid', PlayerReplicationInfo.UniqueId.Uid);
+            // End:0x1FF
+            if(RemoveIndex != -1)
+            {
+                Other.VoicePacketFilter.Remove(RemoveIndex, 1);
+            }
+            Other.ClientUnmutePlayer(PlayerReplicationInfo.UniqueId);
+        }
+    }
+    //return;    
 }
 
-/** notification when a matinee director track starts or stops controlling the ViewTarget of this PlayerController */
 event NotifyDirectorControl(bool bNowControlling)
 {
-	// matinee is done, make sure client syncs up viewtargets, since we were ignoring
-	// ClientSetViewTarget during the matinee.
-	if ( !bNowControlling && (WorldInfo.NetMode == NM_Client) && bClientSimulatingViewTarget )
-	{
-		ServerVerifyViewTarget();
-	}
+    // End:0x3C
+    if((!bNowControlling && WorldInfo.NetMode == NM_Client) && bClientSimulatingViewTarget)
+    {
+        ServerVerifyViewTarget();
+    }
+    //return;    
 }
 
-/**
- * This will turn the subtitles on or off depending on the value of bValue
- *
- * @param bValue  to show or not to show
- **/
-native simulated exec function SetShowSubtitles( bool bValue );
+// Export UPlayerController::execSetShowSubtitles(FFrame&, void* const)
+native simulated exec function SetShowSubtitles(bool bValue);
 
-/**
- * This will turn return whether the subtitles are on or off
- *
- **/
+// Export UPlayerController::execIsShowingSubtitles(FFrame&, void* const)
 native simulated function bool IsShowingSubtitles();
 
-/**
- * Notifies the player that an attempt to connect to a remote server failed, or an existing connection was dropped.
- *
- * @param	Message		a description of why the connection was lost
- * @param	Title		the title to use in the connection failure message.
- */
-function NotifyConnectionError( optional string Message=Localize("Errors", "ConnectionFailed", "Engine"), optional string Title=Localize("Errors", "ConnectionFailed_Title", "Engine") )
+function NotifyConnectionError(optional string Message = Localize("Errors", "ConnectionFailed", "Engine"), optional string Title = Localize("Errors", "ConnectionFailed_Title", "Engine"))
 {
-	`log(`location @ `showvar(Title) @ `showvar(Message) @ `showenum(ENetMode,WorldInfo.NetMode,NetMode) @ `showvar(GetURLMap(),Map) ,,'DevNet');
-	if (WorldInfo.NetMode != NM_Standalone)
-	{
-		if ( WorldInfo.Game != None )
-		{
-			// Mark the server as having a problem
-			WorldInfo.Game.bHasNetworkError = true;
-		}
-
-		ClientTravel("?failed", TRAVEL_Absolute);
-	}
+    LogInternal((((((((((((((("(" $ string(Name)) $ ") PlayerController::") $ string(GetFuncName())) @ "Title:'") $ Title) $ "'") @ "Message:'") $ Message) $ "'") @ "NetMode:'") $ string(GetEnum(Enum'WorldInfo.ENetMode', WorldInfo.NetMode))) $ "'") @ "Map:'") $ GetURLMap()) $ "'", 'DevNet');
+    // End:0x176
+    if(WorldInfo.NetMode != NM_Standalone)
+    {
+        // End:0x15F
+        if(WorldInfo.Game != none)
+        {
+            WorldInfo.Game.bHasNetworkError = true;
+        }
+        ClientTravel("?failed", 0);
+    }
+    //return;    
 }
 
-reliable client event ClientWasKicked();
-
-/**
- * Tells the client to register with arbitration. The client must notify the
- * server once that is complete or it will be kicked from the match
- */
-reliable client function ClientRegisterForArbitration()
+reliable client simulated event ClientWasKicked()
 {
-	if (OnlineSub != None && OnlineSub.GameInterface != None)
-	{
-		OnlineSub.GameInterface.AddArbitrationRegistrationCompleteDelegate(OnArbitrationRegisterComplete);
-		// Kick off async arbitration registration
-		OnlineSub.GameInterface.RegisterForArbitration('Game');
-	}
-	else
-	{
-		// Fake completion with the server for flow testing
-		ServerRegisteredForArbitration(true);
-	}
+    //return;    
 }
 
-/**
- * Delegate that is notified when registration is complete. Forwards the call
- * to the server so that it can finalize processing
- *
- * @param SessionName the name of the session this is for
- * @param bWasSuccessful whether registration worked or not
- */
-function OnArbitrationRegisterComplete(name SessionName,bool bWasSuccessful)
+reliable client simulated function ClientRegisterForArbitration()
 {
-	// Clear the delegate since it isn't needed
-	OnlineSub.GameInterface.ClearArbitrationRegistrationCompleteDelegate(OnArbitrationRegisterComplete);
-	// Tell the server that we completed registration
-	ServerRegisteredForArbitration(bWasSuccessful);
+    // End:0x7E
+    if((OnlineSub != none) && NotEqual_InterfaceInterface(OnlineSub.GameInterface, none))
+    {
+        OnlineSub.GameInterface.AddArbitrationRegistrationCompleteDelegate(OnArbitrationRegisterComplete);
+        OnlineSub.GameInterface.RegisterForArbitration('Game');        
+    }
+    else
+    {
+        ServerRegisteredForArbitration(true);
+    }
+    //return;    
 }
 
-/**
- * Notifies the server that the arbitration registration is complete
- *
- * @param bWasSuccessful whether the registration with arbitration worked
- */
+function OnArbitrationRegisterComplete(name SessionName, bool bWasSuccessful)
+{
+    OnlineSub.GameInterface.ClearArbitrationRegistrationCompleteDelegate(OnArbitrationRegisterComplete);
+    ServerRegisteredForArbitration(bWasSuccessful);
+    //return;    
+}
+
 reliable server function ServerRegisteredForArbitration(bool bWasSuccessful)
 {
-	// Tell the game info this PC is done and whether it worked or not
-	WorldInfo.Game.ProcessClientRegistrationCompletion(self,bWasSuccessful);
+    WorldInfo.Game.ProcessClientRegistrationCompletion(self, bWasSuccessful);
+    //return;    
 }
 
-/**
- * Delegate called when the user accepts a game invite externally. This allows
- * the game code a chance to clean up before joining the game via
- * AcceptGameInvite() call.
- *
- * NOTE: There must be space for all signed in players to join the game. All
- * players must also have permission to play online too.
- *
- * @param GameInviteSettings the settings for the game we're to join
- */
 function OnGameInviteAccepted(OnlineGameSettings GameInviteSettings)
 {
-	if (OnlineSub != None && OnlineSub.GameInterface != None)
-	{
-		if (GameInviteSettings != None)
-		{
-			// Make sure the new game has space
-			if (InviteHasEnoughSpace(GameInviteSettings))
-			{
-				// Make sure everyone logged in can play online
-				if (CanAllPlayersPlayOnline())
-				{
-					if (WorldInfo.NetMode != NM_Standalone)
-					{
-						WorldInfo.GRI.bNeedsOnlineCleanup = false;
-						// Write arbitration data, if required
-						if (OnlineSub.GameInterface.GetGameSettings('Game').bUsesArbitration)
-						{
-							// Write out our version of the scoring before leaving
-							ClientWriteOnlinePlayerScores(WorldInfo.GRI.GameClass != None ? WorldInfo.GRI.GameClass.default.ArbitratedLeaderBoardId : 0);
-						}
-						// Set the end delegate, where we'll destroy the game and then join
-						OnlineSub.GameInterface.AddEndOnlineGameCompleteDelegate(OnEndForInviteComplete);
-						// Force the flush of the stats
-						OnlineSub.GameInterface.EndOnlineGame('Game');
-					}
-					else
-					{
-						// Set the delegate for notification of the join completing
-						OnlineSub.GameInterface.AddJoinOnlineGameCompleteDelegate(OnInviteJoinComplete);
-
-						// We can immediately accept since there is no online game
-						if (!OnlineSub.GameInterface.AcceptGameInvite(LocalPlayer(Player).ControllerId,'Game'))
-						{
-							OnlineSub.GameInterface.ClearJoinOnlineGameCompleteDelegate(OnInviteJoinComplete);
-						}
-					}
-				}
-				else
-				{
-					// Display an error message
-					NotifyNotAllPlayersCanJoinInvite();
-				}
-			}
-			else
-			{
-				// Display an error message
-				NotifyNotEnoughSpaceInInvite();
-			}
-		}
-		else
-		{
-			// Display an error message
-			NotifyInviteFailed();
-		}
-	}
+    // End:0x21D
+    if((OnlineSub != none) && NotEqual_InterfaceInterface(OnlineSub.GameInterface, none))
+    {
+        // End:0x213
+        if(GameInviteSettings != none)
+        {
+            // End:0x206
+            if(InviteHasEnoughSpace(GameInviteSettings))
+            {
+                // End:0x1F9
+                if(CanAllPlayersPlayOnline())
+                {
+                    // End:0x163
+                    if(WorldInfo.NetMode != NM_Standalone)
+                    {
+                        WorldInfo.GRI.bNeedsOnlineCleanup = false;
+                        // End:0x110
+                        if(OnlineSub.GameInterface.GetGameSettings('Game').bUsesArbitration)
+                        {
+                            ClientWriteOnlinePlayerScores(((WorldInfo.GRI.GameClass != none) ? WorldInfo.GRI.GameClass.default.ArbitratedLeaderboardId : 0));
+                        }
+                        OnlineSub.GameInterface.AddEndOnlineGameCompleteDelegate(OnEndForInviteComplete);
+                        OnlineSub.GameInterface.EndOnlineGame('Game');                        
+                    }
+                    else
+                    {
+                        OnlineSub.GameInterface.AddJoinOnlineGameCompleteDelegate(OnInviteJoinComplete);
+                        // End:0x1F6
+                        if(!OnlineSub.GameInterface.AcceptGameInvite(byte(LocalPlayer(Player).ControllerId), 'Game'))
+                        {
+                            OnlineSub.GameInterface.ClearJoinOnlineGameCompleteDelegate(OnInviteJoinComplete);
+                        }
+                    }                    
+                }
+                else
+                {
+                    NotifyNotAllPlayersCanJoinInvite();
+                }                
+            }
+            else
+            {
+                NotifyNotEnoughSpaceInInvite();
+            }            
+        }
+        else
+        {
+            NotifyInviteFailed();
+        }
+    }
+    //return;    
 }
 
-/**
- * Counts the number of local players to verify there is enough space
- *
- * @return true if there is sufficient space, false if not
- */
 function bool InviteHasEnoughSpace(OnlineGameSettings InviteSettings)
 {
-	local int NumLocalPlayers;
-	local PlayerController PC;
+    local int NumLocalPlayers;
+    local PlayerController PC;
 
-	foreach LocalPlayerControllers(class'PlayerController', PC)
-	{
-		NumLocalPlayers++;
-	}
-	// Invites consume private connections
-	return (InviteSettings.NumOpenPrivateConnections + InviteSettings.NumOpenPublicConnections) >= NumLocalPlayers;
+    // End:0x1B
+    foreach LocalPlayerControllers(Class'PlayerController', PC)
+    {
+        NumLocalPlayers++;        
+    }    
+    return (InviteSettings.NumOpenPrivateConnections + InviteSettings.NumOpenPublicConnections) >= NumLocalPlayers;
+    //return ReturnValue;    
 }
 
-/**
- * Validates that each local player can play online
- *
- * @return true if there is sufficient space, false if not
- */
 function bool CanAllPlayersPlayOnline()
 {
-	local PlayerController PC;
-	local LocalPlayer LocPlayer;
+    local PlayerController PC;
+    local LocalPlayer LocPlayer;
 
-	foreach LocalPlayerControllers(class'PlayerController', PC)
-	{
-		LocPlayer = LocalPlayer(PC.Player);
-		if (LocPlayer != None)
-		{
-			// Check their login status and permissions
-			if (OnlineSub.PlayerInterface.GetLoginStatus(LocPlayer.ControllerId) != LS_LoggedIn ||
-				OnlineSub.PlayerInterface.CanPlayOnline(LocPlayer.ControllerId) == FPL_Disabled)
-			{
-				return false;
-			}
-		}
-		else
-		{
-			return false;
-		}
-	}
-	return true;
+    // End:0xBA
+    foreach LocalPlayerControllers(Class'PlayerController', PC)
+    {
+        LocPlayer = LocalPlayer(PC.Player);
+        // End:0xB6
+        if(LocPlayer != none)
+        {
+            // End:0xB3
+            if((OnlineSub.PlayerInterface.GetLoginStatus(byte(LocPlayer.ControllerId)) != 2) || OnlineSub.PlayerInterface.CanPlayOnline(byte(LocPlayer.ControllerId)) == 0)
+            {                
+                return false;
+            }
+            // End:0xB9
+            continue;
+        }        
+        return false;        
+    }    
+    return true;
+    //return ReturnValue;    
 }
 
-/**
- * Clears all of the invite delegates
- */
 function ClearInviteDelegates()
 {
-	// Clear the end delegate
-	OnlineSub.GameInterface.ClearEndOnlineGameCompleteDelegate(OnEndForInviteComplete);
-	// Clear the destroy delegate
-	OnlineSub.GameInterface.ClearDestroyOnlineGameCompleteDelegate(OnDestroyForInviteComplete);
-	// Set the delegate for notification of the join completing
-	OnlineSub.GameInterface.ClearJoinOnlineGameCompleteDelegate(OnInviteJoinComplete);
+    OnlineSub.GameInterface.ClearEndOnlineGameCompleteDelegate(OnEndForInviteComplete);
+    OnlineSub.GameInterface.ClearDestroyOnlineGameCompleteDelegate(OnDestroyForInviteComplete);
+    OnlineSub.GameInterface.ClearJoinOnlineGameCompleteDelegate(OnInviteJoinComplete);
+    //return;    
 }
 
-/**
- * Delegate called once the destroy of an online game before accepting an invite
- * is complete. From here, the game invite can be accepted
- *
- * @param SessionName the name of the session being ended
- * @param bWasSuccessful whether the end completed ok or not
- */
-function OnEndForInviteComplete(name SessionName,bool bWasSuccessful)
+function OnEndForInviteComplete(name SessionName, bool bWasSuccessful)
 {
-	// Set the destroy delegate so we can know when that is complete
-	OnlineSub.GameInterface.AddDestroyOnlineGameCompleteDelegate(OnDestroyForInviteComplete);
-	// Now we can destroy the game (completion delegate guaranteed to be called)
-	OnlineSub.GameInterface.DestroyOnlineGame(SessionName);
+    OnlineSub.GameInterface.AddDestroyOnlineGameCompleteDelegate(OnDestroyForInviteComplete);
+    OnlineSub.GameInterface.DestroyOnlineGame(SessionName);
+    //return;    
 }
 
-/**
- * Delegate called once the destroy of an online game before accepting an invite
- * is complete. From here, the game invite can be accepted
- *
- * @param SessionName the name of the session being ended
- * @param bWasSuccessful whether the end completed ok or not
- */
-function OnDestroyForInviteComplete(name SessionName,bool bWasSuccessful)
+function OnDestroyForInviteComplete(name SessionName, bool bWasSuccessful)
 {
-	if (bWasSuccessful)
-	{
-		// Set the delegate for notification of the join completing
-		OnlineSub.GameInterface.AddJoinOnlineGameCompleteDelegate(OnInviteJoinComplete);
-		// This will have us join async
-		if (!OnlineSub.GameInterface.AcceptGameInvite(LocalPlayer(Player).ControllerId,SessionName))
-		{
-			OnlineSub.GameInterface.ClearJoinOnlineGameCompleteDelegate(OnInviteJoinComplete);
-			// Do some error handling
-			NotifyInviteFailed();
-		}
-	}
-	else
-	{
-		// Do some error handling
-		NotifyInviteFailed();
-	}
+    // End:0xA5
+    if(bWasSuccessful)
+    {
+        OnlineSub.GameInterface.AddJoinOnlineGameCompleteDelegate(OnInviteJoinComplete);
+        // End:0xA2
+        if(!OnlineSub.GameInterface.AcceptGameInvite(byte(LocalPlayer(Player).ControllerId), SessionName))
+        {
+            OnlineSub.GameInterface.ClearJoinOnlineGameCompleteDelegate(OnInviteJoinComplete);
+            NotifyInviteFailed();
+        }        
+    }
+    else
+    {
+        NotifyInviteFailed();
+    }
+    //return;    
 }
 
-/**
- * Once the join completes, use the platform specific connection information
- * to connect to it
- *
- * @param SessionName the name of the session that was joined
- * @param bWasSuccessful whether the join worked or not
- */
-function OnInviteJoinComplete(name SessionName,bool bWasSuccessful)
+function OnInviteJoinComplete(name SessionName, bool bWasSuccessful)
 {
-	local string URL, ConnectPassword;
+    local string URL, ConnectPassword;
 
-	if (bWasSuccessful)
-	{
-		if (OnlineSub != None && OnlineSub.GameInterface != None)
-		{
-			// Get the platform specific information
-			if (OnlineSub.GameInterface.GetResolvedConnectString(SessionName,URL))
-			{
-				// if a password was set in the registry (this would normally be done by the UI scene that handles accepting
-				// the game invite or join friend request), append it to the URL
-				if ( class'UIRoot'.static.GetDataStoreStringValue("<Registry:ConnectPassword>", ConnectPassword) && ConnectPassword != "" )
-				{
-					// we append "Password=" because that's what AccessControl checks for (see AccessControl.PreLogin)
-					URL $= "?Password=" $ ConnectPassword;
-				}
-
-				`Log("Resulting url is ("$URL$")");
-				// Open a network connection to it
-				ClientTravel(URL, TRAVEL_Absolute);
-			}
-		}
-	}
-	else
-	{
-		// Do some error handling
-		NotifyInviteFailed();
-	}
-	ClearInviteDelegates();
-	class'UIRoot'.static.SetDataStoreStringValue("<Registry:ConnectPassword>", "");
+    // End:0x101
+    if(bWasSuccessful)
+    {
+        // End:0xFE
+        if((OnlineSub != none) && NotEqual_InterfaceInterface(OnlineSub.GameInterface, none))
+        {
+            // End:0xFE
+            if(OnlineSub.GameInterface.GetResolvedConnectString(SessionName, URL))
+            {
+                // End:0xC8
+                if(Class'UIRoot'.static.GetDataStoreStringValue("<Registry:ConnectPassword>", ConnectPassword) && ConnectPassword != "")
+                {                    
+                    URL $= ("?Password=" $ ConnectPassword);
+                }
+                LogInternal(("Resulting url is (" $ URL) $ ")");
+                ClientTravel(URL, 0);
+            }
+        }        
+    }
+    else
+    {
+        NotifyInviteFailed();
+    }
+    ClearInviteDelegates();
+    Class'UIRoot'.static.SetDataStoreStringValue("<Registry:ConnectPassword>", "");
+    //return;    
 }
 
-/** Override to display a message to the user */
 function NotifyInviteFailed()
 {
-	`Log("Invite handling failed");
-	ClearInviteDelegates();
+    LogInternal("Invite handling failed");
+    ClearInviteDelegates();
+    //return;    
 }
 
-/** Override to display a message to the user */
 function NotifyNotAllPlayersCanJoinInvite()
 {
-	`Log("Not all local players have permission to join the game invite");
+    LogInternal("Not all local players have permission to join the game invite");
+    //return;    
 }
 
-/** Override to display a message to the user */
 function NotifyNotEnoughSpaceInInvite()
 {
-	`Log("Not enough space for all local players in the game invite");
+    LogInternal("Not enough space for all local players in the game invite");
+    //return;    
 }
 
-/**
- * Called when an arbitrated match has ended and we need to disconnect
- */
-reliable client function ClientArbitratedMatchEnded()
+reliable client simulated function ClientArbitratedMatchEnded()
 {
-	ConsoleCommand("Disconnect");
+    ConsoleCommand("Disconnect");
+    //return;    
 }
 
-/**
- * Writes the scores for all active players. Override this in your
- * playercontroller class to provide custom scoring
- *
- * @param LeaderboardId the leaderboard the scores are being written to
- */
-reliable client function ClientWriteOnlinePlayerScores(int LeaderboardId)
+reliable client simulated function ClientWriteOnlinePlayerScores(int LeaderboardId)
 {
-	local GameReplicationInfo GRI;
-	local int Index;
-	local array<OnlinePlayerScore> PlayerScores;
-	local UniqueNetId ZeroUniqueId;
-	local bool bIsTeamGame;
-	local int ScoreIndex;
+    local GameReplicationInfo GRI;
+    local int Index;
+    local array<OnlinePlayerScore> PlayerScores;
+    local UniqueNetId ZeroUniqueId;
+    local bool bIsTeamGame;
+    local int ScoreIndex;
 
-	GRI = WorldInfo.GRI;
-	if (GRI != None && OnlineSub != None && OnlineSub.StatsInterface != None)
-	{
-		// Look at the default object of the gameinfo to determine if this is a
-		// team game or not
-		bIsTeamGame = GRI.GameClass != None ? GRI.GameClass.default.bTeamGame : false;
-		// Iterate through the players building their score data
-		for (Index = 0; Index < GRI.PRIArray.Length; Index++)
-		{
-			if (GRI.PRIArray[Index].UniqueId != ZeroUniqueId)
-			{
-				ScoreIndex = PlayerScores.Length;
-				PlayerScores.Length = ScoreIndex + 1;
-				// Build the skill data for this player
-				PlayerScores[ScoreIndex].PlayerId = GRI.PRIArray[Index].UniqueId;
-				if (bIsTeamGame)
-				{
-					PlayerScores[ScoreIndex].TeamId = GRI.PRIArray[Index].Team.TeamIndex;
-					PlayerScores[ScoreIndex].Score = GRI.PRIArray[Index].Team.Score;
-				}
-				else
-				{
-					PlayerScores[ScoreIndex].TeamId = Index;
-					PlayerScores[ScoreIndex].Score = GRI.PRIArray[Index].Score;
-				}
-			}
-		}
-		// Now write out the scores
-		OnlineSub.StatsInterface.WriteOnlinePlayerScores(PlayerReplicationInfo.SessionName,LeaderboardId,PlayerScores);
-	}
+    GRI = WorldInfo.GRI;
+    // End:0x248
+    if(((GRI != none) && OnlineSub != none) && NotEqual_InterfaceInterface(OnlineSub.StatsInterface, none))
+    {
+        bIsTeamGame = ((GRI.GameClass != none) ? GRI.GameClass.default.bTeamGame : false);
+        Index = 0;
+        J0x8D:
+
+        // End:0x210 [Loop If]
+        if(Index < GRI.PRIArray.Length)
+        {
+            // End:0x206
+            if(GRI.PRIArray[Index].UniqueId != ZeroUniqueId)
+            {
+                ScoreIndex = PlayerScores.Length;
+                PlayerScores.Length = ScoreIndex + 1;
+                PlayerScores[ScoreIndex].PlayerID = GRI.PRIArray[Index].UniqueId;
+                // End:0x1B2
+                if(bIsTeamGame)
+                {
+                    PlayerScores[ScoreIndex].TeamID = GRI.PRIArray[Index].Team.TeamIndex;
+                    PlayerScores[ScoreIndex].Score = int(GRI.PRIArray[Index].Team.Score);
+                    // [Explicit Continue]
+                    goto J0x206;
+                }
+                PlayerScores[ScoreIndex].TeamID = Index;
+                PlayerScores[ScoreIndex].Score = int(GRI.PRIArray[Index].Score);
+            }
+            J0x206:
+
+            Index++;
+            // [Loop Continue]
+            goto J0x8D;
+        }
+        OnlineSub.StatsInterface.WriteOnlinePlayerScores(PlayerReplicationInfo.SessionName, LeaderboardId, PlayerScores);
+    }
+    //return;    
 }
 
-/**
- * Tells the clients to write the stats using the specified stats object
- *
- * @param OnlineStatsWriteClass the stats class to write with
- */
-reliable client function ClientWriteLeaderboardStats(class<OnlineStatsWrite> OnlineStatsWriteClass);
-
-/**
- * Sets the host's net id for handling dropped arbitrated matches
- *
- * @param InHostId the host's unique net id to report the drop for
- */
-reliable client function ClientSetHostUniqueId(UniqueNetId InHostId);
-
-/** Tells this client that it should not send voice data over the network */
-reliable client function ClientStopNetworkedVoice()
+reliable client simulated function ClientWriteLeaderboardStats(class<OnlineStatsWrite> OnlineStatsWriteClass)
 {
-	local LocalPlayer LocPlayer;
-
-	LocPlayer = LocalPlayer(Player);
-	if (LocPlayer != None && OnlineSub != None && OnlineSub.VoiceInterface != None)
-	{
-		OnlineSub.VoiceInterface.StopNetworkedVoice(LocPlayer.ControllerId);
-	}
+    //return;    
 }
 
-/** Tells this client that it should send voice data over the network */
-reliable client function ClientStartNetworkedVoice()
+reliable client simulated function ClientSetHostUniqueId(UniqueNetId InHostId)
 {
-	local LocalPlayer LocPlayer;
+    //return;    
+}
 
-	LocPlayer = LocalPlayer(Player);
-	if (LocPlayer != None && OnlineSub != None && OnlineSub.VoiceInterface != None)
-	{
-		OnlineSub.VoiceInterface.StartNetworkedVoice(LocPlayer.ControllerId);
-	}
+reliable client simulated function ClientStopNetworkedVoice()
+{
+    local LocalPlayer LocPlayer;
+
+    LocPlayer = LocalPlayer(Player);
+    // End:0x78
+    if(((LocPlayer != none) && OnlineSub != none) && NotEqual_InterfaceInterface(OnlineSub.VoiceInterface, none))
+    {
+        OnlineSub.VoiceInterface.StopNetworkedVoice(byte(LocPlayer.ControllerId));
+    }
+    //return;    
+}
+
+reliable client simulated function ClientStartNetworkedVoice()
+{
+    local LocalPlayer LocPlayer;
+
+    LocPlayer = LocalPlayer(Player);
+    // End:0x78
+    if(((LocPlayer != none) && OnlineSub != none) && NotEqual_InterfaceInterface(OnlineSub.VoiceInterface, none))
+    {
+        OnlineSub.VoiceInterface.StartNetworkedVoice(byte(LocPlayer.ControllerId));
+    }
+    //return;    
 }
 
 simulated function OnDestroy(SeqAct_Destroy Action)
 {
-	// Kismet is not allowed to disconnect players from the game
-	Action.ScriptLog("Cannot use Destroy action on players");
+    Action.ScriptLog("Cannot use Destroy action on players");
+    //return;    
 }
 
-`if(`notdefined(ShippingPC))
-/** console control commands, useful when remote debugging so you can't touch the console the normal way */
 exec function ConsoleKey(name Key)
 {
-	if (LocalPlayer(Player) != None)
-	{
-		LocalPlayer(Player).ViewportClient.ViewportConsole.InputKey(0, Key, IE_Pressed);
-	}
+    // End:0x52
+    if((LocalPlayer(Player) != none) && AllowConsole())
+    {
+        LocalPlayer(Player).ViewportClient.ViewportConsole.InputKey(0, Key, 0);
+    }
+    //return;    
 }
+
 exec function SendToConsole(string Command)
 {
-	if (LocalPlayer(Player) != None)
-	{
-		LocalPlayer(Player).ViewportClient.ViewportConsole.ConsoleCommand(Command);
-	}
+    // End:0x4D
+    if((LocalPlayer(Player) != none) && AllowConsole())
+    {
+        LocalPlayer(Player).ViewportClient.ViewportConsole.ConsoleCommand(Command);
+    }
+    //return;    
 }
-`endif
 
-/**
- * Iterate through list of debug text and draw it over the associated actors in world space.
- * Also handles culling null entries, and reducing the duration for timed debug text.
- */
 final simulated function DrawDebugTextList(Canvas Canvas, float RenderDelta)
 {
-	local vector CameraLoc, ScreenLoc, Offset;
-	local rotator CameraRot;
-	local int Idx;
-	if (DebugTextList.Length > 0)
-	{
-		GetPlayerViewPoint(CameraLoc,CameraRot);
-		Canvas.SetDrawColor(255,255,255);
-		Canvas.Font = class'Engine'.static.GetSmallFont();
-		for (Idx = 0; Idx < DebugTextList.Length; Idx++)
-		{
-			if (DebugTextList[Idx].SrcActor == None)
-			{
-				DebugTextList.Remove(Idx--,1);
-				continue;
-			}
-			if (DebugTextList[Idx].TimeRemaining != -1.f)
-			{
-				DebugTextList[Idx].TimeRemaining -= RenderDelta;
-				if (DebugTextList[Idx].TimeRemaining <= 0.f)
-				{
-					DebugTextList.Remove(Idx--,1);
-					continue;
-				}
-			}
-			Offset = VLerp(DebugTextList[Idx].SrcActorOffset,DebugTextList[Idx].SrcActorDesiredOffset,1.f - (DebugTextList[Idx].TimeRemaining/DebugTextList[Idx].Duration));
-			ScreenLoc = Canvas.Project(DebugTextList[Idx].SrcActor.Location + (Offset >> CameraRot));
-			Canvas.SetPos(ScreenLoc.X,ScreenLoc.Y);
-			Canvas.DrawColor = DebugTextList[Idx].TextColor;
-			Canvas.DrawText(DebugTextList[Idx].DebugText);
-		}
-	}
+    local Vector cameraLoc, ScreenLoc, Offset;
+    local Rotator cameraRot;
+    local int Idx;
+
+    // End:0x244
+    if(DebugTextList.Length > 0)
+    {
+        GetPlayerViewPoint(cameraLoc, cameraRot);
+        Canvas.SetDrawColor(255, 255, 255);
+        Canvas.Font = Class'Engine'.static.GetSmallFont();
+        Idx = 0;
+        J0x5E:
+
+        // End:0x244 [Loop If]
+        if(Idx < DebugTextList.Length)
+        {
+            // End:0x9B
+            if(DebugTextList[Idx].SrcActor == none)
+            {
+                DebugTextList.Remove(Idx--, 1);
+                // [Explicit Continue]
+                goto J0x23A;
+            }
+            // End:0x109
+            if(DebugTextList[Idx].TimeRemaining != -1.0000000)
+            {
+                DebugTextList[Idx].TimeRemaining -= RenderDelta;
+                // End:0x109
+                if(DebugTextList[Idx].TimeRemaining <= 0.0000000)
+                {
+                    DebugTextList.Remove(Idx--, 1);
+                    // [Explicit Continue]
+                    goto J0x23A;
+                }
+            }
+            Offset = VLerp(DebugTextList[Idx].SrcActorOffset, DebugTextList[Idx].SrcActorDesiredOffset, 1.0000000 - (DebugTextList[Idx].TimeRemaining / DebugTextList[Idx].Duration));
+            ScreenLoc = Canvas.Project(DebugTextList[Idx].SrcActor.Location + (Offset >> cameraRot));
+            Canvas.SetPos(ScreenLoc.X, ScreenLoc.Y);
+            Canvas.DrawColor = DebugTextList[Idx].TextColor;
+            Canvas.DrawText(DebugTextList[Idx].DebugText);
+            J0x23A:
+
+            Idx++;
+            // [Loop Continue]
+            goto J0x5E;
+        }
+    }
+    //return;    
 }
 
-/**
- * Add debug text for a specific actor to be displayed via DrawDebugTextList().  If the debug text is invalid then it will
- * attempt to remove any previous entries via RemoveDebugText().
- */
-final reliable client event AddDebugText(string DebugText, optional Actor SrcActor, optional float Duration = -1.f, optional vector Offset, optional vector DesiredOffset, optional color TextColor, optional bool bSkipOverwriteCheck)
+reliable client final simulated event AddDebugText(string DebugText, optional Actor SrcActor, optional float Duration = -1.0000000, optional Vector Offset, optional Vector DesiredOffset, optional Color TextColor, optional bool bSkipOverwriteCheck)
 {
-	local int Idx;
-	// set a default color
-	if (TextColor.R == 0 && TextColor.G == 0 && TextColor.B == 0 && TextColor.A == 0)
-	{
-		TextColor.R = 255;
-		TextColor.G = 255;
-		TextColor.B = 255;
-		TextColor.A = 255;
-	}
-	// and a default source actor of our pawn
-	if (SrcActor == None)
-	{
-		SrcActor = Pawn;
-	}
-	if (SrcActor != None)
-	{
-		if (Len(DebugText) == 0)
-		{
-			RemoveDebugText(SrcActor);
-		}
-		else
-		{
-			//`log("Adding debug text:"@DebugText@"for actor:"@SrcActor);
-			// search for an existing entry
-			if (!bSkipOverwriteCheck)
-			{
-				Idx = DebugTextList.Find('SrcActor',SrcActor);
-				if (Idx == INDEX_NONE)
-				{
-					// manually grow the array one struct element
-					Idx = DebugTextList.Length;
-					DebugTextList.Length = Idx + 1;
-				}
-			}
-			else
-			{
-				Idx = DebugTextList.Length;
-				DebugTextList.Length = Idx + 1;
-			}
-			// assign the new text and actor
-			DebugTextList[Idx].SrcActor = SrcActor;
-			DebugTextList[Idx].SrcActorOffset = Offset;
-			DebugTextList[Idx].SrcActorDesiredOffset = DesiredOffset;
-			DebugTextList[Idx].DebugText = DebugText;
-			DebugTextList[Idx].TimeRemaining = Duration;
-			DebugTextList[Idx].Duration = Duration;
-			DebugTextList[Idx].TextColor = TextColor;
-		}
-	}
+    local int Idx;
+
+    // End:0xCC
+    if((((TextColor.R == 0) && TextColor.G == 0) && TextColor.B == 0) && TextColor.A == 0)
+    {
+        TextColor.R = 255;
+        TextColor.G = 255;
+        TextColor.B = 255;
+        TextColor.A = 255;
+    }
+    // End:0xE2
+    if(SrcActor == none)
+    {
+        SrcActor = Pawn;
+    }
+    // End:0x23B
+    if(SrcActor != none)
+    {
+        // End:0x108
+        if(Len(DebugText) == 0)
+        {
+            RemoveDebugText(SrcActor);            
+        }
+        else
+        {
+            // End:0x15C
+            if(!bSkipOverwriteCheck)
+            {
+                Idx = DebugTextList.Find('SrcActor', SrcActor);
+                // End:0x159
+                if(Idx == -1)
+                {
+                    Idx = DebugTextList.Length;
+                    DebugTextList.Length = Idx + 1;
+                }                
+            }
+            else
+            {
+                Idx = DebugTextList.Length;
+                DebugTextList.Length = Idx + 1;
+            }
+            DebugTextList[Idx].SrcActor = SrcActor;
+            DebugTextList[Idx].SrcActorOffset = Offset;
+            DebugTextList[Idx].SrcActorDesiredOffset = DesiredOffset;
+            DebugTextList[Idx].DebugText = DebugText;
+            DebugTextList[Idx].TimeRemaining = Duration;
+            DebugTextList[Idx].Duration = Duration;
+            DebugTextList[Idx].TextColor = TextColor;
+        }
+    }
+    //return;    
 }
 
-/**
- * Remove debug text for the specific actor.
- */
-final reliable client event RemoveDebugText(Actor SrcActor)
+reliable client final simulated event RemoveDebugText(Actor SrcActor)
 {
-	local int Idx;
-	Idx = DebugTextList.Find('SrcActor',SrcActor);
-	if (Idx != INDEX_NONE)
-	{
-		DebugTextList.Remove(Idx,1);
-	}
+    local int Idx;
+
+    Idx = DebugTextList.Find('SrcActor', SrcActor);
+    // End:0x37
+    if(Idx != -1)
+    {
+        DebugTextList.Remove(Idx, 1);
+    }
+    //return;    
 }
 
-/**
- *  Switch controller to debug camera without locking gameplay and with locking
- *  local player controller input
- */
+event DrawShieldDecals()
+{
+    //return;    
+}
+
 function EnableDebugCamera()
 {
-	local Player P;
-	local vector eyeLoc;
-	local rotator eyeRot;
+    local Player P;
+    local Vector eyeLoc;
+    local Rotator eyeRot;
 
-	P = Player;
-	if( P!= none && Pawn != none && IsLocalPlayerController() )
-	{
-		if( DebugCameraControllerRef==None )
-		{
-			DebugCameraControllerRef = spawn(DebugCameraControllerClass);
-		}
-		DebugCameraControllerRef.OryginalPlayer = P;
-		DebugCameraControllerRef.OryginalControllerRef = self;
-
-		GetPlayerViewPoint(eyeLoc,eyeRot);
-		DebugCameraControllerRef.SetLocation(eyeLoc);
-		DebugCameraControllerRef.SetRotation(eyeRot);
-		DebugCameraControllerRef.PlayerCamera.SetFOV( GetFOVAngle() );
-		DebugCameraControllerRef.PlayerCamera.UpdateCamera(0.0);
-
-		P.SwitchController( DebugCameraControllerRef );
-		DebugCameraControllerRef.OnActivate( self );
+    P = Player;
+    // End:0x12B
+    if(((P != none) && Pawn != none) && IsLocalPlayerController())
+    {
+        // End:0x54
+        if(DebugCameraControllerRef == none)
+        {
+            DebugCameraControllerRef = Spawn(DebugCameraControllerClass);
+        }
+        DebugCameraControllerRef.OryginalPlayer = P;
+        DebugCameraControllerRef.OryginalControllerRef = self;
+        GetPlayerViewPoint(eyeLoc, eyeRot);
+        DebugCameraControllerRef.SetLocation(eyeLoc);
+        DebugCameraControllerRef.SetRotation(eyeRot);
+        DebugCameraControllerRef.PlayerCamera.SetFOV(GetFOVAngle());
+        DebugCameraControllerRef.PlayerCamera.UpdateCamera(0.0000000);
+        P.SwitchController(DebugCameraControllerRef);
+        DebugCameraControllerRef.OnActivate(self);
     }
+    //return;    
 }
 
-/**
- * Registers the host's stat guid with the online subsystem
- *
- * @param StatGuid the stat guid to register
- */
-reliable client function ClientRegisterHostStatGuid(string StatGuid)
+reliable client simulated function ClientRegisterHostStatGuid(string StatGuid)
 {
-	if (OnlineSub != None && OnlineSub.StatsInterface != None)
-	{
-		OnlineSub.StatsInterface.AddRegisterHostStatGuidCompleteDelegate(OnRegisterHostStatGuidComplete);
-		if(OnlineSub.StatsInterface.RegisterHostStatGuid(StatGuid)==false)
-		{
-			OnRegisterHostStatGuidComplete(false);
-		}
-	}
+    // End:0x88
+    if((OnlineSub != none) && NotEqual_InterfaceInterface(OnlineSub.StatsInterface, none))
+    {
+        OnlineSub.StatsInterface.AddRegisterHostStatGuidCompleteDelegate(OnRegisterHostStatGuidComplete);
+        // End:0x88
+        if(OnlineSub.StatsInterface.RegisterHostStatGuid(StatGuid) == false)
+        {
+            OnRegisterHostStatGuidComplete(false);
+        }
+    }
+    //return;    
 }
 
-/**
- * Called once the host registration has completed. Sends the host this clients stat guid
- *
- * @param bWasSuccessful true if the registration worked, false otherwise
- */
 function OnRegisterHostStatGuidComplete(bool bWasSuccessful)
 {
-	local string StatGuid;
+    local string StatGuid;
 
-	OnlineSub.StatsInterface.ClearRegisterHostStatGuidCompleteDelegateDelegate(OnRegisterHostStatGuidComplete);
-	if (bWasSuccessful)
-	{
-		StatGuid = OnlineSub.StatsInterface.GetClientStatGuid();
-		// Report the client stat guid back to the server
-		ServerRegisterClientStatGuid(StatGuid);
-	}
+    OnlineSub.StatsInterface.ClearRegisterHostStatGuidCompleteDelegateDelegate(OnRegisterHostStatGuidComplete);
+    // End:0x65
+    if(bWasSuccessful)
+    {
+        StatGuid = OnlineSub.StatsInterface.GetClientStatGuid();
+        ServerRegisterClientStatGuid(StatGuid);
+    }
+    //return;    
 }
 
-/**
- * Registers the client's stat guid with the online subsystem
- *
- * @param StatGuid the stat guid to register
- */
 reliable server function ServerRegisterClientStatGuid(string StatGuid)
 {
-	if (OnlineSub != None && OnlineSub.StatsInterface != None)
-	{
-		OnlineSub.StatsInterface.RegisterStatGuid(PlayerReplicationInfo.UniqueId,StatGuid);
-	}
+    // End:0x5E
+    if((OnlineSub != none) && NotEqual_InterfaceInterface(OnlineSub.StatsInterface, none))
+    {
+        OnlineSub.StatsInterface.RegisterStatGuid(PlayerReplicationInfo.UniqueId, StatGuid);
+    }
+    //return;    
 }
 
-/**
- * Starts the online game using the session name in the PRI
- */
-reliable client function ClientStartOnlineGame()
+reliable client simulated function ClientStartOnlineGame()
 {
-	local OnlineGameSettings GameSettings;
+    local OnlineGameSettings GameSettings;
 
-	if (OnlineSub != None &&
-		OnlineSub.GameInterface != None &&
-		IsPrimaryPlayer())
-	{
-		GameSettings = OnlineSub.GameInterface.GetGameSettings(PlayerReplicationInfo.SessionName);
-		// Start the game if not already in progress
-		if (GameSettings != None &&
-			(GameSettings.GameState == OGS_Pending || GameSettings.GameState == OGS_Ended))
-		{
-			OnlineSub.GameInterface.StartOnlineGame(PlayerReplicationInfo.SessionName);
-		}
-	}
+    // End:0xDF
+    if(((OnlineSub != none) && NotEqual_InterfaceInterface(OnlineSub.GameInterface, none)) && IsPrimaryPlayer())
+    {
+        GameSettings = OnlineSub.GameInterface.GetGameSettings(PlayerReplicationInfo.SessionName);
+        // End:0xDF
+        if((GameSettings != none) && (GameSettings.GameState == 1) || GameSettings.GameState == 5)
+        {
+            OnlineSub.GameInterface.StartOnlineGame(PlayerReplicationInfo.SessionName);
+        }
+    }
+    //return;    
 }
 
-/**
- * Ends the online game using the session name in the PRI
- */
-reliable client function ClientEndOnlineGame()
+reliable client simulated function ClientEndOnlineGame()
 {
-	local OnlineGameSettings GameSettings;
+    local OnlineGameSettings GameSettings;
 
-	if (OnlineSub != None &&
-		OnlineSub.GameInterface != None&&
-		IsPrimaryPlayer())
-	{
-		GameSettings = OnlineSub.GameInterface.GetGameSettings(PlayerReplicationInfo.SessionName);
-		// End the game if in progress
-		if (GameSettings != None &&
-			GameSettings.GameState == OGS_InProgress)
-		{
-			OnlineSub.GameInterface.EndOnlineGame(PlayerReplicationInfo.SessionName);
-		}
-	}
+    // End:0xC3
+    if(((OnlineSub != none) && NotEqual_InterfaceInterface(OnlineSub.GameInterface, none)) && IsPrimaryPlayer())
+    {
+        GameSettings = OnlineSub.GameInterface.GetGameSettings(PlayerReplicationInfo.SessionName);
+        // End:0xC3
+        if((GameSettings != none) && GameSettings.GameState == 3)
+        {
+            OnlineSub.GameInterface.EndOnlineGame(PlayerReplicationInfo.SessionName);
+        }
+    }
+    //return;    
 }
 
-/** Checks for parental controls blocking user created content */
 function bool CanViewUserCreatedContent()
 {
-	local LocalPlayer LocPlayer;
+    local LocalPlayer LocPlayer;
 
-	LocPlayer = LocalPlayer(Player);
-	if (LocPlayer != None && OnlineSub != None && OnlineSub.PlayerInterface != None)
-	{
-		return OnlineSub.PlayerInterface.CanDownloadUserContent(LocPlayer.ControllerId) == FPL_Enabled;
-	}
-	return true;
+    LocPlayer = LocalPlayer(Player);
+    // End:0x81
+    if(((LocPlayer != none) && OnlineSub != none) && NotEqual_InterfaceInterface(OnlineSub.PlayerInterface, none))
+    {
+        return OnlineSub.PlayerInterface.CanDownloadUserContent(byte(LocPlayer.ControllerId)) == 2;
+    }
+    return true;
+    //return ReturnValue;    
 }
-
 
 function IncrementNumberOfMatchesPlayed()
 {
-	`log( "  Num Matches Played: " $ PlayerReplicationInfo.AutomatedTestingData.NumberOfMatchesPlayed );
-	PlayerReplicationInfo.AutomatedTestingData.NumberOfMatchesPlayed++;
+    LogInternal("  Num Matches Played: " $ string(PlayerReplicationInfo.AutomatedTestingData.NumberOfMatchesPlayed));
+    PlayerReplicationInfo.AutomatedTestingData.NumberOfMatchesPlayed++;
+    //return;    
 }
 
-/** For AI debugging */
 event SoakPause(Pawn P)
 {
-	`log("Soak pause by "$P);
-	SetViewTarget(P);
-	SetPause(true);
-	myHud.bShowDebugInfo = true;
+    LogInternal("Soak pause by " $ string(P));
+    SetViewTarget(P);
+    SetPause(true);
+    myHUD.bShowDebugInfo = true;
+    //return;    
 }
 
-// AI PATHING DEBUG
-exec function PathStep( optional int Cnt)
+event OnPlayerHasBeenMoved()
 {
-	Pawn.IncrementPathStep( Max(1, Cnt), myHud.Canvas );
+    LogInternal(("Player " $ string(Pawn.Name)) $ " has been moved.");
+    //return;    
 }
-exec function PathChild( optional int Cnt )
+
+exec function PathStep(optional int Cnt)
 {
-	Pawn.IncrementPathChild( Max(1, Cnt), myHud.Canvas );
+    Pawn.IncrementPathStep(Max(1, Cnt), myHUD.Canvas);
+    //return;    
 }
+
+exec function PathChild(optional int Cnt)
+{
+    Pawn.IncrementPathChild(Max(1, Cnt), myHUD.Canvas);
+    //return;    
+}
+
 exec function PathClear()
 {
-	Pawn.ClearPathStep();
+    Pawn.ClearPathStep();
+    //return;    
 }
 
-/**
- * Displays a survey on the client to be filled in by the user
- *
- * @param QuestionId the question to display in the survey
- * @param Context the context for this question
- */
-reliable client function ClientShowSurvey(string QuestionId,string Context)
+reliable client simulated function ClientTravelToSession(name SessionName, class<OnlineGameSearch> SearchClass, byte PlatformSpecificInfo[68])
 {
-	ShowSurvey(QuestionId,Context);
+    local OnlineGameSearch Search;
+    local LocalPlayer LP;
+    local OnlineGameSearchResult SessionToJoin;
+
+    LP = LocalPlayer(Player);
+    // End:0xE1
+    if(LP != none)
+    {
+        Search = new SearchClass;
+        // End:0xE1
+        if(OnlineSub.GameInterface.BindPlatformSpecificSessionToSearch(byte(LP.ControllerId), Search, PlatformSpecificInfo))
+        {
+            SessionToJoin = Search.Results[0];
+            OnlineSub.GameInterface.AddJoinOnlineGameCompleteDelegate(OnJoinTravelToSessionComplete);
+            OnlineSub.GameInterface.JoinOnlineGame(byte(LP.ControllerId), SessionName, SessionToJoin);
+        }
+    }
+    //return;    
 }
 
-/**
- * Displays a survey over top of the scene
- *
- * @param QuestionId the survey question to show
- * @param Context the context for the question
- */
-native function ShowSurvey(string QuestionId, string Context);
-
-/**
- * Used when a host is telling a client to go to a specific Internet session
- *
- * @param SessionName the name of the session to register
- * @param SearchClass the search that should be populated with the session
- * @param PlatformSpecificInfo the binary data to place in the platform specific areas
- */
-reliable client function ClientTravelToSession(name SessionName,class<OnlineGameSearch> SearchClass,byte PlatformSpecificInfo[68])
+function OnJoinTravelToSessionComplete(name SessionName, bool bWasSuccessful)
 {
-	local OnlineGameSearch Search;
-	local LocalPlayer LP;
-	local OnlineGameSearchResult SessionToJoin;
+    local string URL;
 
-	LP = LocalPlayer(Player);
-	if (LP != None)
-	{
-		Search = new SearchClass;
-		// Get the information needed to travel to this destination
-		if (OnlineSub.GameInterface.BindPlatformSpecificSessionToSearch(LP.ControllerId,Search,PlatformSpecificInfo))
-		{
-			// There will be only one search result so use it
-			SessionToJoin = Search.Results[0];
-
-			OnlineSub.GameInterface.AddJoinOnlineGameCompleteDelegate(OnJoinTravelToSessionComplete);
-			// Now join this Session
-			OnlineSub.GameInterface.JoinOnlineGame(LP.ControllerId,SessionName,SessionToJoin);
-		}
-	}
+    // End:0x76
+    if(bWasSuccessful)
+    {
+        // End:0x76
+        if(OnlineSub.GameInterface.GetResolvedConnectString(SessionName, URL))
+        {
+            LogInternal(("Resulting url for 'Game' is (" $ URL) $ ")");
+            ClientTravel(URL, 0);
+        }
+    }
+    //return;    
 }
 
-/**
- * Called when the join for the travel destination has completed
- *
- * @param SessionName the name of the session the event is for
- * @param bWasSuccessful whether it worked or not
- */
-function OnJoinTravelToSessionComplete(name SessionName,bool bWasSuccessful)
+reliable client simulated function ClientReturnToParty()
 {
-	local string URL;
+    local string URL;
 
-	if (bWasSuccessful)
-	{
-		// We are joining so grab the connect string to use
-		if (OnlineSub.GameInterface.GetResolvedConnectString(SessionName,URL))
-		{
-			`Log("Resulting url for 'Game' is ("$URL$")");
-			// travel to the specified URL
-			ClientTravel(URL, TRAVEL_Absolute);
-		}
-	}
+    // End:0x163
+    if(IsPrimaryPlayer())
+    {
+        // End:0x147
+        if(((OnlineSub != none) && NotEqual_InterfaceInterface(OnlineSub.GameInterface, none)) && NotEqual_InterfaceInterface(OnlineSub.PlayerInterface, none))
+        {
+            // End:0x128
+            if(OnlineSub.GameInterface.GetGameSettings('Party') != none)
+            {
+                // End:0xE2
+                if(IsPartyLeader())
+                {
+                    URL = (((GetPartyMapName()) $ "?game=") $ (GetPartyGameTypeName())) $ "?listen";
+                    WorldInfo.ServerTravel(URL, true, true);                    
+                }
+                else
+                {
+                    // End:0x125
+                    if(OnlineSub.GameInterface.GetResolvedConnectString('Party', URL))
+                    {
+                        ClientTravel(URL, 0);
+                    }
+                }                
+            }
+            else
+            {                
+                ConsoleCommand("disconnect");
+            }            
+        }
+        else
+        {            
+            ConsoleCommand("disconnect");
+        }
+    }
+    //return;    
 }
 
-
-/**
- * Used when a host is telling a client to return to their party host from the
- * current session. It looks for the session named 'Party' and does a travel to
- * it. If it's not available, it just does a "disconnect"
- */
-reliable client function ClientReturnToParty()
-{
-	local string URL;
-
-	// only do this for the first player in split-screen sessions.
-	if (IsPrimaryPlayer())
-	{
-		if (OnlineSub != None &&
-			OnlineSub.GameInterface != None &&
-			OnlineSub.PlayerInterface != None)
-		{
-			// Find the party settings to verify that a party is registered
-			if (OnlineSub.GameInterface.GetGameSettings('Party') != None)
-			{
-				// Now see if we are the party host or not
-				if (IsPartyLeader())
-				{
-					// We are the party host so create the session and listen for returning clients
-					URL = GetPartyMapName() $ "?game=" $ GetPartyGameTypeName() $ "?listen";
-					// Transition to being the party host without notifying clients and traveling absolute
-					WorldInfo.ServerTravel(URL,true,true);
-				}
-				else
-				{
-					// We are joining so grab the connect string to use
-					if (OnlineSub.GameInterface.GetResolvedConnectString('Party',URL))
-					{
-						ClientTravel(URL, TRAVEL_Absolute);
-					}
-				}
-			}
-			else
-			{
-				ConsoleCommand("disconnect");
-			}
-		}
-		else
-		{
-			ConsoleCommand("disconnect");
-		}
-	}
-}
-
-/**
- * Wrapper for determining whether this player is the first player on their console.
- *
- * @return	TRUE if this player is not using splitscreen, or is the first player in the split-screen layout.
- */
 simulated function bool IsPrimaryPlayer()
 {
-	local int SSIndex;
+    local int SSIndex;
 
-	return !IsSplitscreenPlayer(SSIndex) || SSIndex == 0;
+    return !IsSplitscreenPlayer(SSIndex) || SSIndex == 0;
+    //return ReturnValue;    
 }
 
-/**
- * Determines whether this player is playing split-screen.
- *
- * @param	out_SplitscreenPlayerIndex	receives the index [into the player's local GamePlayers array] for this player, if playing splitscreen.
- *									.
- * @return	TRUE if this player is playing splitscreen.
- */
-simulated function bool IsSplitscreenPlayer( optional out int out_SplitscreenPlayerIndex )
+simulated function bool IsSplitscreenPlayer(optional out int out_SplitscreenPlayerIndex)
 {
-	local bool bResult;
-	local LocalPlayer LP;
-	local NetConnection RemoteConnection;
-	local ChildConnection ChildRemoteConnection;
+    local bool bResult;
+    local LocalPlayer LP;
+    local NetConnection RemoteConnection;
+    local ChildConnection ChildRemoteConnection;
 
-	out_SplitscreenPlayerIndex = NetPlayerIndex;
-	if ( Player != None )
-	{
-		LP = LocalPlayer(Player);
-		RemoteConnection = NetConnection(Player);
-		if ( LP != None )
-		{
-			if ( LP.GamePlayers.Length > 1 )
-			{
-				out_SplitscreenPlayerIndex = LP.GamePlayers.Find(LP);
-				bResult = true;
-			}
-
-//			`log(`location @ `showobj(LP) @ `showvar(LP.ViewportClient.GamePlayers.Length,NumLocalPlayers) @ `showvar(bResult),,'RON_DEBUG');
-		}
-		else if ( RemoteConnection != None )
-		{
-			if ( RemoteConnection.Children.Length > 0 )
-			{
-				out_SplitscreenPlayerIndex = 0;
-				bResult = true;
-			}
-			else
-			{
-				ChildRemoteConnection = ChildConnection(RemoteConnection);
-				if ( ChildRemoteConnection != None )
-				{
-					if ( ChildRemoteConnection.Parent != None )
-					{
-						out_SplitscreenPlayerIndex = ChildRemoteConnection.Parent.Children.Find(ChildRemoteConnection) + 1;
-					}
-					bResult = true;
-				}
-			}
-//			`log(`location @ `showvar(RemoteConnection.Children.Length,Child Connections) @ `showobj(ChildRemoteConnection) @ (ChildRemoteConnection != None ? "Parent:" $ string(ChildRemoteConnection.Parent.Name) : "")
-//				@ `showvar(out_SplitscreenPlayerIndex) @ `showvar(bResult),,'RON_DEBUG');
-		}
-		else
-		{
-			`log(`location @ "NOT A LOCALPLAYER AND NOT A REMOTECONNECTION!",,'RON_DEBUG');
-		}
-	}
-	else
-	{
-		`log(`location @ "called without a valid Player value!");
-	}
-
-	return bResult;
+    out_SplitscreenPlayerIndex = int(NetPlayerIndex);
+    // End:0x19B
+    if(Player != none)
+    {
+        LP = LocalPlayer(Player);
+        RemoteConnection = NetConnection(Player);
+        // End:0x96
+        if(LP != none)
+        {
+            // End:0x93
+            if(LP.Outer.GamePlayers.Length > 1)
+            {
+                out_SplitscreenPlayerIndex = LP.Outer.GamePlayers.Find(LP);
+                bResult = true;
+            }            
+        }
+        else
+        {
+            // End:0x12E
+            if(RemoteConnection != none)
+            {
+                // End:0xC9
+                if(RemoteConnection.Children.Length > 0)
+                {
+                    out_SplitscreenPlayerIndex = 0;
+                    bResult = true;                    
+                }
+                else
+                {
+                    ChildRemoteConnection = ChildConnection(RemoteConnection);
+                    // End:0x12B
+                    if(ChildRemoteConnection != none)
+                    {
+                        // End:0x123
+                        if(ChildRemoteConnection.Parent != none)
+                        {
+                            out_SplitscreenPlayerIndex = ChildRemoteConnection.Parent.Children.Find(ChildRemoteConnection) + 1;
+                        }
+                        bResult = true;
+                    }
+                }                
+            }
+            else
+            {
+                LogInternal(((("(" $ string(Name)) $ ") PlayerController::") $ string(GetFuncName())) @ "NOT A LOCALPLAYER AND NOT A REMOTECONNECTION!", 'RON_DEBUG');
+            }
+        }        
+    }
+    else
+    {
+        LogInternal(((("(" $ string(Name)) $ ") PlayerController::") $ string(GetFuncName())) @ "called without a valid Player value!");
+    }
+    return bResult;
+    //return ReturnValue;    
 }
 
-/**
- * Determines whether the PlayerReplicationInfo is associated with a split-screen player.  Safe to use on client and server.
- *
- * @param	PRI		the PlayerReplicationInfo to check
- *
- * @return	TRUE if the player associated with the PRI is a split-screen player.  FALSE if not.
- */
-simulated function bool HasSplitscreenPlayer( PlayerReplicationInfo PRI )
+simulated function bool HasSplitscreenPlayer(PlayerReplicationInfo PRI)
 {
-	local bool bResult;
-	local PlayerController OwnerPC;
+    local bool bResult;
+    local PlayerController OwnerPC;
 
-	if ( PRI != None )
-	{
-		if ( PRI.IsLocalPlayerPRI() )
-		{
-			// if the PRI belongs to a local player, they're split-sceen if we are
-			bResult = IsSplitscreenPlayer();
-		}
-		else
-		{
-			// on the server, we can just call the function on the owning PC
-			if ( Role == ROLE_Authority )
-			{
-				OwnerPC = PlayerController(PRI.Owner);
-				bResult = OwnerPC.IsSplitscreenPlayer();
-			}
-			else
-			{
-				// in this case, we are on a client and PRI represents a player from a remote machine.  SplitscreenIndex might not have
-				// replicated just yet, but we don't have access to any other data that could be used to determine whether that player is a ss player.
-				bResult = PRI.SplitscreenIndex != INDEX_NONE;
-			}
-		}
-	}
-	else
-	{
-		`warn(`location @ "called with a NULL PRI!");
-	}
-
-	return bResult;
+    // End:0xA0
+    if(PRI != none)
+    {
+        // End:0x37
+        if(PRI.IsLocalPlayerPRI())
+        {
+            bResult = IsSplitscreenPlayer();            
+        }
+        else
+        {
+            // End:0x80
+            if(Role == ROLE_Authority)
+            {
+                OwnerPC = PlayerController(PRI.Owner);
+                bResult = OwnerPC.IsSplitscreenPlayer();                
+            }
+            else
+            {
+                bResult = PRI.SplitscreenIndex != -1;
+            }
+        }        
+    }
+    else
+    {
+        WarnInternal(((("(" $ string(Name)) $ ") PlayerController::") $ string(GetFuncName())) @ "called with a NULL PRI!");
+    }
+    return bResult;
+    //return ReturnValue;    
 }
 
-/**
- * Returns the PRI associated with the player at the specified index.
- *
- * @param	PlayerIndex		the index [into the local player's GamePlayers array] for the player PRI to find
- *
- * @return	the PRI associated with the player at the specified index, or None if the player is not a split-screen player or
- *			the index was out of range.
- */
-simulated function PlayerReplicationInfo GetSplitscreenPlayerByIndex( optional int PlayerIndex=1 )
+simulated function PlayerReplicationInfo GetSplitscreenPlayerByIndex(optional int PlayerIndex = 1)
 {
-	local PlayerReplicationInfo Result;
-	local LocalPlayer LP, SplitPlayer;
-	local NetConnection MasterConnection, RemoteConnection;
-	local ChildConnection ChildRemoteConnection;
+    local PlayerReplicationInfo Result;
+    local LocalPlayer LP, SplitPlayer;
+    local NetConnection MasterConnection, RemoteConnection;
+    local ChildConnection ChildRemoteConnection;
 
-	if ( Player != None )
-	{
-		if ( IsSplitscreenPlayer() )
-		{
-			LP = LocalPlayer(Player);
-			RemoteConnection = NetConnection(Player);
-			if ( LP != None )
-			{
-				// this PC is a local player
-				if ( PlayerIndex >= 0 && PlayerIndex < LP.ViewportClient.GamePlayers.Length )
-				{
-					SplitPlayer = LP.ViewportClient.GamePlayers[PlayerIndex];
-					Result = SplitPlayer.Actor.PlayerReplicationInfo;
-				}
-				else
-				{
-					`warn(`location $ ":" @ "requested player at invalid index!" @ `showvar(PlayerIndex) @ `showvar(LP.ViewportClient.GamePlayers.Length,NumLocalPlayers));
-				}
-			}
-			else if ( RemoteConnection != None )
-			{
-				if ( WorldInfo.NetMode == NM_Client )
-				{
-					//THIS SHOULD NEVER HAPPEN - IF HAVE A REMOTECONNECTION, WE SHOULDN'T BE A CLIENT
-					// this player is a client
-					`warn(`location $ ":" @ "CALLED ON CLIENT WITH VALID REMOTE NETCONNECTION!");
-				}
-				else
-				{
-					ChildRemoteConnection = ChildConnection(RemoteConnection);
-					if ( ChildRemoteConnection != None )
-					{
-						// this player controller is not the primary player in the splitscreen layout
-						MasterConnection = ChildRemoteConnection.Parent;
-						if ( PlayerIndex == 0 )
-						{
-							Result = MasterConnection.Actor.PlayerReplicationInfo;
-						}
-						else
-						{
-							PlayerIndex--;
-							if ( PlayerIndex >= 0 && PlayerIndex < MasterConnection.Children.Length )
-							{
-								ChildRemoteConnection = MasterConnection.Children[PlayerIndex];
-								Result = ChildRemoteConnection.Actor.PlayerReplicationInfo;
-							}
-						}
-					}
-					else if ( RemoteConnection.Children.Length > 0 )
-					{
-						// this PC is the primary splitscreen player
-						if ( PlayerIndex == 0 )
-						{
-							// they want this player controller's PRI
-							Result = PlayerReplicationInfo;
-						}
-						else
-						{
-							// our split-screen's PRI is being requested.
-							PlayerIndex--;
-							if ( PlayerIndex >= 0 && PlayerIndex < RemoteConnection.Children.Length )
-							{
-								ChildRemoteConnection = RemoteConnection.Children[PlayerIndex];
-								Result = ChildRemoteConnection.Actor.PlayerReplicationInfo;
-							}
-						}
-					}
-					else
-					{
-						`log(`location $ ":" @ Player @ "IS NOT THE PRIMARY CONNECTION AND HAS NO CHILD CONNECTIONS!");
-					}
-				}
-			}
-			else
-			{
-				`log(`location $ ":" @ Player @ "IS NOT A LOCALPLAYER AND NOT A REMOTECONNECTION! (No valid Player reference)");
-			}
-		}
-//		else
-//		{
-//			`log(`location $ ":" @ "not a splitscreen player!",,'RON_DEBUG');
-//		}
-	}
-	else
-	{
-		`log(`location $ ":" @ "NULL value for Player!");
-	}
-
-	return Result;
+    // End:0x49B
+    if(Player != none)
+    {
+        // End:0x498
+        if(IsSplitscreenPlayer())
+        {
+            LP = LocalPlayer(Player);
+            RemoteConnection = NetConnection(Player);
+            // End:0x194
+            if(LP != none)
+            {
+                // End:0xD5
+                if((PlayerIndex >= 0) && PlayerIndex < LP.ViewportClient.Outer.GamePlayers.Length)
+                {
+                    SplitPlayer = LP.ViewportClient.Outer.GamePlayers[PlayerIndex];
+                    Result = SplitPlayer.Actor.PlayerReplicationInfo;                    
+                }
+                else
+                {
+                    WarnInternal((((((((((("(" $ string(Name)) $ ") PlayerController::") $ string(GetFuncName())) $ ":") @ "requested player at invalid index!") @ "PlayerIndex:'") $ string(PlayerIndex)) $ "'") @ "NumLocalPlayers:'") $ string(LP.ViewportClient.Outer.GamePlayers.Length)) $ "'");
+                }                
+            }
+            else
+            {
+                // End:0x409
+                if(RemoteConnection != none)
+                {
+                    // End:0x226
+                    if(WorldInfo.NetMode == NM_Client)
+                    {
+                        WarnInternal((((("(" $ string(Name)) $ ") PlayerController::") $ string(GetFuncName())) $ ":") @ "CALLED ON CLIENT WITH VALID REMOTE NETCONNECTION!");                        
+                    }
+                    else
+                    {
+                        ChildRemoteConnection = ChildConnection(RemoteConnection);
+                        // End:0x2EE
+                        if(ChildRemoteConnection != none)
+                        {
+                            MasterConnection = ChildRemoteConnection.Parent;
+                            // End:0x283
+                            if(PlayerIndex == 0)
+                            {
+                                Result = MasterConnection.Actor.PlayerReplicationInfo;                                
+                            }
+                            else
+                            {
+                                PlayerIndex--;
+                                // End:0x2EB
+                                if((PlayerIndex >= 0) && PlayerIndex < MasterConnection.Children.Length)
+                                {
+                                    ChildRemoteConnection = MasterConnection.Children[PlayerIndex];
+                                    Result = ChildRemoteConnection.Actor.PlayerReplicationInfo;
+                                }
+                            }                            
+                        }
+                        else
+                        {
+                            // End:0x388
+                            if(RemoteConnection.Children.Length > 0)
+                            {
+                                // End:0x31D
+                                if(PlayerIndex == 0)
+                                {
+                                    Result = PlayerReplicationInfo;                                    
+                                }
+                                else
+                                {
+                                    PlayerIndex--;
+                                    // End:0x385
+                                    if((PlayerIndex >= 0) && PlayerIndex < RemoteConnection.Children.Length)
+                                    {
+                                        ChildRemoteConnection = RemoteConnection.Children[PlayerIndex];
+                                        Result = ChildRemoteConnection.Actor.PlayerReplicationInfo;
+                                    }
+                                }                                
+                            }
+                            else
+                            {
+                                LogInternal(((((("(" $ string(Name)) $ ") PlayerController::") $ string(GetFuncName())) $ ":") @ string(Player)) @ "IS NOT THE PRIMARY CONNECTION AND HAS NO CHILD CONNECTIONS!");
+                            }
+                        }
+                    }                    
+                }
+                else
+                {
+                    LogInternal(((((("(" $ string(Name)) $ ") PlayerController::") $ string(GetFuncName())) $ ":") @ string(Player)) @ "IS NOT A LOCALPLAYER AND NOT A REMOTECONNECTION! (No valid Player reference)");
+                }
+            }
+        }        
+    }
+    else
+    {
+        LogInternal((((("(" $ string(Name)) $ ") PlayerController::") $ string(GetFuncName())) $ ":") @ "NULL value for Player!");
+    }
+    return Result;
+    //return ReturnValue;    
 }
 
-/**
- * Returns the number of split-screen players playing on this player's machine.
- *
- * @return	the total number of players on the player's local machine, or 0 if this player isn't playing split-screen.
- */
 simulated function int GetSplitscreenPlayerCount()
 {
-	local LocalPlayer LP;
-	local NetConnection RemoteConnection;
-	local int Result;
+    local LocalPlayer LP;
+    local NetConnection RemoteConnection;
+    local int Result;
 
-	if ( IsSplitscreenPlayer() )
-	{
-		if ( Player != None )
-		{
-			LP = LocalPlayer(Player);
-			RemoteConnection = NetConnection(Player);
-			if ( LP != None )
-			{
-				Result = LP.ViewportClient.GamePlayers.Length;
-			}
-			else if ( RemoteConnection != None )
-			{
-				if ( ChildConnection(RemoteConnection) != None )
-				{
-					// we're the secondary (or otherwise) player in the split - we need to move up to the primary connection
-					RemoteConnection = ChildConnection(RemoteConnection).Parent;
-				}
-
-				// add one for the primary player
-				Result = RemoteConnection.Children.Length + 1;
-			}
-			else
-			{
-				`log(`location @ "NOT A LOCALPLAYER AND NOT A REMOTECONNECTION!");
-			}
-		}
-		else
-		{
-			`log(`location @ "called without a valid Player value!");
-		}
-	}
-
-	return Result;
+    // End:0x180
+    if(IsSplitscreenPlayer())
+    {
+        // End:0x127
+        if(Player != none)
+        {
+            LP = LocalPlayer(Player);
+            RemoteConnection = NetConnection(Player);
+            // End:0x71
+            if(LP != none)
+            {
+                Result = LP.ViewportClient.Outer.GamePlayers.Length;                
+            }
+            else
+            {
+                // End:0xC2
+                if(RemoteConnection != none)
+                {
+                    // End:0xA6
+                    if(ChildConnection(RemoteConnection) != none)
+                    {
+                        RemoteConnection = ChildConnection(RemoteConnection).Parent;
+                    }
+                    Result = RemoteConnection.Children.Length + 1;                    
+                }
+                else
+                {
+                    LogInternal(((("(" $ string(Name)) $ ") PlayerController::") $ string(GetFuncName())) @ "NOT A LOCALPLAYER AND NOT A REMOTECONNECTION!");
+                }
+            }            
+        }
+        else
+        {
+            LogInternal(((("(" $ string(Name)) $ ") PlayerController::") $ string(GetFuncName())) @ "called without a valid Player value!");
+        }
+    }
+    return Result;
+    //return ReturnValue;    
 }
 
-reliable client function ClientControlMovieTexture(TextureMovie MovieTexture, SeqAct_ControlMovieTexture.EMovieControlType Mode)
+reliable client simulated function ClientControlMovieTexture(TextureMovie MovieTexture, SeqAct_ControlMovieTexture.EMovieControlType Mode)
 {
-	if (MovieTexture != None)
-	{
-		switch (Mode)
-		{
-			case MCT_Play:
-				MovieTexture.Play();
-				break;
-			case MCT_Stop:
-				MovieTexture.Stop();
-				break;
-			case MCT_Pause:
-				MovieTexture.Pause();
-				break;
-			default:
-				break;
-		}
-	}
+    // End:0x6D
+    if(MovieTexture != none)
+    {
+        switch(Mode)
+        {
+            // End:0x2F
+            case 0:
+                MovieTexture.Play();
+                // End:0x6D
+                break;
+            // End:0x4B
+            case 1:
+                MovieTexture.Stop();
+                // End:0x6D
+                break;
+            // End:0x67
+            case 2:
+                MovieTexture.Pause();
+                // End:0x6D
+                break;
+            // End:0xFFFF
+            default:
+                // End:0x6D
+                break;
+                break;
+        }
+    }
+    //return;    
 }
 
-/**
- * Forces the streaming system to disregard the normal logic for the specified duration and
- * instead always load all mip-levels for all textures used by the specified material.
- *
- * @param Material		- The material whose textures should be forced into memory.
- * @param ForceDuration	- Number of seconds to keep all mip-levels in memory, disregarding the normal priority logic.
- */
-reliable client event ClientSetForceMipLevelsToBeResident( MaterialInterface Material, float ForceDuration )
+reliable client simulated event ClientSetForceMipLevelsToBeResident(MaterialInterface Material, float ForceDuration)
 {
-	if ( Material != None && IsPrimaryPlayer() )
-	{
-		Material.SetForceMipLevelsToBeResident( ForceDuration );
-	}
+    // End:0x33
+    if((Material != none) && IsPrimaryPlayer())
+    {
+        Material.SetForceMipLevelsToBeResident(ForceDuration);
+    }
+    //return;    
 }
 
-/**
- * Forces the streaming system to disregard the normal logic for the specified duration and
- * instead always load all mip-levels for all textures used by the specified actor.
- *
- * @param ForcedActor		- The actor whose textures should be forced into memory.
- * @param ForceDuration		- Number of seconds to keep all mip-levels in memory, disregarding the normal priority logic.
- * @param bEnableStreaming	- Whether to start (TRUE) or stop (FALSE) streaming
- */
-reliable client event ClientPrestreamTextures( Actor ForcedActor, float ForceDuration, bool bEnableStreaming )
+reliable client simulated event ClientPrestreamTextures(Actor ForcedActor, float ForceDuration, bool bEnableStreaming)
 {
-	if ( ForcedActor != None && IsPrimaryPlayer() )
-	{
-		ForcedActor.PrestreamTextures( ForceDuration, bEnableStreaming );
-	}
+    // End:0x39
+    if((ForcedActor != none) && IsPrimaryPlayer())
+    {
+        ForcedActor.PrestreamTextures(ForceDuration, bEnableStreaming);
+    }
+    //return;    
 }
 
-/**
- * Wrapper for determining whether a player is the party leader.
- *
- * @return	TRUE if the player is the leader of the party; FALSE if not in a party or not the party leader.
- */
 simulated function bool IsPartyLeader()
 {
-	local OnlineGameSettings PartySettings;
+    local OnlineGameSettings PartySettings;
 
-	if ( OnlineSub != None && OnlineSub.GameInterface != None )
-	{
-		// Find the party settings to verify that a party is registered
-		PartySettings = OnlineSub.GameInterface.GetGameSettings('Party');
-		if ( PartySettings != None )
-		{
-			if ( PlayerReplicationInfo != None )
-			{
-				return OnlineSub.AreUniqueNetIdsEqual(PartySettings.OwningPlayerId, PlayerReplicationInfo.UniqueId);
-			}
-		}
-	}
-
-	return WorldInfo.NetMode != NM_Client && IsPrimaryPlayer();
+    // End:0x9E
+    if((OnlineSub != none) && NotEqual_InterfaceInterface(OnlineSub.GameInterface, none))
+    {
+        PartySettings = OnlineSub.GameInterface.GetGameSettings('Party');
+        // End:0x9E
+        if(PartySettings != none)
+        {
+            // End:0x9E
+            if(PlayerReplicationInfo != none)
+            {
+                return OnlineSub.AreUniqueNetIdsEqual(PartySettings.OwningPlayerId, PlayerReplicationInfo.UniqueId);
+            }
+        }
+    }
+    return (WorldInfo.NetMode != NM_Client) && IsPrimaryPlayer();
+    //return ReturnValue;    
 }
 
-/**
- * Returns the party map name for this game
- */
-static function string GetPartyMapName();
+static function string GetPartyMapName()
+{
+    //return ReturnValue;    
+}
 
-/**
- * Returns the party game info name for this game
- */
-static function string GetPartyGameTypeName();
+static function string GetPartyGameTypeName()
+{
+    //return ReturnValue;    
+}
 
-/**
- * Get the completion amount for a game achievement.
- *
- * @param	AchievementId	the id for the achievement to get the completion percetage for
- * @param	CurrentValue	the current number of times the event required to unlock the achievement has occurred.
- * @param	MaxValue		the value that represents 100% completion.
- *
- * @return	TRUE if the AchievementId specified represents an progressive achievement.  FALSE if the achievement is a one-time event
- *			or if the AchievementId specified is invalid.
- */
-event bool GetAchievementProgression( int AchievementId, out float CurrentValue, out float MaxValue );
+event bool GetAchievementProgression(int AchievementId, out float CurrentValue, out float MaxValue)
+{
+    //return ReturnValue;    
+}
 
+simulated function OnFlyThroughHasEnded(SeqAct_FlyThroughHasEnded inAction)
+{
+    local PlayerController PC;
 
-/**
- * This is a function which is called when sentinel is able to start TravelTheWorld.  This allows the specific game
- * to do things such as turning off UI/HUD and to not enter some default starting the game state.
- **/
+    // End:0x5F
+    if(WorldInfo.Game.bDoingASentinelRun == true)
+    {
+        // End:0x5E
+        foreach WorldInfo.AllControllers(Class'PlayerController', PC)
+        {            
+            PC.ConsoleCommand("quit");            
+        }        
+    }
+    //return;    
+}
+
 function Sentinel_SetupForGamebasedTravelTheWorld()
 {
+    //return;    
 }
 
-/**
- * This function is called before we acquire the travel points.
- **/
 function Sentinel_PreAcquireTravelTheWorldPoints()
 {
+    //return;    
 }
 
-/**
- * This function is called after we acquire the travel points right before we start traveling.
- **/
 function Sentinel_PostAcquireTravelTheWorldPoints()
 {
+    //return;    
 }
 
-
-/** Spawn a camera lens effect (e.g. blood).*/
-unreliable client event ClientSpawnCameraLensEffect( class<EmitterCameraLensEffectBase> LensEffectEmitterClass );
-
-
-/**
-* This will move the player and set their rotation to the passed in values.
-* We have this version of the BugIt family as it is easier to type in just raw numbers in the console.
-**/
-exec function BugItGo( coerce float X, coerce float Y, coerce float Z, coerce int Pitch, coerce int Yaw, coerce int Roll )
+unreliable client simulated event ClientSpawnCameraLensEffect(class<EmitterCameraLensEffectBase> LensEffectEmitterClass)
 {
-	local vector TheLocation;
-	local rotator TheRotation;
-
-	TheLocation.X = X;
-	TheLocation.Y = Y;
-	TheLocation.Z = Z;
-
-	TheRotation.Pitch = Pitch;
-	TheRotation.Yaw = Yaw;
-	TheRotation.Roll = Roll;
-
-	BugItWorker( TheLocation, TheRotation );
+    //return;    
 }
 
-/**
-* This will move the player and set their rotation to the passed in values.
-* We have this version of the BugIt family strings can be passed in from the game ?options easily
-**/
-function BugItGoString( String TheLocation, String TheRotation )
+exec function BugItGo(coerce float X, coerce float Y, coerce float Z, coerce int Pitch, coerce int Yaw, coerce int Roll)
 {
-	BugItWorker( GetFVectorFromString(TheLocation), GetFRotatorFromString(TheRotation) );
+    local Vector TheLocation;
+    local Rotator TheRotation;
+
+    TheLocation.X = X;
+    TheLocation.Y = Y;
+    TheLocation.Z = Z;
+    TheRotation.Pitch = Pitch;
+    TheRotation.Yaw = Yaw;
+    TheRotation.Roll = Roll;
+    BugItWorker(TheLocation, TheRotation);
+    //return;    
 }
 
-/**
-* This will move the player and set their rotation to the passed in values.
-* This actually does the location / rotation setting.  Additionally it will set you as ghost as the level may have
-* changed since the last time you were here.  And the bug may actually be inside of something.
-**/
-function BugItWorker( vector TheLocation, rotator TheRotation )
+function BugItGoString(string TheLocation, string TheRotation)
 {
-	`log( "BugItGo to:" @ TheLocation @ TheRotation );
-
-	if( CheatManager != none )
-	{
-		CheatManager.Ghost();
-	}
-
-	ViewTarget.SetLocation( TheLocation );
-
-	Pawn.FaceRotation( TheRotation, 0.0f );
-	SetRotation( TheRotation );
+    BugItWorker(GetFVectorFromString(TheLocation), GetFRotatorFromString(TheRotation));
+    //return;    
 }
 
-/**
-* This function is used to print out the BugIt location.  It prints out copy and paste versions for both IMing someone to type in
-* and also a gameinfo ?options version so that you can append it to your launching url and be taken to the correct place.
-* Additionally, it will take a screen shot so reporting bugs is a one command action!
-*
-* @TODO:  make this bad
-**/
-exec event BugIt( optional string ScreenShotDescription )
+function BugItWorker(Vector TheLocation, Rotator TheRotation)
 {
-	local vector	ViewLocation;
-	local rotator	ViewRotation;
-
-	local String GoString;
-	local String LocString;
-
-	ConsoleCommand( "bugscreenshot " $ ScreenShotDescription );
-
-	GetPlayerViewPoint( ViewLocation, ViewRotation );
-
-	if( Pawn != None )
-	{
-		ViewLocation = Pawn.Location;
-	}
-
-
-	GoString = "BugItGo " $ ViewLocation.X $ " " $ ViewLocation.Y $ " " $ ViewLocation.Z $ " " $ ViewRotation.Pitch $ " " $ ViewRotation.Yaw $ " " $ ViewRotation.Roll;
-	`log( GoString );
-
-	LocString = "?BugLoc=(" $ "X=" $ ViewLocation.X $ ",Y=" $ ViewLocation.Y $ ",Z=" $ ViewLocation.Z $")" $ "?BugRot=(" $ "Pitch=" $ ViewRotation.Pitch $ ",Yaw=" $ ViewRotation.Yaw $ ",Roll=" $ ViewRotation.Roll $ ")";
-	`log( LocString );
-
-	LogOutBugItGoToLogFile( ScreenShotDescription, GoString, LocString );
+    LogInternal(("BugItGo to:" @ string(TheLocation)) @ string(TheRotation));
+    // End:0x41
+    if(CheatManager != none)
+    {
+        CheatManager.Ghost();
+    }
+    ViewTarget.SetLocation(TheLocation);
+    Pawn.FaceRotation(TheRotation, 0.0000000);
+    SetRotation(TheRotation);
+    //return;    
 }
 
-exec event BugItAI( optional string ScreenShotDescription )
+exec event BugIt(optional string ScreenShotDescription)
 {
-	local vector	ViewLocation;
-	local rotator	ViewRotation;
+    local Vector ViewLocation;
+    local Rotator ViewRotation;
+    local string GoString, LocString;
 
-	local String GoString;
-	local String LocString;
+    ConsoleCommand("bugscreenshot " $ ScreenShotDescription);
+    GetPlayerViewPoint(ViewLocation, ViewRotation);
+    // End:0x5C
+    if(Pawn != none)
+    {
+        ViewLocation = Pawn.Location;
+    }
+    GoString = (((((((((("BugItGo " $ string(ViewLocation.X)) $ " ") $ string(ViewLocation.Y)) $ " ") $ string(ViewLocation.Z)) $ " ") $ string(ViewRotation.Pitch)) $ " ") $ string(ViewRotation.Yaw)) $ " ") $ string(ViewRotation.Roll);
+    LogInternal(GoString);
+    LocString = (((((((((((((("?BugLoc=(" $ "X=") $ string(ViewLocation.X)) $ ",Y=") $ string(ViewLocation.Y)) $ ",Z=") $ string(ViewLocation.Z)) $ ")") $ "?BugRot=(") $ "Pitch=") $ string(ViewRotation.Pitch)) $ ",Yaw=") $ string(ViewRotation.Yaw)) $ ",Roll=") $ string(ViewRotation.Roll)) $ ")";
+    LogInternal(LocString);
+    LogOutBugItGoToLogFile(ScreenShotDescription, GoString, LocString);
+    //return;    
+}
 
-	GetPlayerViewPoint( ViewLocation, ViewRotation );
+exec event BugItAI(optional string ScreenShotDescription)
+{
+    local Vector ViewLocation;
+    local Rotator ViewRotation;
+    local string GoString, LocString;
 
-	if( Pawn != None )
-	{
-		ViewLocation = Pawn.Location;
-	}
-
-
-	GoString = "BugItGo " $ ViewLocation.X $ " " $ ViewLocation.Y $ " " $ ViewLocation.Z $ " " $ ViewRotation.Pitch $ " " $ ViewRotation.Yaw $ " " $ ViewRotation.Roll;
-	`log( GoString );
-
-	LocString = "?BugLoc=(" $ "X=" $ ViewLocation.X $ ",Y=" $ ViewLocation.Y $ ",Z=" $ ViewLocation.Z $")" $ "?BugRot=(" $ "Pitch=" $ ViewRotation.Pitch $ ",Yaw=" $ ViewRotation.Yaw $ ",Roll=" $ ViewRotation.Roll $ ")";
-	`log( LocString );
-
-	ConsoleCommand("debugai");
-	SetTimer(0.1,FALSE,nameof(DisableDebugAI));
-	LogOutBugItAIGoToLogFile( ScreenShotDescription, GoString, LocString );
+    GetPlayerViewPoint(ViewLocation, ViewRotation);
+    // End:0x35
+    if(Pawn != none)
+    {
+        ViewLocation = Pawn.Location;
+    }
+    GoString = (((((((((("BugItGo " $ string(ViewLocation.X)) $ " ") $ string(ViewLocation.Y)) $ " ") $ string(ViewLocation.Z)) $ " ") $ string(ViewRotation.Pitch)) $ " ") $ string(ViewRotation.Yaw)) $ " ") $ string(ViewRotation.Roll);
+    LogInternal(GoString);
+    LocString = (((((((((((((("?BugLoc=(" $ "X=") $ string(ViewLocation.X)) $ ",Y=") $ string(ViewLocation.Y)) $ ",Z=") $ string(ViewLocation.Z)) $ ")") $ "?BugRot=(") $ "Pitch=") $ string(ViewRotation.Pitch)) $ ",Yaw=") $ string(ViewRotation.Yaw)) $ ",Roll=") $ string(ViewRotation.Roll)) $ ")";
+    LogInternal(LocString);    
+    ConsoleCommand("debugai");
+    SetTimer(0.1000000, false, 'DisableDebugAI');
+    LogOutBugItAIGoToLogFile(ScreenShotDescription, GoString, LocString);
+    //return;    
 }
 
 function DisableDebugAI()
 {
-	ConsoleCommand("debugai");
+    ConsoleCommand("debugai");
+    //return;    
 }
 
-/** This will return a vector from a passed in string in form:  (X=8141.9819,Y=7483.3872,Z=2093.4136) **/
-private native function vector GetFVectorFromString( string InStr );
+// Export UPlayerController::execGetFVectorFromString(FFrame&, void* const)
+private native final function Vector GetFVectorFromString(string InStr);
 
-/** This will return a vector from a passed in string in form:  (Pitch=100,Yaw=13559,Roll=0) **/
-private native function rotator GetFRotatorFromString( string InStr );
+// Export UPlayerController::execGetFRotatorFromString(FFrame&, void* const)
+private native final function Rotator GetFRotatorFromString(string InStr);
 
-private native function LogOutBugItGoToLogFile( const String InScreenShotDesc, const string InGoString, const string InLocString );
-private native function LogOutBugItAIGoToLogFile( const String InScreenShotDesc, const string InGoString, const string InLocString );
+// Export UPlayerController::execLogOutBugItGoToLogFile(FFrame&, void* const)
+private native final function LogOutBugItGoToLogFile(const string InScreenShotDesc, const string InGoString, const string InLocString);
 
+// Export UPlayerController::execLogOutBugItAIGoToLogFile(FFrame&, void* const)
+private native final function LogOutBugItAIGoToLogFile(const string InScreenShotDesc, const string InGoString, const string InLocString);
 
+state PlayerWalking
+{
+    event NotifyPhysicsVolumeChange(PhysicsVolume NewVolume)
+    {
+        // End:0x3C
+        if(NewVolume.bWaterVolume && Pawn.bCollideWorld)
+        {
+            GotoState(Pawn.WaterMovementState);
+        }
+        //return;        
+    }
+
+    function ProcessMove(float DeltaTime, Vector newAccel, Actor.EDoubleClickDir DoubleClickMove, Rotator DeltaRot)
+    {
+        // End:0x0D
+        if(Pawn == none)
+        {
+            return;
+        }
+        // End:0x3D
+        if(Role == ROLE_Authority)
+        {
+            Pawn.SetRemoteViewPitch(Rotation.Pitch);
+        }
+        Pawn.Acceleration = newAccel;
+        CheckJumpOrDuck();
+        //return;        
+    }
+
+    function PlayerMove(float DeltaTime)
+    {
+        local Vector X, Y, Z, newAccel;
+        local Actor.EDoubleClickDir DoubleClickMove;
+        local Rotator OldRotation;
+        local bool bSaveJump;
+
+        // End:0x1C
+        if(Pawn == none)
+        {
+            GotoState('Dead');            
+        }
+        else
+        {
+            GetAxes(Pawn.Rotation, X, Y, Z);
+            newAccel = (PlayerInput.aForward * X) + (PlayerInput.aStrafe * Y);
+            newAccel.Z = 0.0000000;
+            newAccel = Pawn.AccelRate * Normal(newAccel);
+            DoubleClickMove = PlayerInput.CheckForDoubleClickMove(DeltaTime / WorldInfo.TimeDilation);
+            OldRotation = Rotation;
+            UpdateRotation(DeltaTime);
+            bDoubleJump = false;
+            // End:0x12B
+            if(bPressedJump && Pawn.CannotJumpNow())
+            {
+                bSaveJump = true;
+                bPressedJump = false;                
+            }
+            else
+            {
+                bSaveJump = false;
+            }
+            // End:0x16C
+            if(Role < ROLE_Authority)
+            {
+                ReplicateMove(DeltaTime, newAccel, DoubleClickMove, OldRotation - Rotation);                
+            }
+            else
+            {
+                ProcessMove(DeltaTime, newAccel, DoubleClickMove, OldRotation - Rotation);
+            }
+            bPressedJump = bSaveJump;
+        }
+        //return;        
+    }
+
+    event BeginState(name PreviousStateName)
+    {
+        DoubleClickDir = 0;
+        bPressedJump = false;
+        GroundPitch = 0;
+        // End:0x37
+        if(Pawn != none)
+        {
+            Pawn.ShouldCrouch(false);
+        }
+        //return;        
+    }
+
+    event EndState(name NextStateName)
+    {
+        GroundPitch = 0;
+        // End:0x48
+        if(Pawn != none)
+        {
+            Pawn.SetRemoteViewPitch(0);
+            // End:0x48
+            if(bDuck == 0)
+            {
+                Pawn.ShouldCrouch(false);
+            }
+        }
+        //return;        
+    }
+Begin:
+
+    stop;                
+}
+
+state PlayerClimbing
+{
+    event NotifyPhysicsVolumeChange(PhysicsVolume NewVolume)
+    {
+        // End:0x2A
+        if(NewVolume.bWaterVolume)
+        {
+            GotoState(Pawn.WaterMovementState);            
+        }
+        else
+        {
+            GotoState(Pawn.LandMovementState);
+        }
+        //return;        
+    }
+
+    function ProcessMove(float DeltaTime, Vector newAccel, Actor.EDoubleClickDir DoubleClickMove, Rotator DeltaRot)
+    {
+        // End:0x0D
+        if(Pawn == none)
+        {
+            return;
+        }
+        // End:0x3D
+        if(Role == ROLE_Authority)
+        {
+            Pawn.SetRemoteViewPitch(Rotation.Pitch);
+        }
+        Pawn.Acceleration = newAccel;
+        // End:0xA3
+        if(bPressedJump)
+        {
+            Pawn.DoJump(bUpdating);
+            // End:0xA3
+            if(Pawn.Physics == 2)
+            {
+                GotoState(Pawn.LandMovementState);
+            }
+        }
+        //return;        
+    }
+
+    function PlayerMove(float DeltaTime)
+    {
+        local Vector X, Y, Z, newAccel;
+        local Rotator OldRotation, ViewRotation;
+
+        GetAxes(Rotation, X, Y, Z);
+        // End:0x98
+        if(Pawn.OnLadder != none)
+        {
+            newAccel = PlayerInput.aForward * Pawn.OnLadder.ClimbDir;
+            // End:0x95
+            if(Pawn.OnLadder.bAllowLadderStrafing)
+            {
+                newAccel += (PlayerInput.aStrafe * Y);
+            }            
+        }
+        else
+        {
+            newAccel = (PlayerInput.aForward * X) + (PlayerInput.aStrafe * Y);
+        }
+        newAccel = Pawn.AccelRate * Normal(newAccel);
+        ViewRotation = Rotation;
+        SetRotation(ViewRotation);
+        OldRotation = Rotation;
+        UpdateRotation(DeltaTime);
+        // End:0x14D
+        if(Role < ROLE_Authority)
+        {
+            ReplicateMove(DeltaTime, newAccel, 0, OldRotation - Rotation);            
+        }
+        else
+        {
+            ProcessMove(DeltaTime, newAccel, 0, OldRotation - Rotation);
+        }
+        bPressedJump = false;
+        //return;        
+    }
+
+    event BeginState(name PreviousStateName)
+    {
+        Pawn.ShouldCrouch(false);
+        bPressedJump = false;
+        //return;        
+    }
+
+    event EndState(name NextStateName)
+    {
+        // End:0x31
+        if(Pawn != none)
+        {
+            Pawn.SetRemoteViewPitch(0);
+            Pawn.ShouldCrouch(false);
+        }
+        //return;        
+    }
+    stop;    
+}
+
+state PlayerSwimming
+{
+    event bool NotifyLanded(Vector HitNormal, Actor FloorActor)
+    {
+        // End:0x30
+        if(Pawn.PhysicsVolume.bWaterVolume)
+        {
+            Pawn.SetPhysics(3);            
+        }
+        else
+        {
+            GotoState(Pawn.LandMovementState);
+        }
+        return bUpdating;
+        //return ReturnValue;        
+    }
+
+    event NotifyPhysicsVolumeChange(PhysicsVolume NewVolume)
+    {
+        local Actor HitActor;
+        local Vector HitLocation, HitNormal, Checkpoint, X, Y, Z;
+
+        // End:0x29
+        if(!Pawn.bCollideActors)
+        {
+            GotoState(Pawn.LandMovementState);
+        }
+        // End:0x290
+        if(Pawn.Physics != 10)
+        {
+            // End:0x275
+            if(!NewVolume.bWaterVolume)
+            {
+                Pawn.SetPhysics(2);
+                // End:0x272
+                if(Pawn.Velocity.Z > float(0))
+                {
+                    GetAxes(Rotation, X, Y, Z);
+                    Pawn.bUpAndOut = ((X Dot Pawn.Acceleration) > float(0)) && (Pawn.Acceleration.Z > float(0)) || Rotation.Pitch > 2048;
+                    // End:0x17E
+                    if(Pawn.bUpAndOut && Pawn.CheckWaterJump(HitNormal))
+                    {
+                        Pawn.Velocity.Z = Pawn.OutofWaterZ;
+                        GotoState(Pawn.LandMovementState);                        
+                    }
+                    else
+                    {
+                        // End:0x1D3
+                        if((Pawn.Velocity.Z > float(160)) || !Pawn.TouchingWaterVolume())
+                        {
+                            GotoState(Pawn.LandMovementState);                            
+                        }
+                        else
+                        {
+                            Checkpoint = Pawn.Location;
+                            Checkpoint.Z -= (Pawn.CylinderComponent.CollisionHeight + 6.0000000);
+                            HitActor = Trace(HitLocation, HitNormal, Checkpoint, Pawn.Location, false);
+                            // End:0x267
+                            if(HitActor != none)
+                            {
+                                GotoState(Pawn.LandMovementState);                                
+                            }
+                            else
+                            {
+                                SetTimer(0.7000000, false);
+                            }
+                        }
+                    }
+                }                
+            }
+            else
+            {
+                ClearTimer();
+                Pawn.SetPhysics(3);
+            }            
+        }
+        else
+        {
+            // End:0x2B9
+            if(!NewVolume.bWaterVolume)
+            {
+                GotoState(Pawn.LandMovementState);
+            }
+        }
+        //return;        
+    }
+
+    function ProcessMove(float DeltaTime, Vector newAccel, Actor.EDoubleClickDir DoubleClickMove, Rotator DeltaRot)
+    {
+        Pawn.Acceleration = newAccel;
+        //return;        
+    }
+
+    function PlayerMove(float DeltaTime)
+    {
+        local Rotator OldRotation;
+        local Vector X, Y, Z, newAccel;
+
+        // End:0x1C
+        if(Pawn == none)
+        {
+            GotoState('Dead');            
+        }
+        else
+        {
+            GetAxes(Rotation, X, Y, Z);
+            newAccel = ((PlayerInput.aForward * X) + (PlayerInput.aStrafe * Y)) + (PlayerInput.aUp * vect(0.0000000, 0.0000000, 1.0000000));
+            newAccel = Pawn.AccelRate * Normal(newAccel);
+            OldRotation = Rotation;
+            UpdateRotation(DeltaTime);
+            // End:0xF4
+            if(Role < ROLE_Authority)
+            {
+                ReplicateMove(DeltaTime, newAccel, 0, OldRotation - Rotation);                
+            }
+            else
+            {
+                ProcessMove(DeltaTime, newAccel, 0, OldRotation - Rotation);
+            }
+            bPressedJump = false;
+        }
+        //return;        
+    }
+
+    event Timer()
+    {
+        // End:0x45
+        if(!Pawn.PhysicsVolume.bWaterVolume && Role == ROLE_Authority)
+        {
+            GotoState(Pawn.LandMovementState);
+        }
+        ClearTimer();
+        //return;        
+    }
+
+    event BeginState(name PreviousStateName)
+    {
+        ClearTimer();
+        // End:0x32
+        if(Pawn.Physics != 10)
+        {
+            Pawn.SetPhysics(3);
+        }
+        //return;        
+    }
+Begin:
+
+    stop;                
+}
+
+state PlayerFlying
+{
+    function PlayerMove(float DeltaTime)
+    {
+        local Vector X, Y, Z;
+
+        GetAxes(Rotation, X, Y, Z);
+        Pawn.Acceleration = ((PlayerInput.aForward * X) + (PlayerInput.aStrafe * Y)) + (PlayerInput.aUp * vect(0.0000000, 0.0000000, 1.0000000));
+        Pawn.Acceleration = Pawn.AccelRate * Normal(Pawn.Acceleration);
+        // End:0xEF
+        if(bCheatFlying && Pawn.Acceleration == vect(0.0000000, 0.0000000, 0.0000000))
+        {
+            Pawn.Velocity = vect(0.0000000, 0.0000000, 0.0000000);
+        }
+        UpdateRotation(DeltaTime);
+        // End:0x13E
+        if(Role < ROLE_Authority)
+        {
+            ReplicateMove(DeltaTime, Pawn.Acceleration, 0, rot(0, 0, 0));            
+        }
+        else
+        {
+            ProcessMove(DeltaTime, Pawn.Acceleration, 0, rot(0, 0, 0));
+        }
+        //return;        
+    }
+
+    event BeginState(name PreviousStateName)
+    {
+        Pawn.SetPhysics(4);
+        //return;        
+    }
+    stop;    
+}
+
+state BaseSpectating
+{
+    function bool IsSpectating()
+    {
+        return true;
+        //return ReturnValue;        
+    }
+
+    function bool LimitSpectatorVelocity()
+    {
+        // End:0x69
+        if(Location.Z > WorldInfo.StallZ)
+        {
+            Velocity.Z = FMin(SpectatorCameraSpeed, (WorldInfo.StallZ - Location.Z) - 2.0000000);
+            return true;            
+        }
+        else
+        {
+            // End:0xCF
+            if(Location.Z < WorldInfo.KillZ)
+            {
+                Velocity.Z = FMin(SpectatorCameraSpeed, (WorldInfo.KillZ - Location.Z) + 2.0000000);
+                return true;
+            }
+        }
+        return false;
+        //return ReturnValue;        
+    }
+
+    function ProcessMove(float DeltaTime, Vector newAccel, Actor.EDoubleClickDir DoubleClickMove, Rotator DeltaRot)
+    {
+        local float VelSize;
+
+        Acceleration = Normal(newAccel) * SpectatorCameraSpeed;
+        VelSize = VSize(Velocity);
+        // End:0x64
+        if(VelSize > float(0))
+        {
+            Velocity = Velocity - ((Velocity - (Normal(Acceleration) * VelSize)) * FMin(DeltaTime * float(8), 1.0000000));
+        }
+        Velocity = Velocity + (Acceleration * DeltaTime);
+        // End:0xA2
+        if(VSize(Velocity) > SpectatorCameraSpeed)
+        {
+            Velocity = Normal(Velocity) * SpectatorCameraSpeed;
+        }
+        LimitSpectatorVelocity();
+        // End:0x10E
+        if(VSize(Velocity) > float(0))
+        {
+            MoveSmooth((float(1 + int(bRun)) * Velocity) * DeltaTime);
+            // End:0x10E
+            if(LimitSpectatorVelocity())
+            {
+                MoveSmooth((Velocity.Z * vect(0.0000000, 0.0000000, 1.0000000)) * DeltaTime);
+            }
+        }
+        //return;        
+    }
+
+    function PlayerMove(float DeltaTime)
+    {
+        local Vector X, Y, Z;
+
+        GetAxes(Rotation, X, Y, Z);
+        Acceleration = ((PlayerInput.aForward * X) + (PlayerInput.aStrafe * Y)) + (PlayerInput.aUp * vect(0.0000000, 0.0000000, 1.0000000));
+        UpdateRotation(DeltaTime);
+        // End:0xAF
+        if(Role < ROLE_Authority)
+        {
+            ReplicateMove(DeltaTime, Acceleration, 0, rot(0, 0, 0));            
+        }
+        else
+        {
+            ProcessMove(DeltaTime, Acceleration, 0, rot(0, 0, 0));
+        }
+        //return;        
+    }
+
+    unreliable server function ServerSetSpectatorLocation(Vector NewLoc)
+    {
+        SetLocation(NewLoc);
+        // End:0x4B
+        if((WorldInfo.TimeSeconds - LastSpectatorStateSynchTime) > 2.0000000)
+        {
+            ClientGotoState(GetStateName());
+            LastSpectatorStateSynchTime = WorldInfo.TimeSeconds;
+        }
+        //return;        
+    }
+
+    function ReplicateMove(float DeltaTime, Vector newAccel, Actor.EDoubleClickDir DoubleClickMove, Rotator DeltaRot)
+    {
+        ProcessMove(DeltaTime, newAccel, DoubleClickMove, DeltaRot);
+        ServerSetSpectatorLocation(Location);
+        //return;        
+    }
+
+    event BeginState(name PreviousStateName)
+    {
+        bCollideWorld = true;
+        //return;        
+    }
+
+    event EndState(name NextStateName)
+    {
+        bCollideWorld = false;
+        //return;        
+    }
+    stop;    
+}
+
+state Spectating extends BaseSpectating
+{
+    ignores RestartLevel, ClientRestart, Suicide, ThrowWeapon;
+
+    exec function StartFire(optional byte FireModeNum)
+    {
+        ServerViewNextPlayer();
+        //return;        
+    }
+
+    exec function StartAltFire(optional byte FireModeNum)
+    {
+        ResetCameraMode();
+        ServerViewSelf();
+        //return;        
+    }
+
+    event BeginState(name PreviousStateName)
+    {
+        // End:0x27
+        if(Pawn != none)
+        {
+            SetLocation(Pawn.Location);
+            UnPossess();
+        }
+        bCollideWorld = true;
+        //return;        
+    }
+
+    event EndState(name NextStateName)
+    {
+        // End:0x63
+        if(PlayerReplicationInfo.bOnlySpectator)
+        {
+            LogInternal("WARNING - Spectator only player leaving spectating state to go to " $ string(NextStateName));
+        }
+        PlayerReplicationInfo.bIsSpectator = false;
+        bCollideWorld = false;
+        //return;        
+    }
+    stop;    
+}
+
+auto state PlayerWaiting extends BaseSpectating
+{
+    // ignores TakeDamage, NextWeapon, PrevWeapon, SwitchToBestWeapon, Jump, Suicide, 
+	//     ServerSuicide;
+    ignores TakeDamage, NextWeapon, PrevWeapon, SwitchToBestWeapon, Suicide, 
+	    ServerSuicide;
+
+    reliable server function ServerChangeTeam(int N)
+    {
+        WorldInfo.Game.ChangeTeam(self, N, true);
+        //return;        
+    }
+
+    reliable server function ServerRestartPlayer()
+    {
+        // End:0x1B
+        if(WorldInfo.TimeSeconds < WaitDelay)
+        {
+            return;
+        }
+        // End:0x37
+        if(WorldInfo.NetMode == NM_Client)
+        {
+            return;
+        }
+        // End:0x69
+        if(WorldInfo.Game.bWaitingToStartMatch)
+        {
+            PlayerReplicationInfo.bReadyToPlay = true;            
+        }
+        else
+        {
+            WorldInfo.Game.RestartPlayer(self);
+        }
+        //return;        
+    }
+
+    exec function StartFire(optional byte FireModeNum)
+    {
+        ServerRestartPlayer();
+        //return;        
+    }
+
+    event EndState(name NextStateName)
+    {
+        // End:0x20
+        if(PlayerReplicationInfo != none)
+        {
+            PlayerReplicationInfo.SetWaitingPlayer(false);
+        }
+        bCollideWorld = false;
+        //return;        
+    }
+
+    simulated event BeginState(name PreviousStateName)
+    {
+        // End:0x20
+        if(PlayerReplicationInfo != none)
+        {
+            PlayerReplicationInfo.SetWaitingPlayer(true);
+        }
+        bCollideWorld = true;
+        //return;        
+    }
+    stop;    
+}
+
+state WaitingForPawn extends BaseSpectating
+{
+    ignores KilledBy;
+
+    exec function StartFire(optional byte FireModeNum)
+    {
+        AskForPawn();
+        //return;        
+    }
+
+    reliable client simulated function ClientGotoState(name NewState, optional name NewLabel)
+    {
+        // End:0x28
+        if(NewState == 'RoundEnded')
+        {
+            global.ClientGotoState(NewState, NewLabel);
+        }
+        //return;        
+    }
+
+    unreliable client simulated function LongClientAdjustPosition(float TimeStamp, name NewState, Actor.EPhysics newPhysics, float NewLocX, float NewLocY, float NewLocZ, float NewVelX, float NewVelY, float NewVelZ, Actor NewBase, float NewFloorX, float NewFloorY, float NewFloorZ)
+    {
+        // End:0x1D
+        if(NewState == 'RoundEnded')
+        {
+            GotoState(NewState);
+        }
+        //return;        
+    }
+
+    event PlayerTick(float DeltaTime)
+    {
+        global.PlayerTick(DeltaTime);
+        // End:0x52
+        if(Pawn != none)
+        {
+            Pawn.Controller = self;
+            Pawn.BecomeViewTarget(self);
+            ClientRestart(Pawn);            
+        }
+        else
+        {
+            // End:0x88
+            if(!IsTimerActive() || GetTimerCount() > 1.0000000)
+            {
+                SetTimer(0.2000000, true);
+                AskForPawn();
+            }
+        }
+        //return;        
+    }
+
+    function ReplicateMove(float DeltaTime, Vector newAccel, Actor.EDoubleClickDir DoubleClickMove, Rotator DeltaRot)
+    {
+        ProcessMove(DeltaTime, newAccel, DoubleClickMove, DeltaRot);
+        //return;        
+    }
+
+    event Timer()
+    {
+        AskForPawn();
+        //return;        
+    }
+
+    event BeginState(name PreviousStateName)
+    {
+        SetTimer(0.2000000, true);
+        AskForPawn();
+        //return;        
+    }
+
+    event EndState(name NextStateName)
+    {
+        ResetCameraMode();
+        SetTimer(0.0000000, false);
+        //return;        
+    }
+    stop;    
+}
+
+state RoundEnded
+{
+    ignores KilledBy, TakeDamage, Suicide, ServerRestartPlayer, ThrowWeapon, Use, 
+	    LongClientAdjustPosition;
+
+    function bool IsSpectating()
+    {
+        return true;
+        //return ReturnValue;        
+    }
+
+    event Possess(Pawn aPawn, bool bVehicleTransition)
+    {
+        global.Possess(aPawn, bVehicleTransition);
+        // End:0x34
+        if(Pawn != none)
+        {
+            Pawn.TurnOff();
+        }
+        //return;        
+    }
+
+    reliable server function ServerRestartGame()
+    {
+        // End:0x40
+        if(WorldInfo.Game.PlayerCanRestartGame(self))
+        {
+            WorldInfo.Game.ResetLevel();
+        }
+        //return;        
+    }
+
+    exec function StartFire(optional byte FireModeNum)
+    {
+        // End:0x13
+        if(Role < ROLE_Authority)
+        {
+            return;
+        }
+        // End:0x2B
+        if(!bFrozen)
+        {
+            ServerRestartGame();            
+        }
+        else
+        {
+            // End:0x43
+            if(!IsTimerActive())
+            {
+                SetTimer(1.5000000, false);
+            }
+        }
+        //return;        
+    }
+
+    function PlayerMove(float DeltaTime)
+    {
+        local Vector X, Y, Z;
+        local Rotator DeltaRot, ViewRotation;
+
+        GetAxes(Rotation, X, Y, Z);
+        ViewRotation = Rotation;
+        DeltaRot.Yaw = int(PlayerInput.aTurn);
+        DeltaRot.Pitch = int(PlayerInput.aLookUp);
+        ProcessViewRotation(DeltaTime, ViewRotation, DeltaRot);
+        SetRotation(ViewRotation);
+        ViewShake(DeltaTime);
+        // End:0xD3
+        if(Role < ROLE_Authority)
+        {
+            ReplicateMove(DeltaTime, vect(0.0000000, 0.0000000, 0.0000000), 0, rot(0, 0, 0));            
+        }
+        else
+        {
+            ProcessMove(DeltaTime, vect(0.0000000, 0.0000000, 0.0000000), 0, rot(0, 0, 0));
+        }
+        bPressedJump = false;
+        //return;        
+    }
+
+    unreliable server function ServerMove(float TimeStamp, Vector InAccel, Vector ClientLoc, byte NewFlags, byte ClientRoll, int View)
+    {
+        global.ServerMove(TimeStamp, InAccel, ClientLoc, NewFlags, ClientRoll, ((Rotation.Yaw & 65535) << 16) + (Rotation.Pitch & 65535));
+        //return;        
+    }
+
+    function FindGoodView()
+    {
+        local Rotator GoodRotation;
+
+        GoodRotation = Rotation;
+        GetViewTarget().FindGoodEndView(self, GoodRotation);
+        SetRotation(GoodRotation);
+        //return;        
+    }
+
+    event Timer()
+    {
+        bFrozen = false;
+        //return;        
+    }
+
+    event BeginState(name PreviousStateName)
+    {
+        local Pawn P;
+
+        FOVAngle = DesiredFOV;
+        bFire = 0;
+        // End:0x4E
+        if(Pawn != none)
+        {
+            Pawn.TurnOff();
+            Pawn.bSpecialHUD = false;
+            StopFiring();
+        }
+        // End:0x6E
+        if(myHUD != none)
+        {
+            myHUD.SetShowScores(true);
+        }
+        bFrozen = true;
+        FindGoodView();
+        SetTimer(5.0000000, false);
+        // End:0xB0
+        foreach DynamicActors(Class'Pawn', P)
+        {
+            P.TurnOff();            
+        }        
+        //return;        
+    }
+
+    event EndState(name NextStateName)
+    {
+        // End:0x20
+        if(myHUD != none)
+        {
+            myHUD.SetShowScores(false);
+        }
+        //return;        
+    }
+Begin:
+
+    stop;                
+}
+
+state Dead
+{
+    ignores KilledBy, NextWeapon, PrevWeapon, ThrowWeapon;
+
+    function bool IsDead()
+    {
+        return true;
+        //return ReturnValue;        
+    }
+
+    reliable server function ServerRestartPlayer()
+    {
+        // End:0x26
+        if(!WorldInfo.Game.PlayerCanRestart(self))
+        {
+            return;
+        }
+        super.ServerRestartPlayer();
+        //return;        
+    }
+
+    exec function StartFire(optional byte FireModeNum)
+    {
+        // End:0x35
+        if(bFrozen)
+        {
+            // End:0x33
+            if(!IsTimerActive() || GetTimerCount() > MinRespawnDelay)
+            {
+                bFrozen = false;
+            }
+            return;
+        }
+        ServerRestartPlayer();
+        //return;        
+    }
+
+    exec function Use()
+    {
+        StartFire(0);
+        //return;        
+    }
+
+    exec function Jump()
+    {
+        StartFire(0);
+        //return;        
+    }
+
+    unreliable server function ServerMove(float TimeStamp, Vector Accel, Vector ClientLoc, byte NewFlags, byte ClientRoll, int View)
+    {
+        global.ServerMove(TimeStamp, Accel, ClientLoc, 0, ClientRoll, View);
+        //return;        
+    }
+
+    function PlayerMove(float DeltaTime)
+    {
+        local Vector X, Y, Z;
+        local Rotator DeltaRot, ViewRotation;
+
+        // End:0xEC
+        if(!bFrozen)
+        {
+            // End:0x28
+            if(bPressedJump)
+            {
+                StartFire(0);
+                bPressedJump = false;
+            }
+            GetAxes(Rotation, X, Y, Z);
+            ViewRotation = Rotation;
+            DeltaRot.Yaw = int(PlayerInput.aTurn);
+            DeltaRot.Pitch = int(PlayerInput.aLookUp);
+            ProcessViewRotation(DeltaTime, ViewRotation, DeltaRot);
+            SetRotation(ViewRotation);
+            // End:0xE9
+            if(Role < ROLE_Authority)
+            {
+                ReplicateMove(DeltaTime, vect(0.0000000, 0.0000000, 0.0000000), 0, rot(0, 0, 0));
+            }            
+        }
+        else
+        {
+            // End:0x115
+            if(!IsTimerActive() || GetTimerCount() > MinRespawnDelay)
+            {
+                bFrozen = false;
+            }
+        }
+        ViewShake(DeltaTime);
+        //return;        
+    }
+
+    function FindGoodView()
+    {
+        local Vector cameraLoc;
+        local Rotator cameraRot, ViewRotation;
+        local int tries, besttry;
+        local float bestDist, newdist;
+        local int startYaw;
+        local Actor TheViewTarget;
+
+        ViewRotation = Rotation;
+        ViewRotation.Pitch = 56000;
+        tries = 0;
+        besttry = 0;
+        bestDist = 0.0000000;
+        startYaw = ViewRotation.Yaw;
+        TheViewTarget = GetViewTarget();
+        tries = 0;
+        J0x67:
+
+        // End:0x108 [Loop If]
+        if(tries < 16)
+        {
+            cameraLoc = TheViewTarget.Location;
+            SetRotation(ViewRotation);
+            GetPlayerViewPoint(cameraLoc, cameraRot);
+            newdist = VSize(cameraLoc - TheViewTarget.Location);
+            // End:0xE7
+            if(newdist > bestDist)
+            {
+                bestDist = newdist;
+                besttry = tries;
+            }
+            ViewRotation.Yaw += 4096;
+            tries++;
+            // [Loop Continue]
+            goto J0x67;
+        }
+        ViewRotation.Yaw = startYaw + (besttry * 4096);
+        SetRotation(ViewRotation);
+        //return;        
+    }
+
+    event Timer()
+    {
+        // End:0x0D
+        if(!bFrozen)
+        {
+            return;
+        }
+        bFrozen = false;
+        bPressedJump = false;
+        //return;        
+    }
+
+    event BeginState(name PreviousStateName)
+    {
+        // End:0x33
+        if((Pawn != none) && Pawn.Controller == self)
+        {
+            Pawn.Controller = none;
+        }
+        Pawn = none;
+        FOVAngle = DesiredFOV;
+        Enemy = none;
+        bFrozen = true;
+        bPressedJump = false;
+        FindGoodView();
+        SetTimer(MinRespawnDelay, false);
+        CleanOutSavedMoves();
+        //return;        
+    }
+
+    event EndState(name NextStateName)
+    {
+        CleanOutSavedMoves();
+        Velocity = vect(0.0000000, 0.0000000, 0.0000000);
+        Acceleration = vect(0.0000000, 0.0000000, 0.0000000);
+        // End:0x4F
+        if(!PlayerReplicationInfo.bOutOfLives)
+        {
+            ResetCameraMode();
+        }
+        bPressedJump = false;
+        // End:0x77
+        if(myHUD != none)
+        {
+            myHUD.SetShowScores(false);
+        }
+        //return;        
+    }
+Begin:
+
+    // End:0x2F
+    if(LocalPlayer(Player) != none)
+    {
+        // End:0x2F
+        if(myHUD != none)
+        {
+            myHUD.PlayerOwnerDied();
+        }
+    }
+    stop;                    
+}
 
 defaultproperties
 {
-	// The PlayerController is currently required to have collision as there is code that uses the collision
-	// for moving the spectator camera around.  Without collision certain assumptions will not hold (e.g. the
-	// spectator does not have a pawn so the various game code looks at ALL pawns.  Having a new pawnType will
-	// require changes to that code.
-	// Removing the collision from the controller and using the controller - pawn mechanic will eventually be coded
-	// for spectator-esque functionality
-	Begin Object Class=CylinderComponent Name=CollisionCylinder
-		CollisionRadius=+22.000000
-		CollisionHeight=+22.000000
-	End Object
-	CollisionComponent=CollisionCylinder
-	CylinderComponent=CollisionCylinder
-	Components.Add(CollisionCylinder)
-
-    DebugCameraControllerClass=class'DebugCameraController';
-
-	FOVAngle=85.000
-	bStasis=False
-	bIsPlayer=true
-	bCanDoSpecial=true
-	Physics=PHYS_None
-	PlayerOwnerDataStoreClass=class'Engine.PlayerOwnerDataStore'
-	CheatClass=class'Engine.CheatManager'
-	InputClass=class'Engine.PlayerInput'
-	ProgressTimeOut=8.0
-
-	CameraClass=class'Camera'
-
-	MaxResponseTime=0.125
-	ClientCap=0
-	LastSpeedHackLog=-100.0
-	SavedMoveClass=class'SavedMove'
-
-	DesiredFOV=85.000000
-	DefaultFOV=85.000000
-	LODDistanceFactor=1.0
-
-	bCinemaDisableInputMove=false
-	bCinemaDisableInputLook=false
-
-	bIsUsingStreamingVolumes=TRUE
-	SpectatorCameraSpeed=600.0
-	MinRespawnDelay=1.0
+    CameraClass=Class'Camera'
+    DebugCameraControllerClass=Class'DebugCameraController'
+    PlayerOwnerDataStoreClass=Class'PlayerOwnerDataStore'
+    bDynamicNetSpeed=true
+    bAimingHelp=true
+    bIsUsingStreamingVolumes=true
+    bCheckRelevancyThroughPortals=true
+    MaxResponseTime=0.1250000
+    FOVAngle=85.0000000
+    DesiredFOV=85.0000000
+    DefaultFOV=85.0000000
+    LODDistanceFactor=1.0000000
+    SavedMoveClass=Class'SavedMove'
+    DynamicPingThreshold=400.0000000
+    LastSpeedHackLog=-100.0000000
+    ProgressTimeOut=8.0000000
+    QuickSaveString="Quick Saving"
+    NoPauseMessage="Pausa no permitida"
+    ViewingFrom="Now viewing from"
+    OwnCamera="Visi?n desde c?mara propia"
+    CheatClass=Class'CheatManager'
+    InputClass=Class'PlayerInput'
+    // Reference: CylinderComponent'Default__PlayerController.CollisionCylinder'
+    // TemplateOwnerClass: none
+    // TemplateOwnerName: 'CollisionCylinder'
+    begin object name="CollisionCylinder" class=Class'CylinderComponent'
+    end object
+    CylinderComponent=CollisionCylinder
+    ForceFeedbackManagerClassName="WinDrv.XnaForceFeedbackManager"
+    InteractDistance=512.0000000
+    SpectatorCameraSpeed=600.0000000
+    MinRespawnDelay=1.0000000
+    bIsPlayer=true
+    bCanDoSpecial=true
+    Components[0]=none
+    Components[1]=CollisionCylinder
+    CollisionComponent=CollisionCylinder
 }

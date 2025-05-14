@@ -56,6 +56,17 @@ enum ENetRole
     ROLE_Authority          =3,
     ROLE_MAX                =4,
 };
+enum EMoveDir
+{
+    MD_Stationary           =0,
+    MD_Forward              =1,
+    MD_Backward             =2,
+    MD_Left                 =3,
+    MD_Right                =4,
+    MD_Up                   =5,
+    MD_Down                 =6,
+    MD_MAX                  =7,
+};
 enum EPhysics
 {
     PHYS_None               =0,
@@ -70,19 +81,9 @@ enum EPhysics
     PHYS_Ladder             =9,
     PHYS_RigidBody          =10,
     PHYS_SoftBody           =11,
-    PHYS_Unused             =12,
-    PHYS_MAX                =13,
-};
-enum EMoveDir
-{
-    MD_Stationary           =0,
-    MD_Forward              =1,
-    MD_Backward             =2,
-    MD_Left                 =3,
-    MD_Right                =4,
-    MD_Up                   =5,
-    MD_Down                 =6,
-    MD_MAX                  =7,
+    PHYS_Floating           =12,
+    PHYS_Unused             =13,
+    PHYS_MAX                =14,
 };
 enum EForceModeType
 {
@@ -896,6 +897,7 @@ AUTOGENERATE_NAME(ActorLeavingVolume)
 AUTOGENERATE_NAME(AddDebugText)
 AUTOGENERATE_NAME(AddDefaultInventory)
 AUTOGENERATE_NAME(AllowDetourTo)
+AUTOGENERATE_NAME(AnimationTriggerCallback)
 AUTOGENERATE_NAME(AnimTreeUpdated)
 AUTOGENERATE_NAME(Attach)
 AUTOGENERATE_NAME(AttachCloneToActor)
@@ -940,7 +942,6 @@ AUTOGENERATE_NAME(ClientWasKicked)
 AUTOGENERATE_NAME(CollisionChanged)
 AUTOGENERATE_NAME(ConditionalPause)
 AUTOGENERATE_NAME(ConstraintBrokenNotify)
-AUTOGENERATE_NAME(ContinueOnFoot)
 AUTOGENERATE_NAME(CreateInventory)
 AUTOGENERATE_NAME(CreatePlayer)
 AUTOGENERATE_NAME(CurrentLevelUnloaded)
@@ -950,13 +951,15 @@ AUTOGENERATE_NAME(Detach)
 AUTOGENERATE_NAME(DetourWeight)
 AUTOGENERATE_NAME(DisableModifier)
 AUTOGENERATE_NAME(DiscardInventory)
-AUTOGENERATE_NAME(DriverLeave)
+AUTOGENERATE_NAME(DrawShieldDecals)
+AUTOGENERATE_NAME(EmitOnTeleport)
 AUTOGENERATE_NAME(EncroachedBy)
 AUTOGENERATE_NAME(EncroachingOn)
 AUTOGENERATE_NAME(EndCrouch)
 AUTOGENERATE_NAME(EndViewTarget)
 AUTOGENERATE_NAME(EnemyNotVisible)
 AUTOGENERATE_NAME(Exit)
+AUTOGENERATE_NAME(FaceFXAudioStartedCallback)
 AUTOGENERATE_NAME(Falling)
 AUTOGENERATE_NAME(FellOutOfWorld)
 AUTOGENERATE_NAME(FindInventoryType)
@@ -974,19 +977,20 @@ AUTOGENERATE_NAME(GetBeaconText)
 AUTOGENERATE_NAME(GetDebugAbbrev)
 AUTOGENERATE_NAME(GetDebugString)
 AUTOGENERATE_NAME(GetDefaultGameClassPath)
-AUTOGENERATE_NAME(GetEntryLocation)
 AUTOGENERATE_NAME(GetFaceFXAudioComponent)
 AUTOGENERATE_NAME(GetFOVAngle)
 AUTOGENERATE_NAME(GetMuzzleLoc)
 AUTOGENERATE_NAME(GetNamedInterface)
 AUTOGENERATE_NAME(GetPawnViewLocation)
 AUTOGENERATE_NAME(GetPhysicalFireStartLoc)
+AUTOGENERATE_NAME(GetPhysicsName)
 AUTOGENERATE_NAME(GetPlayerViewPoint)
 AUTOGENERATE_NAME(GetSeamlessTravelActorList)
 AUTOGENERATE_NAME(GetSubtitleRegion)
 AUTOGENERATE_NAME(GetTraceRange)
 AUTOGENERATE_NAME(GetViewRotation)
 AUTOGENERATE_NAME(GetWeaponStartTraceLocation)
+AUTOGENERATE_NAME(GetZoomMagnification)
 AUTOGENERATE_NAME(HandleInputAxis)
 AUTOGENERATE_NAME(HandleInputChar)
 AUTOGENERATE_NAME(HandleInputKey)
@@ -1006,18 +1010,22 @@ AUTOGENERATE_NAME(InterpolationFinished)
 AUTOGENERATE_NAME(InterpolationStarted)
 AUTOGENERATE_NAME(IsFiring)
 AUTOGENERATE_NAME(IsInCombat)
+AUTOGENERATE_NAME(IsInLoadedVisibleWorld)
 AUTOGENERATE_NAME(IsLookInputIgnored)
 AUTOGENERATE_NAME(IsMoveInputIgnored)
 AUTOGENERATE_NAME(IsSameTeam)
 AUTOGENERATE_NAME(IsSpectating)
 AUTOGENERATE_NAME(KickIdler)
 AUTOGENERATE_NAME(KickWarning)
+AUTOGENERATE_NAME(Kismet_ClientKeyOffSound)
 AUTOGENERATE_NAME(Kismet_ClientPlaySound)
+AUTOGENERATE_NAME(Kismet_ClientSetParameterSound)
 AUTOGENERATE_NAME(Kismet_ClientStopSound)
 AUTOGENERATE_NAME(Landed)
 AUTOGENERATE_NAME(LayoutPlayers)
 AUTOGENERATE_NAME(LevelStreamingStatusChanged)
 AUTOGENERATE_NAME(LimitViewRotation)
+AUTOGENERATE_NAME(LinkToActor)
 AUTOGENERATE_NAME(Login)
 AUTOGENERATE_NAME(LongFall)
 AUTOGENERATE_NAME(LostChild)
@@ -1048,6 +1056,7 @@ AUTOGENERATE_NAME(NotifySkelControlBeyondLimit)
 AUTOGENERATE_NAME(OnAnimEnd)
 AUTOGENERATE_NAME(OnAnimPlay)
 AUTOGENERATE_NAME(OnLostFocusPause)
+AUTOGENERATE_NAME(OnPlayerHasBeenMoved)
 AUTOGENERATE_NAME(OnRanOver)
 AUTOGENERATE_NAME(OnReadComplete)
 AUTOGENERATE_NAME(OnReadPlaylistComplete)
@@ -1062,17 +1071,21 @@ AUTOGENERATE_NAME(PhysicsChangedFor)
 AUTOGENERATE_NAME(PhysicsVolumeChange)
 AUTOGENERATE_NAME(PlayActorFaceFXAnim)
 AUTOGENERATE_NAME(PlayerTick)
+AUTOGENERATE_NAME(PlayFoleySound)
 AUTOGENERATE_NAME(PlayFootStepSound)
 AUTOGENERATE_NAME(PlayParticleEffect)
 AUTOGENERATE_NAME(PlayRumble)
+AUTOGENERATE_NAME(PlayUICue)
 AUTOGENERATE_NAME(Possess)
 AUTOGENERATE_NAME(PostBeginPlay)
 AUTOGENERATE_NAME(PostCommitMapChange)
+AUTOGENERATE_NAME(PostDemoRewind)
 AUTOGENERATE_NAME(PostInit)
 AUTOGENERATE_NAME(PostInitAnimTree)
 AUTOGENERATE_NAME(PostLogin)
 AUTOGENERATE_NAME(PostRender)
 AUTOGENERATE_NAME(PostRenderFor)
+AUTOGENERATE_NAME(PostRestreamed)
 AUTOGENERATE_NAME(PostSeamlessTravel)
 AUTOGENERATE_NAME(PostTouch)
 AUTOGENERATE_NAME(PreBeginPlay)
@@ -1081,12 +1094,15 @@ AUTOGENERATE_NAME(PreCommitMapChange)
 AUTOGENERATE_NAME(PreExit)
 AUTOGENERATE_NAME(PreLogin)
 AUTOGENERATE_NAME(PreRender)
+AUTOGENERATE_NAME(PreStreamOut)
+AUTOGENERATE_NAME(PreventedWalkingOverLedge)
 AUTOGENERATE_NAME(ProcessActorSetVolume)
 AUTOGENERATE_NAME(RanInto)
 AUTOGENERATE_NAME(RatePickup)
 AUTOGENERATE_NAME(ReceivedPlayer)
 AUTOGENERATE_NAME(ReceiveLocalizedMessage)
 AUTOGENERATE_NAME(RemoveDebugText)
+AUTOGENERATE_NAME(RemoveFromAIManager)
 AUTOGENERATE_NAME(RemovePlayer)
 AUTOGENERATE_NAME(Render)
 AUTOGENERATE_NAME(ReplicatedDataBinding)
@@ -1107,13 +1123,16 @@ AUTOGENERATE_NAME(ServerTravel)
 AUTOGENERATE_NAME(ServerUnmutePlayer)
 AUTOGENERATE_NAME(ServerUpdateLevelVisibility)
 AUTOGENERATE_NAME(SetAccountInterface)
+AUTOGENERATE_NAME(SetAnimDirectorBoneName)
 AUTOGENERATE_NAME(SetAnimPosition)
 AUTOGENERATE_NAME(SetContentInterface)
 AUTOGENERATE_NAME(SetDisabled)
+AUTOGENERATE_NAME(SetFaceFXRegister)
 AUTOGENERATE_NAME(SetGameInterface)
 AUTOGENERATE_NAME(SetGameType)
 AUTOGENERATE_NAME(SetInitialState)
 AUTOGENERATE_NAME(SetInvalidUntil)
+AUTOGENERATE_NAME(SetInvestigateHighlighted)
 AUTOGENERATE_NAME(SetMorphWeight)
 AUTOGENERATE_NAME(SetNamedInterface)
 AUTOGENERATE_NAME(SetNewsInterface)
@@ -1158,6 +1177,7 @@ AUTOGENERATE_NAME(Timer)
 AUTOGENERATE_NAME(TornOff)
 AUTOGENERATE_NAME(Touch)
 AUTOGENERATE_NAME(UnClaim)
+AUTOGENERATE_NAME(UnlinkToActor)
 AUTOGENERATE_NAME(UnPossess)
 AUTOGENERATE_NAME(UnTouch)
 AUTOGENERATE_NAME(Update)
@@ -1167,6 +1187,22 @@ AUTOGENERATE_NAME(UpdateCamera)
 
 #ifndef INCLUDED_ENGINE_CLASSES
 #define INCLUDED_ENGINE_CLASSES 1
+
+struct FThought
+{
+    FStringNoInit Text;
+    BYTE Red;
+    BYTE Green;
+    BYTE Blue;
+    BYTE Alpha;
+
+    /** Constructors */
+    FThought() {}
+    FThought(EEventParm)
+    {
+        appMemzero(this, sizeof(FThought));
+    }
+};
 
 struct FTimerData
 {
@@ -1256,6 +1292,31 @@ struct FAnimSlotDesc
     FAnimSlotDesc(EEventParm)
     {
         appMemzero(this, sizeof(FAnimSlotDesc));
+    }
+};
+
+struct FPhysContactModificationData
+{
+    INT ChangeFlags;
+    FPointer PhysShape0;
+    FPointer PhysShape1;
+    class AActor* Actor0;
+    class AActor* Actor1;
+    INT PhysFeatureIndex0;
+    INT physFeatureIndex1;
+    FPointer PhysData;
+
+    /** Constructors */
+    FPhysContactModificationData()
+    : ChangeFlags(0)
+    , Actor0(NULL)
+    , Actor1(NULL)
+    , PhysFeatureIndex0(0)
+    , physFeatureIndex1(0)
+    {}
+    FPhysContactModificationData(EEventParm)
+    {
+        appMemzero(this, sizeof(FPhysContactModificationData));
     }
 };
 
@@ -1399,11 +1460,28 @@ struct FNavReference
 #define UCONST_ACTORMAXSTEPHEIGHT 35.0
 #define UCONST_MINFLOORZ 0.7
 #define UCONST_REP_RBLOCATION_ERROR_TOLERANCE_SQ 16.0f
+#define UCONST_TRACEFLAG_Destructibles 64
+#define UCONST_TRACEFLAG_IgnorePawns 32
+#define UCONST_TRACEFLAG_CheckZeroExtent 16
 #define UCONST_TRACEFLAG_Blocking 8
 #define UCONST_TRACEFLAG_SkipMovers 4
 #define UCONST_TRACEFLAG_PhysicsVolumes 2
 #define UCONST_TRACEFLAG_Bullet 1
 
+struct Actor_eventSetInvestigateHighlighted_Parms
+{
+    class UMaterialInstanceConstant* highMat;
+    UBOOL On;
+    Actor_eventSetInvestigateHighlighted_Parms(EEventParm)
+    {
+    }
+};
+struct Actor_eventPostDemoRewind_Parms
+{
+    Actor_eventPostDemoRewind_Parms(EEventParm)
+    {
+    }
+};
 struct Actor_eventAnimTreeUpdated_Parms
 {
     class USkeletalMeshComponent* SkelMesh;
@@ -1422,6 +1500,34 @@ struct Actor_eventOnRigidBodySpringOverextension_Parms
 {
     class URB_BodyInstance* BodyInstance;
     Actor_eventOnRigidBodySpringOverextension_Parms(EEventParm)
+    {
+    }
+};
+struct Actor_eventUnlinkToActor_Parms
+{
+    class AActor* LinkTarget;
+    UBOOL ReturnValue;
+    Actor_eventUnlinkToActor_Parms(EEventParm)
+    {
+    }
+};
+struct Actor_eventLinkToActor_Parms
+{
+    class AActor* LinkTarget;
+    UBOOL ReturnValue;
+    Actor_eventLinkToActor_Parms(EEventParm)
+    {
+    }
+};
+struct Actor_eventPreStreamOut_Parms
+{
+    Actor_eventPreStreamOut_Parms(EEventParm)
+    {
+    }
+};
+struct Actor_eventPostRestreamed_Parms
+{
+    Actor_eventPostRestreamed_Parms(EEventParm)
     {
     }
 };
@@ -1472,6 +1578,9 @@ struct Actor_eventRigidBodyCollision_Parms
     class UPrimitiveComponent* OtherComponent;
     FCollisionImpactData RigidCollisionData;
     INT ContactIndex;
+    FLOAT Speed;
+    INT Index0;
+    INT Index1;
     Actor_eventRigidBodyCollision_Parms(EEventParm)
     : RigidCollisionData(EC_EventParm)
     {
@@ -1542,6 +1651,15 @@ struct Actor_eventSetMorphWeight_Parms
     {
     }
 };
+struct Actor_eventSetFaceFXRegister_Parms
+{
+    FString RegisterName;
+    FLOAT Value;
+    BYTE RegOp;
+    Actor_eventSetFaceFXRegister_Parms(EEventParm)
+    {
+    }
+};
 struct Actor_eventStopActorFaceFXAnim_Parms
 {
     Actor_eventStopActorFaceFXAnim_Parms(EEventParm)
@@ -1562,6 +1680,13 @@ struct Actor_eventPlayActorFaceFXAnim_Parms
 struct Actor_eventFinishAnimControl_Parms
 {
     Actor_eventFinishAnimControl_Parms(EEventParm)
+    {
+    }
+};
+struct Actor_eventSetAnimDirectorBoneName_Parms
+{
+    FName BoneName;
+    Actor_eventSetAnimDirectorBoneName_Parms(EEventParm)
     {
     }
 };
@@ -1629,6 +1754,13 @@ struct Actor_eventModifyHearSoundComponent_Parms
 {
     class UAudioComponent* AC;
     Actor_eventModifyHearSoundComponent_Parms(EEventParm)
+    {
+    }
+};
+struct Actor_eventGetPhysicsName_Parms
+{
+    FString ReturnValue;
+    Actor_eventGetPhysicsName_Parms(EEventParm)
     {
     }
 };
@@ -1748,6 +1880,23 @@ struct Actor_eventOverRotated_Parms
     FRotator out_Actual;
     UBOOL ReturnValue;
     Actor_eventOverRotated_Parms(EEventParm)
+    {
+    }
+};
+struct Actor_eventFaceFXAudioStartedCallback_Parms
+{
+    class UAudioComponent* AC;
+    Actor_eventFaceFXAudioStartedCallback_Parms(EEventParm)
+    {
+    }
+};
+struct Actor_eventAnimationTriggerCallback_Parms
+{
+    FName TagName;
+    TArray<FString> Params;
+    class UAnimSet* TagAnimSet;
+    FLOAT Time;
+    Actor_eventAnimationTriggerCallback_Parms(EEventParm)
     {
     }
 };
@@ -2070,9 +2219,11 @@ public:
     //## END PROPS Actor
 
     virtual void ForceUpdateComponents(UBOOL bCollisionUpdate=FALSE,UBOOL bTransformOnly=TRUE);
+    virtual void SetExtraStasis(UBOOL NewValue);
     virtual FString ConsoleCommand(const FString& Command,UBOOL bWriteToLog=TRUE);
     void Sleep(FLOAT Seconds);
     void FinishAnim(class UAnimNodeSequence* SeqNode);
+    void SetCollision(UBOOL bNewColActors=FALSE,UBOOL bNewBlockActors=FALSE,UBOOL bNewIgnoreEncroachers=FALSE);
     void SetCollisionSize(FLOAT NewRadius,FLOAT NewHeight);
     void SetCollisionType(BYTE NewCollisionType);
     void SetDrawScale(FLOAT NewScale);
@@ -2081,14 +2232,22 @@ public:
     UBOOL SetLocation(FVector NewLocation);
     UBOOL SetRotation(FRotator NewRotation);
     virtual BYTE MovingWhichWay(FLOAT& Amount);
+    UBOOL SetLocationForTest(FVector NewLocation,UBOOL bNoCheck);
+    void SetZone(UBOOL bForceRefresh);
     UBOOL SetRelativeRotation(FRotator NewRotation);
     UBOOL SetRelativeLocation(FVector NewLocation);
+    void SetHardAttach(UBOOL bNewHardAttach=FALSE);
     INT fixedTurn(INT Current,INT Desired,INT DeltaRate);
+    UBOOL MoveSmooth(FVector Delta);
     void AutonomousPhysics(FLOAT DeltaSeconds);
     virtual FLOAT GetTerminalVelocity();
+    virtual FVector GetZoneVelocity();
+    void SetBase(class AActor* NewBase,FVector NewFloor=FVector(EC_EventParm),class USkeletalMeshComponent* SkelComp=NULL,FName AttachName=NAME_None);
     void SetOwner(class AActor* NewOwner);
     virtual void FindBase();
+    UBOOL IsBasedOn(class AActor* TestActor);
     virtual class AActor* GetBaseMost();
+    UBOOL IsOwnedBy(class AActor* TestActor);
     void SetForcedInitialReplicatedProperty(class UProperty* PropToReplicate,UBOOL bAdd);
     void FlushPersistentDebugLines();
     void DrawDebugLine(FVector LineStart,FVector LineEnd,BYTE R,BYTE G,BYTE B,UBOOL bPersistentLines=FALSE);
@@ -2098,8 +2257,9 @@ public:
     void DrawDebugCylinder(FVector Start,FVector End,FLOAT Radius,INT Segments,BYTE R,BYTE G,BYTE B,UBOOL bPersistentLines=FALSE);
     void DrawDebugCone(FVector Origin,FVector Direction,FLOAT Length,FLOAT AngleWidth,FLOAT AngleHeight,INT NumSides,FColor DrawColor,UBOOL bPersistentLines=FALSE);
     void ChartData(const FString& DataName,FLOAT DataValue);
-    void SetHidden(UBOOL bNewHidden);
+    virtual void SetHidden(UBOOL bNewHidden);
     void SetOnlyOwnerSee(UBOOL bNewOnlyOwnerSee);
+    void SetPhysics(BYTE newPhysics,UBOOL WakePhysics=TRUE);
     void Clock(FLOAT& Time);
     void UnClock(FLOAT& Time);
     void AttachComponent(class UActorComponent* NewComponent);
@@ -2107,10 +2267,17 @@ public:
     void ReattachComponent(class UActorComponent* ComponentToReattach);
     void SetTickGroup(BYTE NewTickGroup);
     UBOOL ClampRotation(FRotator& out_Rot,FRotator rBase,FRotator rUpperLimits,FRotator rLowerLimits);
-    UBOOL FindSpot(FVector BoxExtent,FVector& SpotLocation);
+    class AActor* Trace(FVector& HitLocation,FVector& HitNormal,FVector TraceEnd,FVector TraceStart=FVector(EC_EventParm),UBOOL bTraceActors=FALSE,FVector Extent=FVector(EC_EventParm),struct FTraceHitInfo* HitInfo=NULL,INT ExtraTraceFlags=0);
+    UBOOL TraceComponent(FVector& HitLocation,FVector& HitNormal,class UPrimitiveComponent* InComponent,FVector TraceEnd,FVector TraceStart=FVector(EC_EventParm),FVector Extent=FVector(EC_EventParm),struct FTraceHitInfo* HitInfo=NULL);
+    UBOOL PointCheckComponent(class UPrimitiveComponent* InComponent,FVector PointLocation,FVector PointExtent);
+    UBOOL FastTrace(FVector TraceEnd,FVector TraceStart=FVector(EC_EventParm),FVector BoxExtent=FVector(EC_EventParm),UBOOL bTraceBullet=FALSE);
+    UBOOL TraceAllPhysicsAssetInteractions(class USkeletalMeshComponent* SkelMeshComp,FVector EndTrace,FVector StartTrace,TArray<struct FImpactInfo>& out_Hits,FVector Extent=FVector(EC_EventParm));
+    UBOOL FindSpot(FVector BoxExtent,FVector& SpotLocation,UBOOL DontEaryOut=FALSE);
     UBOOL ContainsPoint(FVector Spot);
-    void GetComponentsBoundingBox(FBox& ActorBox) const;
-    virtual void GetBoundingCylinder(FLOAT& CollisionRadius,FLOAT& CollisionHeight) const;
+    UBOOL IsOverlapping(class AActor* A);
+    void GetComponentsBoundingBox(FBox& ActorBox);
+    virtual void GetBoundingCylinder(FLOAT& CollisionRadius,FLOAT& CollisionHeight);
+    UBOOL Destroy();
     void SetTimer(FLOAT InRate,UBOOL inbLoop=FALSE,FName inTimerFunc=FName(TEXT("Timer")),class UObject* inObj=NULL);
     void ClearTimer(FName inTimerFunc=FName(TEXT("Timer")),class UObject* inObj=NULL);
     void PauseTimer(UBOOL bPause,FName inTimerFunc=FName(TEXT("Timer")),class UObject* inObj=NULL);
@@ -2118,27 +2285,45 @@ public:
     FLOAT GetTimerCount(FName inTimerFunc=FName(TEXT("Timer")),class UObject* inObj=NULL);
     FLOAT GetTimerRate(FName TimerFuncName=FName(TEXT("Timer")),class UObject* inObj=NULL);
     class UAudioComponent* CreateAudioComponent(class USoundCue* InSoundCue,UBOOL bPlay=FALSE,UBOOL bStopWhenOwnerDestroyed=FALSE,UBOOL bUseLocation=FALSE,FVector SourceLocation=FVector(EC_EventParm),UBOOL bAttachToSelf=TRUE);
+    void PlaySound(class USoundCue* InSoundCue,UBOOL bNotReplicated=FALSE,UBOOL bNoRepToOwner=FALSE,UBOOL bStopWhenOwnerDestroyed=FALSE,FVector SoundLocation=FVector(EC_EventParm),UBOOL bNoRepToRelevant=FALSE);
+    void EnableEffect(FName effectToEnable,UBOOL Enable=TRUE);
+    UBOOL EffectEnabled(FName effectToEnable);
+    void EffectValue(FName effectToEnable,FLOAT Value);
+    void EffectSoundCue(FName effectToEnable,class USoundCue* InSoundCue);
+    void EffectReverb(FName effectToEnable,class UFMODReverb* InReverb);
+    void SetMixBin(class UMixBin* mixToStart,FLOAT Time);
+    void SetRoomMixBin(class UMixBin* mixToStart);
+    void SetMixBinMix(class UMixBin* mixToSet,FLOAT Value);
+    void SetMasterMixBin(class UMixBin* mixToStart);
     void MakeNoise(FLOAT Loudness,FName NoiseType=NAME_None);
     UBOOL PlayerCanSeeMe();
-    virtual FVector GetDestination(class AController* C);
+    UBOOL SuggestTossVelocity(FVector& TossVelocity,FVector Destination,FVector Start,FLOAT TossSpeed,FLOAT BaseTossZ=0,FLOAT DesiredZPct=0,FVector CollisionSize=FVector(EC_EventParm),FLOAT TerminalVelocity=0,FLOAT OverrideGravityZ=0);
+    FVector GetDestination(class AController* C);
     FString GetURLMap();
     virtual FLOAT GetGravityZ();
     void SetNetUpdateTime(FLOAT NewUpdateTime);
     virtual void PrestreamTextures(FLOAT Seconds,UBOOL bEnableStreaming);
     virtual UBOOL IsPlayerOwned();
     virtual BYTE GetTeamNum();
-    virtual FVector GetTargetLocation(class AActor* RequestedBy=NULL,UBOOL bRequestAlternateLoc=FALSE) const;
+    virtual FVector GetTargetLocation(class AActor* RequestedBy=NULL,UBOOL bRequestAlternateLoc=FALSE);
+    virtual FVector GetFOVCheckLocation();
     virtual void SetHUDLocation(FVector NewHUDLocation);
     virtual void NativePostRenderFor(class APlayerController* PC,class UCanvas* Canvas,FVector CameraPosition,FVector CameraDir);
     FGuid GetPackageGuid(FName PackageName);
-    UBOOL IsInPersistentLevel() const;
-    virtual UBOOL SupportsKismetModification(class USequenceOp* AskingOp) const;
+    UBOOL IsInPersistentLevel();
+    UBOOL SupportsKismetModification(class USequenceOp* AskingOp,FString& Reason);
     DECLARE_FUNCTION(execForceUpdateComponents)
     {
         P_GET_UBOOL_OPTX(bCollisionUpdate,FALSE);
         P_GET_UBOOL_OPTX(bTransformOnly,TRUE);
         P_FINISH;
         ForceUpdateComponents(bCollisionUpdate,bTransformOnly);
+    }
+    DECLARE_FUNCTION(execSetExtraStasis)
+    {
+        P_GET_UBOOL(NewValue);
+        P_FINISH;
+        SetExtraStasis(NewValue);
     }
     DECLARE_FUNCTION(execConsoleCommand)
     {
@@ -2159,7 +2344,14 @@ public:
         P_FINISH;
         FinishAnim(SeqNode);
     }
-    DECLARE_FUNCTION(execSetCollision);
+    DECLARE_FUNCTION(execSetCollision)
+    {
+        P_GET_UBOOL_OPTX(bNewColActors,FALSE);
+        P_GET_UBOOL_OPTX(bNewBlockActors,FALSE);
+        P_GET_UBOOL_OPTX(bNewIgnoreEncroachers,FALSE);
+        P_FINISH;
+        SetCollision(bNewColActors,bNewBlockActors,bNewIgnoreEncroachers);
+    }
     DECLARE_FUNCTION(execSetCollisionSize)
     {
         P_GET_FLOAT(NewRadius);
@@ -2209,7 +2401,19 @@ public:
         P_FINISH;
         *(BYTE*)Result=MovingWhichWay(Amount);
     }
-    DECLARE_FUNCTION(execSetZone);
+    DECLARE_FUNCTION(execSetLocationForTest)
+    {
+        P_GET_STRUCT(FVector,NewLocation);
+        P_GET_UBOOL(bNoCheck);
+        P_FINISH;
+        *(UBOOL*)Result=SetLocationForTest(NewLocation,bNoCheck);
+    }
+    DECLARE_FUNCTION(execSetZone)
+    {
+        P_GET_UBOOL(bForceRefresh);
+        P_FINISH;
+        SetZone(bForceRefresh);
+    }
     DECLARE_FUNCTION(execSetRelativeRotation)
     {
         P_GET_STRUCT(FRotator,NewRotation);
@@ -2222,7 +2426,12 @@ public:
         P_FINISH;
         *(UBOOL*)Result=SetRelativeLocation(NewLocation);
     }
-    DECLARE_FUNCTION(execSetHardAttach);
+    DECLARE_FUNCTION(execSetHardAttach)
+    {
+        P_GET_UBOOL_OPTX(bNewHardAttach,FALSE);
+        P_FINISH;
+        SetHardAttach(bNewHardAttach);
+    }
     DECLARE_FUNCTION(execfixedTurn)
     {
         P_GET_INT(Current);
@@ -2231,7 +2440,12 @@ public:
         P_FINISH;
         *(INT*)Result=fixedTurn(Current,Desired,DeltaRate);
     }
-    DECLARE_FUNCTION(execMoveSmooth);
+    DECLARE_FUNCTION(execMoveSmooth)
+    {
+        P_GET_STRUCT(FVector,Delta);
+        P_FINISH;
+        *(UBOOL*)Result=MoveSmooth(Delta);
+    }
     DECLARE_FUNCTION(execAutonomousPhysics)
     {
         P_GET_FLOAT(DeltaSeconds);
@@ -2243,7 +2457,20 @@ public:
         P_FINISH;
         *(FLOAT*)Result=GetTerminalVelocity();
     }
-    DECLARE_FUNCTION(execSetBase);
+    DECLARE_FUNCTION(execGetZoneVelocity)
+    {
+        P_FINISH;
+        *(FVector*)Result=GetZoneVelocity();
+    }
+    DECLARE_FUNCTION(execSetBase)
+    {
+        P_GET_OBJECT(AActor,NewBase);
+        P_GET_STRUCT_OPTX(FVector,NewFloor,FVector(EC_EventParm));
+        P_GET_OBJECT_OPTX(USkeletalMeshComponent,SkelComp,NULL);
+        P_GET_NAME_OPTX(AttachName,NAME_None);
+        P_FINISH;
+        SetBase(NewBase,NewFloor,SkelComp,AttachName);
+    }
     DECLARE_FUNCTION(execSetOwner)
     {
         P_GET_OBJECT(AActor,NewOwner);
@@ -2255,13 +2482,23 @@ public:
         P_FINISH;
         FindBase();
     }
-    DECLARE_FUNCTION(execIsBasedOn);
+    DECLARE_FUNCTION(execIsBasedOn)
+    {
+        P_GET_OBJECT(AActor,TestActor);
+        P_FINISH;
+        *(UBOOL*)Result=IsBasedOn(TestActor);
+    }
     DECLARE_FUNCTION(execGetBaseMost)
     {
         P_FINISH;
         *(class AActor**)Result=GetBaseMost();
     }
-    DECLARE_FUNCTION(execIsOwnedBy);
+    DECLARE_FUNCTION(execIsOwnedBy)
+    {
+        P_GET_OBJECT(AActor,TestActor);
+        P_FINISH;
+        *(UBOOL*)Result=IsOwnedBy(TestActor);
+    }
     DECLARE_FUNCTION(execSetForcedInitialReplicatedProperty)
     {
         P_GET_OBJECT(UProperty,PropToReplicate);
@@ -2362,7 +2599,13 @@ public:
         P_FINISH;
         SetOnlyOwnerSee(bNewOnlyOwnerSee);
     }
-    DECLARE_FUNCTION(execSetPhysics);
+    DECLARE_FUNCTION(execSetPhysics)
+    {
+        P_GET_BYTE(newPhysics);
+        P_GET_UBOOL_OPTX(WakePhysics,TRUE);
+        P_FINISH;
+        SetPhysics(newPhysics,WakePhysics);
+    }
     DECLARE_FUNCTION(execClock)
     {
         P_GET_FLOAT_REF(Time);
@@ -2408,17 +2651,65 @@ public:
         P_FINISH;
         *(UBOOL*)Result=ClampRotation(out_Rot,rBase,rUpperLimits,rLowerLimits);
     }
-    DECLARE_FUNCTION(execTrace);
-    DECLARE_FUNCTION(execTraceComponent);
-    DECLARE_FUNCTION(execPointCheckComponent);
-    DECLARE_FUNCTION(execFastTrace);
-    DECLARE_FUNCTION(execTraceAllPhysicsAssetInteractions);
+    DECLARE_FUNCTION(execTrace)
+    {
+        P_GET_STRUCT_REF(FVector,HitLocation);
+        P_GET_STRUCT_REF(FVector,HitNormal);
+        P_GET_STRUCT(FVector,TraceEnd);
+        P_GET_STRUCT_OPTX(FVector,TraceStart,FVector(EC_EventParm));
+        P_GET_UBOOL_OPTX(bTraceActors,FALSE);
+        P_GET_STRUCT_OPTX(FVector,Extent,FVector(EC_EventParm));
+        P_GET_STRUCT_OPTX_REF(struct FTraceHitInfo,HitInfo,FTraceHitInfo(EC_EventParm));
+        P_GET_INT_OPTX(ExtraTraceFlags,0);
+        P_FINISH;
+        *(class AActor**)Result=Trace(HitLocation,HitNormal,TraceEnd,TraceStart,bTraceActors,Extent,pHitInfo ? &HitInfo : NULL,ExtraTraceFlags);
+    }
+    DECLARE_FUNCTION(execTraceComponent)
+    {
+        P_GET_STRUCT_REF(FVector,HitLocation);
+        P_GET_STRUCT_REF(FVector,HitNormal);
+        P_GET_OBJECT(UPrimitiveComponent,InComponent);
+        P_GET_STRUCT(FVector,TraceEnd);
+        P_GET_STRUCT_OPTX(FVector,TraceStart,FVector(EC_EventParm));
+        P_GET_STRUCT_OPTX(FVector,Extent,FVector(EC_EventParm));
+        P_GET_STRUCT_OPTX_REF(struct FTraceHitInfo,HitInfo,FTraceHitInfo(EC_EventParm));
+        P_FINISH;
+        *(UBOOL*)Result=TraceComponent(HitLocation,HitNormal,InComponent,TraceEnd,TraceStart,Extent,pHitInfo ? &HitInfo : NULL);
+    }
+    DECLARE_FUNCTION(execPointCheckComponent)
+    {
+        P_GET_OBJECT(UPrimitiveComponent,InComponent);
+        P_GET_STRUCT(FVector,PointLocation);
+        P_GET_STRUCT(FVector,PointExtent);
+        P_FINISH;
+        *(UBOOL*)Result=PointCheckComponent(InComponent,PointLocation,PointExtent);
+    }
+    DECLARE_FUNCTION(execFastTrace)
+    {
+        P_GET_STRUCT(FVector,TraceEnd);
+        P_GET_STRUCT_OPTX(FVector,TraceStart,FVector(EC_EventParm));
+        P_GET_STRUCT_OPTX(FVector,BoxExtent,FVector(EC_EventParm));
+        P_GET_UBOOL_OPTX(bTraceBullet,FALSE);
+        P_FINISH;
+        *(UBOOL*)Result=FastTrace(TraceEnd,TraceStart,BoxExtent,bTraceBullet);
+    }
+    DECLARE_FUNCTION(execTraceAllPhysicsAssetInteractions)
+    {
+        P_GET_OBJECT(USkeletalMeshComponent,SkelMeshComp);
+        P_GET_STRUCT(FVector,EndTrace);
+        P_GET_STRUCT(FVector,StartTrace);
+        P_GET_TARRAY_REF(struct FImpactInfo,out_Hits);
+        P_GET_STRUCT_OPTX(FVector,Extent,FVector(EC_EventParm));
+        P_FINISH;
+        *(UBOOL*)Result=TraceAllPhysicsAssetInteractions(SkelMeshComp,EndTrace,StartTrace,out_Hits,Extent);
+    }
     DECLARE_FUNCTION(execFindSpot)
     {
         P_GET_STRUCT(FVector,BoxExtent);
         P_GET_STRUCT_REF(FVector,SpotLocation);
+        P_GET_UBOOL_OPTX(DontEaryOut,FALSE);
         P_FINISH;
-        *(UBOOL*)Result=FindSpot(BoxExtent,SpotLocation);
+        *(UBOOL*)Result=FindSpot(BoxExtent,SpotLocation,DontEaryOut);
     }
     DECLARE_FUNCTION(execContainsPoint)
     {
@@ -2426,7 +2717,12 @@ public:
         P_FINISH;
         *(UBOOL*)Result=ContainsPoint(Spot);
     }
-    DECLARE_FUNCTION(execIsOverlapping);
+    DECLARE_FUNCTION(execIsOverlapping)
+    {
+        P_GET_OBJECT(AActor,A);
+        P_FINISH;
+        *(UBOOL*)Result=IsOverlapping(A);
+    }
     DECLARE_FUNCTION(execGetComponentsBoundingBox)
     {
         P_GET_STRUCT_REF(FBox,ActorBox);
@@ -2441,7 +2737,11 @@ public:
         GetBoundingCylinder(CollisionRadius,CollisionHeight);
     }
     DECLARE_FUNCTION(execSpawn);
-    DECLARE_FUNCTION(execDestroy);
+    DECLARE_FUNCTION(execDestroy)
+    {
+        P_FINISH;
+        *(UBOOL*)Result=Destroy();
+    }
     DECLARE_FUNCTION(execSetTimer)
     {
         P_GET_FLOAT(InRate);
@@ -2498,7 +2798,77 @@ public:
         P_FINISH;
         *(class UAudioComponent**)Result=CreateAudioComponent(InSoundCue,bPlay,bStopWhenOwnerDestroyed,bUseLocation,SourceLocation,bAttachToSelf);
     }
-    DECLARE_FUNCTION(execPlaySound);
+    DECLARE_FUNCTION(execPlaySound)
+    {
+        P_GET_OBJECT(USoundCue,InSoundCue);
+        P_GET_UBOOL_OPTX(bNotReplicated,FALSE);
+        P_GET_UBOOL_OPTX(bNoRepToOwner,FALSE);
+        P_GET_UBOOL_OPTX(bStopWhenOwnerDestroyed,FALSE);
+        P_GET_STRUCT_OPTX(FVector,SoundLocation,FVector(EC_EventParm));
+        P_GET_UBOOL_OPTX(bNoRepToRelevant,FALSE);
+        P_FINISH;
+        PlaySound(InSoundCue,bNotReplicated,bNoRepToOwner,bStopWhenOwnerDestroyed,SoundLocation,bNoRepToRelevant);
+    }
+    DECLARE_FUNCTION(execEnableEffect)
+    {
+        P_GET_NAME(effectToEnable);
+        P_GET_UBOOL_OPTX(Enable,TRUE);
+        P_FINISH;
+        EnableEffect(effectToEnable,Enable);
+    }
+    DECLARE_FUNCTION(execEffectEnabled)
+    {
+        P_GET_NAME(effectToEnable);
+        P_FINISH;
+        *(UBOOL*)Result=EffectEnabled(effectToEnable);
+    }
+    DECLARE_FUNCTION(execEffectValue)
+    {
+        P_GET_NAME(effectToEnable);
+        P_GET_FLOAT(Value);
+        P_FINISH;
+        EffectValue(effectToEnable,Value);
+    }
+    DECLARE_FUNCTION(execEffectSoundCue)
+    {
+        P_GET_NAME(effectToEnable);
+        P_GET_OBJECT(USoundCue,InSoundCue);
+        P_FINISH;
+        EffectSoundCue(effectToEnable,InSoundCue);
+    }
+    DECLARE_FUNCTION(execEffectReverb)
+    {
+        P_GET_NAME(effectToEnable);
+        P_GET_OBJECT(UFMODReverb,InReverb);
+        P_FINISH;
+        EffectReverb(effectToEnable,InReverb);
+    }
+    DECLARE_FUNCTION(execSetMixBin)
+    {
+        P_GET_OBJECT(UMixBin,mixToStart);
+        P_GET_FLOAT(Time);
+        P_FINISH;
+        SetMixBin(mixToStart,Time);
+    }
+    DECLARE_FUNCTION(execSetRoomMixBin)
+    {
+        P_GET_OBJECT(UMixBin,mixToStart);
+        P_FINISH;
+        SetRoomMixBin(mixToStart);
+    }
+    DECLARE_FUNCTION(execSetMixBinMix)
+    {
+        P_GET_OBJECT(UMixBin,mixToSet);
+        P_GET_FLOAT(Value);
+        P_FINISH;
+        SetMixBinMix(mixToSet,Value);
+    }
+    DECLARE_FUNCTION(execSetMasterMixBin)
+    {
+        P_GET_OBJECT(UMixBin,mixToStart);
+        P_FINISH;
+        SetMasterMixBin(mixToStart);
+    }
     DECLARE_FUNCTION(execMakeNoise)
     {
         P_GET_FLOAT(Loudness);
@@ -2511,7 +2881,20 @@ public:
         P_FINISH;
         *(UBOOL*)Result=PlayerCanSeeMe();
     }
-    DECLARE_FUNCTION(execSuggestTossVelocity);
+    DECLARE_FUNCTION(execSuggestTossVelocity)
+    {
+        P_GET_STRUCT_REF(FVector,TossVelocity);
+        P_GET_STRUCT(FVector,Destination);
+        P_GET_STRUCT(FVector,Start);
+        P_GET_FLOAT(TossSpeed);
+        P_GET_FLOAT_OPTX(BaseTossZ,0);
+        P_GET_FLOAT_OPTX(DesiredZPct,0);
+        P_GET_STRUCT_OPTX(FVector,CollisionSize,FVector(EC_EventParm));
+        P_GET_FLOAT_OPTX(TerminalVelocity,0);
+        P_GET_FLOAT_OPTX(OverrideGravityZ,0);
+        P_FINISH;
+        *(UBOOL*)Result=SuggestTossVelocity(TossVelocity,Destination,Start,TossSpeed,BaseTossZ,DesiredZPct,CollisionSize,TerminalVelocity,OverrideGravityZ);
+    }
     DECLARE_FUNCTION(execGetDestination)
     {
         P_GET_OBJECT(AController,C);
@@ -2571,6 +2954,11 @@ public:
         P_FINISH;
         *(FVector*)Result=GetTargetLocation(RequestedBy,bRequestAlternateLoc);
     }
+    DECLARE_FUNCTION(execGetFOVCheckLocation)
+    {
+        P_FINISH;
+        *(FVector*)Result=GetFOVCheckLocation();
+    }
     DECLARE_FUNCTION(execSetHUDLocation)
     {
         P_GET_STRUCT(FVector,NewHUDLocation);
@@ -2600,8 +2988,20 @@ public:
     DECLARE_FUNCTION(execSupportsKismetModification)
     {
         P_GET_OBJECT(USequenceOp,AskingOp);
+        P_GET_STR_REF(Reason);
         P_FINISH;
-        *(UBOOL*)Result=SupportsKismetModification(AskingOp);
+        *(UBOOL*)Result=SupportsKismetModification(AskingOp,Reason);
+    }
+    void eventSetInvestigateHighlighted(class UMaterialInstanceConstant* highMat,UBOOL On)
+    {
+        Actor_eventSetInvestigateHighlighted_Parms Parms(EC_EventParm);
+        Parms.highMat=highMat;
+        Parms.On=On ? FIRST_BITFIELD : FALSE;
+        ProcessEvent(FindFunctionChecked(ENGINE_SetInvestigateHighlighted),&Parms);
+    }
+    void eventPostDemoRewind()
+    {
+        ProcessEvent(FindFunctionChecked(ENGINE_PostDemoRewind),NULL);
     }
     void eventAnimTreeUpdated(class USkeletalMeshComponent* SkelMesh)
     {
@@ -2620,6 +3020,30 @@ public:
         Actor_eventOnRigidBodySpringOverextension_Parms Parms(EC_EventParm);
         Parms.BodyInstance=BodyInstance;
         ProcessEvent(FindFunctionChecked(ENGINE_OnRigidBodySpringOverextension),&Parms);
+    }
+    UBOOL eventUnlinkToActor(class AActor* LinkTarget)
+    {
+        Actor_eventUnlinkToActor_Parms Parms(EC_EventParm);
+        Parms.ReturnValue=FALSE;
+        Parms.LinkTarget=LinkTarget;
+        ProcessEvent(FindFunctionChecked(ENGINE_UnlinkToActor),&Parms);
+        return Parms.ReturnValue;
+    }
+    UBOOL eventLinkToActor(class AActor* LinkTarget)
+    {
+        Actor_eventLinkToActor_Parms Parms(EC_EventParm);
+        Parms.ReturnValue=FALSE;
+        Parms.LinkTarget=LinkTarget;
+        ProcessEvent(FindFunctionChecked(ENGINE_LinkToActor),&Parms);
+        return Parms.ReturnValue;
+    }
+    void eventPreStreamOut()
+    {
+        ProcessEvent(FindFunctionChecked(ENGINE_PreStreamOut),NULL);
+    }
+    void eventPostRestreamed()
+    {
+        ProcessEvent(FindFunctionChecked(ENGINE_PostRestreamed),NULL);
     }
     void eventPostInitAnimTree(class USkeletalMeshComponent* SkelComp)
     {
@@ -2658,13 +3082,16 @@ public:
         Parms.WheelIndex=WheelIndex;
         ProcessEvent(FindFunctionChecked(ENGINE_OnRanOver),&Parms);
     }
-    void eventRigidBodyCollision(class UPrimitiveComponent* HitComponent,class UPrimitiveComponent* OtherComponent,const FCollisionImpactData& RigidCollisionData,INT ContactIndex)
+    void eventRigidBodyCollision(class UPrimitiveComponent* HitComponent,class UPrimitiveComponent* OtherComponent,const FCollisionImpactData& RigidCollisionData,INT ContactIndex,FLOAT Speed,INT Index0,INT Index1)
     {
         Actor_eventRigidBodyCollision_Parms Parms(EC_EventParm);
         Parms.HitComponent=HitComponent;
         Parms.OtherComponent=OtherComponent;
         Parms.RigidCollisionData=RigidCollisionData;
         Parms.ContactIndex=ContactIndex;
+        Parms.Speed=Speed;
+        Parms.Index0=Index0;
+        Parms.Index1=Index1;
         ProcessEvent(FindFunctionChecked(ENGINE_RigidBodyCollision),&Parms);
     }
     void eventInterpolationChanged(class USeqAct_Interp* InterpAction)
@@ -2726,6 +3153,14 @@ public:
         Parms.MorphWeight=MorphWeight;
         ProcessEvent(FindFunctionChecked(ENGINE_SetMorphWeight),&Parms);
     }
+    void eventSetFaceFXRegister(const FString& RegisterName,FLOAT Value,BYTE RegOp)
+    {
+        Actor_eventSetFaceFXRegister_Parms Parms(EC_EventParm);
+        Parms.RegisterName=RegisterName;
+        Parms.Value=Value;
+        Parms.RegOp=RegOp;
+        ProcessEvent(FindFunctionChecked(ENGINE_SetFaceFXRegister),&Parms);
+    }
     void eventStopActorFaceFXAnim()
     {
         ProcessEvent(FindFunctionChecked(ENGINE_StopActorFaceFXAnim),NULL);
@@ -2744,6 +3179,12 @@ public:
     void eventFinishAnimControl()
     {
         ProcessEvent(FindFunctionChecked(ENGINE_FinishAnimControl),NULL);
+    }
+    void eventSetAnimDirectorBoneName(FName BoneName)
+    {
+        Actor_eventSetAnimDirectorBoneName_Parms Parms(EC_EventParm);
+        Parms.BoneName=BoneName;
+        ProcessEvent(FindFunctionChecked(ENGINE_SetAnimDirectorBoneName),&Parms);
     }
     void eventSetAnimPosition(FName SlotName,INT ChannelIndex,FName InAnimSeqName,FLOAT InPosition,UBOOL bFireNotifies,UBOOL bLooping)
     {
@@ -2800,6 +3241,12 @@ public:
         Actor_eventModifyHearSoundComponent_Parms Parms(EC_EventParm);
         Parms.AC=AC;
         ProcessEvent(FindFunctionChecked(ENGINE_ModifyHearSoundComponent),&Parms);
+    }
+    FString eventGetPhysicsName()
+    {
+        Actor_eventGetPhysicsName_Parms Parms(EC_EventParm);
+        ProcessEvent(FindFunctionChecked(ENGINE_GetPhysicsName),&Parms);
+        return Parms.ReturnValue;
     }
     void eventEndViewTarget(class APlayerController* PC)
     {
@@ -2906,6 +3353,21 @@ public:
         out_Desired=Parms.out_Desired;
         out_Actual=Parms.out_Actual;
         return Parms.ReturnValue;
+    }
+    void eventFaceFXAudioStartedCallback(class UAudioComponent* AC)
+    {
+        Actor_eventFaceFXAudioStartedCallback_Parms Parms(EC_EventParm);
+        Parms.AC=AC;
+        ProcessEvent(FindFunctionChecked(ENGINE_FaceFXAudioStartedCallback),&Parms);
+    }
+    void eventAnimationTriggerCallback(FName TagName,const TArray<FString>& Params,class UAnimSet* TagAnimSet,FLOAT Time)
+    {
+        Actor_eventAnimationTriggerCallback_Parms Parms(EC_EventParm);
+        Parms.TagName=TagName;
+        Parms.Params=Params;
+        Parms.TagAnimSet=TagAnimSet;
+        Parms.Time=Time;
+        ProcessEvent(FindFunctionChecked(ENGINE_AnimationTriggerCallback),&Parms);
     }
     void eventRanInto(class AActor* Other)
     {
@@ -5016,7 +5478,20 @@ public:
     BITFIELD bProcessAllActors:1;
     //## END PROPS Volume
 
-    DECLARE_FUNCTION(execEncompasses);
+    virtual UBOOL Encompasses(class AActor* Other);
+    virtual UBOOL EncompassesPoint(FVector Point);
+    DECLARE_FUNCTION(execEncompasses)
+    {
+        P_GET_OBJECT(AActor,Other);
+        P_FINISH;
+        *(UBOOL*)Result=Encompasses(Other);
+    }
+    DECLARE_FUNCTION(execEncompassesPoint)
+    {
+        P_GET_STRUCT(FVector,Point);
+        P_FINISH;
+        *(UBOOL*)Result=EncompassesPoint(Point);
+    }
     void eventProcessActorSetVolume(class AActor* Other)
     {
         Volume_eventProcessActorSetVolume_Parms Parms(EC_EventParm);
@@ -5228,6 +5703,13 @@ public:
     //## END PROPS PhysicsVolume
 
     virtual FLOAT GetGravityZ();
+    virtual FVector GetZoneVelocityForActor(class AActor* TheActor);
+    DECLARE_FUNCTION(execGetZoneVelocityForActor)
+    {
+        P_GET_OBJECT(AActor,TheActor);
+        P_FINISH;
+        *(FVector*)Result=GetZoneVelocityForActor(TheActor);
+    }
     void eventPawnLeavingVolume(class APawn* Other)
     {
         PhysicsVolume_eventPawnLeavingVolume_Parms Parms(EC_EventParm);
@@ -6081,7 +6563,7 @@ public:
 
     virtual void ApplyCameraModifiers(FLOAT DeltaTime,FTPOV& OutPOV);
     virtual void CheckViewTarget(struct FTViewTarget& VT);
-    void SetViewTarget(class AActor* NewViewTarget,struct FViewTargetTransitionParams TransitionParams=FViewTargetTransitionParams(EC_EventParm));
+    virtual void SetViewTarget(class AActor* NewViewTarget,struct FViewTargetTransitionParams TransitionParams=FViewTargetTransitionParams(EC_EventParm));
     DECLARE_FUNCTION(execApplyCameraModifiers)
     {
         P_GET_FLOAT(DeltaTime);
@@ -6129,7 +6611,7 @@ public:
     //## END PROPS AnimatedCamera
 
     virtual void ApplyCameraModifiers(FLOAT DeltaTime,FTPOV& OutPOV);
-    virtual void ApplyCameraModifiersNative(FLOAT DeltaTime,FTPOV& OutPOV);
+    void ApplyCameraModifiersNative(FLOAT DeltaTime,FTPOV& OutPOV);
     virtual class UCameraAnimInst* PlayCameraAnim(class UCameraAnim* Anim,FLOAT Rate=1.000000,FLOAT Scale=1.000000,FLOAT BlendInTime=0,FLOAT BlendOutTime=0,UBOOL bLoop=FALSE,UBOOL bRandomStartTime=FALSE,FLOAT Duration=0,UBOOL bSingleInstance=FALSE);
     virtual void StopAllCameraAnims(UBOOL bImmediate=FALSE);
     virtual void StopAllCameraAnimsByType(class UCameraAnim* Anim,UBOOL bImmediate=FALSE);
@@ -6314,6 +6796,12 @@ struct FVisiblePortalInfo
 
 #define UCONST_LATENT_MOVETOWARD 503
 
+struct Controller_eventRemoveFromAIManager_Parms
+{
+    Controller_eventRemoveFromAIManager_Parms(EEventParm)
+    {
+    }
+};
 struct Controller_eventCurrentLevelUnloaded_Parms
 {
     Controller_eventCurrentLevelUnloaded_Parms(EEventParm)
@@ -6602,13 +7090,16 @@ public:
     FVector GetFocalPoint();
     void SetDestinationPosition(FVector Dest,UBOOL bOffsetFromBase=FALSE);
     FVector GetDestinationPosition();
-    virtual void SetAdjustLocation(FVector NewLoc,UBOOL bAdjust,UBOOL bOffsetFromBase=FALSE);
+    void SetAdjustLocation(FVector NewLoc,UBOOL bAdjust,UBOOL bOffsetFromBase=FALSE);
     FVector GetAdjustLocation();
     UBOOL BeyondFogDistance(FVector ViewPoint,FVector OtherPoint);
     virtual BYTE GetTeamNum();
+    UBOOL LineOfSightTo(class AActor* Other,FVector chkLocation=FVector(EC_EventParm),UBOOL bTryAlternateTargetLoc=FALSE);
     UBOOL CanSee(class APawn* Other);
     UBOOL CanSeeByPoints(FVector ViewLocation,FVector TestLocation,FRotator ViewRotation);
     class APawn* PickTarget(class UClass* TargetClass,FLOAT& bestAim,FLOAT& bestDist,FVector FireDir,FVector projStart,FLOAT MaxRange);
+    void MoveTo(FVector NewDestination,class AActor* ViewFocus=NULL,UBOOL bShouldWalk=FALSE);
+    void MoveToward(class AActor* NewTarget,class AActor* ViewFocus=NULL,FLOAT DestinationOffset=0,UBOOL bUseStrafing=FALSE,UBOOL bShouldWalk=FALSE);
     void FinishRotation();
     class AActor* FindPathTo(FVector aPoint,INT MaxPathLength=0,UBOOL bReturnPartial=FALSE);
     class AActor* FindPathToward(class AActor* anActor,UBOOL bWeightDetours=FALSE,INT MaxPathLength=0,UBOOL bReturnPartial=FALSE);
@@ -6618,6 +7109,7 @@ public:
     UBOOL PointReachable(FVector aPoint);
     UBOOL ActorReachable(class AActor* anActor);
     UBOOL PickWallAdjust(FVector HitNormal);
+    void WaitForLanding(FLOAT waitDuration=0);
     virtual void EndClimbLadder();
     UBOOL InLatentExecution(INT LatentActionNumber);
     void StopLatentExecution();
@@ -6715,7 +7207,14 @@ public:
         P_FINISH;
         *(UBOOL*)Result=BeyondFogDistance(ViewPoint,OtherPoint);
     }
-    DECLARE_FUNCTION(execLineOfSightTo);
+    DECLARE_FUNCTION(execLineOfSightTo)
+    {
+        P_GET_OBJECT(AActor,Other);
+        P_GET_STRUCT_OPTX(FVector,chkLocation,FVector(EC_EventParm));
+        P_GET_UBOOL_OPTX(bTryAlternateTargetLoc,FALSE);
+        P_FINISH;
+        *(UBOOL*)Result=LineOfSightTo(Other,chkLocation,bTryAlternateTargetLoc);
+    }
     DECLARE_FUNCTION(execCanSee)
     {
         P_GET_OBJECT(APawn,Other);
@@ -6741,8 +7240,24 @@ public:
         P_FINISH;
         *(class APawn**)Result=PickTarget(TargetClass,bestAim,bestDist,FireDir,projStart,MaxRange);
     }
-    DECLARE_FUNCTION(execMoveTo);
-    DECLARE_FUNCTION(execMoveToward);
+    DECLARE_FUNCTION(execMoveTo)
+    {
+        P_GET_STRUCT(FVector,NewDestination);
+        P_GET_OBJECT_OPTX(AActor,ViewFocus,NULL);
+        P_GET_UBOOL_OPTX(bShouldWalk,bIsWalking);
+        P_FINISH;
+        MoveTo(NewDestination,ViewFocus,bShouldWalk);
+    }
+    DECLARE_FUNCTION(execMoveToward)
+    {
+        P_GET_OBJECT(AActor,NewTarget);
+        P_GET_OBJECT_OPTX(AActor,ViewFocus,NULL);
+        P_GET_FLOAT_OPTX(DestinationOffset,0);
+        P_GET_UBOOL_OPTX(bUseStrafing,FALSE);
+        P_GET_UBOOL_OPTX(bShouldWalk,bIsWalking);
+        P_FINISH;
+        MoveToward(NewTarget,ViewFocus,DestinationOffset,bUseStrafing,bShouldWalk);
+    }
     DECLARE_FUNCTION(execFinishRotation)
     {
         P_FINISH;
@@ -6807,7 +7322,12 @@ public:
         P_FINISH;
         *(UBOOL*)Result=PickWallAdjust(HitNormal);
     }
-    DECLARE_FUNCTION(execWaitForLanding);
+    DECLARE_FUNCTION(execWaitForLanding)
+    {
+        P_GET_FLOAT_OPTX(waitDuration,0);
+        P_FINISH;
+        WaitForLanding(waitDuration);
+    }
     DECLARE_FUNCTION(execEndClimbLadder)
     {
         P_FINISH;
@@ -6823,6 +7343,10 @@ public:
     {
         P_FINISH;
         StopLatentExecution();
+    }
+    void eventRemoveFromAIManager()
+    {
+        ProcessEvent(FindFunctionChecked(ENGINE_RemoveFromAIManager),NULL);
     }
     void eventCurrentLevelUnloaded()
     {
@@ -9237,10 +9761,22 @@ struct PlayerController_eventClientSetForceMipLevelsToBeResident_Parms
     {
     }
 };
+struct PlayerController_eventOnPlayerHasBeenMoved_Parms
+{
+    PlayerController_eventOnPlayerHasBeenMoved_Parms(EEventParm)
+    {
+    }
+};
 struct PlayerController_eventSoakPause_Parms
 {
     class APawn* P;
     PlayerController_eventSoakPause_Parms(EEventParm)
+    {
+    }
+};
+struct PlayerController_eventDrawShieldDecals_Parms
+{
+    PlayerController_eventDrawShieldDecals_Parms(EEventParm)
     {
     }
 };
@@ -9333,8 +9869,6 @@ struct PlayerController_eventClientCancelPendingMapChange_Parms
 };
 struct PlayerController_eventClientCommitMapChange_Parms
 {
-    UBOOL bShouldSkipLevelStartupEvent;
-    UBOOL bShouldSkipLevelBeginningEvent;
     PlayerController_eventClientCommitMapChange_Parms(EEventParm)
     {
     }
@@ -9428,6 +9962,13 @@ struct PlayerController_eventClientSetViewTarget_Parms
     class AActor* A;
     struct FViewTargetTransitionParams TransitionParams;
     PlayerController_eventClientSetViewTarget_Parms(EEventParm)
+    {
+    }
+};
+struct PlayerController_eventGetZoomMagnification_Parms
+{
+    FLOAT ReturnValue;
+    PlayerController_eventGetZoomMagnification_Parms(EEventParm)
     {
     }
 };
@@ -9544,6 +10085,14 @@ struct PlayerController_eventTeamMessage_Parms
     {
     }
 };
+struct PlayerController_eventPlayUICue_Parms
+{
+    class USoundCue* Cue;
+    class UAudioComponent* ReturnValue;
+    PlayerController_eventPlayUICue_Parms(EEventParm)
+    {
+    }
+};
 struct PlayerController_eventClientMessage_Parms
 {
     FString S;
@@ -9559,6 +10108,24 @@ struct PlayerController_eventKismet_ClientStopSound_Parms
     class AActor* SourceActor;
     FLOAT FadeOutTime;
     PlayerController_eventKismet_ClientStopSound_Parms(EEventParm)
+    {
+    }
+};
+struct PlayerController_eventKismet_ClientSetParameterSound_Parms
+{
+    class USoundCue* ASound;
+    class AActor* SourceActor;
+    FName nameToSet;
+    FLOAT valueToSet;
+    PlayerController_eventKismet_ClientSetParameterSound_Parms(EEventParm)
+    {
+    }
+};
+struct PlayerController_eventKismet_ClientKeyOffSound_Parms
+{
+    class USoundCue* ASound;
+    class AActor* SourceActor;
+    PlayerController_eventKismet_ClientKeyOffSound_Parms(EEventParm)
     {
     }
 };
@@ -9788,6 +10355,7 @@ public:
     FScriptDelegate __CanUnpause__Delegate;
     //## END PROPS PlayerController
 
+    UBOOL AllowConsole();
     void SetNetSpeed(INT NewSpeed);
     FString GetPlayerNetworkAddress();
     FString GetServerNetworkAddress();
@@ -9798,21 +10366,20 @@ public:
     virtual void CopyToClipboard(const FString& Text);
     virtual FString PasteFromClipboard();
     virtual void SetAllowMatureLanguage(UBOOL bAllowMatureLanguge);
-    virtual void SetAudioGroupVolume(FName GroupName,FLOAT Volume);
     void ClientConvolve(const FString& C,INT H);
     void ServerProcessConvolve(const FString& C,INT H);
     UBOOL CheckSpeedHack(FLOAT DeltaTime);
     INT FindStairRotation(FLOAT DeltaTime);
     virtual void CleanUpAudioComponents();
-    virtual UBOOL IsControllerTiltActive() const;
+    virtual UBOOL IsControllerTiltActive();
     virtual void SetControllerTiltDesiredIfAvailable(UBOOL bActive);
     virtual void SetControllerTiltActive(UBOOL bActive);
     virtual void SetOnlyUseControllerTiltInput(UBOOL bActive);
     virtual void SetUseTiltForwardAndBack(UBOOL bActive);
-    virtual UBOOL IsKeyboardAvailable() const;
-    virtual UBOOL IsMouseAvailable() const;
+    virtual UBOOL IsKeyboardAvailable();
+    virtual UBOOL IsMouseAvailable();
     virtual class UAudioComponent* GetPooledAudioComponent(class USoundCue* ASound,class AActor* SourceActor,UBOOL bStopWhenOwnerDestroyed,UBOOL bUseLocation=FALSE,FVector SourceLocation=FVector(EC_EventParm));
-    virtual class USoundCue* CreateTTSSoundCue(const FString& StrToSpeak,class APlayerReplicationInfo* PRI);
+    class USoundCue* CreateTTSSoundCue(const FString& StrToSpeak,class APlayerReplicationInfo* PRI);
     void ServerNotifyLoadedWorld(FName WorldPackageName);
     UBOOL HasClientLoadedCurrentWorld();
     virtual UBOOL IsLocalPlayerController();
@@ -9825,11 +10392,15 @@ public:
     class APlayerController* GetPlayerControllerFromNetId(struct FUniqueNetId PlayerNetId);
     virtual void SetShowSubtitles(UBOOL bValue);
     virtual UBOOL IsShowingSubtitles();
-    virtual void ShowSurvey(const FString& QuestionId,const FString& Context);
-    virtual FVector GetFVectorFromString(const FString& InStr);
-    virtual FRotator GetFRotatorFromString(const FString& InStr);
-    virtual void LogOutBugItGoToLogFile(const FString& InScreenShotDesc,const FString& InGoString,const FString& InLocString);
-    virtual void LogOutBugItAIGoToLogFile(const FString& InScreenShotDesc,const FString& InGoString,const FString& InLocString);
+    FVector GetFVectorFromString(const FString& InStr);
+    FRotator GetFRotatorFromString(const FString& InStr);
+    void LogOutBugItGoToLogFile(const FString& InScreenShotDesc,const FString& InGoString,const FString& InLocString);
+    void LogOutBugItAIGoToLogFile(const FString& InScreenShotDesc,const FString& InGoString,const FString& InLocString);
+    DECLARE_FUNCTION(execAllowConsole)
+    {
+        P_FINISH;
+        *(UBOOL*)Result=AllowConsole();
+    }
     DECLARE_FUNCTION(execSetNetSpeed)
     {
         P_GET_INT(NewSpeed);
@@ -9885,13 +10456,6 @@ public:
         P_GET_UBOOL(bAllowMatureLanguge);
         P_FINISH;
         SetAllowMatureLanguage(bAllowMatureLanguge);
-    }
-    DECLARE_FUNCTION(execSetAudioGroupVolume)
-    {
-        P_GET_NAME(GroupName);
-        P_GET_FLOAT(Volume);
-        P_FINISH;
-        SetAudioGroupVolume(GroupName,Volume);
     }
     DECLARE_FUNCTION(execClientConvolve)
     {
@@ -10047,13 +10611,6 @@ public:
         P_FINISH;
         *(UBOOL*)Result=IsShowingSubtitles();
     }
-    DECLARE_FUNCTION(execShowSurvey)
-    {
-        P_GET_STR(QuestionId);
-        P_GET_STR(Context);
-        P_FINISH;
-        ShowSurvey(QuestionId,Context);
-    }
     DECLARE_FUNCTION(execGetFVectorFromString)
     {
         P_GET_STR(InStr);
@@ -10127,11 +10684,19 @@ public:
         Parms.ForceDuration=ForceDuration;
         ProcessEvent(FindFunctionChecked(ENGINE_ClientSetForceMipLevelsToBeResident),&Parms);
     }
+    void eventOnPlayerHasBeenMoved()
+    {
+        ProcessEvent(FindFunctionChecked(ENGINE_OnPlayerHasBeenMoved),NULL);
+    }
     void eventSoakPause(class APawn* P)
     {
         PlayerController_eventSoakPause_Parms Parms(EC_EventParm);
         Parms.P=P;
         ProcessEvent(FindFunctionChecked(ENGINE_SoakPause),&Parms);
+    }
+    void eventDrawShieldDecals()
+    {
+        ProcessEvent(FindFunctionChecked(ENGINE_DrawShieldDecals),NULL);
     }
     void eventRemoveDebugText(class AActor* SrcActor)
     {
@@ -10205,12 +10770,9 @@ public:
     {
         ProcessEvent(FindFunctionChecked(ENGINE_ClientCancelPendingMapChange),NULL);
     }
-    void eventClientCommitMapChange(UBOOL bShouldSkipLevelStartupEvent=FALSE,UBOOL bShouldSkipLevelBeginningEvent=FALSE)
+    void eventClientCommitMapChange()
     {
-        PlayerController_eventClientCommitMapChange_Parms Parms(EC_EventParm);
-        Parms.bShouldSkipLevelStartupEvent=bShouldSkipLevelStartupEvent ? FIRST_BITFIELD : FALSE;
-        Parms.bShouldSkipLevelBeginningEvent=bShouldSkipLevelBeginningEvent ? FIRST_BITFIELD : FALSE;
-        ProcessEvent(FindFunctionChecked(ENGINE_ClientCommitMapChange),&Parms);
+        ProcessEvent(FindFunctionChecked(ENGINE_ClientCommitMapChange),NULL);
     }
     void eventClientPrepareMapChange(FName LevelName,UBOOL bFirst,UBOOL bLast)
     {
@@ -10292,6 +10854,13 @@ public:
         Parms.A=A;
         Parms.TransitionParams=TransitionParams;
         ProcessEvent(FindFunctionChecked(ENGINE_ClientSetViewTarget),&Parms);
+    }
+    FLOAT eventGetZoomMagnification()
+    {
+        PlayerController_eventGetZoomMagnification_Parms Parms(EC_EventParm);
+        Parms.ReturnValue=0;
+        ProcessEvent(FindFunctionChecked(ENGINE_GetZoomMagnification),&Parms);
+        return Parms.ReturnValue;
     }
     FLOAT eventGetFOVAngle()
     {
@@ -10392,6 +10961,14 @@ public:
         Parms.MsgLifeTime=MsgLifeTime;
         ProcessEvent(FindFunctionChecked(ENGINE_TeamMessage),&Parms);
     }
+    class UAudioComponent* eventPlayUICue(class USoundCue* Cue)
+    {
+        PlayerController_eventPlayUICue_Parms Parms(EC_EventParm);
+        Parms.ReturnValue=NULL;
+        Parms.Cue=Cue;
+        ProcessEvent(FindFunctionChecked(ENGINE_PlayUICue),&Parms);
+        return Parms.ReturnValue;
+    }
     void eventClientMessage(const FString& S,FName Type=NAME_None,FLOAT MsgLifeTime=0)
     {
         PlayerController_eventClientMessage_Parms Parms(EC_EventParm);
@@ -10407,6 +10984,22 @@ public:
         Parms.SourceActor=SourceActor;
         Parms.FadeOutTime=FadeOutTime;
         ProcessEvent(FindFunctionChecked(ENGINE_Kismet_ClientStopSound),&Parms);
+    }
+    void eventKismet_ClientSetParameterSound(class USoundCue* ASound,class AActor* SourceActor,FName nameToSet,FLOAT valueToSet)
+    {
+        PlayerController_eventKismet_ClientSetParameterSound_Parms Parms(EC_EventParm);
+        Parms.ASound=ASound;
+        Parms.SourceActor=SourceActor;
+        Parms.nameToSet=nameToSet;
+        Parms.valueToSet=valueToSet;
+        ProcessEvent(FindFunctionChecked(ENGINE_Kismet_ClientSetParameterSound),&Parms);
+    }
+    void eventKismet_ClientKeyOffSound(class USoundCue* ASound,class AActor* SourceActor)
+    {
+        PlayerController_eventKismet_ClientKeyOffSound_Parms Parms(EC_EventParm);
+        Parms.ASound=ASound;
+        Parms.SourceActor=SourceActor;
+        ProcessEvent(FindFunctionChecked(ENGINE_Kismet_ClientKeyOffSound),&Parms);
     }
     void eventKismet_ClientPlaySound(class USoundCue* ASound,class AActor* SourceActor,FLOAT VolumeMultiplier,FLOAT PitchMultiplier,FLOAT FadeInTime,UBOOL bSuppressSubtitles,UBOOL bSuppressSpatialization)
     {
@@ -14127,6 +14720,7 @@ public:
     BITFIELD bWasDoNotActivate:1;
     BITFIELD bInstantHit:1;
     BITFIELD bMeleeWeapon:1;
+    BITFIELD bPendingClientWeaponSet:1;
     FLOAT WeaponRange;
     class UMeshComponent* Mesh;
     FLOAT DefaultAnimSpeed;
@@ -14589,6 +15183,12 @@ public:
 	void CheckForErrors();
 };
 
+struct Pawn_eventPreventedWalkingOverLedge_Parms
+{
+    Pawn_eventPreventedWalkingOverLedge_Parms(EEventParm)
+    {
+    }
+};
 struct Pawn_eventSoakPause_Parms
 {
     Pawn_eventSoakPause_Parms(EEventParm)
@@ -14599,6 +15199,19 @@ struct Pawn_eventMessagePlayer_Parms
 {
     FString msg;
     Pawn_eventMessagePlayer_Parms(EEventParm)
+    {
+    }
+};
+struct Pawn_eventIsInLoadedVisibleWorld_Parms
+{
+    UBOOL ReturnValue;
+    Pawn_eventIsInLoadedVisibleWorld_Parms(EEventParm)
+    {
+    }
+};
+struct Pawn_eventEmitOnTeleport_Parms
+{
+    Pawn_eventEmitOnTeleport_Parms(EEventParm)
     {
     }
 };
@@ -14622,6 +15235,13 @@ struct Pawn_eventStartDriving_Parms
 {
     class AVehicle* V;
     Pawn_eventStartDriving_Parms(EEventParm)
+    {
+    }
+};
+struct Pawn_eventPlayFoleySound_Parms
+{
+    INT Foley;
+    Pawn_eventPlayFoleySound_Parms(EEventParm)
     {
     }
 };
@@ -14920,7 +15540,7 @@ public:
     FVector LastFiringFlashLocation;
     INT ShotCount;
     class UPrimitiveComponent* PreRagdollCollisionComponent;
-    FPointer PhysicsPushBody;
+    class URB_BodyInstance* PhysicsPushBody;
     INT FailedLandingCount;
     FVector walkFailPoint;
     class AActor* LinkedCullPawn;
@@ -14928,12 +15548,12 @@ public:
 
     void SetBasedPosition(struct FBasedPosition& BP,FVector pos,class AActor* ForcedBase=NULL);
     FVector GetBasedPosition(struct FBasedPosition BP);
-    virtual UBOOL IsAliveAndWell() const;
-    virtual FVector AdjustDestination(class AActor* GoalActor,FVector Dest=FVector(EC_EventParm));
+    UBOOL IsAliveAndWell();
+    FVector AdjustDestination(class AActor* GoalActor,FVector Dest=FVector(EC_EventParm));
     UBOOL ValidAnchor();
     virtual UBOOL SuggestJumpVelocity(FVector& JumpVelocity,FVector Destination,FVector Start);
-    virtual UBOOL IsValidTargetFor(const class AController* C) const;
-    virtual UBOOL IsValidEnemyTargetFor(const class APlayerReplicationInfo* PRI,UBOOL bNoPRIisEnemy) const;
+    virtual UBOOL IsValidTargetFor(const class AController* C);
+    virtual UBOOL IsValidEnemyTargetFor(const class APlayerReplicationInfo* PRI,UBOOL bNoPRIisEnemy);
     virtual UBOOL IsInvisible();
     void SetRemoteViewPitch(INT NewRemoteViewPitch);
     virtual void SetAnchor(class ANavigationPoint* NewAnchor);
@@ -14942,13 +15562,13 @@ public:
     virtual UBOOL ReachedPoint(FVector Point,class AActor* NewAnchor);
     virtual void ForceCrouch();
     virtual void SetPushesRigidBodies(UBOOL NewPush);
-    virtual UBOOL ReachedDesiredRotation();
-    virtual void GetBoundingCylinder(FLOAT& CollisionRadius,FLOAT& CollisionHeight) const;
+    UBOOL ReachedDesiredRotation();
+    virtual void GetBoundingCylinder(FLOAT& CollisionRadius,FLOAT& CollisionHeight);
     virtual UBOOL InitRagdoll();
     virtual UBOOL TermRagdoll();
     UBOOL IsHumanControlled();
     UBOOL IsLocallyControlled();
-    virtual UBOOL IsPlayerPawn() const;
+    virtual UBOOL IsPlayerPawn();
     virtual FRotator GetViewRotation();
     virtual FVector GetPawnViewLocation();
     virtual BYTE GetTeamNum();
@@ -15150,6 +15770,10 @@ public:
         P_FINISH;
         ClearPathStep();
     }
+    void eventPreventedWalkingOverLedge()
+    {
+        ProcessEvent(FindFunctionChecked(ENGINE_PreventedWalkingOverLedge),NULL);
+    }
     void eventSoakPause()
     {
         ProcessEvent(FindFunctionChecked(ENGINE_SoakPause),NULL);
@@ -15159,6 +15783,17 @@ public:
         Pawn_eventMessagePlayer_Parms Parms(EC_EventParm);
         Parms.msg=msg;
         ProcessEvent(FindFunctionChecked(ENGINE_MessagePlayer),&Parms);
+    }
+    UBOOL eventIsInLoadedVisibleWorld()
+    {
+        Pawn_eventIsInLoadedVisibleWorld_Parms Parms(EC_EventParm);
+        Parms.ReturnValue=FALSE;
+        ProcessEvent(FindFunctionChecked(ENGINE_IsInLoadedVisibleWorld),&Parms);
+        return Parms.ReturnValue;
+    }
+    void eventEmitOnTeleport()
+    {
+        ProcessEvent(FindFunctionChecked(ENGINE_EmitOnTeleport),NULL);
     }
     class AInventory* eventCreateInventory(class UClass* NewInvClass,UBOOL bDoNotActivate=FALSE)
     {
@@ -15180,6 +15815,12 @@ public:
         Pawn_eventStartDriving_Parms Parms(EC_EventParm);
         Parms.V=V;
         ProcessEvent(FindFunctionChecked(ENGINE_StartDriving),&Parms);
+    }
+    void eventPlayFoleySound(INT Foley)
+    {
+        Pawn_eventPlayFoleySound_Parms Parms(EC_EventParm);
+        Parms.Foley=Foley;
+        ProcessEvent(FindFunctionChecked(ENGINE_PlayFoleySound),&Parms);
     }
     void eventPlayFootStepSound(INT FootDown)
     {
@@ -15636,118 +16277,14 @@ protected:
 	void BuildNavLists();
 };
 
-struct Vehicle_eventGetEntryLocation_Parms
-{
-    FVector ReturnValue;
-    Vehicle_eventGetEntryLocation_Parms(EEventParm)
-    {
-    }
-};
-struct Vehicle_eventDriverLeave_Parms
-{
-    UBOOL bForceLeave;
-    UBOOL ReturnValue;
-    Vehicle_eventDriverLeave_Parms(EEventParm)
-    {
-    }
-};
-struct Vehicle_eventContinueOnFoot_Parms
-{
-    UBOOL ReturnValue;
-    Vehicle_eventContinueOnFoot_Parms(EEventParm)
-    {
-    }
-};
 class AVehicle : public APawn
 {
 public:
     //## BEGIN PROPS Vehicle
-    class APawn* Driver;
-    BITFIELD bDriving:1;
-    BITFIELD bDriverIsVisible:1;
-    BITFIELD bAttachDriver:1;
-    BITFIELD bTurnInPlace:1;
-    BITFIELD bSeparateTurretFocus:1;
-    BITFIELD bFollowLookDir:1;
-    BITFIELD bHasHandbrake:1;
-    BITFIELD bScriptedRise:1;
-    BITFIELD bDuckObstacles:1;
-    BITFIELD bAvoidReversing:1;
-    BITFIELD bRetryPathfindingWithDriver:1;
-    BITFIELD bIgnoreStallZ:1;
-    BITFIELD bDoExtraNetRelevancyTraces:1;
-    TArrayNoInit<FVector> ExitPositions;
-    FLOAT ExitRadius;
-    FVector ExitOffset;
-    FLOAT Steering;
-    FLOAT Throttle;
-    FLOAT Rise;
-    FVector TargetLocationAdjustment;
-    FLOAT DriverDamageMult;
-    FLOAT MomentumMult;
-    class UClass* CrushedDamageType;
-    FLOAT MinCrushSpeed;
-    FLOAT ForceCrushPenetration;
-    BYTE StuckCount;
-    FLOAT ThrottleTime;
-    FLOAT StuckTime;
-    FLOAT OldSteering;
-    FLOAT OnlySteeringStartTime;
-    FLOAT OldThrottle;
-    FLOAT AIMoveCheckTime;
-    FLOAT VehicleMovingTime;
-    FLOAT TurnTime;
     //## END PROPS Vehicle
 
-    virtual FVector GetTargetLocation(class AActor* RequestedBy=NULL,UBOOL bRequestAlternateLoc=FALSE) const;
-    FVector eventGetEntryLocation()
-    {
-        Vehicle_eventGetEntryLocation_Parms Parms(EC_EventParm);
-        appMemzero(&Parms.ReturnValue,sizeof(Parms.ReturnValue));
-        ProcessEvent(FindFunctionChecked(ENGINE_GetEntryLocation),&Parms);
-        return Parms.ReturnValue;
-    }
-    UBOOL eventDriverLeave(UBOOL bForceLeave)
-    {
-        Vehicle_eventDriverLeave_Parms Parms(EC_EventParm);
-        Parms.ReturnValue=FALSE;
-        Parms.bForceLeave=bForceLeave ? FIRST_BITFIELD : FALSE;
-        ProcessEvent(FindFunctionChecked(ENGINE_DriverLeave),&Parms);
-        return Parms.ReturnValue;
-    }
-    UBOOL eventContinueOnFoot()
-    {
-        Vehicle_eventContinueOnFoot_Parms Parms(EC_EventParm);
-        Parms.ReturnValue=FALSE;
-        ProcessEvent(FindFunctionChecked(ENGINE_ContinueOnFoot),&Parms);
-        return Parms.ReturnValue;
-    }
     DECLARE_ABSTRACT_CLASS(AVehicle,APawn,0|CLASS_Config|CLASS_NativeReplication,Engine)
-	virtual INT* GetOptimizedRepList(BYTE* Recent, FPropertyRetirement* Retire, INT* Ptr, UPackageMap* Map, UActorChannel* Channel);
-	virtual UBOOL IsNetRelevantFor(APlayerController* RealViewer, AActor* Viewer, const FVector& SrcLocation);
-	virtual UBOOL ReachedBy(APawn* P, const FVector& TestPosition, const FVector& Dest);
-	virtual ANavigationPoint* CheckDetour(ANavigationPoint* BestDest, ANavigationPoint* Start, UBOOL bWeightDetours);
-	virtual void performPhysics(FLOAT DeltaSeconds);
-	virtual UBOOL HasRelevantDriver();
-	virtual AVehicle* GetAVehicle() { return this; }
-
-	/** returns true if this actor should be considered relevancy owner for ReplicatedActor, which has bOnlyRelevantToOwner=true
-	*/
-	virtual UBOOL IsRelevancyOwnerFor(AActor* ReplicatedActor, AActor* ActorOwner);
-
-	// AI Interface
-	virtual void setMoveTimer(FVector MoveDir);
-	virtual UBOOL IsStuck();
-	virtual UBOOL AdjustFlight(FLOAT ZDiff, UBOOL bFlyingDown, FLOAT Distance, AActor* GoalActor);
-	virtual void SteerVehicle(FVector Direction);
-	virtual void AdjustThrottle( FLOAT Distance );
-	virtual UBOOL moveToward(const FVector &Dest, AActor *GoalActor);
-	virtual void rotateToward(FVector FocalPoint);
-	virtual UBOOL JumpOutCheck(AActor *GoalActor, FLOAT Distance, FLOAT ZDiff);
-	virtual FLOAT GetMaxRiseForce();
-	virtual void MarkEndPoints(ANavigationPoint* EndAnchor, AActor* Goal, const FVector& GoalLocation);
-	virtual FLOAT SecondRouteAttempt(ANavigationPoint* Anchor, ANavigationPoint* EndAnchor, NodeEvaluator NodeEval, FLOAT BestWeight, AActor *goal, const FVector& GoalLocation, FLOAT StartDist, FLOAT EndDist, INT MaxPathLength, INT SoftMaxNodes);
-	virtual UBOOL IsGlider();
+    NO_DEFAULT_CONSTRUCTOR(AVehicle)
 };
 
 class AProjectile : public AActor
@@ -21615,6 +22152,7 @@ AUTOGENERATE_FUNCTION(AActor,-1,execIsInPersistentLevel);
 AUTOGENERATE_FUNCTION(AActor,-1,execGetPackageGuid);
 AUTOGENERATE_FUNCTION(AActor,-1,execNativePostRenderFor);
 AUTOGENERATE_FUNCTION(AActor,-1,execSetHUDLocation);
+AUTOGENERATE_FUNCTION(AActor,-1,execGetFOVCheckLocation);
 AUTOGENERATE_FUNCTION(AActor,-1,execGetTargetLocation);
 AUTOGENERATE_FUNCTION(AActor,-1,execGetTeamNum);
 AUTOGENERATE_FUNCTION(AActor,-1,execIsPlayerOwned);
@@ -21639,6 +22177,15 @@ AUTOGENERATE_FUNCTION(AActor,-1,execGetDestination);
 AUTOGENERATE_FUNCTION(AActor,-1,execSuggestTossVelocity);
 AUTOGENERATE_FUNCTION(AActor,532,execPlayerCanSeeMe);
 AUTOGENERATE_FUNCTION(AActor,512,execMakeNoise);
+AUTOGENERATE_FUNCTION(AActor,-1,execSetMasterMixBin);
+AUTOGENERATE_FUNCTION(AActor,-1,execSetMixBinMix);
+AUTOGENERATE_FUNCTION(AActor,-1,execSetRoomMixBin);
+AUTOGENERATE_FUNCTION(AActor,-1,execSetMixBin);
+AUTOGENERATE_FUNCTION(AActor,-1,execEffectReverb);
+AUTOGENERATE_FUNCTION(AActor,-1,execEffectSoundCue);
+AUTOGENERATE_FUNCTION(AActor,-1,execEffectValue);
+AUTOGENERATE_FUNCTION(AActor,-1,execEffectEnabled);
+AUTOGENERATE_FUNCTION(AActor,-1,execEnableEffect);
 AUTOGENERATE_FUNCTION(AActor,-1,execPlaySound);
 AUTOGENERATE_FUNCTION(AActor,-1,execCreateAudioComponent);
 AUTOGENERATE_FUNCTION(AActor,-1,execGetTimerRate);
@@ -21684,6 +22231,7 @@ AUTOGENERATE_FUNCTION(AActor,-1,execIsBasedOn);
 AUTOGENERATE_FUNCTION(AActor,-1,execFindBase);
 AUTOGENERATE_FUNCTION(AActor,272,execSetOwner);
 AUTOGENERATE_FUNCTION(AActor,298,execSetBase);
+AUTOGENERATE_FUNCTION(AActor,-1,execGetZoneVelocity);
 AUTOGENERATE_FUNCTION(AActor,-1,execGetTerminalVelocity);
 AUTOGENERATE_FUNCTION(AActor,3971,execAutonomousPhysics);
 AUTOGENERATE_FUNCTION(AActor,3969,execMoveSmooth);
@@ -21692,6 +22240,7 @@ AUTOGENERATE_FUNCTION(AActor,-1,execSetHardAttach);
 AUTOGENERATE_FUNCTION(AActor,-1,execSetRelativeLocation);
 AUTOGENERATE_FUNCTION(AActor,-1,execSetRelativeRotation);
 AUTOGENERATE_FUNCTION(AActor,-1,execSetZone);
+AUTOGENERATE_FUNCTION(AActor,-1,execSetLocationForTest);
 AUTOGENERATE_FUNCTION(AActor,-1,execMovingWhichWay);
 AUTOGENERATE_FUNCTION(AActor,299,execSetRotation);
 AUTOGENERATE_FUNCTION(AActor,267,execSetLocation);
@@ -21704,6 +22253,7 @@ AUTOGENERATE_FUNCTION(AActor,262,execSetCollision);
 AUTOGENERATE_FUNCTION(AActor,261,execFinishAnim);
 AUTOGENERATE_FUNCTION(AActor,256,execSleep);
 AUTOGENERATE_FUNCTION(AActor,-1,execConsoleCommand);
+AUTOGENERATE_FUNCTION(AActor,-1,execSetExtraStasis);
 AUTOGENERATE_FUNCTION(AActor,-1,execForceUpdateComponents);
 AUTOGENERATE_FUNCTION(AAnimatedCamera,-1,execStopCameraAnim);
 AUTOGENERATE_FUNCTION(AAnimatedCamera,-1,execStopAllCameraAnimsByType);
@@ -21940,13 +22490,13 @@ AUTOGENERATE_FUNCTION(APawn,-1,execAdjustDestination);
 AUTOGENERATE_FUNCTION(APawn,-1,execIsAliveAndWell);
 AUTOGENERATE_FUNCTION(APawn,-1,execGetBasedPosition);
 AUTOGENERATE_FUNCTION(APawn,-1,execSetBasedPosition);
+AUTOGENERATE_FUNCTION(APhysicsVolume,-1,execGetZoneVelocityForActor);
 AUTOGENERATE_FUNCTION(APhysicsVolume,-1,execGetGravityZ);
 AUTOGENERATE_FUNCTION(UPlayer,-1,execSwitchController);
 AUTOGENERATE_FUNCTION(APlayerController,-1,execLogOutBugItAIGoToLogFile);
 AUTOGENERATE_FUNCTION(APlayerController,-1,execLogOutBugItGoToLogFile);
 AUTOGENERATE_FUNCTION(APlayerController,-1,execGetFRotatorFromString);
 AUTOGENERATE_FUNCTION(APlayerController,-1,execGetFVectorFromString);
-AUTOGENERATE_FUNCTION(APlayerController,-1,execShowSurvey);
 AUTOGENERATE_FUNCTION(APlayerController,-1,execIsShowingSubtitles);
 AUTOGENERATE_FUNCTION(APlayerController,-1,execSetShowSubtitles);
 AUTOGENERATE_FUNCTION(APlayerController,-1,execGetPlayerControllerFromNetId);
@@ -21973,7 +22523,6 @@ AUTOGENERATE_FUNCTION(APlayerController,524,execFindStairRotation);
 AUTOGENERATE_FUNCTION(APlayerController,-1,execCheckSpeedHack);
 AUTOGENERATE_FUNCTION(APlayerController,-1,execServerProcessConvolve);
 AUTOGENERATE_FUNCTION(APlayerController,-1,execClientConvolve);
-AUTOGENERATE_FUNCTION(APlayerController,-1,execSetAudioGroupVolume);
 AUTOGENERATE_FUNCTION(APlayerController,-1,execSetAllowMatureLanguage);
 AUTOGENERATE_FUNCTION(APlayerController,-1,execPasteFromClipboard);
 AUTOGENERATE_FUNCTION(APlayerController,-1,execCopyToClipboard);
@@ -21984,6 +22533,7 @@ AUTOGENERATE_FUNCTION(APlayerController,-1,execConsoleCommand);
 AUTOGENERATE_FUNCTION(APlayerController,-1,execGetServerNetworkAddress);
 AUTOGENERATE_FUNCTION(APlayerController,-1,execGetPlayerNetworkAddress);
 AUTOGENERATE_FUNCTION(APlayerController,-1,execSetNetSpeed);
+AUTOGENERATE_FUNCTION(APlayerController,-1,execAllowConsole);
 AUTOGENERATE_FUNCTION(APlayerReplicationInfo,-1,execGetTeamNum);
 AUTOGENERATE_FUNCTION(APlayerReplicationInfo,-1,execUpdatePing);
 AUTOGENERATE_FUNCTION(APlayerReplicationInfo,-1,execGetPlayerAlias);
@@ -22080,7 +22630,7 @@ AUTOGENERATE_FUNCTION(UTextureMovie,-1,execStop);
 AUTOGENERATE_FUNCTION(UTextureMovie,-1,execPause);
 AUTOGENERATE_FUNCTION(UTextureMovie,-1,execPlay);
 AUTOGENERATE_FUNCTION(UTextureRenderTarget2D,-1,execCreate);
-AUTOGENERATE_FUNCTION(AVehicle,-1,execGetTargetLocation);
+AUTOGENERATE_FUNCTION(AVolume,-1,execEncompassesPoint);
 AUTOGENERATE_FUNCTION(AVolume,-1,execEncompasses);
 AUTOGENERATE_FUNCTION(AWeapon,-1,execGetPhysicalFireStartLoc);
 AUTOGENERATE_FUNCTION(AWorldInfo,-1,execGetWorldFractureSettings);
@@ -22781,7 +23331,6 @@ DECLARE_NATIVE_TYPE(Engine,AZoneInfo);
 	ATriggerVolume::StaticClass(); \
 	UUberPostProcessEffect::StaticClass(); \
 	AVehicle::StaticClass(); \
-	GNativeLookupFuncs[Lookup++] = &FindEngineAVehicleNative; \
 	UVoiceChannel::StaticClass(); \
 	AVolume::StaticClass(); \
 	GNativeLookupFuncs[Lookup++] = &FindEngineAVolumeNative; \
@@ -22806,6 +23355,7 @@ NATIVE_INFO(AActor) GEngineAActorNatives[] =
 	MAP_NATIVE(AActor,execGetPackageGuid)
 	MAP_NATIVE(AActor,execNativePostRenderFor)
 	MAP_NATIVE(AActor,execSetHUDLocation)
+	MAP_NATIVE(AActor,execGetFOVCheckLocation)
 	MAP_NATIVE(AActor,execGetTargetLocation)
 	MAP_NATIVE(AActor,execGetTeamNum)
 	MAP_NATIVE(AActor,execIsPlayerOwned)
@@ -22830,6 +23380,15 @@ NATIVE_INFO(AActor) GEngineAActorNatives[] =
 	MAP_NATIVE(AActor,execSuggestTossVelocity)
 	MAP_NATIVE(AActor,execPlayerCanSeeMe)
 	MAP_NATIVE(AActor,execMakeNoise)
+	MAP_NATIVE(AActor,execSetMasterMixBin)
+	MAP_NATIVE(AActor,execSetMixBinMix)
+	MAP_NATIVE(AActor,execSetRoomMixBin)
+	MAP_NATIVE(AActor,execSetMixBin)
+	MAP_NATIVE(AActor,execEffectReverb)
+	MAP_NATIVE(AActor,execEffectSoundCue)
+	MAP_NATIVE(AActor,execEffectValue)
+	MAP_NATIVE(AActor,execEffectEnabled)
+	MAP_NATIVE(AActor,execEnableEffect)
 	MAP_NATIVE(AActor,execPlaySound)
 	MAP_NATIVE(AActor,execCreateAudioComponent)
 	MAP_NATIVE(AActor,execGetTimerRate)
@@ -22875,6 +23434,7 @@ NATIVE_INFO(AActor) GEngineAActorNatives[] =
 	MAP_NATIVE(AActor,execFindBase)
 	MAP_NATIVE(AActor,execSetOwner)
 	MAP_NATIVE(AActor,execSetBase)
+	MAP_NATIVE(AActor,execGetZoneVelocity)
 	MAP_NATIVE(AActor,execGetTerminalVelocity)
 	MAP_NATIVE(AActor,execAutonomousPhysics)
 	MAP_NATIVE(AActor,execMoveSmooth)
@@ -22883,6 +23443,7 @@ NATIVE_INFO(AActor) GEngineAActorNatives[] =
 	MAP_NATIVE(AActor,execSetRelativeLocation)
 	MAP_NATIVE(AActor,execSetRelativeRotation)
 	MAP_NATIVE(AActor,execSetZone)
+	MAP_NATIVE(AActor,execSetLocationForTest)
 	MAP_NATIVE(AActor,execMovingWhichWay)
 	MAP_NATIVE(AActor,execSetRotation)
 	MAP_NATIVE(AActor,execSetLocation)
@@ -22895,6 +23456,7 @@ NATIVE_INFO(AActor) GEngineAActorNatives[] =
 	MAP_NATIVE(AActor,execFinishAnim)
 	MAP_NATIVE(AActor,execSleep)
 	MAP_NATIVE(AActor,execConsoleCommand)
+	MAP_NATIVE(AActor,execSetExtraStasis)
 	MAP_NATIVE(AActor,execForceUpdateComponents)
 	{NULL,NULL}
 };
@@ -22903,6 +23465,7 @@ IMPLEMENT_NATIVE_HANDLER(Engine,AActor);
 NATIVE_INFO(UActorComponent) GEngineUActorComponentNatives[] = 
 { 
 	MAP_NATIVE(UActorComponent,execDetachFromAny)
+	MAP_NATIVE(UActorComponent,execQueueReattach)
 	MAP_NATIVE(UActorComponent,execForceUpdate)
 	MAP_NATIVE(UActorComponent,execSetComponentRBFixed)
 	MAP_NATIVE(UActorComponent,execSetTickGroup)
@@ -22933,13 +23496,20 @@ IMPLEMENT_NATIVE_HANDLER(Engine,AApexDestructibleActor);
 
 NATIVE_INFO(UAudioComponent) GEngineUAudioComponentNatives[] = 
 { 
+	MAP_NATIVE(UAudioComponent,execGetAverageVolume)
+	MAP_NATIVE(UAudioComponent,execIsLooping)
 	MAP_NATIVE(UAudioComponent,execResetToDefaults)
 	MAP_NATIVE(UAudioComponent,execSetWaveParameter)
+	MAP_NATIVE(UAudioComponent,execSetVelocity)
+	MAP_NATIVE(UAudioComponent,execSetSeekSpeed)
 	MAP_NATIVE(UAudioComponent,execSetFloatParameter)
-	MAP_NATIVE(UAudioComponent,execAdjustVolume)
-	MAP_NATIVE(UAudioComponent,execFadeOut)
-	MAP_NATIVE(UAudioComponent,execFadeIn)
+	MAP_NATIVE(UAudioComponent,execGetMaxDistance)
+	MAP_NATIVE(UAudioComponent,execGetMinDistance)
+	MAP_NATIVE(UAudioComponent,execPause)
+	MAP_NATIVE(UAudioComponent,execIsPaused)
 	MAP_NATIVE(UAudioComponent,execIsPlaying)
+	MAP_NATIVE(UAudioComponent,execKeyOffOnMarker)
+	MAP_NATIVE(UAudioComponent,execKeyOff)
 	MAP_NATIVE(UAudioComponent,execStop)
 	MAP_NATIVE(UAudioComponent,execPlay)
 	{NULL,NULL}
@@ -23271,6 +23841,8 @@ NATIVE_INFO(UMeshComponent) GEngineUMeshComponentNatives[] =
 	MAP_NATIVE(UMeshComponent,execGetNumElements)
 	MAP_NATIVE(UMeshComponent,execSetMaterial)
 	MAP_NATIVE(UMeshComponent,execGetMaterial)
+	MAP_NATIVE(UMeshComponent,execGetUseSimpleLineCollision)
+	MAP_NATIVE(UMeshComponent,execGetUseSimpleBoxCollision)
 	{NULL,NULL}
 };
 IMPLEMENT_NATIVE_HANDLER(Engine,UMeshComponent);
@@ -23426,6 +23998,7 @@ IMPLEMENT_NATIVE_HANDLER(Engine,APawn);
 
 NATIVE_INFO(APhysicsVolume) GEngineAPhysicsVolumeNatives[] = 
 { 
+	MAP_NATIVE(APhysicsVolume,execGetZoneVelocityForActor)
 	MAP_NATIVE(APhysicsVolume,execGetGravityZ)
 	{NULL,NULL}
 };
@@ -23444,7 +24017,6 @@ NATIVE_INFO(APlayerController) GEngineAPlayerControllerNatives[] =
 	MAP_NATIVE(APlayerController,execLogOutBugItGoToLogFile)
 	MAP_NATIVE(APlayerController,execGetFRotatorFromString)
 	MAP_NATIVE(APlayerController,execGetFVectorFromString)
-	MAP_NATIVE(APlayerController,execShowSurvey)
 	MAP_NATIVE(APlayerController,execIsShowingSubtitles)
 	MAP_NATIVE(APlayerController,execSetShowSubtitles)
 	MAP_NATIVE(APlayerController,execGetPlayerControllerFromNetId)
@@ -23471,7 +24043,6 @@ NATIVE_INFO(APlayerController) GEngineAPlayerControllerNatives[] =
 	MAP_NATIVE(APlayerController,execCheckSpeedHack)
 	MAP_NATIVE(APlayerController,execServerProcessConvolve)
 	MAP_NATIVE(APlayerController,execClientConvolve)
-	MAP_NATIVE(APlayerController,execSetAudioGroupVolume)
 	MAP_NATIVE(APlayerController,execSetAllowMatureLanguage)
 	MAP_NATIVE(APlayerController,execPasteFromClipboard)
 	MAP_NATIVE(APlayerController,execCopyToClipboard)
@@ -23482,6 +24053,7 @@ NATIVE_INFO(APlayerController) GEngineAPlayerControllerNatives[] =
 	MAP_NATIVE(APlayerController,execGetServerNetworkAddress)
 	MAP_NATIVE(APlayerController,execGetPlayerNetworkAddress)
 	MAP_NATIVE(APlayerController,execSetNetSpeed)
+	MAP_NATIVE(APlayerController,execAllowConsole)
 	{NULL,NULL}
 };
 IMPLEMENT_NATIVE_HANDLER(Engine,APlayerController);
@@ -23522,6 +24094,8 @@ IMPLEMENT_NATIVE_HANDLER(Engine,APortalTeleporter);
 
 NATIVE_INFO(UPrimitiveComponent) GEngineUPrimitiveComponentNatives[] = 
 { 
+	MAP_NATIVE(UPrimitiveComponent,execGetPhysicalMaterial)
+	MAP_NATIVE(UPrimitiveComponent,execGetHasFallenOutOfWorld)
 	MAP_NATIVE(UPrimitiveComponent,execGetRotation)
 	MAP_NATIVE(UPrimitiveComponent,execSetAbsolute)
 	MAP_NATIVE(UPrimitiveComponent,execSetScale3D)
@@ -23530,37 +24104,49 @@ NATIVE_INFO(UPrimitiveComponent) GEngineUPrimitiveComponentNatives[] =
 	MAP_NATIVE(UPrimitiveComponent,execSetTranslation)
 	MAP_NATIVE(UPrimitiveComponent,execSetActorCollision)
 	MAP_NATIVE(UPrimitiveComponent,execSetTraceBlocking)
-	MAP_NATIVE(UPrimitiveComponent,execSetViewOwnerDepthPriorityGroup)
 	MAP_NATIVE(UPrimitiveComponent,execSetDepthPriorityGroup)
 	MAP_NATIVE(UPrimitiveComponent,execSetLightingChannels)
 	MAP_NATIVE(UPrimitiveComponent,execSetCullDistance)
 	MAP_NATIVE(UPrimitiveComponent,execSetLightEnvironment)
 	MAP_NATIVE(UPrimitiveComponent,execSetShadowParent)
 	MAP_NATIVE(UPrimitiveComponent,execSetIgnoreOwnerHidden)
+	MAP_NATIVE(UPrimitiveComponent,execSetLevelHidden)
+	MAP_NATIVE(UPrimitiveComponent,execSetDontDrawThisFrame)
+	MAP_NATIVE(UPrimitiveComponent,execSetOnlyXraySee)
+	MAP_NATIVE(UPrimitiveComponent,execSetXrayNoSee)
 	MAP_NATIVE(UPrimitiveComponent,execSetOnlyOwnerSee)
 	MAP_NATIVE(UPrimitiveComponent,execSetOwnerNoSee)
+	MAP_NATIVE(UPrimitiveComponent,execSetHiddenEditor)
 	MAP_NATIVE(UPrimitiveComponent,execSetHidden)
 	MAP_NATIVE(UPrimitiveComponent,execSetRBDominanceGroup)
 	MAP_NATIVE(UPrimitiveComponent,execGetRootBodyInstance)
 	MAP_NATIVE(UPrimitiveComponent,execSetPhysMaterialOverride)
 	MAP_NATIVE(UPrimitiveComponent,execInitRBPhys)
+	MAP_NATIVE(UPrimitiveComponent,execSetContactModification)
 	MAP_NATIVE(UPrimitiveComponent,execSetNotifyRigidBodyCollision)
 	MAP_NATIVE(UPrimitiveComponent,execSetRBChannel)
+	MAP_NATIVE(UPrimitiveComponent,execSetRBCollisionChannels)
 	MAP_NATIVE(UPrimitiveComponent,execSetRBCollidesWithChannel)
 	MAP_NATIVE(UPrimitiveComponent,execSetBlockRigidBody)
+	MAP_NATIVE(UPrimitiveComponent,execRigidBodyIsNearlyStill)
 	MAP_NATIVE(UPrimitiveComponent,execRigidBodyIsAwake)
+	MAP_NATIVE(UPrimitiveComponent,execRigidBodyIsFullyDynamic)
 	MAP_NATIVE(UPrimitiveComponent,execPutRigidBodyToSleep)
 	MAP_NATIVE(UPrimitiveComponent,execWakeRigidBody)
 	MAP_NATIVE(UPrimitiveComponent,execSetRBRotation)
 	MAP_NATIVE(UPrimitiveComponent,execSetRBPosition)
 	MAP_NATIVE(UPrimitiveComponent,execRetardRBLinearVelocity)
 	MAP_NATIVE(UPrimitiveComponent,execSetRBAngularVelocity)
+	MAP_NATIVE(UPrimitiveComponent,execGetRBLinearVelocity)
 	MAP_NATIVE(UPrimitiveComponent,execSetRBLinearVelocity)
+	MAP_NATIVE(UPrimitiveComponent,execAddTorqueImpulse)
+	MAP_NATIVE(UPrimitiveComponent,execAddTorqueForce)
 	MAP_NATIVE(UPrimitiveComponent,execAddTorque)
 	MAP_NATIVE(UPrimitiveComponent,execAddRadialForce)
 	MAP_NATIVE(UPrimitiveComponent,execAddForce)
 	MAP_NATIVE(UPrimitiveComponent,execAddRadialImpulse)
 	MAP_NATIVE(UPrimitiveComponent,execAddImpulse)
+	MAP_NATIVE(UPrimitiveComponent,execSetDisableAllRigidBody)
 	{NULL,NULL}
 };
 IMPLEMENT_NATIVE_HANDLER(Engine,UPrimitiveComponent);
@@ -23797,6 +24383,8 @@ IMPLEMENT_NATIVE_HANDLER(Engine,USoundCue);
 
 NATIVE_INFO(UStaticMeshComponent) GEngineUStaticMeshComponentNatives[] = 
 { 
+	MAP_NATIVE(UStaticMeshComponent,execGetUseSimpleLineCollision)
+	MAP_NATIVE(UStaticMeshComponent,execGetUseSimpleBoxCollision)
 	MAP_NATIVE(UStaticMeshComponent,execSetForceStaticDecals)
 	MAP_NATIVE(UStaticMeshComponent,execDisableRBCollisionWithSMC)
 	MAP_NATIVE(UStaticMeshComponent,execSetStaticMesh)
@@ -23877,15 +24465,9 @@ NATIVE_INFO(UTextureRenderTarget2D) GEngineUTextureRenderTarget2DNatives[] =
 };
 IMPLEMENT_NATIVE_HANDLER(Engine,UTextureRenderTarget2D);
 
-NATIVE_INFO(AVehicle) GEngineAVehicleNatives[] = 
-{ 
-	MAP_NATIVE(AVehicle,execGetTargetLocation)
-	{NULL,NULL}
-};
-IMPLEMENT_NATIVE_HANDLER(Engine,AVehicle);
-
 NATIVE_INFO(AVolume) GEngineAVolumeNatives[] = 
 { 
+	MAP_NATIVE(AVolume,execEncompassesPoint)
 	MAP_NATIVE(AVolume,execEncompasses)
 	{NULL,NULL}
 };
@@ -24956,8 +25538,6 @@ VERIFY_CLASS_SIZE_NODIE(ATriggerVolume)
 VERIFY_CLASS_OFFSET_NODIE(U,UberPostProcessEffect,SceneShadows)
 VERIFY_CLASS_OFFSET_NODIE(U,UberPostProcessEffect,SceneDesaturation)
 VERIFY_CLASS_SIZE_NODIE(UUberPostProcessEffect)
-VERIFY_CLASS_OFFSET_NODIE(A,Vehicle,Driver)
-VERIFY_CLASS_OFFSET_NODIE(A,Vehicle,TurnTime)
 VERIFY_CLASS_SIZE_NODIE(AVehicle)
 VERIFY_CLASS_SIZE_NODIE(AVolume)
 VERIFY_CLASS_OFFSET_NODIE(A,VolumePathNode,StartingRadius)

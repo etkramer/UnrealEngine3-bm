@@ -531,6 +531,12 @@ struct FSeqEventLink
     }
 };
 
+struct SequenceOp_eventReset_Parms
+{
+    SequenceOp_eventReset_Parms(EEventParm)
+    {
+    }
+};
 struct SequenceOp_eventVersionUpdated_Parms
 {
     INT OldVersion;
@@ -570,12 +576,17 @@ protected:
 public:
     //## END PROPS SequenceOp
 
-    UBOOL HasLinkedOps(UBOOL bConsiderInputLinks=FALSE) const;
+    UBOOL HasLinkedOps(UBOOL bConsiderInputLinks=FALSE);
     void GetLinkedObjects(TArray<class USequenceObject*>& out_Objects,class UClass* ObjectType=NULL,UBOOL bRecurse=FALSE);
+    void GetVectorVars(TArray<FVector>& vecVars,const FString& inDesc=TEXT(""));
+    void GetObjectVars(TArray<class UObject*>& ObjVars,const FString& inDesc=TEXT(""));
+    void GetInterpDataVars(TArray<class UInterpData*>& outIData,const FString& inDesc=TEXT(""));
+    void GetBoolVars(TArray<BYTE>& boolVars,const FString& inDesc=TEXT(""));
+    void GetFloatVars(TArray<FLOAT>& floatVars,const FString& inDesc=TEXT(""));
     UBOOL ActivateOutputLink(INT OutputIdx);
     UBOOL ActivateNamedOutputLink(const FString& LinkDesc);
-    virtual void PopulateLinkedVariableValues();
-    virtual void PublishLinkedVariableValues();
+    void PopulateLinkedVariableValues();
+    void PublishLinkedVariableValues();
     void ForceActivateInput(INT InputIdx);
     DECLARE_FUNCTION(execHasLinkedOps)
     {
@@ -591,9 +602,41 @@ public:
         P_FINISH;
         GetLinkedObjects(out_Objects,ObjectType,bRecurse);
     }
-    DECLARE_FUNCTION(execGetObjectVars);
-    DECLARE_FUNCTION(execGetInterpDataVars);
-    DECLARE_FUNCTION(execGetBoolVars);
+    DECLARE_FUNCTION(execGetVectorVars)
+    {
+        P_GET_TARRAY_REF(FVector,vecVars);
+        P_GET_STR_OPTX(inDesc,TEXT(""));
+        P_FINISH;
+        GetVectorVars(vecVars,inDesc);
+    }
+    DECLARE_FUNCTION(execGetObjectVars)
+    {
+        P_GET_TARRAY_REF(class UObject*,ObjVars);
+        P_GET_STR_OPTX(inDesc,TEXT(""));
+        P_FINISH;
+        GetObjectVars(ObjVars,inDesc);
+    }
+    DECLARE_FUNCTION(execGetInterpDataVars)
+    {
+        P_GET_TARRAY_REF(class UInterpData*,outIData);
+        P_GET_STR_OPTX(inDesc,TEXT(""));
+        P_FINISH;
+        GetInterpDataVars(outIData,inDesc);
+    }
+    DECLARE_FUNCTION(execGetBoolVars)
+    {
+        P_GET_TARRAY_REF(BYTE,boolVars);
+        P_GET_STR_OPTX(inDesc,TEXT(""));
+        P_FINISH;
+        GetBoolVars(boolVars,inDesc);
+    }
+    DECLARE_FUNCTION(execGetFloatVars)
+    {
+        P_GET_TARRAY_REF(FLOAT,floatVars);
+        P_GET_STR_OPTX(inDesc,TEXT(""));
+        P_FINISH;
+        GetFloatVars(floatVars,inDesc);
+    }
     DECLARE_FUNCTION(execLinkedVariables);
     DECLARE_FUNCTION(execActivateOutputLink)
     {
@@ -622,6 +665,10 @@ public:
         P_GET_INT(InputIdx);
         P_FINISH;
         ForceActivateInput(InputIdx);
+    }
+    void eventReset()
+    {
+        ProcessEvent(FindFunctionChecked(ENGINE_Reset),NULL);
     }
     void eventVersionUpdated(INT OldVersion,INT NewVersion)
     {
@@ -3665,7 +3712,17 @@ public:
     TArrayNoInit<struct FQueuedActivationInfo> QueuedActivations;
     //## END PROPS SequenceEvent
 
-    DECLARE_FUNCTION(execCheckActivate);
+    UBOOL CheckActivate(class AActor* InOriginator,class AActor* InInstigator,UBOOL bTest=FALSE,const TArray<INT>* ActivateIndices=NULL,UBOOL bPushTop=FALSE);
+    DECLARE_FUNCTION(execCheckActivate)
+    {
+        P_GET_OBJECT(AActor,InOriginator);
+        P_GET_OBJECT(AActor,InInstigator);
+        P_GET_UBOOL_OPTX(bTest,FALSE);
+        P_GET_TARRAY_OPTX_REF(INT,ActivateIndices,TArray<INT>(EC_EventParm));
+        P_GET_UBOOL_OPTX(bPushTop,FALSE);
+        P_FINISH;
+        *(UBOOL*)Result=CheckActivate(InOriginator,InInstigator,bTest,pActivateIndices ? &ActivateIndices : NULL,bPushTop);
+    }
     void eventToggled()
     {
         ProcessEvent(FindFunctionChecked(ENGINE_Toggled),NULL);
@@ -4719,9 +4776,11 @@ AUTOGENERATE_FUNCTION(USequenceOp,-1,execPopulateLinkedVariableValues);
 AUTOGENERATE_FUNCTION(USequenceOp,-1,execActivateNamedOutputLink);
 AUTOGENERATE_FUNCTION(USequenceOp,-1,execActivateOutputLink);
 AUTOGENERATE_FUNCTION(USequenceOp,-1,execLinkedVariables);
+AUTOGENERATE_FUNCTION(USequenceOp,-1,execGetFloatVars);
 AUTOGENERATE_FUNCTION(USequenceOp,-1,execGetBoolVars);
 AUTOGENERATE_FUNCTION(USequenceOp,-1,execGetInterpDataVars);
 AUTOGENERATE_FUNCTION(USequenceOp,-1,execGetObjectVars);
+AUTOGENERATE_FUNCTION(USequenceOp,-1,execGetVectorVars);
 AUTOGENERATE_FUNCTION(USequenceOp,-1,execGetLinkedObjects);
 AUTOGENERATE_FUNCTION(USequenceOp,-1,execHasLinkedOps);
 
@@ -5092,9 +5151,11 @@ NATIVE_INFO(USequenceOp) GEngineUSequenceOpNatives[] =
 	MAP_NATIVE(USequenceOp,execActivateNamedOutputLink)
 	MAP_NATIVE(USequenceOp,execActivateOutputLink)
 	MAP_NATIVE(USequenceOp,execLinkedVariables)
+	MAP_NATIVE(USequenceOp,execGetFloatVars)
 	MAP_NATIVE(USequenceOp,execGetBoolVars)
 	MAP_NATIVE(USequenceOp,execGetInterpDataVars)
 	MAP_NATIVE(USequenceOp,execGetObjectVars)
+	MAP_NATIVE(USequenceOp,execGetVectorVars)
 	MAP_NATIVE(USequenceOp,execGetLinkedObjects)
 	MAP_NATIVE(USequenceOp,execHasLinkedOps)
 	{NULL,NULL}

@@ -1,207 +1,146 @@
-/**
- * Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
- */
 class AudioComponent extends ActorComponent
-	native
-	noexport
-	collapsecategories
-	hidecategories(Object)
-	hidecategories(ActorComponent)
-	editinlinenew;
+    native
+    editinlinenew
+    collapsecategories
+    noexport;
 
-var()					SoundCue			SoundCue;
-var		native const	SoundNode			CueFirstNode; // This is just a pointer to the root node in SoundCue.
-
-/**
- *	Struct used for storing one per-instance named paramter for this AudioComponent.
- *	Certain nodes in the SoundCue may reference parameters by name so they can be adjusted per-instance.
- */
 struct native AudioComponentParam
 {
-	var()	name		ParamName;
-	var()	float		FloatParam;
-
-	// BM1
-	var() float SeekSpeed;
+    var() name ParamName;
+    var() float FloatParam;
+    var() float SeekSpeed;
     var() float Velocity;
     var bool bSetValue;
+    var() SoundNodeWave WaveParam;
 
-	var() SoundNodeWave WaveParam;
+    structdefaultproperties
+    {
+        ParamName="None"
+        FloatParam=0.0000000
+        SeekSpeed=0.0000000
+        Velocity=0.0000000
+        bSetValue=false
+        WaveParam=none
+    }
 };
 
-/** Array of per-instance parameters for this AudioComponent. */
-var()	editinline array<AudioComponentParam>		InstanceParameters;
-
-/** Spatialise to the owner's coordinates */
-var						bool				bUseOwnerLocation;
-/** Auto start this component on creation */
-var						bool				bAutoPlay;
-/** Auto destroy this component on completion */
-var						bool				bAutoDestroy;
-/** Stop sound when owner is destroyed */
-var						bool				bStopWhenOwnerDestroyed;
-/** Whether the wave instances should remain active if they're dropped by the prioritization code. Useful for e.g. vehicle sounds that shouldn't cut out. */
-var						bool				bShouldRemainActiveIfDropped;
-/** whether we were occluded the last time we checked */
-var						bool				bWasOccluded;
-/** If true, subtitles in the sound data will be ignored. */
-var		transient		bool				bSuppressSubtitles;
-/** Set to true when the component has resources that need cleanup */
-var		transient		bool				bWasPlaying;
-/** Is this audio component allowed to be spatialized? */
-var						bool				bAllowSpatialization;
-/** Whether the current component has finished playing */
-var		transient		bool				bFinished;
-/** Whether this audio component is previewing a sound */
-var		transient		bool				bPreviewComponent;
-/** If TRUE, this sound will not be stopped when flushing the audio device. */
-var		transient		bool				bIgnoreForFlushing;
-
-/**
- * Properties of the audio component set by its owning sound class
- */
-
-/** Whether audio effects are applied */
-var		transient		bool				bApplyEffects;
-/** Whether to artificially prioritise the component to play */
-var		transient		bool				bAlwaysPlay;
-/** Whether or not this sound plays when the game is paused in the UI */
-var		transient		bool				bIsUISound;
-/** Whether or not this audio component is a music clip */
-var		transient		bool				bIsMusic;
-/** Whether or not the audio component should be excluded from reverb EQ processing */
-var		transient		bool				bNoReverb;
-
-// BM1
+var() SoundCue SoundCue;
+var native const SoundNode CueFirstNode;
+var() editinline array<editinline AudioComponentParam> InstanceParameters;
+var bool bUseOwnerLocation;
+var bool bAutoPlay;
+var bool bAutoDestroy;
+var bool bStopWhenOwnerDestroyed;
+var bool bShouldRemainActiveIfDropped;
+var bool bWasOccluded;
+var transient bool bSuppressSubtitles;
+var transient bool bWasPlaying;
+var bool bAllowSpatialization;
+var transient bool bFinished;
+var transient bool bPreviewComponent;
+var transient bool bIgnoreForFlushing;
+var transient bool bApplyEffects;
+var transient bool bAlwaysPlay;
+var transient bool bIsUISound;
+var transient bool bIsMusic;
+var transient bool bNoReverb;
 var transient bool bFMODGenerated;
 var transient bool bIsPaused;
 var transient bool bForcePauseUpdate;
 var transient bool bPlaying;
 var transient float SubPriDistance;
-
-var	duplicatetransient native const	array<pointer>		WaveInstances{struct FWaveInstance};
-var	duplicatetransient native const	array<byte>			SoundNodeData;
-
-/**
- * We explicitly disregard SoundNodeOffsetMap/WaveMap/ResetWaveMap for GC as all references are already
- * handled elsewhere and we can't NULL references anyways.
- */
-var	duplicatetransient native const	Map{USoundNode*,UINT} SoundNodeOffsetMap;
-var	duplicatetransient native const	multimap_mirror		SoundNodeResetWaveMap{TMultiMap<USoundNode*,FWaveInstance*>};
-var duplicatetransient native const multimap_mirror 	SoundNodeFMODMap{TMultiMap<USoundNode*,UINT>};
-
-var duplicatetransient native const	pointer				Listener{struct FListener};
-
-var	duplicatetransient native const	float				PlaybackTime;
-var duplicatetransient native const	PortalVolume		PortalVolume;
-var	duplicatetransient native		vector				Location;
-var	duplicatetransient native const	vector				ComponentLocation;
-
-/** Remember the last owner so we can remove it from the actor's component array even if it's already been detached */
-var 	transient const	Actor							LastOwner;
-
-/** Used by the subtitle manager to prioritize subtitles wave instances spawned by this component. */
-var		native			float				SubtitlePriority;
-
-// Temporary variables for node traversal.
-var		native const	SoundNode			CurrentNotifyBufferFinishedHook;
-var		native const	vector				CurrentLocation;
-var		native const	float				CurrentVolume;
-var		native const	float				CurrentPitch;
-var		native const	int					CurrentUseSpatialization;
-var		native const	int					CurrentUseSeamlessLooping;
-
-// Multipliers used before propagation to WaveInstance
-var		native const	float				CurrentVolumeMultiplier;
-var		native const	float				CurrentPitchMultiplier;
-
-// Serialized multipliers used to e.g. override volume for ambient sound actors.
-var()					float				VolumeMultiplier;
-var()					float				PitchMultiplier;
-
-// BM1
+var duplicatetransient native const array<Pointer> WaveInstances{struct FWaveInstance};
+var duplicatetransient native const array<byte> SoundNodeData;
+var duplicatetransient native const map{USoundNode*,UINT} SoundNodeOffsetMap;
+var duplicatetransient native const MultiMap_Mirror SoundNodeResetWaveMap{TMultiMap<USoundNode*,FWaveInstance*>};
+var duplicatetransient native const MultiMap_Mirror SoundNodeFMODMap{TMultiMap<USoundNode*,UINT>};
+var duplicatetransient native const Pointer Listener{struct FListener};
+var duplicatetransient native const float PlaybackTime;
+var duplicatetransient native const PortalVolume PortalVolume;
+var duplicatetransient native Vector Location;
+var duplicatetransient native const Vector ComponentLocation;
+var const transient Actor LastOwner;
+var native float SubtitlePriority;
+var native const SoundNode CurrentNotifyBufferFinishedHook;
+var native const Vector CurrentLocation;
+var native const float CurrentVolume;
+var native const float CurrentPitch;
+var native const int CurrentUseSpatialization;
+var native const int CurrentUseSeamlessLooping;
+var native const float CurrentVolumeMultiplier;
+var native const float CurrentPitchMultiplier;
+var() float VolumeMultiplier;
+var() float PitchMultiplier;
 var native const bool bIgnorePitch;
 var transient bool bEmoteCue;
+var float OcclusionCheckInterval;
+var transient float LastOcclusionCheckTime;
+var const export editinline DrawSoundRadiusComponent PreviewSoundRadius;
+//var delegate<OnAudioFinished> __OnAudioFinished__Delegate;
+//var delegate<OnAudioMarker> __OnAudioMarker__Delegate;
 
-/** while playing, this component will check for occlusion from its closest listener every this many seconds and call OcclusionChanged() if the status changes */
-var						float				OcclusionCheckInterval;
-/** last time we checked for occlusion */
-var		transient		float				LastOcclusionCheckTime;
-
-var		const			DrawSoundRadiusComponent PreviewSoundRadius;
-
+// Export UAudioComponent::execPlay(FFrame&, void* const)
 native final function Play();
+
+// Export UAudioComponent::execStop(FFrame&, void* const)
 native final function Stop();
 
-/** Returns TRUE if this component is currently playing a SoundCue. */
+// Export UAudioComponent::execKeyOff(FFrame&, void* const)
+native final function KeyOff();
+
+// Export UAudioComponent::execKeyOffOnMarker(FFrame&, void* const)
+native final function KeyOffOnMarker();
+
+// Export UAudioComponent::execIsPlaying(FFrame&, void* const)
 native final function bool IsPlaying();
 
-/**
- * This is called in place of "play".  So you will say AudioComponent->FadeIn().
- * This is useful for fading in music or some constant playing sound.
- *
- * If FadeTime is 0.0, this is the same as calling Play() but just modifying the volume by
- * FadeVolumeLevel. (e.g. you will play instantly but the FadeVolumeLevel will affect the AudioComponent)
- *
- * If FadeTime is > 0.0, this will call Play(), and then increase the volume level of this
- * AudioCompoenent to the passed in FadeVolumeLevel over FadeInTime seconds.
- *
- * The VolumeLevel is MODIFYING the AudioComponent's "base" volume.  (e.g.  if you have an
- * AudioComponent that is volume 1000 and you pass in .5 as your VolumeLevel then you will fade to 500 )
- *
- * @param FadeInDuration how long it should take to reach the FadeVolumeLevel
- * @param FadeVolumeLevel the percentage of the AudioComponents's calculated volume in which to fade to
- **/
-native final function FadeIn( FLOAT FadeInDuration, FLOAT FadeVolumeLevel );
+// Export UAudioComponent::execIsPaused(FFrame&, void* const)
+native final function bool IsPaused();
 
-/**
- * This is called in place of "stop".  So you will say AudioComponent->FadeOut().
- * This is useful for fading out music or some constant playing sound.
- *
- * If FadeTime is 0.0, this is the same as calling Stop().
- *
- * If FadeTime is > 0.0, this will decrease the volume level of this
- * AudioCompoenent to the passed in FadeVolumeLevel over FadeInTime seconds.
- *
- * The VolumeLevel is MODIFYING the AudioComponent's "base" volume.  (e.g.  if you have an
- * AudioComponent that is volume 1000 and you pass in .5 as your VolumeLevel then you will fade to 500 )
- *
- * @param FadeOutDuration how long it should take to reach the FadeVolumeLevel
- * @param FadeVolumeLevel the percentage of the AudioComponents's calculated volume in which to fade to
- **/
-native final function FadeOut( FLOAT FadeOutDuration, FLOAT FadeVolumeLevel );
+// Export UAudioComponent::execPause(FFrame&, void* const)
+native final function Pause(bool bDoPause);
 
-/**
- * This will allow one to adjust the volume of an AudioComponent on the fly
- **/
-native final function AdjustVolume( FLOAT AdjustVolumeDuration, FLOAT AdjustVolumeLevel );
+// Export UAudioComponent::execGetMinDistance(FFrame&, void* const)
+native final function float GetMinDistance();
 
+// Export UAudioComponent::execGetMaxDistance(FFrame&, void* const)
+native final function float GetMaxDistance();
+
+// Export UAudioComponent::execSetFloatParameter(FFrame&, void* const)
 native final function SetFloatParameter(name InName, float InFloat);
 
+// Export UAudioComponent::execSetSeekSpeed(FFrame&, void* const)
+native final function SetSeekSpeed(name InName, float InFloat);
+
+// Export UAudioComponent::execSetVelocity(FFrame&, void* const)
+native final function SetVelocity(name InName, float InFloat);
+
+// Export UAudioComponent::execSetWaveParameter(FFrame&, void* const)
 native final function SetWaveParameter(name InName, SoundNodeWave InWave);
 
-/** stops the audio (if playing), detaches the component, and resets the component's properties to the values of its template */
+// Export UAudioComponent::execResetToDefaults(FFrame&, void* const)
 native final function ResetToDefaults();
 
-/** called when we finish playing audio, either because it played to completion or because a Stop() call turned it off early */
-delegate OnAudioFinished(AudioComponent AC);
+// Export UAudioComponent::execIsLooping(FFrame&, void* const)
+native final function bool IsLooping();
 
-// BM1
-delegate OnAudioMarker(AudioComponent AC, string MarkerName);
-
-/** called when OcclusionCheckInterval > 0.0 and the occlusion status changes */
-event OcclusionChanged(bool bNowOccluded)
+delegate OnAudioFinished(AudioComponent AC)
 {
-	VolumeMultiplier *= bNowOccluded ? 0.5 : 2.0;
+    //return;    
 }
+
+delegate OnAudioMarker(AudioComponent AC, string MarkerName)
+{
+    //return;    
+}
+
+// Export UAudioComponent::execGetAverageVolume(FFrame&, void* const)
+native final function float GetAverageVolume();
 
 defaultproperties
 {
-	bUseOwnerLocation=true
-	bAutoDestroy=false
-	bAutoPlay=false
-	bAllowSpatialization=true
-
-	VolumeMultiplier=1.0
-	PitchMultiplier=1.0
+    bUseOwnerLocation=true
+    bAllowSpatialization=true
+    VolumeMultiplier=1.0000000
+    PitchMultiplier=1.0000000
 }

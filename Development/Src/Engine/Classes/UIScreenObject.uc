@@ -2630,7 +2630,7 @@ function OnBecomePrimaryPlayer( UIAction_BecomePrimaryPlayer Action )
 		NextPlayer = GetPlayerOwner(0);
 		if ( OriginalPrimaryPlayer != NextPlayer )
 		{
-			NextPlayer.Actor.ReloadProfileSettings();
+			// NextPlayer.Actor.ReloadProfileSettings();
 		}
 	}
 }

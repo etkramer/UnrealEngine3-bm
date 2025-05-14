@@ -1,26 +1,14 @@
-/**
- * Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
- */
 class SeqAct_ToggleGodMode extends SequenceAction;
 
-/**
- * Determines whether this class should be displayed in the list of available ops in the UI's kismet editor.
- *
- * @param	TargetObject	the widget that this SequenceObject would be attached to.
- *
- * @return	TRUE if this sequence object should be available for use in the UI kismet editor
- */
-event bool IsValidUISequenceObject( optional UIScreenObject TargetObject )
+event bool IsValidUISequenceObject(optional UIScreenObject TargetObject)
 {
-	return true;
+    return true;
+    //return ReturnValue;    
 }
 
 defaultproperties
 {
-	ObjName="Toggle God Mode"
-	ObjCategory="Toggle"
-
-	InputLinks(0)=(LinkDesc="Enable")
-	InputLinks(1)=(LinkDesc="Disable")
-	InputLinks(2)=(LinkDesc="Toggle")
+    InputLinks[0]=(LinkDesc="Enable",bHasImpulse=false,QueuedActivations=0,bDisabled=false,bDisabledPIE=false,LinkedOp=none,DrawY=0,bHidden=false,ActivateDelay=0.0000000)
+    InputLinks[1]=(LinkDesc="Disable",bHasImpulse=false,QueuedActivations=0,bDisabled=false,bDisabledPIE=false,LinkedOp=none,DrawY=0,bHidden=false,ActivateDelay=0.0000000)
+    InputLinks[2]=(LinkDesc="Toggle",bHasImpulse=false,QueuedActivations=0,bDisabled=false,bDisabledPIE=false,LinkedOp=none,DrawY=0,bHidden=false,ActivateDelay=0.0000000)
 }

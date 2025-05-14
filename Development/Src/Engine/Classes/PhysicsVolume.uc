@@ -1,74 +1,47 @@
-//=============================================================================
-// PhysicsVolume:  a bounding volume which affects actor physics
-// Each Actor is affected at any time by one PhysicsVolume
-// Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
-//=============================================================================
 class PhysicsVolume extends Volume
-	native
-	nativereplication
-	placeable;
-
-var()		interp vector	ZoneVelocity;
-var()		bool		bVelocityAffectsWalking;
-var()		bool	bPainCausing;			// Zone causes pain.
-/** if this is TRUE AI should not treat paths inside this volume differently even if the volume causes pain */
-var()		bool	bAIShouldIgnorePain;
-/** if bPainCausing, cause pain when something enters the volume in addition to damage each second */
-var() bool bEntryPain;
-var			bool	BACKUP_bPainCausing;
-var()		bool	bDestructive;			// Destroys most actors which enter it.
-var()		bool	bNoInventory;
-var()		bool	bMoveProjectiles;		// this velocity zone should impart velocity to projectiles and effects
-var()		bool	bBounceVelocity;		// this velocity zone should bounce actors that land in it
-var()		bool	bNeutralZone;			// Players can't take damage in this zone.
-
-/** If TRUE, crowd agents entering this volume play their death animation. */
-var()		bool	bCrowdAgentsPlayDeathAnim;
-
-/**
- *	By default, the origin of an Actor must be inside a PhysicsVolume for it to affect it.
- *	If this flag is true though, if this Actor touches the volume at all, it will affect it.
- */
-var()		bool	bPhysicsOnContact;
-var			bool	bWaterVolume;
-
-// BM1
-var bool bWindVolume;
-var bool bPerformTorque;
-
-var()		float		GroundFriction;
-var()		float		TerminalVelocity;
-var()		float		DamagePerSec;
-var() class<DamageType>	DamageType<AllowAbstract>;
-var()		int			Priority;	// determines which PhysicsVolume takes precedence if they overlap
-var()		float		FluidFriction;
-
-/** If pain causing, time between damage applications. */
-var()		float	PainInterval;
-
-/**
- *	This controls the force that will be applied to PHYS_RigidBody objects in this volume to get them
- *	to match the ZoneVelocity.
- */
-var()		float	RigidBodyDamping;
-
-/** Applies a cap on the maximum damping force that is applied to objects. */
-var()		float	MaxDampingForce;
-
-var	Info PainTimer;
-
-/** Controller that gets credit for any damage caused by this volume */
-var Controller DamageInstigator;
-
-var PhysicsVolume NextPhysicsVolume;
-
-// BM1
-var Vector ZoneTorque;
+    native
+    nativereplication
+    placeable;
 
 struct CheckpointRecord
 {
-	var bool bPainCausing;
+    var bool bPainCausing;
+
+    structdefaultproperties
+    {
+        bPainCausing=false
+    }
 };
+
+var() interp Vector ZoneVelocity;
+var() bool bVelocityAffectsWalking;
+var() bool bPainCausing;
+var() bool bAIShouldIgnorePain;
+var() bool bEntryPain;
+var bool BACKUP_bPainCausing;
+var() bool bDestructive;
+var() bool bNoInventory;
+var() bool bMoveProjectiles;
+var() bool bBounceVelocity;
+var() bool bNeutralZone;
+var() bool bCrowdAgentsPlayDeathAnim;
+var() bool bPhysicsOnContact;
+var bool bWaterVolume;
+var bool bWindVolume;
+var bool bPerformTorque;
+var() float GroundFriction;
+var() float TerminalVelocity;
+var() float DamagePerSec;
+var() class<DamageType> DamageType;
+var() int Priority;
+var() float FluidFriction;
+var() float PainInterval;
+var() float RigidBodyDamping;
+var() float MaxDampingForce;
+var Info PainTimer;
+var Controller DamageInstigator;
+var PhysicsVolume NextPhysicsVolume;
+var Vector ZoneTorque;
 
 cpptext
 {
@@ -81,189 +54,267 @@ cpptext
 	virtual FLOAT GetVolumeRBGravityZ() { return GetGravityZ(); }
 }
 
+// Export UPhysicsVolume::execGetGravityZ(FFrame&, void* const)
 native function float GetGravityZ();
+
+// Export UPhysicsVolume::execGetZoneVelocityForActor(FFrame&, void* const)
+native function Vector GetZoneVelocityForActor(Actor TheActor);
 
 simulated event PostBeginPlay()
 {
-	Super.PostBeginPlay();
-
-	BACKUP_bPainCausing	= bPainCausing;
-
-	if ( Role < ROLE_Authority )
-		return;
-	if ( bPainCausing )
-	{
-		PainTimer = Spawn(class'VolumeTimer', self);
-	}
+    super(Actor).PostBeginPlay();
+    BACKUP_bPainCausing = bPainCausing;
+    // End:0x25
+    if(Role < ROLE_Authority)
+    {
+        return;
+    }
+    PainTimer = Spawn(Class'VolumeTimer', self);
+    //return;    
 }
 
-/* Reset() - reset actor to initial state - used when restarting level without reloading. */
 function Reset()
 {
-	bPainCausing	= BACKUP_bPainCausing;
-	bForceNetUpdate = TRUE;
+    bPainCausing = BACKUP_bPainCausing;
+    bForceNetUpdate = true;
+    //return;    
 }
 
-/* Called when an actor in this PhysicsVolume changes its physics mode
-*/
-event PhysicsChangedFor(Actor Other);
-
-event ActorEnteredVolume(Actor Other);
-event ActorLeavingVolume(Actor Other);
-
-event PawnEnteredVolume(Pawn Other);
-event PawnLeavingVolume(Pawn Other);
-
-simulated function OnToggle( SeqAct_Toggle inAction )
+event PhysicsChangedFor(Actor Other)
 {
-	Super.OnToggle( inAction );
+    //return;    
+}
 
-	if( inAction.InputLinks[0].bHasImpulse )
-	{
-		// Turn on pain if that was it's original state
-		bPainCausing = BACKUP_bPainCausing;
-	}
-	else
-	if( inAction.InputLinks[1].bHasImpulse )
-	{
-		// Turn off pain
-		bPainCausing = FALSE;
-	}
-	else
-	if( inAction.InputLinks[2].bHasImpulse )
-	{
-		// Toggle pain off, or on if original state caused pain
-		bPainCausing = !bPainCausing && BACKUP_bPainCausing;
-	}
+event ActorEnteredVolume(Actor Other)
+{
+    //return;    
+}
+
+event ActorLeavingVolume(Actor Other)
+{
+    //return;    
+}
+
+event PawnEnteredVolume(Pawn Other)
+{
+    //return;    
+}
+
+event PawnLeavingVolume(Pawn Other)
+{
+    //return;    
+}
+
+simulated function OnToggle(SeqAct_Toggle inAction)
+{
+    // End:0x28
+    if(!bStatic || RemoteRole > ROLE_None)
+    {
+        super.OnToggle(inAction);
+    }
+    // End:0x58
+    if(inAction.InputLinks[0].bHasImpulse)
+    {
+        bPainCausing = BACKUP_bPainCausing;        
+    }
+    else
+    {
+        // End:0x83
+        if(inAction.InputLinks[1].bHasImpulse)
+        {
+            bPainCausing = false;            
+        }
+        else
+        {
+            // End:0xBE
+            if(inAction.InputLinks[2].bHasImpulse)
+            {
+                bPainCausing = !bPainCausing && BACKUP_bPainCausing;
+            }
+        }
+    }
+    //return;    
 }
 
 simulated event CollisionChanged()
 {
-	// disable Volume behaviour of toggling rigid body collision...
+    //return;    
 }
 
-/*
-TimerPop
-damage touched actors if pain causing.
-since PhysicsVolume is static, this function is actually called by a volumetimer
-*/
 function TimerPop(VolumeTimer T)
 {
-	local Actor A;
+    local Actor A;
 
-	if ( T == PainTimer )
-	{
-		if ( !bPainCausing )
-			return;
-
-		ForEach TouchingActors(class'Actor', A)
-		{
-			if ( A.bCanBeDamaged && !A.bStatic )
-			{
-				CausePainTo(A);
-			}
-		}
-	}
+    // End:0x77
+    if(T == PainTimer)
+    {
+        // End:0x76
+        foreach TouchingActors(Class'Actor', A)
+        {
+            // End:0x3C
+            if(!bPainCausing)
+            {
+                DamageApexDestructible(A);
+                // End:0x75
+                continue;
+            }
+            // End:0x75
+            if(A.bCanBeDamaged && !A.bStatic)
+            {
+                CausePainTo(A);
+            }            
+        }        
+    }
+    //return;    
 }
 
-simulated event Touch( Actor Other, PrimitiveComponent OtherComp, vector HitLocation, vector HitNormal )
+simulated event Touch(Actor Other, PrimitiveComponent OtherComp, Vector HitLocation, Vector HitNormal)
 {
-	Super.Touch(Other, OtherComp, HitLocation, HitNormal);
-	if ( (Other == None) || Other.bStatic )
-		return;
-	if ( bNoInventory && (DroppedPickup(Other) != None) && (Other.Owner == None) )
-	{
-		Other.LifeSpan = 1.5;
-		return;
-	}
-	if ( bMoveProjectiles && (ZoneVelocity != vect(0,0,0)) )
-	{
-		if ( Other.Physics == PHYS_Projectile )
-			Other.Velocity += ZoneVelocity;
-			else if ( (Other.Base == None) && Other.IsA('Emitter') && (Other.Physics == PHYS_None) )
-		{
-			Other.SetPhysics(PHYS_Projectile);
-			Other.Velocity += ZoneVelocity;
-		}
-	}
-	if ( bPainCausing )
-	{
-		if ( Other.bDestroyInPainVolume )
-		{
-			Other.VolumeBasedDestroy(self);
-			return;
-		}
-		if (bEntryPain && Other.bCanBeDamaged)
-		{
-			CausePainTo(Other);
-		}
-	}
+    super(Actor).Touch(Other, OtherComp, HitLocation, HitNormal);
+    // End:0x3C
+    if((Other == none) || Other.bStatic)
+    {
+        return;
+    }
+    // End:0x85
+    if((bNoInventory && DroppedPickup(Other) != none) && Other.Owner == none)
+    {
+        Other.LifeSpan = 1.5000000;
+        return;
+    }
+    // End:0x14B
+    if(bMoveProjectiles && ZoneVelocity != vect(0.0000000, 0.0000000, 0.0000000))
+    {
+        // End:0xDA
+        if(Other.Physics == 6)
+        {
+            Other.Velocity += ZoneVelocity;            
+        }
+        else
+        {
+            // End:0x14B
+            if(((Other.Base == none) && Other.IsA('Emitter')) && Other.Physics == 0)
+            {
+                Other.SetPhysics(6);
+                Other.Velocity += ZoneVelocity;
+            }
+        }
+    }
+    // End:0x1AE
+    if(bPainCausing)
+    {
+        // End:0x17E
+        if(Other.bDestroyInPainVolume)
+        {
+            Other.VolumeBasedDestroy(self);
+            return;
+        }
+        // End:0x1AB
+        if(bEntryPain && Other.bCanBeDamaged)
+        {
+            CausePainTo(Other);
+        }        
+    }
+    else
+    {
+        DamageApexDestructible(Other);
+    }
+    //return;    
 }
 
 function CausePainTo(Actor Other)
 {
-	if (DamagePerSec > 0)
-	{
-		if ( WorldInfo.bSoftKillZ && (Other.Physics != PHYS_Walking) )
-			return;
-		if ( (DamageType == None) || (DamageType == class'DamageType') )
-			`log("No valid damagetype ("$DamageType$") specified for "$PathName(self));
-		Other.TakeDamage(DamagePerSec*PainInterval, DamageInstigator, Location, vect(0,0,0), DamageType,, self);
-	}
-	else
-	{
-		Other.HealDamage(DamagePerSec*PainInterval, DamageInstigator, DamageType);
-	}
+    // End:0xDD
+    if(DamagePerSec > float(0))
+    {
+        // End:0x3E
+        if(WorldInfo.bSoftKillZ && Other.Physics != 1)
+        {
+            return;
+        }
+        // End:0x9A
+        if((DamageType == none) || DamageType == Class'DamageType')
+        {
+            LogInternal((("No valid damagetype (" $ string(DamageType)) $ ") specified for ") $ PathName(self));
+        }
+        Other.TakeDamage(int(DamagePerSec * PainInterval), DamageInstigator, Location, vect(0.0000000, 0.0000000, 0.0000000), DamageType,, self);        
+    }
+    else
+    {
+        Other.HealDamage(int(-DamagePerSec * PainInterval), DamageInstigator, DamageType);
+    }
+    //return;    
 }
 
-/** called from GameInfo::SetPlayerDefaults() on the Pawn's PhysicsVolume after the its default movement properties have been restored
- * allows the volume to reapply any movement modifiers on the Pawn
- */
-function ModifyPlayer(Pawn PlayerPawn);
+function DamageApexDestructible(Actor TheActor)
+{
+    local Box Bounds;
 
-/** notification when a Pawn inside this volume becomes the ViewTarget for a PlayerController */
-function NotifyPawnBecameViewTarget(Pawn P, PlayerController PC);
+    // End:0x7C
+    if(ApexDestructibleActor(TheActor) != none)
+    {
+        GetComponentsBoundingBox(Bounds);
+        TheActor.TakeRadiusDamage(DamageInstigator, DamagePerSec * PainInterval, VSize(Bounds.Max - Bounds.Min) / 2.0000000, DamageType, 0.0000000, Location, false, self);
+    }
+    //return;    
+}
 
-/** Kismet hook to set DamageInstigator */
+function ModifyPlayer(Pawn PlayerPawn)
+{
+    //return;    
+}
+
+function NotifyPawnBecameViewTarget(Pawn P, PlayerController PC)
+{
+    //return;    
+}
+
 function OnSetDamageInstigator(SeqAct_SetDamageInstigator Action)
 {
-	DamageInstigator = Action.GetController(Action.DamageInstigator);
+    DamageInstigator = Action.GetController(Action.DamageInstigator);
+    //return;    
 }
 
 function bool ShouldSaveForCheckpoint()
 {
-	return (bPainCausing != BACKUP_bPainCausing);
+    return bPainCausing != BACKUP_bPainCausing;
+    //return ReturnValue;    
 }
 
 function CreateCheckpointRecord(out CheckpointRecord Record)
 {
-	Record.bPainCausing = bPainCausing;
+    Record.bPainCausing = bPainCausing;
+    //return;    
 }
 
 function ApplyCheckpointRecord(const out CheckpointRecord Record)
 {
-	bPainCausing = Record.bPainCausing;
+    bPainCausing = Record.bPainCausing;
+    //return;    
 }
 
 defaultproperties
 {
-	Begin Object Name=BrushComponent0
-		CollideActors=true
-		BlockActors=false
-		BlockZeroExtent=true
-		BlockNonZeroExtent=true
-		BlockRigidBody=false
-	End Object
-
-	MaxDampingForce=1000000.0
-	FluidFriction=+0.3
-	bVelocityAffectsWalking=true
-    TerminalVelocity=+03500.000000
-	bAlwaysRelevant=true
-	bOnlyDirtyReplication=true
-    GroundFriction=+00008.000000
-	bSkipActorPropertyReplication=true
-	DamageType=class'Engine.DamageType'
-	bEntryPain=true
-	PainInterval=1.f
+    bVelocityAffectsWalking=true
+    bEntryPain=true
+    GroundFriction=8.0000000
+    TerminalVelocity=3500.0000000
+    DamageType=Class'DamageType'
+    FluidFriction=0.3000000
+    PainInterval=1.0000000
+    MaxDampingForce=1000000.0000000
+    // Reference: BrushComponent'Default__PhysicsVolume.BrushComponent0'
+    // TemplateOwnerClass: none
+    // TemplateOwnerName: 'BrushComponent0'
+    // Archetype: BrushComponent'Default__Volume.BrushComponent0'
+    begin object name="BrushComponent0"
+        BlockZeroExtent=true
+        bDisableAllRigidBody=false
+    end object
+    BrushComponent=BrushComponent0
+    bAlwaysRelevant=true
+    bOnlyDirtyReplication=true
+    bForceAllowKismetModification=true
+    Components[0]=BrushComponent0
+    CollisionComponent=BrushComponent0
 }

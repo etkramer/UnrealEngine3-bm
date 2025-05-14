@@ -1,569 +1,311 @@
-//=============================================================================
-// Actor: The base class of all actors.
-// Actor is the base class of all gameplay objects.
-// A large number of properties, behaviors and interfaces are implemented in Actor, including:
-//
-// -	Display
-// -	Animation
-// -	Physics and world interaction
-// -	Making sounds
-// -	Networking properties
-// -	Actor creation and destruction
-// -	Actor iterator functions
-// -	Message broadcasting
-//
-// Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
-//=============================================================================
-
 class Actor extends Object
-	abstract
-	native
-	nativereplication
-	hidecategories(Navigation)
-	DependsOn(AnimNode);
+    abstract
+    native
+    nativereplication
+    DependsOn(AnimNode);
 
-/** List of extra trace flags */
-const TRACEFLAG_Bullet			= 1;
-const TRACEFLAG_PhysicsVolumes	= 2;
-const TRACEFLAG_SkipMovers		= 4;
-const TRACEFLAG_Blocking		= 8;
-
-/** when bReplicateRigidBodyLocation is true, the root body of a ragdoll will be replicated
- * but this is not entirely accurate (and isn't meant to be) as the other bodies in the ragdoll may interfere
- * this can then result in jittering from the client constantly trying to apply the replicated value
- * so if the client's error is less than this amount from the replicated value, it will be ignored
- */
+const TRACEFLAG_Bullet = 1;
+const TRACEFLAG_PhysicsVolumes = 2;
+const TRACEFLAG_SkipMovers = 4;
+const TRACEFLAG_Blocking = 8;
+const TRACEFLAG_CheckZeroExtent = 16;
+const TRACEFLAG_IgnorePawns = 32;
+const TRACEFLAG_Destructibles = 64;
 const REP_RBLOCATION_ERROR_TOLERANCE_SQ = 16.0f;
+const MINFLOORZ = 0.7;
+const ACTORMAXSTEPHEIGHT = 35.0;
+const RBSTATE_LINVELSCALE = 10.0;
+const RBSTATE_ANGVELSCALE = 1000.0;
+const RB_None = 0x00;
+const RB_NeedsUpdate = 0x01;
+const RB_Sleeping = 0x02;
 
-/** The set of Directions an actor can be moving **/
+enum EPhysics
+{
+    PHYS_None,                      // 0
+    PHYS_Walking,                   // 1
+    PHYS_Falling,                   // 2
+    PHYS_Swimming,                  // 3
+    PHYS_Flying,                    // 4
+    PHYS_Rotating,                  // 5
+    PHYS_Projectile,                // 6
+    PHYS_Interpolating,             // 7
+    PHYS_Spider,                    // 8
+    PHYS_Ladder,                    // 9
+    PHYS_RigidBody,                 // 10
+    PHYS_SoftBody,                  // 11
+    PHYS_Floating,                  // 12
+    PHYS_Unused,                    // 13
+    PHYS_MAX                        // 14
+};
+
 enum EMoveDir
 {
-	MD_Stationary,
-	MD_Forward,
-	MD_Backward,
-	MD_Left,
-	MD_Right,
-	MD_Up,
-	MD_Down
+    MD_Stationary,                  // 0
+    MD_Forward,                     // 1
+    MD_Backward,                    // 2
+    MD_Left,                        // 3
+    MD_Right,                       // 4
+    MD_Up,                          // 5
+    MD_Down,                        // 6
+    MD_MAX                          // 7
 };
 
-var(Advanced) bool bLoadIfPhysXLevel0;
-var(Advanced) bool bLoadIfPhysXLevel1;
-var(Advanced) bool bLoadIfPhysXLevel2;
-
-// Flags.
-var			  const bool	bStatic;			// Does not move or change over time. Don't let L.D.s change this - screws up net play
-
-/** If this is True, all PrimitiveComponents of the actor are hidden.  If this is false, only PrimitiveComponents with HiddenGame=True are hidden. */
-var(Display) const bool	bHidden;
-
-var			  const	bool	bNoDelete;			// Cannot be deleted during play.
-var			  const	bool	bDeleteMe;			// About to be deleted.
-var transient const bool	bTicked;			// Actor has been updated.
-var const				bool    bOnlyOwnerSee;		// Only owner can see this actor.
-
-/**
- * This is an early out bool so we do do not have to even call call virtual function InStasis().  So if this is true then it means
- * we will call InStasis to see if we should actually "be in stasis".
- * InStatis checks for: physics == PHYS_None or PHYS_Rotating AND has not been rendered in last 5 seconds.
- **/
-var					bool	bStasis;
-var			  const	bool	bExtraStasis;
-
-var					bool	bWorldGeometry;		// Collision and Physics treats this actor as static world geometry
-/** Ignore Unreal collisions between PHYS_RigidBody pawns (vehicles/ragdolls) and this actor (only relevant if bIgnoreEncroachers is false) */
-var					bool	bIgnoreRigidBodyPawns;
-var					bool	bOrientOnSlope;		// when landing, orient base on slope of floor
-var			  const	bool	bIgnoreEncroachers;	// Ignore collisions between movers and this actor
-/** whether encroachers can push this Actor (only relevant if bIgnoreEncroachers is false and not an encroacher ourselves)
- * if false, the encroacher gets EncroachingOn() called immediately instead of trying to safely move this actor first
- */
-var bool bPushedByEncroachers;
-/** If TRUE, when an InterpActor (Mover) encroaches or runs into this Actor, it is destroyed, and will not stop the mover. */
-var bool bDestroyedByInterpActor;
-
-/** Whether to route BeginPlay even if the actor is static. */
-var			  const bool	bRouteBeginPlayEvenIfStatic;
-/** Used to determine when we stop moving, so we can update PreviousLocalToWorld to stop motion blurring. */
-var			  const	bool	bIsMoving;
-/**
- *	If true (and is an encroacher) will do the encroachment check inside MoveActor even if there is no movement.
- *	This is useful for objects that may change bounding box but not actually move.
- */
-var					bool	bAlwaysEncroachCheck;
-/** whether this Actor may return an alternate location from GetTargetLocation() when bRequestAlternateLoc is true
- * (used as an early out when tracing to those locations, etc)
- */
-var bool bHasAlternateTargetLocation;
-
-var(Collision) bool bCanStepUpOn;
-
-// Networking flags
-var			  const	bool	bNetTemporary;				// Tear-off simulation in network play.
-var			  const	bool	bOnlyRelevantToOwner;			// this actor is only relevant to its owner. If this flag is changed during play, all non-owner channels would need to be explicitly closed.
-var transient				bool	bNetDirty;				// set when any attribute is assigned a value in unrealscript, reset when the actor is replicated
-var					bool	bAlwaysRelevant;			// Always relevant for network.
-var					bool	bReplicateInstigator;		// Replicate instigator to client (used by bNetTemporary projectiles).
-var					bool	bReplicateMovement;			// if true, replicate movement/location related properties
-var					bool	bSkipActorPropertyReplication; // if true, don't replicate actor class variables for this actor
-var					bool	bUpdateSimulatedPosition;	// if true, update velocity/location after initialization for simulated proxies
-var					bool	bTearOff;					// if true, this actor is no longer replicated to new clients, and
-														// is "torn off" (becomes a ROLE_Authority) on clients to which it was being replicated.
-var					bool	bOnlyDirtyReplication;		// if true, only replicate actor if bNetDirty is true - useful if no C++ changed attributes (such as physics)
-														// bOnlyDirtyReplication only used with bAlwaysRelevant actors
-
-/** Whether this actor will interact with fluid surfaces or not. */
-var(Physics)		bool	bAllowFluidSurfaceInteraction;
-
-
-/** Demo recording variables */
-var transient				bool	bDemoRecording;	/** set when we are currently replicating this Actor into a demo */
-var					bool	bDemoOwner;					// Demo recording driver owns this actor.
-var bool bForceDemoRelevant; /** force Actor to be relevant for demos (only works on dynamic actors) */
-
-/** Should replicate initial rotation.  This property should never be changed during execution, as the client and server rely on the default value of this property always being the same. */
-var const           bool    bNetInitialRotation;
-
-var					bool	bReplicateRigidBodyLocation;	// replicate Location property even when in PHYS_RigidBody
-var					bool	bKillDuringLevelTransition;	// If set, actor and its components are marked as pending kill during seamless map transitions
-/** whether we already exchanged Role/RemoteRole on the client, as removing then readding a streaming level
- * causes all initialization to be performed again even though the actor may not have actually been reloaded
- */
-var const				bool	bExchangedRoles;
-
-/** If true, texture streaming code iterates over all StaticMeshComponents found on this actor when building texture streaming information. */
-var(Advanced)				bool	bConsiderAllStaticMeshComponentsForStreaming;
-
-//debug
-var(Debug)					bool	 bDebug;	// Used to toggle debug logging
-
-// HUD
-/** IF true, may call PostRenderFor() even when this actor is not visible */
-var							bool	bPostRenderIfNotVisible;
-
-/** When set to TRUE will force this actor to immediately be considered for replication, instead of waiting for NetUpdateTime */
-var transient bool bForceNetUpdate;
-
-var bool bAutomaticPerformPhysics;
-
-var(Attachment) const bool bHardAttach;		// Uses 'hard' attachment code. bBlockActor must also be false.
-											// This actor cannot then move relative to base (setlocation etc.).
-											// Dont set while currently based on something!
-
-var(Attachment) bool bSnapAttach;
-
-var(Attachment) bool bIgnoreBaseRotation;	/** If true, this actor ignores the effects of changes in its base's rotation on its location and rotation */
-
-/** If TRUE, BaseSkelComponent is used as the shadow parent for this actor. */
-var(Attachment) bool bShadowParented;
-
-/** Determines whether or not adhesion code should attempt to adhere to this actor. **/
-var bool bCanBeAdheredTo;
-
-/** Determines whether or not friction code should attempt to friction to this actor. **/
-var bool bCanBeFrictionedTo;
-
-
-//-----------------------------------------------------------------------------
-// Display properties.
-
-// Advanced.
-var			  bool		bHurtEntry;				// keep HurtRadius from being reentrant
-var			  bool		bGameRelevant;			// Always relevant for game
-var const     bool		bMovable;				// Actor can be moved.
-var			  bool		bDestroyInPainVolume;	// destroy this actor if it enters a pain volume
-var			  bool		bCanBeDamaged;			// can take damage
-var			  bool		bShouldBaseAtStartup;	// if true, find base for this actor at level startup, if collides with world and PHYS_None or PHYS_Rotating
-var			  bool		bPendingDelete;			// set when actor is about to be deleted (since endstate and other functions called
-												// during deletion process before bDeleteMe is set).
-var			  bool		bCanTeleport;			// This actor can be teleported.
-var			  const	bool	bAlwaysTick;		// Update even when paused
-/** indicates that this Actor can dynamically block AI paths */
-var(Navigation) bool bBlocksNavigation;
-
-/** mirrored copy of CollisionComponent's BlockRigidBody for the Actor property window for LDs (so it's next to CollisionType)
- * purely for editing convenience and not used at all by the physics code
- */
-var(Collision) const transient bool BlockRigidBody;
-
-// Collision flags.
-var 			bool		bCollideWhenPlacing;	// This actor collides with the world when placing.
-var const	bool		bCollideActors;			// Collides with other actors.
-var		bool		bCollideWorld;			// Collides with the world.
-var(Collision)			bool		bCollideComplex;		// Ignore Simple Collision on Static Meshes, and collide per Poly.
-var			bool		bBlockActors;			// Blocks other nonplayer actors.
-var						bool		bProjTarget;			// Projectiles should potentially target this actor.
-var						bool		bBlocksTeleport;
-
-var bool bForceZeroExtentCollision;
-var bool bPlayerMovementCheck;
-var bool bIgnoreDynamic;
-
-/**
- *	For encroachers, don't do the overlap check when they move. You will not get touch events for this actor moving, but it is much faster.
- *	This is an optimisation for large numbers of PHYS_RigidBody actors for example.
- */
-var(Collision)			bool		bNoEncroachCheck;
-
-/** If true, do a zero-extent trace each frame from old to new Location when in PHYS_RigidBody. If it hits the world (ie might be tunneling), call FellOutOfWorld. */
-var(Collision)			bool		bPhysRigidBodyOutOfWorldCheck;
-
-/** Set TRUE if a component is ever attached which is outside the world. OutsideWorldBounds will be called in Tick in this case. */
-var	const transient		bool		bComponentOutsideWorld;
-
-//-----------------------------------------------------------------------------
-// Physics.
-
-// Options.
-var			  bool        bBounce;           // Bounces when hits ground fast.
-var			  const bool  bJustTeleported;   // Used by engine physics - not valid for scripts.
-
-//-----------------------------------------------------------------------------
-// Networking.
-
-// Symmetric network flags, valid during replication only.
-var const bool bNetInitial;       // Initial network update.
-var const bool bNetOwner;         // Player owns this actor.
-
-//Editing flags
-var(Advanced) const bool  bHiddenEd;     // Is hidden during editing.
-var(Advanced) const bool  bHiddenEdGroup;// Is hidden by the group brower.
-var const bool bHiddenEdCustom; // custom visibility flag for game-specific editor modes; not used by base editor functionality
-var(Advanced) bool        bEdShouldSnap; // Snap to grid in editor.
-var transient const bool  bTempEditor;   // Internal UnrealEd.
-var(Collision) bool		  bPathColliding;// this actor should collide (if bWorldGeometry && bBlockActors is true) during path building (ignored if bStatic is true, as actor will always collide during path building)
-var transient bool		  bPathTemp;	 // Internal/path building
-var	bool				  bScriptInitialized; // set to prevent re-initializing of actors spawned during level startup
-var(Advanced) bool        bLockLocation; // Prevent the actor from being moved in the editor.
-/** always allow Kismet to modify this Actor, even if it's static and not networked (e.g. for server side only stuff) */
-var const bool bForceAllowKismetModification;
-
-var bool bIsPointOfInterest;
-var const bool bDonePostBeginPlay;
-var(Collision) bool bBatmanCanClimb;
-var(Gadget) bool bValidLineLauncherTarget;
-var(Gadget) bool bValidGelTarget;
-var bool bCurrentInvestigateHightlighted;
-var bool CachedInvestigateSightCheck;
-
-/**
- * Actor components.
- * These are not exposed by default to level designers for several reasons.
- * The main one being that properties are not propagated to network clients
- * when is actor is dynamic (bStatic=FALSE and bNoDelete=FALSE).
- * So instead the actor should expose and interface the necessary component variables.
- */
-
-/** The actor components which are attached directly to the actor's location/rotation. */
-var private const array<ActorComponent>	Components;
-
-/** All actor components which are directly or indirectly attached to the actor. */
-var private transient const array<ActorComponent> AllComponents;
-
-// The actor's position and rotation.
-/** Actor's location; use Move or SetLocation to change. */
-var(Movement) const vector			Location;
-
-/** The actor's rotation; use SetRotation to change. */
-var(Movement) const rotator			Rotation;
-
-/** Scaling factor, 1.0=normal size. */
-var(Display) const interp	float	DrawScale;
-
-/** Scaling vector, (1.0,1.0,1.0)=normal size. */
-var(Display) const interp	vector	DrawScale3D;
-
-/** Offset from box center for drawing. */
-var(Display) const			vector	PrePivot;
-
-/** A fence to track when the primitive is detached from the scene in the rendering thread. */
-var private native const RenderCommandFence DetachFence;
-
-/** Allow each actor to run at a different time speed */
-var float CustomTimeDilation;
-
-// Priority Parameters
-// Actor's current physics mode.
-var(Movement) const enum EPhysics
-{
-	PHYS_None,
-	PHYS_Walking,
-	PHYS_Falling,
-	PHYS_Swimming,
-	PHYS_Flying,
-	PHYS_Rotating,
-	PHYS_Projectile,
-	PHYS_Interpolating,
-	PHYS_Spider,
-	PHYS_Ladder,
-	PHYS_RigidBody,
-	PHYS_SoftBody, /** update bounding boxes and killzone test, otherwise like PHYS_None */
-	PHYS_Unused
-} Physics;
-
-// Net variables.
 enum ENetRole
 {
-	ROLE_None,              // No role at all.
-	ROLE_SimulatedProxy,	// Locally simulated proxy of this actor.
-	ROLE_AutonomousProxy,	// Locally autonomous proxy of this actor.
-	ROLE_Authority,			// Authoritative control over the actor.
+    ROLE_None,                      // 0
+    ROLE_SimulatedProxy,            // 1
+    ROLE_AutonomousProxy,           // 2
+    ROLE_Authority,                 // 3
+    ROLE_MAX                        // 4
 };
-var ENetRole RemoteRole, Role;
 
-//-----------------------------------------------------------------------------
-// Collision.
-
-/** enum for LDs to select collision options - sets Actor flags and that of our CollisionComponent via PostEditChange() */
-var(Collision) const transient enum ECollisionType
+enum ECollisionType
 {
-	COLLIDE_CustomDefault, // custom programmer set collison (PostEditChange() will restore collision to defaults when this is selected)
-	COLLIDE_NoCollision, // doesn't collide
-	COLLIDE_BlockAll, // blocks everything
-	COLLIDE_BlockWeapons, // only blocks zero extent things (usually weapons)
-	COLLIDE_TouchAll, // touches (doesn't block) everything
-	COLLIDE_TouchWeapons, // touches (doesn't block) only zero extent things
-	COLLIDE_BlockAllButWeapons, // only blocks non-zero extent things (Pawns, etc)
-	COLLIDE_TouchAllButWeapons, // touches (doesn't block) only non-zero extent things
-	COLLIDE_BlockWeaponsKickable // Same as BlockWeapons, but enables flags to be kicked by player physics
-} CollisionType;
-/** used when collision is changed via Kismet "Change Collision" action to set component flags on the CollisionComponent
- * will not modify replicated Actor flags regardless of setting
- */
-var transient ECollisionType ReplicatedCollisionType;
+    COLLIDE_CustomDefault,          // 0
+    COLLIDE_NoCollision,            // 1
+    COLLIDE_BlockAll,               // 2
+    COLLIDE_BlockWeapons,           // 3
+    COLLIDE_TouchAll,               // 4
+    COLLIDE_TouchWeapons,           // 5
+    COLLIDE_BlockAllButWeapons,     // 6
+    COLLIDE_TouchAllButWeapons,     // 7
+    COLLIDE_BlockWeaponsKickable,   // 8
+    COLLIDE_MAX                     // 9
+};
 
-/** The ticking group this actor belongs to */
-var const ETickingGroup TickGroup;
+enum ETravelType
+{
+    TRAVEL_Absolute,                // 0
+    TRAVEL_Partial,                 // 1
+    TRAVEL_Relative,                // 2
+    TRAVEL_MAX                      // 3
+};
 
-var byte FramesTillInvestigateSightCheck;
+enum EDoubleClickDir
+{
+    DCLICK_None,                    // 0
+    DCLICK_Left,                    // 1
+    DCLICK_Right,                   // 2
+    DCLICK_Forward,                 // 3
+    DCLICK_Back,                    // 4
+    DCLICK_Active,                  // 5
+    DCLICK_Done,                    // 6
+    DCLICK_MAX                      // 7
+};
 
-// Owner.
-var const Actor	Owner;			// Owner actor.
-var(Attachment) const Actor	Base;           // Actor we're standing on.
+struct native Thought
+{
+    var string Text;
+    var byte Red;
+    var byte Green;
+    var byte Blue;
+    var byte Alpha;
+
+    structdefaultproperties
+    {
+        Text="Empty Thought"
+        Red=255
+        Green=255
+        Blue=255
+        Alpha=255
+    }
+};
 
 struct native TimerData
 {
-	var bool			bLoop;
-	var Name			FuncName;
-	var float			Rate, Count;
-	var Object			TimerObj;
-	var bool			bPaused;
+    var bool bLoop;
+    var name FuncName;
+    var float Rate;
+    var float Count;
+    var Object TimerObj;
+    var bool bPaused;
+
+    structdefaultproperties
+    {
+        bLoop=false
+        FuncName="None"
+        Rate=0.0000000
+        Count=0.0000000
+        TimerObj=none
+        bPaused=false
+    }
 };
-var const array<TimerData>			Timers;			// list of currently active timers
-
-
-var Pawn                  Instigator;    // Pawn responsible for damage caused by this actor.
-
-var const transient WorldInfo	WorldInfo;
-var	float						LifeSpan;		// How old the object lives before dying, 0=forever.
-var const float					CreationTime;	// The time this actor was created, relative to WorldInfo.TimeSeconds
-
-//-----------------------------------------------------------------------------
-// Structures.
 
 struct native transient TraceHitInfo
 {
-	var Material			Material; // Material we hit.
-	var PhysicalMaterial    PhysMaterial; // The Physical Material that was hit
-	var int					Item; // Extra info about thing we hit.
-	var int					LevelIndex; // Level index, if we hit BSP.
-	var name				BoneName; // Name of bone if we hit a skeletal mesh.
-	var PrimitiveComponent	HitComponent; // Component of the actor that we hit.
+    var init Material Material;
+    var init PhysicalMaterial PhysMaterial;
+    var init int Item;
+    var init int LevelIndex;
+    var init name BoneName;
+    var init export editinline PrimitiveComponent HitComponent;
+
+    structdefaultproperties
+    {
+        Material=none
+        PhysMaterial=none
+        Item=0
+        LevelIndex=0
+        BoneName="None"
+        HitComponent=none
+    }
 };
 
-
-/** Hit definition struct. Mainly used by Instant Hit Weapons. */
 struct native transient ImpactInfo
 {
-	/** Actor Hit */
-	var	Actor			HitActor;
-	/** world location of hit impact */
-	var	vector			HitLocation;
-	/** Hit normal of impact */
-	var	vector			HitNormal;
-	/** Direction of ray when hitting actor */
-	var	vector			RayDir;
-	/** Start location of trace */
-	var vector			StartTrace;
-	/** Trace Hit Info (material, bonename...) */
-	var	TraceHitInfo	HitInfo;
+    var init Actor HitActor;
+    var init Vector HitLocation;
+    var init Vector HitNormal;
+    var init Vector RayDir;
+    var init Vector StartTrace;
+    var init TraceHitInfo HitInfo;
+
+    structdefaultproperties
+    {
+        HitActor=none
+        HitLocation=(X=0.0000000,Y=0.0000000,Z=0.0000000)
+        HitNormal=(X=0.0000000,Y=0.0000000,Z=0.0000000)
+        RayDir=(X=0.0000000,Y=0.0000000,Z=0.0000000)
+        StartTrace=(X=0.0000000,Y=0.0000000,Z=0.0000000)
+        HitInfo=(Material=none,PhysMaterial=none,Item=0,LevelIndex=0,BoneName="None",HitComponent=none)
+    }
 };
 
-/** Struct used for passing information from Matinee to an Actor for blending animations during a sequence. */
 struct native transient AnimSlotInfo
 {
-	/** Name of slot that we want to play the animtion in. */
-	var	name			SlotName;
+    var init name SlotName;
+    var init array<float> ChannelWeights;
 
-	/** Strength of each Channel within this Slot. Channel indexs are determined by track order in Matinee. */
-	var array<float>	ChannelWeights;
+    structdefaultproperties
+    {
+        SlotName="None"
+        ChannelWeights=none
+    }
 };
 
-/** Used to indicate each slot name and how many channels they have. */
 struct native transient AnimSlotDesc
 {
-	/** Name of the slot. */
-	var name			SlotName;
+    var init name SlotName;
+    var init int NumChannels;
 
-	/** Number of channels that are available in this slot. */
-	var int				NumChannels;
+    structdefaultproperties
+    {
+        SlotName="None"
+        NumChannels=0
+    }
 };
 
-//-----------------------------------------------------------------------------
-// Major actor properties.
+struct native transient PhysContactModificationData
+{
+    var init int ChangeFlags;
+    var init native const Pointer PhysShape0;
+    var init native const Pointer PhysShape1;
+    var init Actor Actor0;
+    var init Actor Actor1;
+    var init int PhysFeatureIndex0;
+    var init int physFeatureIndex1;
+    var init native Pointer PhysData;
 
-/**
- * The value of WorldInfo->TimeSeconds for the frame when this actor was last rendered.  This is written
- * from the render thread, which is up to a frame behind the game thread, so you should allow this time to
- * be at least a frame behind the game thread's world time before you consider the actor non-visible.
- * There's an equivalent variable in PrimitiveComponent.
- */
-var transient float		LastRenderTime;
+    structdefaultproperties
+    {
+        ChangeFlags=0
+        Actor0=none
+        Actor1=none
+        PhysFeatureIndex0=0
+        physFeatureIndex1=0
+    }
+};
 
-var(Object)	name			Tag;			// Actor's tag name.
-var			name			InitialState;
-var(Object)	name			Group;
-
-// Internal.
-var transient const array<Actor>	Touching;		 // List of touching actors.
-var transient const array<Actor>	Children;		// array of actors owned by this actor
-var const float				LatentFloat;   // Internal latent function use.
-var const AnimNodeSequence	LatentSeqNode; // Internal latent function use.
-
-var transient const PhysicsVolume	PhysicsVolume;	// physics volume this actor is currently in
-var					vector			Velocity;		// Velocity.
-var					vector			Acceleration;	// Acceleration.
-var	transient const	vector			AngularVelocity;	// Angular velocity, in radians/sec.  Read-only, see RotationRate to set rotation.
-
-// Attachment related variables
-var(Attachment) SkeletalMeshComponent	BaseSkelComponent;
-var(Attachment) name					BaseBoneName;
-
-var const array<Actor>  Attached;			// array of actors attached to this actor.
-var const vector		RelativeLocation;	// location relative to base/bone (valid if base exists)
-var const rotator		RelativeRotation;	// rotation relative to base/bone (valid if base exists)
-
-// Collision primitive.
-var(Collision) editconst PrimitiveComponent CollisionComponent;
-
-var				native int	  		OverlapTag;
-
-// Physics properties.
-var(Movement) rotator	  RotationRate;		// Change in rotation per second.
-var(Movement) rotator     DesiredRotation;	// Physics will smoothly rotate actor to this rotation.
-var			  Actor		  PendingTouch;		// Actor touched during move which wants to add an effect after the movement completes
-
-//@note: Pawns have properties that override these values
-const MINFLOORZ = 0.7; // minimum z value for floor normal (if less, not a walkable floor)
-					   // 0.7 ~= 45 degree angle for floor
-const ACTORMAXSTEPHEIGHT = 35.0; // max height floor walking actor can step up to
-
-const RBSTATE_LINVELSCALE = 10.0;
-const RBSTATE_ANGVELSCALE = 1000.0;
-
-/** describes the physical state of a rigid body
- * @warning: C++ mirroring is in UnPhysPublic.h
- */
 struct RigidBodyState
 {
-	var vector	Position;
-	var Quat	Quaternion;
-	var vector	LinVel; // RBSTATE_LINVELSCALE times actual (precision reasons)
-	var vector	AngVel; // RBSTATE_ANGVELSCALE times actual (precision reasons)
-	var	byte	bNewData;
+    var Vector Position;
+    var Quat Quaternion;
+    var Vector LinVel;
+    var Vector AngVel;
+    var byte bNewData;
+
+    structdefaultproperties
+    {
+        Position=(X=0.0000000,Y=0.0000000,Z=0.0000000)
+        Quaternion=(X=0.0000000,Y=0.0000000,Z=0.0000000,W=0.0000000)
+        LinVel=(X=0.0000000,Y=0.0000000,Z=0.0000000)
+        AngVel=(X=0.0000000,Y=0.0000000,Z=0.0000000)
+        bNewData=0
+    }
 };
 
-const RB_None=0x00;			// Not set, empty
-const RB_NeedsUpdate=0x01;	// If bNewData & RB_NeedsUpdate != 0 then an update is needed
-const RB_Sleeping=0x02;		// if bNewData & RB_Sleeping != 0 then this RigidBody needs to sleep
-
-/** Information about one contact between a pair of rigid bodies
- * @warning: C++ mirroring is in UnPhysPublic.h
- */
 struct RigidBodyContactInfo
 {
-	var vector ContactPosition;
-	var vector ContactNormal;
-	var float ContactPenetration;
-	var vector ContactVelocity[2];
-	var PhysicalMaterial PhysMaterial[2];
+    var Vector ContactPosition;
+    var Vector ContactNormal;
+    var float ContactPenetration;
+    var Vector ContactVelocity[2];
+    var PhysicalMaterial PhysMaterial[2];
+
+    structdefaultproperties
+    {
+        ContactPosition=(X=0.0000000,Y=0.0000000,Z=0.0000000)
+        ContactNormal=(X=0.0000000,Y=0.0000000,Z=0.0000000)
+        ContactPenetration=0.0000000
+        ContactVelocity[0]=(X=0.0000000,Y=0.0000000,Z=0.0000000)
+        ContactVelocity[1]=(X=0.0000000,Y=0.0000000,Z=0.0000000)
+        PhysMaterial[0]=none
+        PhysMaterial[1]=none
+    }
 };
 
-/** Information about an overall collision, including contacts
- * @warning: C++ mirroring is in UnPhysPublic.h
- */
 struct CollisionImpactData
 {
-	/** all the contact points in the collision*/
-	var array<RigidBodyContactInfo> ContactInfos;
+    var array<RigidBodyContactInfo> ContactInfos;
+    var Vector TotalNormalForceVector;
+    var Vector TotalFrictionForceVector;
 
-	/** the total force applied as the two objects push against each other*/
-	var vector TotalNormalForceVector;
-	/** the total counterforce applied of the two objects sliding against each other*/
-	var vector TotalFrictionForceVector;
+    structdefaultproperties
+    {
+        ContactInfos=none
+        TotalNormalForceVector=(X=0.0000000,Y=0.0000000,Z=0.0000000)
+        TotalFrictionForceVector=(X=0.0000000,Y=0.0000000,Z=0.0000000)
+    }
 };
 
 struct native ReplicatedHitImpulse
 {
-	var vector AppliedImpulse; //contains DamageRadius in X and damageimpulse in y for radial impulse
-	var vector HitLocation;  // HurtOrigin for radial impulse
-	var name BoneName;
-	var byte ImpulseCount;
-	var bool bRadialImpulse;
+    var Vector AppliedImpulse;
+    var Vector HitLocation;
+    var name BoneName;
+    var byte ImpulseCount;
+    var bool bRadialImpulse;
+
+    structdefaultproperties
+    {
+        AppliedImpulse=(X=0.0000000,Y=0.0000000,Z=0.0000000)
+        HitLocation=(X=0.0000000,Y=0.0000000,Z=0.0000000)
+        BoneName="None"
+        ImpulseCount=0
+        bRadialImpulse=false
+    }
 };
 
-/** Struct used to pass back information for physical impact effect */
 struct native PhysEffectInfo
 {
-	// BM1
-	var() float MinEffectSpeed;
-	var() float MaxEffectSpeed;
+    var() float MinEffectSpeed;
+    var() float MaxEffectSpeed;
+    var() float ReFireDelay;
+    var() ParticleSystem Effect;
+    var() SoundCue Sound;
+    var() export editinline RB_ForceComponent Force;
 
-	var()	float				ReFireDelay;
-	var()	ParticleSystem		Effect;
-	var()	SoundCue			Sound;
-
-	// BM1
-	var() export editinline RB_ForceComponent Force;
+    structdefaultproperties
+    {
+        MinEffectSpeed=0.0000000
+        MaxEffectSpeed=0.0000000
+        ReFireDelay=0.0000000
+        Effect=none
+        Sound=none
+        Force=none
+    }
 };
-
-// endif
-
-//-----------------------------------------------------------------------------
-// Enums.
-
-// Traveling from server to server.
-enum ETravelType
-{
-	TRAVEL_Absolute,	// Absolute URL.
-	TRAVEL_Partial,		// Partial (carry name, reset server).
-	TRAVEL_Relative,	// Relative URL.
-};
-
-
-// double click move direction.
-enum EDoubleClickDir
-{
-	DCLICK_None,
-	DCLICK_Left,
-	DCLICK_Right,
-	DCLICK_Forward,
-	DCLICK_Back,
-	DCLICK_Active,
-	DCLICK_Done
-};
-
-//-----------------------------------------------------------------------------
-// Kismet
-
-/** List of all events that this actor can support, for use by the editor */
-var const array<class<SequenceEvent> > SupportedEvents;
-
-/** List of all events currently associated with this actor */
-var const array<SequenceEvent> GeneratedEvents;
-
-/** List of all latent actions currently active on this actor */
-var array<SeqAct_Latent> LatentActions;
 
 struct native InvestigationData
 {
@@ -573,20 +315,24 @@ struct native InvestigationData
     var() name GlobalFlagCheck;
     var() bool bInvertFlag;
     var() bool bWarningFlag;
+
+    structdefaultproperties
+    {
+        InvestigationInfoTitle=""
+        InvestigationInfo=""
+        BatmanThought=none
+        GlobalFlagCheck="None"
+        bInvertFlag=false
+        bWarningFlag=false
+    }
 };
 
-var(Investigate) float InvestigationMaxDistance;
-var(Investigate) array<InvestigationData> InvestigationDataArray;
-
-/**
- * Struct used for cross level actor references
- */
-struct immutablewhencooked native ActorReference
+struct native immutablewhencooked ActorReference
 {
-	var() Actor	Actor;
-	var() editconst const Guid Guid;
+    var() Actor Actor;
+    var() const editconst Guid Guid;
 
-	structcpptext
+    structcpptext
 	{
 		FActorReference()
 		{
@@ -650,17 +396,25 @@ struct immutablewhencooked native ActorReference
 			return ((class ANavigationPoint*)Actor);
 		}
 	}
+
+    structdefaultproperties
+    {
+        Actor=none
+        Guid=(A=0,B=0,C=0,D=0)
+    }
 };
 
-struct immutablewhencooked native NavReference
+struct native immutablewhencooked NavReference
 {
-	var() NavigationPoint Nav;
-	var() editconst const guid Guid;
+    var() NavigationPoint Nav;
+    var() const editconst Guid Guid;
+
+    structdefaultproperties
+    {
+        Nav=none
+        Guid=(A=0,B=0,C=0,D=0)
+    }
 };
-
-
-//-----------------------------------------------------------------------------
-// cpptext.
 
 cpptext
 {
@@ -1220,394 +974,489 @@ public:
 	}
 }
 
-//-----------------------------------------------------------------------------
-// Network replication.
+var(Advanced) bool bLoadIfPhysXLevel0;
+var(Advanced) bool bLoadIfPhysXLevel1;
+var(Advanced) bool bLoadIfPhysXLevel2;
+var const bool bStatic;
+var(Display) const bool bHidden;
+var const bool bNoDelete;
+var const bool bDeleteMe;
+var const transient bool bTicked;
+var const bool bOnlyOwnerSee;
+var bool bStasis;
+var const bool bExtraStasis;
+var bool bWorldGeometry;
+var bool bIgnoreRigidBodyPawns;
+var bool bOrientOnSlope;
+var const bool bIgnoreEncroachers;
+var bool bPushedByEncroachers;
+var bool bDestroyedByInterpActor;
+var const bool bRouteBeginPlayEvenIfStatic;
+var const bool bIsMoving;
+var bool bAlwaysEncroachCheck;
+var bool bHasAlternateTargetLocation;
+var(Collision) bool bCanStepUpOn;
+var const bool bNetTemporary;
+var const bool bOnlyRelevantToOwner;
+var transient bool bNetDirty;
+var bool bAlwaysRelevant;
+var bool bReplicateInstigator;
+var bool bReplicateMovement;
+var bool bSkipActorPropertyReplication;
+var bool bUpdateSimulatedPosition;
+var bool bTearOff;
+var bool bOnlyDirtyReplication;
+var(Physics) bool bAllowFluidSurfaceInteraction;
+var transient bool bDemoRecording;
+var bool bDemoOwner;
+var bool bForceDemoRelevant;
+var const bool bNetInitialRotation;
+var bool bReplicateRigidBodyLocation;
+var bool bKillDuringLevelTransition;
+var const bool bExchangedRoles;
+var(Advanced) bool bConsiderAllStaticMeshComponentsForStreaming;
+var(Debug) bool bDebug;
+var bool bPostRenderIfNotVisible;
+var transient bool bForceNetUpdate;
+var bool bAutomaticPerformPhysics;
+var(Attachment) const bool bHardAttach;
+var(Attachment) bool bSnapAttach;
+var(Attachment) bool bIgnoreBaseRotation;
+var(Attachment) bool bShadowParented;
+var bool bCanBeAdheredTo;
+var bool bCanBeFrictionedTo;
+var bool bHurtEntry;
+var bool bGameRelevant;
+var const bool bMovable;
+var bool bDestroyInPainVolume;
+var bool bCanBeDamaged;
+var bool bShouldBaseAtStartup;
+var bool bPendingDelete;
+var bool bCanTeleport;
+var const bool bAlwaysTick;
+var(Navigation) bool bBlocksNavigation;
+var(Collision) const transient bool BlockRigidBody;
+var bool bCollideWhenPlacing;
+var const bool bCollideActors;
+var bool bCollideWorld;
+var(Collision) bool bCollideComplex;
+var bool bBlockActors;
+var bool bProjTarget;
+var bool bBlocksTeleport;
+var bool bForceZeroExtentCollision;
+var bool bPlayerMovementCheck;
+var bool bIgnoreDynamic;
+var(Collision) bool bNoEncroachCheck;
+var(Collision) bool bPhysRigidBodyOutOfWorldCheck;
+var const transient bool bComponentOutsideWorld;
+var bool bBounce;
+var const bool bJustTeleported;
+var const bool bNetInitial;
+var const bool bNetOwner;
+var(Advanced) const bool bHiddenEd;
+var(Advanced) const bool bHiddenEdGroup;
+var const bool bHiddenEdCustom;
+var(Advanced) bool bEdShouldSnap;
+var const transient bool bTempEditor;
+var(Collision) bool bPathColliding;
+var transient bool bPathTemp;
+var bool bScriptInitialized;
+var(Advanced) bool bLockLocation;
+var const bool bForceAllowKismetModification;
+var bool bIsPointOfInterest;
+var const bool bDonePostBeginPlay;
+var(Collision) bool bBatmanCanClimb;
+var(Gadget) bool bValidLineLauncherTarget;
+var(Gadget) bool bValidGelTarget;
+var bool bCurrentInvestigateHightlighted;
+var bool CachedInvestigateSightCheck;
+var private const export editinline array<export editinline ActorComponent> Components;
+var private const export editinline transient array<export editinline ActorComponent> AllComponents;
+var(Movement) const Vector Location;
+var(Movement) const Rotator Rotation;
+var(Display) interp const float DrawScale;
+var(Display) interp const Vector DrawScale3D;
+var(Display) const Vector PrePivot;
+var private native const RenderCommandFence DetachFence;
+var float CustomTimeDilation;
+var(Movement) const Actor.EPhysics Physics;
+var Actor.ENetRole RemoteRole;
+var Actor.ENetRole Role;
+var(Collision) const transient Actor.ECollisionType CollisionType;
+var transient Actor.ECollisionType ReplicatedCollisionType;
+var const Object.ETickingGroup TickGroup;
+var byte FramesTillInvestigateSightCheck;
+var const Actor Owner;
+var(Attachment) const Actor Base;
+var const array<TimerData> Timers;
+var Pawn Instigator;
+var const transient WorldInfo WorldInfo;
+var float LifeSpan;
+var const float CreationTime;
+var transient float LastRenderTime;
+var(Object) name Tag;
+var name InitialState;
+var(Object) name Group;
+var const transient array<Actor> Touching;
+var const transient array<Actor> Children;
+var const float LatentFloat;
+var const AnimNodeSequence LatentSeqNode;
+var const transient PhysicsVolume PhysicsVolume;
+var Vector Velocity;
+var Vector Acceleration;
+var const transient Vector AngularVelocity;
+var(Attachment) export editinline SkeletalMeshComponent BaseSkelComponent;
+var(Attachment) name BaseBoneName;
+var const array<Actor> Attached;
+var const Vector RelativeLocation;
+var const Rotator RelativeRotation;
+var(Collision) editconst export editinline PrimitiveComponent CollisionComponent;
+var native int OverlapTag;
+var(Movement) Rotator RotationRate;
+var(Movement) Rotator DesiredRotation;
+var Actor PendingTouch;
+var const array< class<SequenceEvent> > SupportedEvents;
+var const array<SequenceEvent> GeneratedEvents;
+var array<SeqAct_Latent> LatentActions;
+var(Investigate) float InvestigationMaxDistance;
+var(Investigate) array<InvestigationData> InvestigationDataArray;
 
-replication
-{
-	// Location
-	if ( (!bSkipActorPropertyReplication || bNetInitial) && bReplicateMovement
-					&& (((RemoteRole == ROLE_AutonomousProxy) && bNetInitial)
-						|| ((RemoteRole == ROLE_SimulatedProxy) && (bNetInitial || bUpdateSimulatedPosition) && ((Base == None) || Base.bWorldGeometry))) )
-		Location, Rotation;
+// Export UActor::execForceUpdateComponents(FFrame&, void* const)
+native function ForceUpdateComponents(optional bool bCollisionUpdate = false, optional bool bTransformOnly = true);
 
-	if ( (!bSkipActorPropertyReplication || bNetInitial) && bReplicateMovement
-					&& RemoteRole==ROLE_SimulatedProxy )
-		Base;
+// Export UActor::execSetExtraStasis(FFrame&, void* const)
+native function SetExtraStasis(bool NewValue);
 
-	if( (!bSkipActorPropertyReplication || bNetInitial) && bReplicateMovement && (bNetInitial || bUpdateSimulatedPosition)
-					&& RemoteRole==ROLE_SimulatedProxy && (Base != None) && !Base.bWorldGeometry)
-		RelativeRotation, RelativeLocation;
-
-	// Physics
-	if( (!bSkipActorPropertyReplication || bNetInitial) && bReplicateMovement
-					&& ((RemoteRole == ROLE_SimulatedProxy) && (bNetInitial || bUpdateSimulatedPosition)) )
-		Velocity, Physics;
-
-	// Animation.
-	if ( (!bSkipActorPropertyReplication || bNetInitial) && (Role==ROLE_Authority) )
-		bHardAttach;
-
-	// Properties changed using accessor functions
-	if ( (!bSkipActorPropertyReplication || bNetInitial) && (Role==ROLE_Authority) && bNetDirty )
-		bHidden;
-
-	if ( (!bSkipActorPropertyReplication || bNetInitial) && (Role==ROLE_Authority) && bNetDirty
-					&& (bCollideActors || bCollideWorld) )
-		bProjTarget, bBlockActors;
-
-	// Properties changed only when spawning or in script (relationships, rendering, lighting)
-	if ( (!bSkipActorPropertyReplication || bNetInitial) && (Role==ROLE_Authority) )
-		Role,RemoteRole,bNetOwner,bTearOff;
-
-	if ( (!bSkipActorPropertyReplication || bNetInitial) && (Role==ROLE_Authority)
-					&& bNetDirty && bReplicateInstigator )
-		Instigator;
-
-	// Infrequently changed mesh properties
-	if ( (!bSkipActorPropertyReplication || bNetInitial) && (Role==ROLE_Authority)	&& bNetDirty )
-		DrawScale, bCollideActors, bCollideWorld, ReplicatedCollisionType;
-
-	// Properties changed using accessor functions
-	if ( bNetOwner && (!bSkipActorPropertyReplication || bNetInitial) && (Role==ROLE_Authority) && bNetDirty )
-		Owner;
-}
-
-//-----------------------------------------------------------------------------
-// natives.
-
-/**
- * Flags all components as dirty and then calls UpdateComponents().
- *
- * @param	bCollisionUpdate	[opt] As per UpdateComponents; defaults to FALSE.
- * @param	bTransformOnly		[opt] TRUE to update only the component transforms, FALSE to update the entire component.
- */
-native function ForceUpdateComponents(optional bool bCollisionUpdate = FALSE, optional bool bTransformOnly = TRUE);
-
-// Execute a console command in the context of the current level and game engine.
+// Export UActor::execConsoleCommand(FFrame&, void* const)
 native function string ConsoleCommand(string Command, optional bool bWriteToLog = true);
 
-//=============================================================================
-// General functions.
+// Export UActor::execSleep(FFrame&, void* const)
+native(256) final latent function Sleep(float Seconds);
 
-// Latent functions.
-native(256) final latent function Sleep( float Seconds );
-native(261) final latent function FinishAnim( AnimNodeSequence SeqNode );
+// Export UActor::execFinishAnim(FFrame&, void* const)
+native(261) final latent function FinishAnim(AnimNodeSequence SeqNode);
 
-// Collision.
-native(262) final noexport function SetCollision( optional bool bNewColActors, optional bool bNewBlockActors, optional bool bNewIgnoreEncroachers );
-native(283) final function SetCollisionSize( float NewRadius, float NewHeight );
-native final function SetCollisionType(ECollisionType NewCollisionType);
+// Export UActor::execSetCollision(FFrame&, void* const)
+native(262) final function SetCollision(optional bool bNewColActors, optional bool bNewBlockActors, optional bool bNewIgnoreEncroachers);
+
+// Export UActor::execSetCollisionSize(FFrame&, void* const)
+native(283) final function SetCollisionSize(float NewRadius, float NewHeight);
+
+// Export UActor::execSetCollisionType(FFrame&, void* const)
+native final function SetCollisionType(Actor.ECollisionType NewCollisionType);
+
+// Export UActor::execSetDrawScale(FFrame&, void* const)
 native final function SetDrawScale(float NewScale);
-native final function SetDrawScale3D(vector NewScale3D);
 
-// Movement.
-native(266) final function bool Move( vector Delta );
-native(267) final function bool SetLocation( vector NewLocation );
-native(299) final function bool SetRotation( rotator NewRotation );
-/** This will return the direction in LocalSpace that that actor is moving.  This is useful for firing off effects based on which way the actor is moving. **/
-native function EMoveDir MovingWhichWay( out float Amount );
+// Export UActor::execSetDrawScale3D(FFrame&, void* const)
+native final function SetDrawScale3D(Vector NewScale3D);
 
-/** updates the zone/PhysicsVolume of this Actor
- * @param bForceRefresh - forces the code to do a full collision check instead of exiting early if the current info is valid
- */
-native final noexport function SetZone(bool bForceRefresh);
+// Export UActor::execMove(FFrame&, void* const)
+native(266) final function bool Move(Vector Delta);
 
-// SetRelativeRotation() sets the rotation relative to the actor's base
-native final function bool SetRelativeRotation( rotator NewRotation );
-native final function bool SetRelativeLocation( vector NewLocation );
-native final function noexport SetHardAttach(optional bool bNewHardAttach);
+// Export UActor::execSetLocation(FFrame&, void* const)
+native(267) final function bool SetLocation(Vector NewLocation);
 
-/** Returns a new rotation component value
-  * @PARAM Current is the current rotation value
-  * @PARAM Desired is the desired rotation value
-  * @PARAM DeltaRate is the rotation amount to apply
-  */
+// Export UActor::execSetRotation(FFrame&, void* const)
+native(299) final function bool SetRotation(Rotator NewRotation);
+
+// Export UActor::execMovingWhichWay(FFrame&, void* const)
+native function Actor.EMoveDir MovingWhichWay(out float Amount);
+
+// Export UActor::execSetLocationForTest(FFrame&, void* const)
+native final function bool SetLocationForTest(Vector NewLocation, bool bNoCheck);
+
+// Export UActor::execSetZone(FFrame&, void* const)
+native final function SetZone(bool bForceRefresh);
+
+// Export UActor::execSetRelativeRotation(FFrame&, void* const)
+native final function bool SetRelativeRotation(Rotator NewRotation);
+
+// Export UActor::execSetRelativeLocation(FFrame&, void* const)
+native final function bool SetRelativeLocation(Vector NewLocation);
+
+// Export UActor::execSetHardAttach(FFrame&, void* const)
+native final function SetHardAttach(optional bool bNewHardAttach);
+
+// Export UActor::execfixedTurn(FFrame&, void* const)
 native final function int fixedTurn(int Current, int Desired, int DeltaRate);
 
-native(3969) noexport final function bool MoveSmooth( vector Delta );
+// Export UActor::execMoveSmooth(FFrame&, void* const)
+native(3969) final function bool MoveSmooth(Vector Delta);
+
+// Export UActor::execAutonomousPhysics(FFrame&, void* const)
 native(3971) final function AutonomousPhysics(float DeltaSeconds);
 
-/** returns terminal velocity (max speed while falling) for this actor.  Unless overridden, it returns the TerminalVelocity of the PhysicsVolume in which this actor is located.
-*/
+// Export UActor::execGetTerminalVelocity(FFrame&, void* const)
 native function float GetTerminalVelocity();
 
-// Relations.
-native(298) noexport final function SetBase( actor NewBase, optional vector NewFloor, optional SkeletalMeshComponent SkelComp, optional name AttachName );
-native(272) final function SetOwner( actor NewOwner );
+// Export UActor::execGetZoneVelocity(FFrame&, void* const)
+native function Vector GetZoneVelocity();
 
-/** Attempts to find a valid base for this actor */
+// Export UActor::execSetBase(FFrame&, void* const)
+native(298) final function SetBase(Actor NewBase, optional Vector NewFloor, optional SkeletalMeshComponent SkelComp, optional name AttachName);
+
+// Export UActor::execSetOwner(FFrame&, void* const)
+native(272) final function SetOwner(Actor NewOwner);
+
+// Export UActor::execFindBase(FFrame&, void* const)
 native function FindBase();
 
-/** iterates up the Base chain to see whether or not this Actor is based on the given Actor
- * @param TestActor the Actor to test for
- * @return whether or not this Actor is based on TestActor
- */
-native noexport final function bool IsBasedOn(Actor TestActor);
+// Export UActor::execIsBasedOn(FFrame&, void* const)
+native final function bool IsBasedOn(Actor TestActor);
 
-/** Walks up the Base chain from this Actor and returns the Actor at the top (the eventual Base). this->Base is NULL, returns this. */
+// Export UActor::execGetBaseMost(FFrame&, void* const)
 native function Actor GetBaseMost();
 
-/** iterates up the Owner chain to see whether or not this Actor is owned by the given Actor
- * @param TestActor the Actor to test for
- * @return whether or not this Actor is owned by TestActor
- */
-native noexport final function bool IsOwnedBy(Actor TestActor);
+// Export UActor::execIsOwnedBy(FFrame&, void* const)
+native final function bool IsOwnedBy(Actor TestActor);
 
-simulated event ReplicatedEvent(name VarName);	// Called when a variable with the property flag "RepNotify" is replicated
+simulated event ReplicatedEvent(name VarName)
+{
+    //return;    
+}
 
-/**
- * Called when a variable is replicated that has the 'databinding' keyword.
- *
- * @param	VarName		the name of the variable that was replicated.
- */
-simulated event ReplicatedDataBinding( name VarName );
+simulated event ReplicatedDataBinding(name VarName)
+{
+    //return;    
+}
 
-/** adds/removes a property from a list of properties that will always be replicated when this Actor is bNetInitial, even if the code thinks
- * the client has the same value the server already does
- * This is a workaround to the problem where an LD places an Actor in the level, changes a replicated variable away from the defaults,
- * then at runtime the variable is changed back to the default but it doesn't replicate because initial replication is based on class defaults
- * Only has an effect when called on bStatic or bNoDelete Actors
- * Only properties already in the owning class's replication block may be specified
- * @param PropToReplicate the property to add or remove to the list
- * @param bAdd true to add the property, false to remove the property
- */
+// Export UActor::execSetForcedInitialReplicatedProperty(FFrame&, void* const)
 native final function SetForcedInitialReplicatedProperty(Property PropToReplicate, bool bAdd);
 
-//=========================================================================
-// Rendering.
-
-/** Flush persistent lines */
+// Export UActor::execFlushPersistentDebugLines(FFrame&, void* const)
 native static final function FlushPersistentDebugLines();
 
-/** Draw a debug line */
-native static final function DrawDebugLine(vector LineStart, vector LineEnd, byte R, byte G, byte B, optional bool bPersistentLines); // SLOW! Use for debugging only!
+// Export UActor::execDrawDebugLine(FFrame&, void* const)
+native static final function DrawDebugLine(Vector LineStart, Vector LineEnd, byte R, byte G, byte B, optional bool bPersistentLines);
 
-/** Draw a debug box */
-native static final function DrawDebugBox(vector Center, vector Extent, byte R, byte G, byte B, optional bool bPersistentLines); // SLOW! Use for debugging only!
+// Export UActor::execDrawDebugBox(FFrame&, void* const)
+native static final function DrawDebugBox(Vector Center, Vector Extent, byte R, byte G, byte B, optional bool bPersistentLines);
 
-/** Draw Debug coordinate system */
-native static final function DrawDebugCoordinateSystem(vector AxisLoc, Rotator AxisRot, float Scale, optional bool bPersistentLines); // SLOW! Use for debugging only!
+// Export UActor::execDrawDebugCoordinateSystem(FFrame&, void* const)
+native static final function DrawDebugCoordinateSystem(Vector AxisLoc, Rotator AxisRot, float Scale, optional bool bPersistentLines);
 
-/** Draw a debug sphere */
-native static final function DrawDebugSphere(vector Center, float Radius, INT Segments, byte R, byte G, byte B, optional bool bPersistentLines); // SLOW! Use for debugging only!
+// Export UActor::execDrawDebugSphere(FFrame&, void* const)
+native static final function DrawDebugSphere(Vector Center, float Radius, int Segments, byte R, byte G, byte B, optional bool bPersistentLines);
 
-/** Draw a debug cylinder */
-native static final function DrawDebugCylinder(vector Start, vector End, float Radius, INT Segments, byte R, byte G, byte B, optional bool bPersistentLines); // SLOW! Use for debugging only!
+// Export UActor::execDrawDebugCylinder(FFrame&, void* const)
+native static final function DrawDebugCylinder(Vector Start, Vector End, float Radius, int Segments, byte R, byte G, byte B, optional bool bPersistentLines);
 
-/** Draw a debug cone */
-native static final function DrawDebugCone(Vector Origin, Vector Direction, FLOAT Length, FLOAT AngleWidth, FLOAT AngleHeight, INT NumSides, Color DrawColor, optional bool bPersistentLines);
+// Export UActor::execDrawDebugCone(FFrame&, void* const)
+native static final function DrawDebugCone(Vector Origin, Vector Direction, float Length, float AngleWidth, float AngleHeight, int NumSides, Color DrawColor, optional bool bPersistentLines);
 
-/** Draw some value over time onto the StatChart. Toggle on and off with */
+// Export UActor::execChartData(FFrame&, void* const)
 native final function ChartData(string DataName, float DataValue);
 
-/**
- * Changes the value of bHidden.
- *
- * @param bNewHidden	- The value to assign to bHidden.
- */
-native final function SetHidden(bool bNewHidden);
+// Export UActor::execSetHidden(FFrame&, void* const)
+native function SetHidden(bool bNewHidden);
 
-/** changes the value of bOnlyOwnerSee
- * @param bNewOnlyOwnerSee the new value to assign to bOnlyOwnerSee
- */
+// Export UActor::execSetOnlyOwnerSee(FFrame&, void* const)
 native final function SetOnlyOwnerSee(bool bNewOnlyOwnerSee);
 
-//=========================================================================
-// Physics.
+// Export UActor::execSetPhysics(FFrame&, void* const)
+native(3970) final function SetPhysics(Actor.EPhysics newPhysics, optional bool WakePhysics = true);
 
-native(3970) noexport final function SetPhysics( EPhysics newPhysics );
+// Export UActor::execClock(FFrame&, void* const)
+native final function Clock(out float Time);
 
-// Timing
-native final function Clock(out float time);
-native final function UnClock(out float time);
+// Export UActor::execUnClock(FFrame&, void* const)
+native final function UnClock(out float Time);
 
-// Components
-
-/**
- * Adds a component to the actor's components array, attaching it to the actor.
- * @param NewComponent - The component to attach.
- */
+// Export UActor::execAttachComponent(FFrame&, void* const)
 native final function AttachComponent(ActorComponent NewComponent);
 
-/**
- * Removes a component from the actor's components array, detaching it from the actor.
- * @param ExComponent - The component to detach.
- */
+// Export UActor::execDetachComponent(FFrame&, void* const)
 native final function DetachComponent(ActorComponent ExComponent);
 
-/**
- * Detaches and immediately reattaches specified component.  Handles bWillReattach properly.
- */
+// Export UActor::execReattachComponent(FFrame&, void* const)
 native final function ReattachComponent(ActorComponent ComponentToReattach);
 
-/** Changes the ticking group for this actor */
-native final function SetTickGroup(ETickingGroup NewTickGroup);
+// Export UActor::execSetTickGroup(FFrame&, void* const)
+native final function SetTickGroup(Object.ETickingGroup NewTickGroup);
 
-//=========================================================================
-// Engine notification functions.
+event Destroyed()
+{
+    //return;    
+}
 
-//
-// Major notifications.
-//
-event Destroyed();
-event GainedChild( Actor Other );
-event LostChild( Actor Other );
-event Tick( float DeltaTime );
+event GainedChild(Actor Other)
+{
+    //return;    
+}
 
-//
-// Physics & world interaction.
-//
-event Timer();
-event HitWall( vector HitNormal, actor Wall, PrimitiveComponent WallComp);
-event Falling();
-event Landed( vector HitNormal, actor FloorActor );
-event PhysicsVolumeChange( PhysicsVolume NewVolume );
-event Touch( Actor Other, PrimitiveComponent OtherComp, vector HitLocation, vector HitNormal );
-event PostTouch( Actor Other ); // called for PendingTouch actor after physics completes
-event UnTouch( Actor Other );
-event Bump( Actor Other, PrimitiveComponent OtherComp, Vector HitNormal );
-event BaseChange();
-event Attach( Actor Other );
-event Detach( Actor Other );
-event Actor SpecialHandling(Pawn Other);
-/**
- * Called when collision values change for this actor (via SetCollision/SetCollisionSize).
- */
-event CollisionChanged();
-/** called when this Actor is encroaching on Other and we couldn't find an appropriate place to push Other to
- * @return true to abort the move, false to allow it
- * @warning do not abort moves of PHYS_RigidBody actors as that will cause the Unreal location and physics engine location to mismatch
- */
-event bool EncroachingOn(Actor Other);
-event EncroachedBy( actor Other );
-event RanInto( Actor Other );	// called for encroaching actors which successfully moved the other actor out of the way
+event LostChild(Actor Other)
+{
+    //return;    
+}
 
-/** Clamps out_Rot between the upper and lower limits offset from the base */
-simulated final native function bool ClampRotation( out Rotator out_Rot, Rotator rBase, Rotator rUpperLimits, Rotator rLowerLimits );
-/** Called by ClampRotation if the rotator was outside of the limits */
-simulated event bool OverRotated( out Rotator out_Desired, out Rotator out_Actual );
+event Tick(float DeltaTime)
+{
+    //return;    
+}
 
-/**
- * Called when being activated by the specified pawn.  Default
- * implementation searches for any SeqEvent_Used and activates
- * them.
- *
- * @return		true to indicate this actor was activated
- */
+event Timer()
+{
+    //return;    
+}
+
+event HitWall(Vector HitNormal, Actor Wall, PrimitiveComponent WallComp)
+{
+    //return;    
+}
+
+event Falling()
+{
+    //return;    
+}
+
+event Landed(Vector HitNormal, Actor FloorActor)
+{
+    //return;    
+}
+
+event PhysicsVolumeChange(PhysicsVolume NewVolume)
+{
+    //return;    
+}
+
+event Touch(Actor Other, PrimitiveComponent OtherComp, Vector HitLocation, Vector HitNormal)
+{
+    //return;    
+}
+
+event PostTouch(Actor Other)
+{
+    //return;    
+}
+
+event UnTouch(Actor Other)
+{
+    //return;    
+}
+
+event Bump(Actor Other, PrimitiveComponent OtherComp, Vector HitNormal)
+{
+    //return;    
+}
+
+event BaseChange()
+{
+    //return;    
+}
+
+event Attach(Actor Other)
+{
+    //return;    
+}
+
+event Detach(Actor Other)
+{
+    //return;    
+}
+
+event Actor SpecialHandling(Pawn Other)
+{
+    //return ReturnValue;    
+}
+
+event CollisionChanged()
+{
+    //return;    
+}
+
+event bool EncroachingOn(Actor Other)
+{
+    //return ReturnValue;    
+}
+
+event EncroachedBy(Actor Other)
+{
+    //return;    
+}
+
+event RanInto(Actor Other)
+{
+    //return;    
+}
+
+event AnimationTriggerCallback(name TagName, array<string> Params, AnimSet TagAnimSet, float Time)
+{
+    LogInternal("Actor::AnimationTriggerCallback" @ string(TagName));
+    //return;    
+}
+
+simulated event FaceFXAudioStartedCallback(AudioComponent AC)
+{
+    //return;    
+}
+
+// Export UActor::execClampRotation(FFrame&, void* const)
+native final simulated function bool ClampRotation(out Rotator out_Rot, Rotator rBase, Rotator rUpperLimits, Rotator rLowerLimits);
+
+simulated event bool OverRotated(out Rotator out_Desired, out Rotator out_Actual)
+{
+    //return ReturnValue;    
+}
+
 function bool UsedBy(Pawn User)
 {
-	return TriggerEventClass(class'SeqEvent_Used', User, -1);
+    return TriggerEventClass(Class'SeqEvent_Used', User, -1);
+    //return ReturnValue;    
 }
 
-/** called when the actor falls out of the world 'safely' (below KillZ and such) */
 simulated event FellOutOfWorld(class<DamageType> dmgType)
 {
-	SetPhysics(PHYS_None);
-	SetHidden(True);
-	SetCollision(false,false);
-	Destroy();
+    SetPhysics(0);
+    SetHidden(true);
+    SetCollision(false, false);
+    Destroy();
+    //return;    
 }
 
-/** called when the Actor is outside the hard limit on world bounds
- * @note physics and collision are automatically turned off after calling this function
- */
 simulated event OutsideWorldBounds()
 {
-	Destroy();
+    Destroy();
+    //return;    
 }
 
-/** Called when an Actor should be destroyed by a pain volume. */
 simulated function VolumeBasedDestroy(PhysicsVolume PV)
 {
-	Destroy();
+    Destroy();
+    //return;    
 }
 
-/**
- * Trace a line and see what it collides with first.
- * Takes this actor's collision properties into account.
- * Returns first hit actor, Level if hit level, or None if hit nothing.
- */
-native(277) noexport final function Actor Trace
-(
-	out vector					HitLocation,
-	out vector					HitNormal,
-	vector						TraceEnd,
-	optional vector				TraceStart,
-	optional bool				bTraceActors,
-	optional vector				Extent,
-	optional out TraceHitInfo	HitInfo,
-	optional int				ExtraTraceFlags
-);
+// Export UActor::execTrace(FFrame&, void* const)
+native(277) final function Actor Trace(out Vector HitLocation, out Vector HitNormal, Vector TraceEnd, optional Vector TraceStart, optional bool bTraceActors, optional Vector Extent, optional out TraceHitInfo HitInfo, optional int ExtraTraceFlags);
 
-/**
- *	Run a line check against just this PrimitiveComponent. Return TRUE if we hit.
- *  NOTE: the actual Actor we call this on is irrelevant!
- */
-native noexport final function bool TraceComponent
-(
-	out vector						HitLocation,
-	out vector						HitNormal,
-	PrimitiveComponent				InComponent,
-	vector							TraceEnd,
-	optional vector					TraceStart,
-	optional vector					Extent,
-	optional out TraceHitInfo		HitInfo
-);
+// Export UActor::execTraceComponent(FFrame&, void* const)
+native final function bool TraceComponent(out Vector HitLocation, out Vector HitNormal, PrimitiveComponent InComponent, Vector TraceEnd, optional Vector TraceStart, optional Vector Extent, optional out TraceHitInfo HitInfo);
 
-/**
- *	Run a point check against just this PrimitiveComponent. Return TRUE if we hit.
- *  NOTE: the actual Actor we call this on is irrelevant!
- */
-native noexport final function bool PointCheckComponent
-(
-	PrimitiveComponent				InComponent,
-	vector							PointLocation,
-	vector							PointExtent
-);
+// Export UActor::execPointCheckComponent(FFrame&, void* const)
+native final function bool PointCheckComponent(PrimitiveComponent InComponent, Vector PointLocation, Vector PointExtent);
 
-// returns true if did not hit world geometry
-native(548) noexport final function bool FastTrace
-(
-	vector          TraceEnd,
-	optional vector TraceStart,
-	optional vector BoxExtent,
-	optional bool	bTraceBullet
-);
+// Export UActor::execFastTrace(FFrame&, void* const)
+native(548) final function bool FastTrace(Vector TraceEnd, optional Vector TraceStart, optional Vector BoxExtent, optional bool bTraceBullet);
 
-native noexport final function bool TraceAllPhysicsAssetInteractions
-( 
-	SkeletalMeshComponent SkelMeshComp, 
-	Vector EndTrace, 
-	Vector StartTrace,
-	out Array<ImpactInfo> out_Hits,
-	optional Vector Extent
-);
+// Export UActor::execTraceAllPhysicsAssetInteractions(FFrame&, void* const)
+native final function bool TraceAllPhysicsAssetInteractions(SkeletalMeshComponent SkelMeshComp, Vector EndTrace, Vector StartTrace, out array<ImpactInfo> out_Hits, optional Vector Extent);
 
-/*
- * Tries to position a box to avoid overlapping world geometry.
- * If no overlap, the box is placed at SpotLocation, otherwise the position is adjusted
- * @Parameter BoxExtent is the collision extent (X and Y=CollisionRadius, Z=CollisionHeight)
- * @Parameter SpotLocation is the position where the box should be placed.  Contains the adjusted location if it is adjusted.
- * @Return true if successful in finding a valid non-world geometry overlapping location
- */
-native final function bool FindSpot(vector BoxExtent, out vector SpotLocation);
+// Export UActor::execFindSpot(FFrame&, void* const)
+native final function bool FindSpot(Vector BoxExtent, out Vector SpotLocation, optional bool DontEaryOut = false);
 
-native final function bool ContainsPoint(vector Spot);
-native noexport final function bool IsOverlapping(Actor A);
-native final function GetComponentsBoundingBox(out box ActorBox) const;
-native function GetBoundingCylinder(out float CollisionRadius, out float CollisionHeight) const;
+// Export UActor::execContainsPoint(FFrame&, void* const)
+native final function bool ContainsPoint(Vector Spot);
 
-/** Spawn an actor. Returns an actor of the specified class, not
- * of class Actor (this is hardcoded in the compiler). Returns None
- * if the actor could not be spawned (if that happens, there will be a log warning indicating why)
- * Defaults to spawning at the spawner's location.
- *
- * @note: ActorTemplate is sent for replicated actors and therefore its properties will also be applied
- * at initial creation on the client. However, because of this, ActorTemplate must be a static resource
- * (an actor archetype, default object, or a bStatic/bNoDelete actor in a level package)
- * or the spawned Actor cannot be replicated
- */
+// Export UActor::execIsOverlapping(FFrame&, void* const)
+native final function bool IsOverlapping(Actor A);
+
+// Export UActor::execGetComponentsBoundingBox(FFrame&, void* const)
+native final function GetComponentsBoundingBox(out Box ActorBox);
+
+// Export UActor::execGetBoundingCylinder(FFrame&, void* const)
+native function GetBoundingCylinder(out float CollisionRadius, out float CollisionHeight);
+
+// Export UActor::execSpawn(FFrame&, void* const)
 native noexport final function coerce actor Spawn
 (
 	class<actor>      SpawnClass,
@@ -1619,1779 +1468,1702 @@ native noexport final function coerce actor Spawn
 	optional bool	  bNoCollisionFail
 );
 
-//
-// Destroy this actor. Returns true if destroyed, false if indestructible.
-// Destruction is latent. It occurs at the end of the tick.
-//
-native(279) final noexport function bool Destroy();
+// Export UActor::execDestroy(FFrame&, void* const)
+native(279) final function bool Destroy();
 
-// Networking - called on client when actor is torn off (bTearOff==true)
-event TornOff();
+event TornOff()
+{
+    //return;    
+}
 
-//=============================================================================
-// Timing.
+// Export UActor::execSetTimer(FFrame&, void* const)
+native(280) final function SetTimer(float InRate, optional bool inbLoop, optional name inTimerFunc = 'Timer', optional Object inObj);
 
-/**
- * Sets a timer to call the given function at a set
- * interval.  Defaults to calling the 'Timer' event if
- * no function is specified.  If inRate is set to
- * 0.f it will effectively disable the previous timer.
- *
- * NOTE: Functions with parameters are not supported!
- *
- * @param inRate the amount of time to pass between firing
- * @param inbLoop whether to keep firing or only fire once
- * @param inTimerFunc the name of the function to call when the timer fires
- */
-native(280) final function SetTimer(float inRate, optional bool inbLoop, optional Name inTimerFunc='Timer', optional Object inObj);
+// Export UActor::execClearTimer(FFrame&, void* const)
+native final function ClearTimer(optional name inTimerFunc = 'Timer', optional Object inObj);
 
-/**
- * Clears a previously set timer, identical to calling
- * SetTimer() with a <= 0.f rate.
- *
- * @param inTimerFunc the name of the timer to remove or the default one if not specified
- */
-native final function ClearTimer(optional Name inTimerFunc='Timer', optional Object inObj);
+// Export UActor::execPauseTimer(FFrame&, void* const)
+native final function PauseTimer(bool bPause, optional name inTimerFunc = 'Timer', optional Object inObj);
 
-/**
- *	Pauses/Unpauses a previously set timer
- *
- * @param bPause whether to pause/unpause the timer
- * @param inTimerFunc the name of the timer to pause or the default one if not specified
- * @param inObj object timer is attached to
- */
-native final function PauseTimer( bool bPause, optional Name inTimerFunc='Timer', optional Object inObj );
+// Export UActor::execIsTimerActive(FFrame&, void* const)
+native final function bool IsTimerActive(optional name inTimerFunc = 'Timer', optional Object inObj);
 
-/**
- * Returns true if the specified timer is active, defaults
- * to 'Timer' if no function is specified.
- *
- * @param inTimerFunc the name of the timer to remove or the default one if not specified
- */
-native final function bool IsTimerActive(optional Name inTimerFunc='Timer', optional Object inObj);
+// Export UActor::execGetTimerCount(FFrame&, void* const)
+native final function float GetTimerCount(optional name inTimerFunc = 'Timer', optional Object inObj);
 
-/**
- * Gets the current count for the specified timer, defaults
- * to 'Timer' if no function is specified.  Returns -1.f
- * if the timer is not currently active.
- *
- * @param inTimerFunc the name of the timer to remove or the default one if not specified
- */
-native final function float GetTimerCount(optional Name inTimerFunc='Timer', optional Object inObj);
-
-/**
- * Gets the current rate for the specified timer.
- *
- * @note: GetTimerRate('SomeTimer') - GetTimerCount('SomeTimer') is the time remaining before 'SomeTimer' is called
- *
- * @param: TimerFuncName the name of the function to check for a timer for; 'Timer' is the default
- *
- * @return the rate for the given timer, or -1.f if that timer is not active
- */
+// Export UActor::execGetTimerRate(FFrame&, void* const)
 native final function float GetTimerRate(optional name TimerFuncName = 'Timer', optional Object inObj);
 
-simulated final function float GetRemainingTimeForTimer(optional name TimerFuncName = 'Timer', optional Object inObj)
+final simulated function float GetRemainingTimeForTimer(optional name TimerFuncName = 'Timer', optional Object inObj)
 {
-	local float Count, Rate;
-	Rate = GetTimerRate(TimerFuncName,inObj);
-	if (Rate != -1.f)
-	{
-		Count = GetTimerCount(TimerFuncName,inObj);
-		return Rate - Count;
-	}
-	return -1.f;
+    local float Count, Rate;
+
+    Rate = GetTimerRate(TimerFuncName, inObj);
+    // End:0x56
+    if(Rate != -1.0000000)
+    {
+        Count = GetTimerCount(TimerFuncName, inObj);
+        return Rate - Count;
+    }
+    return -1.0000000;
+    //return ReturnValue;    
 }
 
-//=============================================================================
-// Sound functions.
+// Export UActor::execCreateAudioComponent(FFrame&, void* const)
+native final function AudioComponent CreateAudioComponent(SoundCue InSoundCue, optional bool bPlay, optional bool bStopWhenOwnerDestroyed, optional bool bUseLocation, optional Vector SourceLocation, optional bool bAttachToSelf = true);
 
-/* Create an audio component.
- * may fail and return None if sound is disabled, there are too many sounds playing, or if the Location is out of range of all listeners
- */
-native final function AudioComponent CreateAudioComponent(SoundCue InSoundCue, optional bool bPlay, optional bool bStopWhenOwnerDestroyed, optional bool bUseLocation, optional vector SourceLocation, optional bool bAttachToSelf = true);
+// Export UActor::execPlaySound(FFrame&, void* const)
+native final function PlaySound(SoundCue InSoundCue, optional bool bNotReplicated, optional bool bNoRepToOwner, optional bool bStopWhenOwnerDestroyed, optional Vector SoundLocation, optional bool bNoRepToRelevant);
 
-/*
- * Play a sound.  Creates an AudioComponent only if the sound is determined to be audible, and replicates the sound to clients based on optional flags
- * @param InSoundCue - the sound to play
- * @param bNotReplicated (opt) - sound is considered only for players on this machine (supercedes other flags)
- * @param bNoRepToOwner (opt) - sound is not replicated to the Owner of this Actor (typically for Inventory sounds)
- * @param bStopWhenOwnerDestroyed (opt) - whether the sound should cut out early if the playing Actor is destroyed
- * @param SoundLocation (opt) - alternate location to play the sound instead of this Actor's Location
- * @param bNoRepToRelevant (opt) - sound is not replicated to clients for which this Actor is relevant (for important sounds that are locally simulated when possible)
- */
-native noexport final function PlaySound(SoundCue InSoundCue, optional bool bNotReplicated, optional bool bNoRepToOwner, optional bool bStopWhenOwnerDestroyed, optional vector SoundLocation, optional bool bNoRepToRelevant);
+// Export UActor::execEnableEffect(FFrame&, void* const)
+native final function EnableEffect(name effectToEnable, optional bool Enable = true);
 
-//=============================================================================
-// AI functions.
+// Export UActor::execEffectEnabled(FFrame&, void* const)
+native final function bool EffectEnabled(name effectToEnable);
 
-/* Inform other creatures that you've made a noise
- they might hear (they are sent a HearNoise message)
- Senders of MakeNoise should have an instigator if they are not pawns.
-*/
-native(512) final function MakeNoise( float Loudness, optional Name NoiseType );
+// Export UActor::execEffectValue(FFrame&, void* const)
+native final function EffectValue(name effectToEnable, float Value);
 
-/* PlayerCanSeeMe returns true if any player (server) or the local player (standalone
-or client) has a line of sight to actor's location.
-*/
+// Export UActor::execEffectSoundCue(FFrame&, void* const)
+native final function EffectSoundCue(name effectToEnable, SoundCue InSoundCue);
+
+// Export UActor::execEffectReverb(FFrame&, void* const)
+native final function EffectReverb(name effectToEnable, FMODReverb InReverb);
+
+// Export UActor::execSetMixBin(FFrame&, void* const)
+native final function SetMixBin(MixBin mixToStart, float Time);
+
+// Export UActor::execSetRoomMixBin(FFrame&, void* const)
+native final function SetRoomMixBin(MixBin mixToStart);
+
+// Export UActor::execSetMixBinMix(FFrame&, void* const)
+native final function SetMixBinMix(MixBin mixToSet, float Value);
+
+// Export UActor::execSetMasterMixBin(FFrame&, void* const)
+native final function SetMasterMixBin(MixBin mixToStart);
+
+// Export UActor::execMakeNoise(FFrame&, void* const)
+native(512) final function MakeNoise(float Loudness, optional name NoiseType);
+
+// Export UActor::execPlayerCanSeeMe(FFrame&, void* const)
 native(532) final function bool PlayerCanSeeMe();
 
-/* epic ===============================================
-* ::SuggestTossVelocity()
-*
-* returns true if a successful toss from Start to Destination was found, and returns the suggested toss velocity in TossVelocity.
-* TossSpeed in the magnitude of the toss
-* BaseTossZ is an additional Z direction force added to the toss. (defaults to 0)
-* DesiredZPct is the requested pct of the toss in the z direction (0=toss horizontally, 0.5 = toss at 45 degrees).  This is the starting point for finding a toss.  (Defaults to 0.05).
-*		the purpose of this is to bias the test in cases where there is more than one solution
-* CollisionSize is the size of bunding box of the tossed actor (defaults to (0,0,0)
-*/
-native noexport final function bool SuggestTossVelocity(out vector TossVelocity, vector Destination, vector Start, float TossSpeed, optional float BaseTossZ, optional float DesiredZPct, optional vector CollisionSize, optional float TerminalVelocity, optional float OverrideGravityZ /* = GetGravityZ() */);
+// Export UActor::execSuggestTossVelocity(FFrame&, void* const)
+native final function bool SuggestTossVelocity(out Vector TossVelocity, Vector Destination, Vector Start, float TossSpeed, optional float BaseTossZ, optional float DesiredZPct, optional Vector CollisionSize, optional float TerminalVelocity, optional float OverrideGravityZ);
 
-/** returns the position the AI should move toward to reach this actor
- * accounts for AI using path lanes, cutting corners, and other special adjustments
- */
-native final virtual function vector GetDestination(Controller C);
+// Export UActor::execGetDestination(FFrame&, void* const)
+native final function Vector GetDestination(Controller C);
 
-//=============================================================================
-// Regular engine functions.
+function bool PreTeleport(Teleporter InTeleporter)
+{
+    //return ReturnValue;    
+}
 
-// Teleportation.
-function bool PreTeleport(Teleporter InTeleporter);
-function PostTeleport(Teleporter OutTeleporter);
+function PostTeleport(Teleporter OutTeleporter)
+{
+    //return;    
+}
 
-//========================================================================
-// Disk access.
-
-// Find files.
+// Export UActor::execGetURLMap(FFrame&, void* const)
 native(547) final function string GetURLMap();
 
-//=============================================================================
-// Iterator functions.
+// Export UActor::execAllActors(FFrame&, void* const)
+native(304) final iterator function AllActors(class<Actor> BaseClass, out Actor Actor);
 
-// Iterator functions for dealing with sets of actors.
+// Export UActor::execDynamicActors(FFrame&, void* const)
+native(313) final iterator function DynamicActors(class<Actor> BaseClass, out Actor Actor);
 
-/* AllActors() - avoid using AllActors() too often as it iterates through the whole actor list and is therefore slow
-*/
-native(304) final iterator function AllActors     ( class<actor> BaseClass, out actor Actor );
+// Export UActor::execChildActors(FFrame&, void* const)
+native(305) final iterator function ChildActors(class<Actor> BaseClass, out Actor Actor);
 
-/* DynamicActors() only iterates through the non-static actors on the list (still relatively slow, but
- much better than AllActors).  This should be used in most cases and replaces AllActors in most of
- Epic's game code.
-*/
-native(313) final iterator function DynamicActors     ( class<actor> BaseClass, out actor Actor );
+// Export UActor::execBasedActors(FFrame&, void* const)
+native(306) final iterator function BasedActors(class<Actor> BaseClass, out Actor Actor);
 
-/* ChildActors() returns all actors owned by this actor.  Slow like AllActors()
-*/
-native(305) final iterator function ChildActors   ( class<actor> BaseClass, out actor Actor );
+// Export UActor::execTouchingActors(FFrame&, void* const)
+native(307) final iterator function TouchingActors(class<Actor> BaseClass, out Actor Actor);
 
-/* BasedActors() returns all actors based on the current actor (fast)
-*/
-native(306) final iterator function BasedActors   ( class<actor> BaseClass, out actor Actor );
+// Export UActor::execTraceActors(FFrame&, void* const)
+native(309) final iterator function TraceActors(class<Actor> BaseClass, out Actor Actor, out Vector HitLoc, out Vector HitNorm, Vector End, optional Vector Start, optional Vector Extent, optional out TraceHitInfo HitInfo, optional int ExtraTraceFlags);
 
-/* TouchingActors() returns all actors touching the current actor (fast)
-*/
-native(307) final iterator function TouchingActors( class<actor> BaseClass, out actor Actor );
+// Export UActor::execVisibleActors(FFrame&, void* const)
+native(311) final iterator function VisibleActors(class<Actor> BaseClass, out Actor Actor, optional float Radius, optional Vector Loc);
 
-/* TraceActors() return all actors along a traced line.  Reasonably fast (like any trace)
-*/
-native(309) final iterator function TraceActors   ( class<actor> BaseClass, out actor Actor, out vector HitLoc, out vector HitNorm, vector End, optional vector Start, optional vector Extent, optional out TraceHitInfo HitInfo, optional int ExtraTraceFlags );
+// Export UActor::execVisibleCollidingActors(FFrame&, void* const)
+native(312) final iterator function VisibleCollidingActors(class<Actor> BaseClass, out Actor Actor, float Radius, optional Vector Loc, optional bool bIgnoreHidden, optional Vector Extent, optional bool bTraceActors);
 
-/* VisibleActors() returns all visible (not bHidden) actors within a radius
-for which a trace from Loc (which defaults to caller's Location) to that actor's Location does not hit the world.
-Slow like AllActors(). Use VisibleCollidingActors() instead if desired actor types are in the collision hash (bCollideActors is true)
-*/
-native(311) final iterator function VisibleActors ( class<actor> BaseClass, out actor Actor, optional float Radius, optional vector Loc );
+// Export UActor::execCollidingActors(FFrame&, void* const)
+native(321) final iterator function CollidingActors(class<Actor> BaseClass, out Actor Actor, float Radius, optional Vector Loc, optional bool bUseOverlapCheck);
 
-/* VisibleCollidingActors() returns all colliding (bCollideActors==true) actors within a certain radius
-for which a trace from Loc (which defaults to caller's Location) to that actor's Location does not hit the world.
-Much faster than AllActors() since it uses the collision octree
-bUseOverlapCheck uses a sphere vs. box check instead of checking to see if the center of an object lies within a sphere
-*/
-native(312) final iterator function VisibleCollidingActors ( class<actor> BaseClass, out actor Actor, float Radius, optional vector Loc, optional bool bIgnoreHidden, optional vector Extent, optional bool bTraceActors );
+// Export UActor::execOverlappingActors(FFrame&, void* const)
+native final iterator function OverlappingActors(class<Actor> BaseClass, out Actor out_Actor, float Radius, optional Vector Loc, optional bool bIgnoreHidden);
 
-/* CollidingActors() returns colliding (bCollideActors==true) actors within a certain radius.
-Much faster than AllActors() for reasonably small radii since it uses the collision octree
-bUseOverlapCheck uses a sphere vs. box check instead of checking to see if the center of an object lies within a sphere
-*/
-native(321) final iterator function CollidingActors ( class<actor> BaseClass, out actor Actor, float Radius, optional vector Loc, optional bool bUseOverlapCheck );
+// Export UActor::execComponentList(FFrame&, void* const)
+native final iterator function ComponentList(Class BaseClass, out ActorComponent out_Component);
 
-/**
- * Returns colliding (bCollideActors==true) which overlap a Sphere from location 'Loc' and 'Radius' radius.
- *
- * @param BaseClass		The Actor returns must be a subclass of this.
- * @param out_Actor		returned Actor at each iteration.
- * @param Radius		Radius of sphere for overlapping check.
- * @param Loc			Center of sphere for overlapping check. (Optional, caller's location is used otherwise).
- * @param bIgnoreHidden	if true, ignore bHidden actors.
- */
-native final iterator function OverlappingActors( class<Actor> BaseClass, out Actor out_Actor, float Radius, optional vector Loc, optional bool bIgnoreHidden );
+// Export UActor::execAllOwnedComponents(FFrame&, void* const)
+native final iterator function AllOwnedComponents(class<Component> BaseClass, out ActorComponent OutComponent);
 
-/**
-*	Returns each component in the Components list
-*	author: superville
-**/
-native final iterator function ComponentList( class<Object> BaseClass, out ActorComponent out_Component );
-
-/**
- * Iterates over all components directly or indirectly attached to this actor.
- * @param BaseClass - Only components deriving from BaseClass will be iterated upon.
- * @param OutComponent - The iteration variable.
- */
-native final iterator function AllOwnedComponents(class<Component> BaseClass,out ActorComponent OutComponent);
-
-/**
- iterator LocalPlayerControllers()
- returns all locally rendered/controlled player controllers (typically 1 per client, unless split screen)
-*/
+// Export UActor::execLocalPlayerControllers(FFrame&, void* const)
 native final iterator function LocalPlayerControllers(class<PlayerController> BaseClass, out PlayerController PC);
 
-/**
- * Searches for actors of the specified class.
- */
 final function bool FindActorsOfClass(class<Actor> ActorClass, out array<Actor> out_Actors)
 {
-	local Actor TestActor;
-	out_Actors.Length = 0;
-	foreach AllActors(ActorClass,TestActor)
-	{
-		out_Actors[out_Actors.Length] = TestActor;
-	}
-	return (out_Actors.Length > 0);
+    local Actor TestActor;
+
+    out_Actors.Length = 0;
+    // End:0x2B
+    foreach AllActors(ActorClass, TestActor)
+    {
+        out_Actors[out_Actors.Length] = TestActor;        
+    }    
+    return out_Actors.Length > 0;
+    //return ReturnValue;    
 }
 
-//=============================================================================
-// Scripted Actor functions.
-
-//
-// Called immediately before gameplay begins.
-//
 event PreBeginPlay()
 {
-	// Handle autodestruction if desired.
-	if (!bGameRelevant && !bStatic && WorldInfo.NetMode != NM_Client && !WorldInfo.Game.CheckRelevance(self))
-	{
-		if (bNoDelete)
-		{
-			ShutDown();
-		}
-		else
-		{
-			Destroy();
-		}
-	}
+    // End:0x66
+    if(bStatic && !(bLoadIfPhysXLevel0 && bLoadIfPhysXLevel1) && bLoadIfPhysXLevel2)
+    {
+        // End:0x63
+        if(!WorldInfo.Game.CheckRelevance(self))
+        {
+            SetHidden(true);
+            SetCollisionType(1);
+        }        
+    }
+    else
+    {
+        // End:0xFC
+        if((!(bLoadIfPhysXLevel0 && bLoadIfPhysXLevel1) && bLoadIfPhysXLevel2 || (!bGameRelevant && !bStatic) && WorldInfo.NetMode != NM_Client) && !WorldInfo.Game.CheckRelevance(self))
+        {
+            // End:0xF9
+            if(bNoDelete)
+            {
+                ShutDown();                
+            }
+            else
+            {
+                Destroy();
+            }
+        }
+    }
+    //return;    
 }
 
-//
-// Broadcast a localized message to all players.
-// Most message deal with 0 to 2 related PRIs.
-// The LocalMessage class defines how the PRI's and optional actor are used.
-//
-event BroadcastLocalizedMessage( class<LocalMessage> InMessageClass, optional int Switch, optional PlayerReplicationInfo RelatedPRI_1, optional PlayerReplicationInfo RelatedPRI_2, optional Object OptionalObject )
+event BroadcastLocalizedMessage(class<LocalMessage> InMessageClass, optional int Switch, optional PlayerReplicationInfo RelatedPRI_1, optional PlayerReplicationInfo RelatedPRI_2, optional Object OptionalObject)
 {
-	WorldInfo.Game.BroadcastLocalized( self, InMessageClass, Switch, RelatedPRI_1, RelatedPRI_2, OptionalObject );
+    WorldInfo.Game.BroadcastLocalized(self, InMessageClass, Switch, RelatedPRI_1, RelatedPRI_2, OptionalObject);
+    //return;    
 }
 
-//
-// Broadcast a localized message to all players on a team.
-// Most message deal with 0 to 2 related PRIs.
-// The LocalMessage class defines how the PRI's and optional actor are used.
-//
-event BroadcastLocalizedTeamMessage( int TeamIndex, class<LocalMessage> InMessageClass, optional int Switch, optional PlayerReplicationInfo RelatedPRI_1, optional PlayerReplicationInfo RelatedPRI_2, optional Object OptionalObject )
+event BroadcastLocalizedTeamMessage(int TeamIndex, class<LocalMessage> InMessageClass, optional int Switch, optional PlayerReplicationInfo RelatedPRI_1, optional PlayerReplicationInfo RelatedPRI_2, optional Object OptionalObject)
 {
-	WorldInfo.Game.BroadcastLocalizedTeam( TeamIndex, self, InMessageClass, Switch, RelatedPRI_1, RelatedPRI_2, OptionalObject );
+    WorldInfo.Game.BroadcastLocalizedTeam(TeamIndex, self, InMessageClass, Switch, RelatedPRI_1, RelatedPRI_2, OptionalObject);
+    //return;    
 }
 
-// Called immediately after gameplay begins.
-//
-event PostBeginPlay();
+event PostBeginPlay()
+{
+    //return;    
+}
 
-// Called after PostBeginPlay.
-//
 simulated event SetInitialState()
 {
-	bScriptInitialized = true;
-	if( InitialState!='' )
-		GotoState( InitialState );
-	else
-		GotoState( 'Auto' );
+    bScriptInitialized = true;
+    // End:0x28
+    if(InitialState != 'None')
+    {
+        GotoState(InitialState);        
+    }
+    else
+    {
+        GotoState('Auto');
+    }
+    //return;    
 }
 
-
-/**
- * When a constraint is broken we will get this event from c++ land.
- **/
-simulated event ConstraintBrokenNotify( Actor ConOwner, RB_ConstraintSetup ConSetup, RB_ConstraintInstance ConInstance  )
+simulated event ConstraintBrokenNotify(Actor ConOwner, RB_ConstraintSetup ConSetup, RB_ConstraintInstance ConInstance)
 {
-
+    //return;    
 }
 
-simulated event NotifySkelControlBeyondLimit( SkelControlLookAt LookAt );
+simulated event NotifySkelControlBeyondLimit(SkelControlLookAt LookAt)
+{
+    //return;    
+}
 
-/* epic ===============================================
-* ::StopsProjectile()
-*
-* returns true if Projectiles should call ProcessTouch() when they touch this actor
-*/
 simulated function bool StopsProjectile(Projectile P)
 {
-	return bProjTarget || bBlockActors;
+    return bProjTarget || bBlockActors;
+    //return ReturnValue;    
 }
 
-/* HurtRadius()
- Hurt locally authoritative actors within the radius.
-*/
-simulated function bool HurtRadius
-(
-	float				BaseDamage,
-	float				DamageRadius,
-	class<DamageType>	DamageType,
-	float				Momentum,
-	vector				HurtOrigin,
-	optional Actor		IgnoredActor,
-	optional Controller InstigatedByController = Instigator != None ? Instigator.Controller : None,
-	optional bool       bDoFullDamage
-)
+simulated function bool HurtRadius(float BaseDamage, float DamageRadius, class<DamageType> DamageType, float Momentum, Vector HurtOrigin, optional Actor IgnoredActor, optional Controller InstigatedByController = ((Instigator != none) ? Instigator.Controller : none), optional bool bDoFullDamage)
 {
-	local Actor	Victim;
-	local bool bCausedDamage;
+    local Actor Victim;
+    local bool bCausedDamage;
 
-	// Prevent HurtRadius() from being reentrant.
-	if ( bHurtEntry )
-		return false;
-
-	bHurtEntry = true;
-	bCausedDamage = false;
-	foreach VisibleCollidingActors( class'Actor', Victim, DamageRadius, HurtOrigin )
-	{
-		if ( !Victim.bWorldGeometry && (Victim != self) && (Victim != IgnoredActor) && (Victim.bProjTarget || (NavigationPoint(Victim) == None)) )
-		{
-			Victim.TakeRadiusDamage(InstigatedByController, BaseDamage, DamageRadius, DamageType, Momentum, HurtOrigin, bDoFullDamage, self);
-			bCausedDamage = bCausedDamage || Victim.bProjTarget;
-		}
-	}
-	bHurtEntry = false;
-	return bCausedDamage;
+    // End:0x2E
+    if(bHurtEntry)
+    {
+        return false;
+    }
+    bHurtEntry = true;
+    bCausedDamage = false;
+    // End:0x111
+    foreach VisibleCollidingActors(Class'Actor', Victim, DamageRadius, HurtOrigin)
+    {
+        // End:0x110
+        if(((!Victim.bWorldGeometry && Victim != self) && Victim != IgnoredActor) && Victim.bProjTarget || NavigationPoint(Victim) == none)
+        {
+            Victim.TakeRadiusDamage(InstigatedByController, BaseDamage, DamageRadius, DamageType, Momentum, HurtOrigin, bDoFullDamage, self);
+            bCausedDamage = bCausedDamage || Victim.bProjTarget;
+        }        
+    }    
+    bHurtEntry = false;
+    return bCausedDamage;
+    //return ReturnValue;    
 }
 
-//
-// Damage and kills.
-//
-function KilledBy( pawn EventInstigator );
-
-/** apply some amount of damage to this actor
- * @param Damage the base damage to apply
- * @param EventInstigator the Controller responsible for the damage
- * @param HitLocation world location where the hit occurred
- * @param Momentum force caused by this hit
- * @param DamageType class describing the damage that was done
- * @param HitInfo additional info about where the hit occurred
- * @param DamageCauser the Actor that directly caused the damage (i.e. the Projectile that exploded, the Weapon that fired, etc)
- */
-event TakeDamage(int DamageAmount, Controller EventInstigator, vector HitLocation, vector Momentum, class<DamageType> DamageType, optional TraceHitInfo HitInfo, optional Actor DamageCauser)
+function KilledBy(Pawn EventInstigator)
 {
-	local int idx;
-	local SeqEvent_TakeDamage dmgEvent;
-	// search for any damage events
-	for (idx = 0; idx < GeneratedEvents.Length; idx++)
-	{
-		dmgEvent = SeqEvent_TakeDamage(GeneratedEvents[idx]);
-		if (dmgEvent != None)
-		{
-			// notify the event of the damage received
-			dmgEvent.HandleDamage(self, EventInstigator, DamageType, DamageAmount);
-		}
-	}
+    //return;    
 }
-/**
- * the reverse of TakeDamage(); heals the specified amount
- *
- * @param	Amount		The amount of damage to heal
- * @param	Healer		Who is doing the healing
- * @param	DamageType	What type of healing is it
- */
-function bool HealDamage(int Amount, Controller Healer, class<DamageType> DamageType);
 
-/**
- * Take Radius Damage
- * by default scales damage based on distance from HurtOrigin to Actor's location.
- * This can be overridden by the actor receiving the damage for special conditions (see KAsset.uc).
- * This then calls TakeDamage() to go through the same damage pipeline.
- *
- * @param	InstigatedBy, instigator of the damage
- * @param	Base Damage
- * @param	Damage Radius (from Origin)
- * @param	DamageType class
- * @param	Momentum (float)
- * @param	HurtOrigin, origin of the damage radius.
- * @param	bFullDamage, if true, damage not scaled based on distance HurtOrigin
- * @param DamageCauser the Actor that directly caused the damage (i.e. the Projectile that exploded, the Weapon that fired, etc)
- */
-simulated function TakeRadiusDamage
-(
-	Controller			InstigatedBy,
-	float				BaseDamage,
-	float				DamageRadius,
-	class<DamageType>	DamageType,
-	float				Momentum,
-	vector				HurtOrigin,
-	bool				bFullDamage,
-	Actor DamageCauser
-)
+event TakeDamage(int DamageAmount, Controller EventInstigator, Vector HitLocation, Vector Momentum, class<DamageType> DamageType, optional TraceHitInfo HitInfo, optional Actor DamageCauser)
 {
-	local float		ColRadius, ColHeight;
-	local float		DamageScale, Dist;
-	local vector	Dir;
+    local int Idx;
+    local SeqEvent_TakeDamage dmgEvent;
 
-	GetBoundingCylinder(ColRadius, ColHeight);
+    Idx = 0;
+    J0x09:
 
-	Dir	= Location - HurtOrigin;
-	Dist = VSize(Dir);
-	Dir	= Normal(Dir);
-
-	if ( bFullDamage )
-	{
-		DamageScale = 1;
-	}
-	else
-	{
-		Dist = FClamp(Dist - ColRadius, 0.f, DamageRadius);
-		DamageScale = 1 - Dist/DamageRadius;
-	}
-
-	if (DamageScale > 0.f)
-	{
-		TakeDamage
-		(
-			DamageScale * BaseDamage,
-			InstigatedBy,
-			Location - 0.5 * (ColHeight + ColRadius) * Dir,
-			(DamageScale * Momentum * Dir),
-			DamageType,,
-			DamageCauser
-		);
-	}
+    // End:0x6D [Loop If]
+    if(Idx < GeneratedEvents.Length)
+    {
+        dmgEvent = SeqEvent_TakeDamage(GeneratedEvents[Idx]);
+        // End:0x63
+        if(dmgEvent != none)
+        {
+            dmgEvent.HandleDamage(self, EventInstigator, DamageType, DamageAmount, HitLocation);
+        }
+        Idx++;
+        // [Loop Continue]
+        goto J0x09;
+    }
+    //return;    
 }
 
-/**
- * Make sure we pass along a valid HitInfo struct for damage.
- * The main reason behind this is that SkeletalMeshes do require a BoneName to receive and process an impulse...
- * So if we don't have access to it (through touch() or for any non trace damage results), we need to perform an extra trace call().
- *
- * @param	HitInfo, initial structure to check
- * @param	FallBackComponent, PrimitiveComponent to use if HitInfo.HitComponent is none
- * @param	Dir, Direction to use if a Trace needs to be performed to find BoneName on skeletalmesh. Trace from HitLocation.
- * @param	out_HitLocation, HitLocation to use for potential Trace, will get updated by Trace.
- */
-final simulated function CheckHitInfo
-(
-	out	TraceHitInfo		HitInfo,
-		PrimitiveComponent	FallBackComponent,
-		Vector				Dir,
-	out Vector				out_HitLocation
-)
+function bool HealDamage(int Amount, Controller Healer, class<DamageType> DamageType)
 {
-	local vector			out_NewHitLocation, out_HitNormal, TraceEnd, TraceStart;
-	local TraceHitInfo		newHitInfo;
-
-	//`log("Actor::CheckHitInfo - HitInfo.HitComponent:" @ HitInfo.HitComponent @ "FallBackComponent:" @ FallBackComponent );
-
-	// we're good, return!
-	if( SkeletalMeshComponent(HitInfo.HitComponent) != None && HitInfo.BoneName != '' )
-	{
-		return;
-	}
-
-	// Use FallBack PrimitiveComponent if possible
-	if( HitInfo.HitComponent == None ||
-		(SkeletalMeshComponent(HitInfo.HitComponent) == None && SkeletalMeshComponent(FallBackComponent) != None) )
-	{
-		HitInfo.HitComponent = FallBackComponent;
-	}
-
-	// if we do not have a valid BoneName, perform a trace against component to try to find one.
-	if( SkeletalMeshComponent(HitInfo.HitComponent) != None && HitInfo.BoneName == '' )
-	{
-		if( IsZero(Dir) )
-		{
-			//`warn("passed zero dir for trace");
-			Dir = Vector(Rotation);
-		}
-
-		if( IsZero(out_HitLocation) )
-		{
-			//`warn("IsZero(out_HitLocation)");
-			//assert(false);
-			out_HitLocation = Location;
-		}
-
-		TraceStart	= out_HitLocation - 128 * Normal(Dir);
-		TraceEnd	= out_HitLocation + 128 * Normal(Dir);
-
-		if( TraceComponent( out_NewHitLocation, out_HitNormal, HitInfo.HitComponent, TraceEnd, TraceStart, vect(0,0,0), newHitInfo ) )
-		{	// Update HitLocation
-			HitInfo.BoneName	= newHitInfo.BoneName;
-			HitInfo.PhysMaterial = newHitInfo.PhysMaterial;
-			out_HitLocation		= out_NewHitLocation;
-		}
-		/*
-		else
-		{
-			// FIXME LAURENT -- The test fails when a just spawned projectile triggers a touch() event, the trace performed will be slightly off and fail.
-			`log("Actor::CheckHitInfo non successful TraceComponent!!");
-			`log("HitInfo.HitComponent:" @ HitInfo.HitComponent );
-			`log("TraceEnd:" @ TraceEnd );
-			`log("TraceStart:" @ TraceStart );
-			`log("out_HitLocation:" @ out_HitLocation );
-
-			ScriptTrace();
-			//DrawDebugLine(TraceEnd, TraceStart, 255, 0, 0, TRUE);
-			//DebugFreezeGame();
-		}
-		*/
-	}
+    //return ReturnValue;    
 }
 
-/**
- * Get gravity currently affecting this actor
- */
+simulated function TakeRadiusDamage(Controller InstigatedBy, float BaseDamage, float DamageRadius, class<DamageType> DamageType, float Momentum, Vector HurtOrigin, bool bFullDamage, Actor DamageCauser)
+{
+    local float ColRadius, ColHeight, DamageScale, Dist;
+    local Vector Dir;
+
+    GetBoundingCylinder(ColRadius, ColHeight);
+    Dir = Location - HurtOrigin;
+    Dist = VSize(Dir);
+    Dir = Normal(Dir);
+    // End:0x57
+    if(bFullDamage)
+    {
+        DamageScale = 1.0000000;        
+    }
+    else
+    {
+        Dist = FClamp(Dist - ColRadius, 0.0000000, DamageRadius);
+        DamageScale = 1.0000000 - (Dist / DamageRadius);
+    }
+    // End:0xF9
+    if(DamageScale > 0.0000000)
+    {
+        TakeDamage(int(DamageScale * BaseDamage), InstigatedBy, Location - ((0.5000000 * (ColHeight + ColRadius)) * Dir), (DamageScale * Momentum) * Dir, DamageType,, DamageCauser);
+    }
+    //return;    
+}
+
+final simulated function CheckHitInfo(out TraceHitInfo HitInfo, PrimitiveComponent FallBackComponent, Vector Dir, out Vector out_HitLocation)
+{
+    local Vector out_NewHitLocation, out_HitNormal, TraceEnd, TraceStart;
+    local TraceHitInfo newHitInfo;
+
+    // End:0x3D
+    if((SkeletalMeshComponent(HitInfo.HitComponent) != none) && HitInfo.BoneName != 'None')
+    {
+        return;
+    }
+    // End:0x98
+    if((HitInfo.HitComponent == none) || (SkeletalMeshComponent(HitInfo.HitComponent) == none) && SkeletalMeshComponent(FallBackComponent) != none)
+    {
+        HitInfo.HitComponent = FallBackComponent;
+    }
+    // End:0x1C1
+    if((SkeletalMeshComponent(HitInfo.HitComponent) != none) && HitInfo.BoneName == 'None')
+    {
+        // End:0xEB
+        if(IsZero(Dir))
+        {
+            Dir = Vector(Rotation);
+        }
+        // End:0x101
+        if(IsZero(out_HitLocation))
+        {
+            out_HitLocation = Location;
+        }
+        TraceStart = out_HitLocation - (float(128) * Normal(Dir));
+        TraceEnd = out_HitLocation + (float(128) * Normal(Dir));
+        // End:0x1C1
+        if(TraceComponent(out_NewHitLocation, out_HitNormal, HitInfo.HitComponent, TraceEnd, TraceStart, vect(0.0000000, 0.0000000, 0.0000000), newHitInfo))
+        {
+            HitInfo.BoneName = newHitInfo.BoneName;
+            HitInfo.PhysMaterial = newHitInfo.PhysMaterial;
+            out_HitLocation = out_NewHitLocation;
+        }
+    }
+    //return;    
+}
+
+// Export UActor::execGetGravityZ(FFrame&, void* const)
 native function float GetGravityZ();
 
-/**
- * Debug Freeze Game
- * dumps the current script function stack and pauses the game with PlayersOnly (still allowing the player to move around).
- */
 event DebugFreezeGame(optional Actor ActorToLookAt)
 {
-`if(`notdefined(FINAL_RELEASE))
-	local PlayerController	PC;
-	ScriptTrace();
-	ForEach LocalPlayerControllers(class'PlayerController', PC)
-	{
-		PC.ConsoleCommand("PlayersOnly");
+    local PlayerController PC;
 
-		if( ActorToLookAt != None )
-		{
-			PC.SetViewTarget(ActorToLookAt);
-		}
-
-		return;
-	}
-`endif
+    ScriptTrace();
+    // End:0x6A
+    foreach LocalPlayerControllers(Class'PlayerController', PC)
+    {        
+        PC.ConsoleCommand("PlayersOnly");
+        // End:0x66
+        if(ActorToLookAt != none)
+        {
+            PC.SetViewTarget(ActorToLookAt);
+        }        
+        return;        
+    }    
+    //return;    
 }
 
-function bool CheckForErrors();
-
-/* BecomeViewTarget
-	Called by Camera when this actor becomes its ViewTarget */
-event BecomeViewTarget( PlayerController PC );
-
-/* EndViewTarget
-	Called by Camera when this actor no longer its ViewTarget */
-event EndViewTarget( PlayerController PC );
-
-/**
- *	Calculate camera view point, when viewing this actor.
- *
- * @param	fDeltaTime	delta time seconds since last update
- * @param	out_CamLoc	Camera Location
- * @param	out_CamRot	Camera Rotation
- * @param	out_FOV		Field of View
- *
- * @return	true if Actor should provide the camera point of view.
- */
-simulated function bool CalcCamera( float fDeltaTime, out vector out_CamLoc, out rotator out_CamRot, out float out_FOV )
+function bool CheckForErrors()
 {
-	local vector HitNormal;
-	local float Radius, Height;
-
-	GetBoundingCylinder(Radius, Height);
-
-	if (Trace(out_CamLoc, HitNormal, Location - vector(out_CamRot) * Radius * 20, Location, false) == None)
-	{
-		out_CamLoc = Location - vector(out_CamRot) * Radius * 20;
-	}
-	else
-	{
-		out_CamLoc = Location + Height * vector(Rotation);
-	}
-
-	return false;
+    //return ReturnValue;    
 }
 
-// Returns the string representation of the name of an object without the package
-// prefixes.
-//
-simulated function String GetItemName( string FullName )
+event BecomeViewTarget(PlayerController PC)
 {
-	local int pos;
-
-	pos = InStr(FullName, ".");
-	While ( pos != -1 )
-	{
-		FullName = Right(FullName, Len(FullName) - pos - 1);
-		pos = InStr(FullName, ".");
-	}
-
-	return FullName;
+    //return;    
 }
 
-// Returns the human readable string representation of an object.
-//
-simulated function String GetHumanReadableName()
+event EndViewTarget(PlayerController PC)
 {
-	return GetItemName(string(class));
+    //return;    
+}
+
+simulated function bool CalcCamera(float fDeltaTime, out Vector out_CamLoc, out Rotator out_CamRot, out float out_FOV)
+{
+    local Vector HitNormal;
+    local float Radius, Height;
+
+    GetBoundingCylinder(Radius, Height);
+    // End:0x6F
+    if(Trace(out_CamLoc, HitNormal, Location - ((Vector(out_CamRot) * Radius) * float(20)), Location, false) == none)
+    {
+        out_CamLoc = Location - ((Vector(out_CamRot) * Radius) * float(20));        
+    }
+    else
+    {
+        out_CamLoc = Location + (Height * Vector(Rotation));
+    }
+    return false;
+    //return ReturnValue;    
+}
+
+simulated function string GetItemName(string FullName)
+{
+    local int pos;
+
+    pos = InStr(FullName, ".");
+    J0x11:
+
+    // End:0x52 [Loop If]
+    if(pos != -1)
+    {
+        FullName = Right(FullName, (Len(FullName) - pos) - 1);
+        pos = InStr(FullName, ".");
+        // [Loop Continue]
+        goto J0x11;
+    }
+    return FullName;
+    //return ReturnValue;    
+}
+
+simulated function string GetHumanReadableName()
+{
+    return GetItemName(string(Class));
+    //return ReturnValue;    
 }
 
 static function ReplaceText(out string Text, string Replace, string With)
 {
-	local int i;
-	local string Input;
+    local int I;
+    local string Input;
 
-	Input = Text;
-	Text = "";
-	i = InStr(Input, Replace);
-	while(i != -1)
-	{
-		Text = Text $ Left(Input, i) $ With;
-		Input = Mid(Input, i + Len(Replace));
-		i = InStr(Input, Replace);
-	}
-	Text = Text $ Input;
+    Input = Text;
+    Text = "";
+    I = InStr(Input, Replace);
+    J0x26:
+
+    // End:0x87 [Loop If]
+    if(I != -1)
+    {
+        Text = (Text $ Left(Input, I)) $ With;
+        Input = Mid(Input, I + Len(Replace));
+        I = InStr(Input, Replace);
+        // [Loop Continue]
+        goto J0x26;
+    }
+    Text = Text $ Input;
+    //return;    
 }
 
-// Get localized message string associated with this actor
-static function string GetLocalString(
-	optional int Switch,
-	optional PlayerReplicationInfo RelatedPRI_1,
-	optional PlayerReplicationInfo RelatedPRI_2
-	)
+static function string GetLocalString(optional int Switch, optional PlayerReplicationInfo RelatedPRI_1, optional PlayerReplicationInfo RelatedPRI_2)
 {
-	return "";
+    return "";
+    //return ReturnValue;    
 }
 
-function MatchStarting(); // called when gameplay actually starts
-function SetGRI(GameReplicationInfo GRI);
-
-function String GetDebugName()
+function MatchStarting()
 {
-	return GetItemName(string(self));
+    //return;    
 }
 
-/**
- * list important Actor variables on canvas.  HUD will call DisplayDebug() on the current ViewTarget when
- * the ShowDebug exec is used
- *
- * @param	HUD		- HUD with canvas to draw on
- * @input	out_YL		- Height of the current font
- * @input	out_YPos	- Y position on Canvas. out_YPos += out_YL, gives position to draw text for next debug line.
- */
+function SetGRI(GameReplicationInfo GRI)
+{
+    //return;    
+}
+
+function string GetDebugName()
+{
+    return GetItemName(string(self));
+    //return ReturnValue;    
+}
+
 simulated function DisplayDebug(HUD HUD, out float out_YL, out float out_YPos)
 {
-	local string	T;
-	local Actor		A;
-	local float MyRadius, MyHeight;
-	local Canvas Canvas;
+    local string T;
+    local Actor A;
+    local float MyRadius, MyHeight;
+    local Canvas Canvas;
 
-	Canvas = HUD.Canvas;
-
-	Canvas.SetPos(4, out_YPos);
-	Canvas.SetDrawColor(255,0,0);
-
-	T = GetDebugName();
-	if( bDeleteMe )
-	{
-		T = T$" DELETED (bDeleteMe == true)";
-	}
-
-	if( T != "" )
-	{
-		Canvas.DrawText(T, FALSE);
-		out_YPos += out_YL;
-		Canvas.SetPos(4, out_YPos);
-	}
-
-	Canvas.SetDrawColor(255,255,255);
-
-	if( HUD.ShouldDisplayDebug('net') )
-	{
-		if( WorldInfo.NetMode != NM_Standalone )
-		{
-			// networking attributes
-			T = "ROLE:" @ Role @ "RemoteRole:" @ RemoteRole @ "NetMode:" @ WorldInfo.NetMode;
-
-			if( bTearOff )
-			{
-				T = T @ "Tear Off";
-			}
-			Canvas.DrawText(T, FALSE);
-			out_YPos += out_YL;
-			Canvas.SetPos(4, out_YPos);
-		}
-	}
-
-	Canvas.DrawText("Location:" @ Location @ "Rotation:" @ Rotation, FALSE);
-	out_YPos += out_YL;
-	Canvas.SetPos(4,out_YPos);
-
-	if( HUD.ShouldDisplayDebug('physics') )
-	{
-		T = "Physics" @ GetPhysicsName() @ "in physicsvolume" @ GetItemName(string(PhysicsVolume)) @ "on base" @ GetItemName(string(Base)) @ "gravity" @ GetGravityZ();
-		if( bBounce )
-		{
-			T = T$" - will bounce";
-		}
-		Canvas.DrawText(T, FALSE);
-		out_YPos += out_YL;
-		Canvas.SetPos(4,out_YPos);
-
-		Canvas.DrawText("bHardAttach:" @ bHardAttach @ "RelativeLoc:" @ RelativeLocation @ "RelativeRot:" @ RelativeRotation @ "SkelComp:" @ BaseSkelComponent @ "Bone:" @ string(BaseBoneName), FALSE);
-		out_YPos += out_YL;
-		Canvas.SetPos(4,out_YPos);
-
-		Canvas.DrawText("Velocity:" @ Velocity @ "Speed:" @ VSize(Velocity) @ "Speed2D:" @ VSize2D(Velocity), FALSE);
-		out_YPos += out_YL;
-		Canvas.SetPos(4,out_YPos);
-
-		Canvas.DrawText("Acceleration:" @ Acceleration, FALSE);
-		out_YPos += out_YL;
-		Canvas.SetPos(4,out_YPos);
-	}
-
-	if( HUD.ShouldDisplayDebug('collision') )
-	{
-		Canvas.DrawColor.B = 0;
-		GetBoundingCylinder(MyRadius, MyHeight);
-		Canvas.DrawText("Collision Radius:" @ MyRadius @ "Height:" @ MyHeight);
-		out_YPos += out_YL;
-		Canvas.SetPos(4,out_YPos);
-
-		Canvas.DrawText("Collides with Actors:" @ bCollideActors @ " world:" @ bCollideWorld @ "proj. target:" @ bProjTarget);
-		out_YPos += out_YL;
-		Canvas.SetPos(4,out_YPos);
-		Canvas.DrawText("Blocks Actors:" @ bBlockActors);
-		out_YPos += out_YL;
-		Canvas.SetPos(4,out_YPos);
-
-		T = "Touching ";
-		ForEach TouchingActors(class'Actor', A)
-			T = T$GetItemName(string(A))$" ";
-		if ( T == "Touching ")
-			T = "Touching nothing";
-		Canvas.DrawText(T, FALSE);
-		out_YPos += out_YL;
-		Canvas.SetPos(4,out_YPos);
-	}
-
-	Canvas.DrawColor.B = 255;
-	Canvas.DrawText(" STATE:" @ GetStateName(), FALSE);
-	out_YPos += out_YL;
-	Canvas.SetPos(4,out_YPos);
-
-	Canvas.DrawText( " Instigator:" @ GetItemName(string(Instigator)) @ "Owner:" @ GetItemName(string(Owner)) );
-	out_YPos += out_YL;
-	Canvas.SetPos(4,out_YPos);
+    Canvas = HUD.Canvas;
+    Canvas.SetPos(4.0000000, out_YPos);
+    Canvas.SetDrawColor(255, 0, 0);
+    T = GetDebugName();
+    // End:0x8A
+    if(bDeleteMe)
+    {
+        T = T $ " DELETED (bDeleteMe == true)";
+    }
+    // End:0xD4
+    if(T != "")
+    {
+        Canvas.DrawText(T, false);
+        out_YPos += out_YL;
+        Canvas.SetPos(4.0000000, out_YPos);
+    }
+    Canvas.SetDrawColor(255, 255, 255);
+    // End:0x1D0
+    if(HUD.ShouldDisplayDebug('net'))
+    {
+        // End:0x1D0
+        if(WorldInfo.NetMode != NM_Standalone)
+        {
+            T = (((("ROLE:" @ string(Role)) @ "RemoteRole:") @ string(RemoteRole)) @ "NetMode:") @ string(WorldInfo.NetMode);
+            // End:0x192
+            if(bTearOff)
+            {
+                T = T @ "Tear Off";
+            }
+            Canvas.DrawText(T, false);
+            out_YPos += out_YL;
+            Canvas.SetPos(4.0000000, out_YPos);
+        }
+    }
+    Canvas.DrawText((("Location:" @ string(Location)) @ "Rotation:") @ string(Rotation), false);
+    out_YPos += out_YL;
+    Canvas.SetPos(4.0000000, out_YPos);
+    // End:0x4A9
+    if(HUD.ShouldDisplayDebug('Physics'))
+    {
+        T = (((((("Physics" @ (GetPhysicsName())) @ "in physicsvolume") @ (GetItemName(string(PhysicsVolume)))) @ "on base") @ (GetItemName(string(Base)))) @ "gravity") @ string(GetGravityZ());
+        // End:0x2F2
+        if(bBounce)
+        {
+            T = T $ " - will bounce";
+        }
+        Canvas.DrawText(T, false);
+        out_YPos += out_YL;
+        Canvas.SetPos(4.0000000, out_YPos);
+        Canvas.DrawText((((((((("bHardAttach:" @ string(bHardAttach)) @ "RelativeLoc:") @ string(RelativeLocation)) @ "RelativeRot:") @ string(RelativeRotation)) @ "SkelComp:") @ string(BaseSkelComponent)) @ "Bone:") @ string(BaseBoneName), false);
+        out_YPos += out_YL;
+        Canvas.SetPos(4.0000000, out_YPos);
+        Canvas.DrawText((((("Velocity:" @ string(Velocity)) @ "Speed:") @ string(VSize(Velocity))) @ "Speed2D:") @ string(VSize2D(Velocity)), false);
+        out_YPos += out_YL;
+        Canvas.SetPos(4.0000000, out_YPos);
+        Canvas.DrawText("Acceleration:" @ string(Acceleration), false);
+        out_YPos += out_YL;
+        Canvas.SetPos(4.0000000, out_YPos);
+    }
+    // End:0x6F1
+    if(HUD.ShouldDisplayDebug('Collision'))
+    {
+        Canvas.DrawColor.B = 0;
+        GetBoundingCylinder(MyRadius, MyHeight);
+        Canvas.DrawText((("Collision Radius:" @ string(MyRadius)) @ "Height:") @ string(MyHeight));
+        out_YPos += out_YL;
+        Canvas.SetPos(4.0000000, out_YPos);
+        Canvas.DrawText((((("Collides with Actors:" @ string(bCollideActors)) @ " world:") @ string(bCollideWorld)) @ "proj. target:") @ string(bProjTarget));
+        out_YPos += out_YL;
+        Canvas.SetPos(4.0000000, out_YPos);
+        Canvas.DrawText("Blocks Actors:" @ string(bBlockActors));
+        out_YPos += out_YL;
+        Canvas.SetPos(4.0000000, out_YPos);
+        T = "Touching ";
+        // End:0x685
+        foreach TouchingActors(Class'Actor', A)
+        {
+            T = (T $ (GetItemName(string(A)))) $ " ";            
+        }        
+        // End:0x6B3
+        if(T == "Touching ")
+        {
+            T = "Touching nothing";
+        }
+        Canvas.DrawText(T, false);
+        out_YPos += out_YL;
+        Canvas.SetPos(4.0000000, out_YPos);
+    }
+    Canvas.DrawColor.B = 255;
+    Canvas.DrawText(" STATE:" @ string(GetStateName()), false);
+    out_YPos += out_YL;
+    Canvas.SetPos(4.0000000, out_YPos);
+    Canvas.DrawText(((" Instigator:" @ (GetItemName(string(Instigator)))) @ "Owner:") @ (GetItemName(string(Owner))));
+    out_YPos += out_YL;
+    Canvas.SetPos(4.0000000, out_YPos);
+    //return;    
 }
 
-simulated function String GetPhysicsName()
+event string GetPhysicsName()
 {
-	Switch( PHYSICS )
-	{
-		case PHYS_None:				return "None"; break;
-		case PHYS_Walking:			return "Walking"; break;
-		case PHYS_Falling:			return "Falling"; break;
-		case PHYS_Swimming:			return "Swimming"; break;
-		case PHYS_Flying:			return "Flying"; break;
-		case PHYS_Rotating:			return "Rotating"; break;
-		case PHYS_Projectile:		return "Projectile"; break;
-		case PHYS_Interpolating:	return "Interpolating"; break;
-		case PHYS_Spider:			return "Spider"; break;
-		case PHYS_Ladder:			return "Ladder"; break;
-		case PHYS_RigidBody:		return "RigidBody"; break;
-		case PHYS_Unused:			return "Unused"; break;
-	}
-	return "Unknown";
+    switch(Physics)
+    {
+        // End:0x17
+        case 0:
+            return "None";
+            // End:0xFC
+            break;
+        // End:0x29
+        case 1:
+            return "Walking";
+            // End:0xFC
+            break;
+        // End:0x3B
+        case 2:
+            return "Falling";
+            // End:0xFC
+            break;
+        // End:0x4E
+        case 3:
+            return "Swimming";
+            // End:0xFC
+            break;
+        // End:0x5F
+        case 4:
+            return "Flying";
+            // End:0xFC
+            break;
+        // End:0x72
+        case 5:
+            return "Rotating";
+            // End:0xFC
+            break;
+        // End:0x87
+        case 6:
+            return "Projectile";
+            // End:0xFC
+            break;
+        // End:0x9F
+        case 7:
+            return "Interpolating";
+            // End:0xFC
+            break;
+        // End:0xB0
+        case 8:
+            return "Spider";
+            // End:0xFC
+            break;
+        // End:0xC1
+        case 9:
+            return "Ladder";
+            // End:0xFC
+            break;
+        // End:0xD5
+        case 10:
+            return "RigidBody";
+            // End:0xFC
+            break;
+        // End:0xE6
+        case 13:
+            return "Unused";
+            // End:0xFC
+            break;
+        // End:0xF9
+        case 12:
+            return "Floating";
+            // End:0xFC
+            break;
+        // End:0xFFFF
+        default:
+            break;
+    }
+    return "Unknown";
+    //return ReturnValue;    
 }
 
-/** called when a sound is going to be played on this Actor via PlayerController::ClientHearSound()
- * gives it a chance to modify the component that will be used (add parameter values, etc)
- */
-simulated event ModifyHearSoundComponent(AudioComponent AC);
+simulated event ModifyHearSoundComponent(AudioComponent AC)
+{
+    //return;    
+}
 
-/**
- *	Function for allowing you to tell FaceFX which AudioComponent it should use for playing audio
- *	for corresponding facial animation.
- */
 simulated event AudioComponent GetFaceFXAudioComponent()
 {
-	return None;
+    return none;
+    //return ReturnValue;    
 }
 
-/* Reset()
-reset actor to initial state - used when restarting level without reloading.
-*/
-event Reset();
+event Reset()
+{
+    //return;    
+}
 
 function bool IsInVolume(Volume aVolume)
 {
-	local Volume V;
+    local Volume V;
 
-	ForEach TouchingActors(class'Volume',V)
-		if ( V == aVolume )
-			return true;
-	return false;
+    // End:0x23
+    foreach TouchingActors(Class'Volume', V)
+    {
+        // End:0x22
+        if(V == aVolume)
+        {            
+            return true;
+        }        
+    }    
+    return false;
+    //return ReturnValue;    
 }
 
 function bool IsInPain()
 {
-	local PhysicsVolume V;
+    local PhysicsVolume V;
 
-	ForEach TouchingActors(class'PhysicsVolume',V)
-		if ( V.bPainCausing && (V.DamagePerSec > 0) )
-			return true;
-	return false;
+    // End:0x40
+    foreach TouchingActors(Class'PhysicsVolume', V)
+    {
+        // End:0x3F
+        if(V.bPainCausing && V.DamagePerSec > float(0))
+        {            
+            return true;
+        }        
+    }    
+    return false;
+    //return ReturnValue;    
 }
 
-function PlayTeleportEffect(bool bOut, bool bSound);
+function PlayTeleportEffect(bool bOut, bool bSound)
+{
+    //return;    
+}
 
 simulated function bool CanSplash()
 {
-	return false;
+    return false;
+    //return ReturnValue;    
 }
 
-/** Called when this actor touches a fluid surface */
-simulated function ApplyFluidSurfaceImpact( FluidSurfaceActor Fluid, vector HitLocation)
+simulated function bool EffectedByReverb()
 {
-	local float Radius, Height, AdjustedVelocity;
-
-	if (bAllowFluidSurfaceInteraction)
-	{
-		AdjustedVelocity = 0.01 * Abs(Velocity.Z);
-		GetBoundingCylinder(Radius, Height);
-		Fluid.FluidComponent.ApplyForce( HitLocation, AdjustedVelocity * Fluid.FluidComponent.ForceImpact, Radius*0.3, True );
-	}
+    return false;
+    //return ReturnValue;    
 }
 
-simulated function bool CheckMaxEffectDistance(PlayerController P, vector SpawnLocation, optional float CullDistance)
+simulated function ApplyFluidSurfaceImpact(FluidSurfaceActor Fluid, Vector HitLocation)
 {
-	local float Dist;
+    local float Radius, Height, AdjustedVelocity;
 
-	if ( P.ViewTarget == None )
-		return true;
-
-	// if the effect location is behind us
-	// then we want to say it is relevant if it is moderately close
-	if ( (Vector(P.Rotation) Dot (SpawnLocation - P.ViewTarget.Location)) < 0.0f )
-	{
-		return (VSize(P.ViewTarget.Location - SpawnLocation) < 1600);
-	}
-
-	Dist = VSize(SpawnLocation - P.ViewTarget.Location);
-
-	if (CullDistance > 0.0f && CullDistance < Dist * P.LODDistanceFactor)
-	{
-		return false;
-	}
-
-	return !P.BeyondFogDistance(P.ViewTarget.Location,SpawnLocation);
+    // End:0x88
+    if(bAllowFluidSurfaceInteraction)
+    {
+        AdjustedVelocity = 0.0100000 * Abs(Velocity.Z);
+        GetBoundingCylinder(Radius, Height);
+        Fluid.FluidComponent.ApplyForce(HitLocation, AdjustedVelocity * Fluid.FluidComponent.ForceImpact, Radius * 0.3000000, true);
+    }
+    //return;    
 }
 
-simulated function bool EffectIsRelevant(vector SpawnLocation, bool bForceDedicated, optional float CullDistance )
+simulated function bool CheckMaxEffectDistance(PlayerController P, Vector SpawnLocation, optional float CullDistance)
 {
-	local PlayerController	P;
-	local bool				bResult;
+    local float Dist;
 
-	if ( WorldInfo.NetMode == NM_DedicatedServer )
-	{
-		return bForceDedicated;
-	}
-
-	if ( (WorldInfo.NetMode == NM_ListenServer) && (WorldInfo.Game.NumPlayers > 1) )
-	{
-		if ( bForceDedicated )
-			return true;
-		if ( (Instigator != None) && Instigator.IsHumanControlled() && Instigator.IsLocallyControlled() )
-			return true;
-	}
-	else if ( (Instigator != None) && Instigator.IsHumanControlled() )
-	{
-		return true;
-	}
-
-	if ( SpawnLocation == Location )
-	{
-		bResult = ( WorldInfo.TimeSeconds - LastRenderTime < 0.5 );
-	}
-	else if ( (Instigator != None) && (WorldInfo.TimeSeconds - Instigator.LastRenderTime < 1.0) )
-	{
-		bResult = true;
-	}
-
-	if ( bResult )
-	{
-		bResult = false;
-		ForEach LocalPlayerControllers(class'PlayerController', P)
-		{
-			if ( P.ViewTarget != None )
-			{
-				if ( (P.Pawn == Instigator) && (Instigator != None) )
-				{
-					return true;
-				}
-				else
-				{
-					bResult = CheckMaxEffectDistance(P, SpawnLocation, CullDistance);
-					break;
-				}
-			}
-		}
-	}
-	return bResult;
+    // End:0x18
+    if(P.ViewTarget == none)
+    {
+        return true;
+    }
+    // End:0x81
+    if((Vector(P.Rotation) Dot (SpawnLocation - P.ViewTarget.Location)) < 0.0000000)
+    {
+        return VSize(P.ViewTarget.Location - SpawnLocation) < float(1600);
+    }
+    Dist = VSize(SpawnLocation - P.ViewTarget.Location);
+    // End:0xDC
+    if((CullDistance > 0.0000000) && CullDistance < (Dist * P.LODDistanceFactor))
+    {
+        return false;
+    }
+    return !P.BeyondFogDistance(P.ViewTarget.Location, SpawnLocation);
+    //return ReturnValue;    
 }
 
-/** Retrieves difference between world time and given time */
-simulated final function float TimeSince( float Time )
+simulated function bool EffectIsRelevant(Vector SpawnLocation, bool bForceDedicated, optional float CullDistance)
 {
-	return WorldInfo.TimeSeconds - Time;
+    local PlayerController P;
+    local bool bResult;
+
+    // End:0x22
+    if(WorldInfo.NetMode == NM_DedicatedServer)
+    {
+        return bForceDedicated;
+    }
+    // End:0xA2
+    if((WorldInfo.NetMode == NM_ListenServer) && WorldInfo.Game.NumPlayers > 1)
+    {
+        // End:0x68
+        if(bForceDedicated)
+        {
+            return true;
+        }
+        // End:0x9F
+        if(((Instigator != none) && Instigator.IsHumanControlled()) && Instigator.IsLocallyControlled())
+        {
+            return true;
+        }        
+    }
+    else
+    {
+        // End:0xC4
+        if((Instigator != none) && Instigator.IsHumanControlled())
+        {
+            return true;
+        }
+    }
+    // End:0xFA
+    if(SpawnLocation == Location)
+    {
+        bResult = (WorldInfo.TimeSeconds - LastRenderTime) < 0.5000000;        
+    }
+    else
+    {
+        // End:0x139
+        if((Instigator != none) && (WorldInfo.TimeSeconds - Instigator.LastRenderTime) < 1.0000000)
+        {
+            bResult = true;
+        }
+    }
+    // End:0x1C3
+    if(bResult)
+    {
+        bResult = false;
+        // End:0x1C2
+        foreach LocalPlayerControllers(Class'PlayerController', P)
+        {
+            // End:0x1C1
+            if(P.ViewTarget != none)
+            {
+                // End:0x19E
+                if((P.Pawn == Instigator) && Instigator != none)
+                {                    
+                    return true;
+                    // End:0x1C1
+                    continue;
+                }
+                bResult = CheckMaxEffectDistance(P, SpawnLocation, CullDistance);
+                // End:0x1C2
+                break;
+            }            
+        }        
+    }
+    return bResult;
+    //return ReturnValue;    
 }
 
-//-----------------------------------------------------------------------------
-// Scripting support
+final simulated function float TimeSince(float Time)
+{
+    return WorldInfo.TimeSeconds - Time;
+    //return ReturnValue;    
+}
 
-
-/** Convenience function for triggering events in the GeneratedEvents list
- * If you need more options (activating multiple outputs, etc), call ActivateEventClass() directly
- */
 simulated function bool TriggerEventClass(class<SequenceEvent> InEventClass, Actor InInstigator, optional int ActivateIndex = -1, optional bool bTest, optional out array<SequenceEvent> ActivatedEvents)
 {
-	local array<int> ActivateIndices;
+    local array<int> ActivateIndices;
 
-	if (ActivateIndex >= 0)
-	{
-		ActivateIndices[0] = ActivateIndex;
-	}
-	return ActivateEventClass(InEventClass, InInstigator, GeneratedEvents, ActivateIndices, bTest, ActivatedEvents);
+    // End:0x23
+    if(ActivateIndex >= 0)
+    {
+        ActivateIndices[0] = ActivateIndex;
+    }
+    return ActivateEventClass(InEventClass, InInstigator, GeneratedEvents, ActivateIndices, bTest, ActivatedEvents);
+    //return ReturnValue;    
 }
 
-/**
- * Iterates through the given list of events and looks for all
- * matching events, activating them as found.
- *
- * @return		true if an event was found and activated
- */
-simulated final function bool ActivateEventClass( class<SequenceEvent> InClass, Actor InInstigator, const out array<SequenceEvent> EventList,
-					optional const out array<int> ActivateIndices, optional bool bTest, optional out array<SequenceEvent> ActivatedEvents )
+final simulated function bool ActivateEventClass(class<SequenceEvent> InClass, Actor InInstigator, const out array<SequenceEvent> EventList, const optional out array<int> ActivateIndices, optional bool bTest, optional out array<SequenceEvent> ActivatedEvents)
 {
-	local SequenceEvent Evt;
-	ActivatedEvents.Length = 0;
-	foreach EventList(Evt)
-	{
-		if (ClassIsChildOf(Evt.Class,InClass) &&
-			Evt.CheckActivate(self,InInstigator,bTest,ActivateIndices))
-		{
-			ActivatedEvents.AddItem(Evt);
-		}
-	}
-	return (ActivatedEvents.Length > 0);
+    local SequenceEvent Evt;
+
+    ActivatedEvents.Length = 0;
+    // End:0x69
+    foreach EventList(Evt)
+    {
+        // End:0x68
+        if(ClassIsChildOf(Evt.Class, InClass) && Evt.CheckActivate(self, InInstigator, bTest, ActivateIndices))
+        {
+            ActivatedEvents.AddItem(Evt);
+        }        
+    }    
+    return ActivatedEvents.Length > 0;
+    //return ReturnValue;    
 }
 
-/**
- * Builds a list of all events of the specified class.
- *
- * @param	eventClass - type of event to search for
- * @param	out_EventList - list of found events
- * @param   bIncludeDisabled - will not filter out the events with bEnabled = FALSE
- *
- * @return	true if any events were found
- */
-simulated final function bool FindEventsOfClass(class<SequenceEvent> EventClass, optional out array<SequenceEvent> out_EventList, optional bool bIncludeDisabled)
+final simulated function bool FindEventsOfClass(class<SequenceEvent> EventClass, optional out array<SequenceEvent> out_EventList, optional bool bIncludeDisabled)
 {
-	local SequenceEvent Evt;
-	local bool bFoundEvent;
-	foreach GeneratedEvents(Evt)
-	{
-		if (Evt != None && (Evt.bEnabled || bIncludeDisabled) && ClassIsChildOf(Evt.Class,EventClass) && (Evt.MaxTriggerCount == 0 || Evt.MaxTriggerCount > Evt.TriggerCount))
-		{
-			out_EventList.AddItem(Evt);
-			bFoundEvent = TRUE;
-		}
-	}
-	return bFoundEvent;
+    local SequenceEvent Evt;
+    local bool bFoundEvent;
+
+    // End:0xAA
+    foreach GeneratedEvents(Evt)
+    {
+        // End:0xA9
+        if((((Evt != none) && Evt.bEnabled || bIncludeDisabled) && ClassIsChildOf(Evt.Class, EventClass)) && (Evt.MaxTriggerCount == 0) || Evt.MaxTriggerCount > Evt.TriggerCount)
+        {
+            out_EventList.AddItem(Evt);
+            bFoundEvent = true;
+        }        
+    }    
+    return bFoundEvent;
+    //return ReturnValue;    
 }
 
-/**
- * Clears all latent actions of the specified class.
- *
- * @param	actionClass - type of latent action to clear
- * @param	bAborted - was this latent action aborted?
- * @param	exceptionAction - action to skip
- */
-simulated final function ClearLatentAction(class<SeqAct_Latent> actionClass,optional bool bAborted,optional SeqAct_Latent exceptionAction)
+final simulated function ClearLatentAction(class<SeqAct_Latent> actionClass, optional bool bAborted, optional SeqAct_Latent exceptionAction)
 {
-	local int idx;
-	for (idx = 0; idx < LatentActions.Length; idx++)
-	{
-		if (LatentActions[idx] == None)
-		{
-			// remove dead entry
-			LatentActions.Remove(idx--,1);
-		}
-		else
-		if (ClassIsChildOf(LatentActions[idx].class,actionClass) &&
-			LatentActions[idx] != exceptionAction)
-		{
-			// if aborted,
-			if (bAborted)
-			{
-				// then notify the action
-				LatentActions[idx].AbortFor(self);
-			}
-			// remove action from list
-			LatentActions.Remove(idx--,1);
-		}
-	}
+    local int Idx;
+
+    Idx = 0;
+    J0x09:
+
+    // End:0xAE [Loop If]
+    if(Idx < LatentActions.Length)
+    {
+        // End:0x3B
+        if(LatentActions[Idx] == none)
+        {
+            LatentActions.Remove(Idx--, 1);
+            // [Explicit Continue]
+            goto J0xA4;
+        }
+        // End:0xA4
+        if(ClassIsChildOf(LatentActions[Idx].Class, actionClass) && LatentActions[Idx] != exceptionAction)
+        {
+            // End:0x96
+            if(bAborted)
+            {
+                LatentActions[Idx].AbortFor(self);
+            }
+            LatentActions.Remove(Idx--, 1);
+        }
+        J0xA4:
+
+        Idx++;
+        // [Loop Continue]
+        goto J0x09;
+    }
+    //return;    
 }
 
-/**
- * If this actor is not already scheduled for destruction,
- * destroy it now.
- */
 simulated function OnDestroy(SeqAct_Destroy Action)
 {
-	local int AttachIdx, IgnoreIdx;
-	local Actor A;
+    local int AttachIdx, IgnoreIdx;
+    local Actor A;
 
-	// Iterate through based actors and destroy them as well
-	if( Action.bDestroyBasedActors )
-	{
-		for( AttachIdx = 0; AttachIdx < Attached.Length; AttachIdx++ )
-		{
-			A = Attached[AttachIdx];
-			for( IgnoreIdx = 0; IgnoreIdx < Action.IgnoreBasedClasses.Length; IgnoreIdx++ )
-			{
-				if( ClassIsChildOf( A.Class, Action.IgnoreBasedClasses[IgnoreIdx]) )
-				{
-					A = None;
-					break;
-				}
-			}
-			if( A == None )
-				continue;
+    // End:0xCB
+    if(Action.bDestroyBasedActors)
+    {
+        AttachIdx = 0;
+        J0x1A:
 
-			A.OnDestroy( Action );
-		}
-	}
+        // End:0xCB [Loop If]
+        if(AttachIdx < Attached.Length)
+        {
+            A = Attached[AttachIdx];
+            IgnoreIdx = 0;
+            J0x42:
 
-	if (bNoDelete || Role < ROLE_Authority)
-	{
-		// bNoDelete actors cannot be destroyed, and are shut down instead.
-		ShutDown();
-	}
-	else if( !bDeleteMe )
-	{
-		Destroy();
-	}
+            // End:0x9A [Loop If]
+            if(IgnoreIdx < Action.IgnoreBasedClasses.Length)
+            {
+                // End:0x90
+                if(ClassIsChildOf(A.Class, Action.IgnoreBasedClasses[IgnoreIdx]))
+                {
+                    A = none;
+                    // [Explicit Break]
+                    goto J0x9A;
+                }
+                IgnoreIdx++;
+                // [Loop Continue]
+                goto J0x42;
+            }
+            J0x9A:
+
+            // End:0xA8
+            if(A == none)
+            {
+                // [Explicit Continue]
+                goto J0xC1;
+            }
+            A.OnDestroy(Action);
+            J0xC1:
+
+            AttachIdx++;
+            // [Loop Continue]
+            goto J0x1A;
+        }
+    }
+    // End:0xF3
+    if(bNoDelete || Role < ROLE_Authority)
+    {
+        ShutDown();        
+    }
+    else
+    {
+        // End:0x101
+        if(!bDeleteMe)
+        {
+            Destroy();
+        }
+    }
+    //return;    
 }
 
-/** forces this actor to be net relevant if it is not already
- * by default, only works on level placed actors (bNoDelete)
- */
 event ForceNetRelevant()
 {
-	if (RemoteRole == ROLE_None && bNoDelete && !bStatic)
-	{
-		RemoteRole = ROLE_SimulatedProxy;
-		bAlwaysRelevant = true;
-	}
-	bForceNetUpdate = TRUE;
+    //return;    
 }
 
-/** Updates NetUpdateTime to the new value for future net relevancy checks */
-final native function SetNetUpdateTime(float NewUpdateTime);
-
-/**
- * ShutDown an actor.
- */
+// Export UActor::execSetNetUpdateTime(FFrame&, void* const)
+native final function SetNetUpdateTime(float NewUpdateTime);
 
 simulated event ShutDown()
 {
-	// Shut down physics
-	SetPhysics(PHYS_None);
-	// shut down collision
-	SetCollision(false, false);
-	if (CollisionComponent != None)
-	{
-		CollisionComponent.SetBlockRigidBody(false);
-	}
-
-	// shut down rendering
-	SetHidden(true);
-	// ignore if in a non rendered zone
-	bStasis = true;
-
-	ForceNetRelevant();
-
-	if (RemoteRole != ROLE_None)
-	{
-		// force replicate flags if necessary
-		SetForcedInitialReplicatedProperty(Property'Engine.Actor.bCollideActors', (bCollideActors == default.bCollideActors));
-		SetForcedInitialReplicatedProperty(Property'Engine.Actor.bBlockActors', (bBlockActors == default.bBlockActors));
-		SetForcedInitialReplicatedProperty(Property'Engine.Actor.bHidden', (bHidden == default.bHidden));
-		SetForcedInitialReplicatedProperty(Property'Engine.Actor.Physics', (Physics == default.Physics));
-	}
-
-	// force immediate network update of these changes
-	bForceNetUpdate = TRUE;
+    SetPhysics(0);
+    SetCollision(false, false);
+    // End:0x28
+    if(CollisionComponent != none)
+    {
+        CollisionComponent.SetBlockRigidBody(false);
+    }
+    SetHidden(true);
+    bStasis = true;
+    //return;    
 }
 
-/**
- * Called upon receiving a SeqAct_CauseDamage action, calls
- * TakeDamage() with the given parameters.
- *
- * @param	Action - damage action that was activated
- */
 simulated function OnCauseDamage(SeqAct_CauseDamage Action)
 {
-	local Controller InstigatorController;
-	local Pawn InstigatorPawn;
+    local Controller InstigatorController;
+    local Pawn InstigatorPawn;
 
-	InstigatorController = Controller(Action.Instigator);
-	if (InstigatorController == None)
-	{
-		InstigatorPawn = Pawn(Action.Instigator);
-		if (InstigatorPawn != None)
-		{
-			InstigatorController = InstigatorPawn.Controller;
-		}
-	}
-	TakeDamage(Action.DamageAmount, InstigatorController, Location, vector(Rotation) * -Action.Momentum, Action.DamageType);
+    InstigatorController = Controller(Action.Instigator);
+    // End:0x5F
+    if(InstigatorController == none)
+    {
+        InstigatorPawn = Pawn(Action.Instigator);
+        // End:0x5F
+        if(InstigatorPawn != none)
+        {
+            InstigatorController = InstigatorPawn.Controller;
+        }
+    }
+    TakeDamage(int(Action.DamageAmount), InstigatorController, Location, Vector(Rotation) * -Action.Momentum, Action.DamageType);
+    //return;    
 }
 
-/**
- *	Calls PrestreamTextures() for all the actor's meshcomponents.
- *	@param Seconds			Number of seconds to force all mip-levels to be resident
- *	@param bEnableStreaming	Whether to start (TRUE) or stop (FALSE) streaming
- */
-native function PrestreamTextures( float Seconds, bool bEnableStreaming );
+// Export UActor::execPrestreamTextures(FFrame&, void* const)
+native function PrestreamTextures(float Seconds, bool bEnableStreaming);
 
-/**
- * Called upon receiving a SeqAct_HealDamage action, calls
- * HealDamage() with the given parameters.
- *
- * @param	Action - heal action that was activated
- */
 function OnHealDamage(SeqAct_HealDamage Action)
 {
-	local Controller InstigatorController;
-	local Pawn InstigatorPawn;
+    local Controller InstigatorController;
+    local Pawn InstigatorPawn;
 
-	InstigatorController = Controller(Action.Instigator);
-	if (InstigatorController == None)
-	{
-		InstigatorPawn = Pawn(Action.Instigator);
-		if (InstigatorPawn != None)
-		{
-			InstigatorController = InstigatorPawn.Controller;
-		}
-	}
-	HealDamage(Action.HealAmount, InstigatorController, Action.DamageType);
+    InstigatorController = Controller(Action.Instigator);
+    // End:0x5F
+    if(InstigatorController == none)
+    {
+        InstigatorPawn = Pawn(Action.Instigator);
+        // End:0x5F
+        if(InstigatorPawn != none)
+        {
+            InstigatorController = InstigatorPawn.Controller;
+        }
+    }
+    HealDamage(Action.HealAmount, InstigatorController, Action.DamageType);
+    //return;    
 }
 
-/**
- * Called upon receiving a SeqAct_Teleport action.  Grabs
- * the first destination available and attempts to teleport
- * this actor.
- *
- * @param	Action - teleport action that was activated
- */
 simulated function OnTeleport(SeqAct_Teleport Action)
 {
-	local array<Object> objVars;
-	local int idx;
-	local Actor destActor;
-	local Controller C;
+    local bool UpdateRot;
+    local Vector Loc;
+    local Rotator Rot;
 
-	// find the first supplied actor
-	Action.GetObjectVars(objVars,"Destination");
-	for (idx = 0; idx < objVars.Length && destActor == None; idx++)
-	{
-		destActor = Actor(objVars[idx]);
-
-		// If its a player variable, teleport to the Pawn not the Controller.
-		C = Controller(destActor);
-		if(C != None && C.Pawn != None)
-		{
-			destActor = C.Pawn;
-		}
-	}
-	// and set to that actor's location
-	if (destActor != None && SetLocation(destActor.Location))
-	{
-		PlayTeleportEffect(false, true);
-		if (Action.bUpdateRotation)
-		{
-			SetRotation(destActor.Rotation);
-		}
-
-		// make sure the changes get replicated
-		ForceNetRelevant();
-		bUpdateSimulatedPosition = true;
-		bNetDirty = true;
-	}
-	else
-	{
-		`warn("Unable to teleport to"@destActor);
-	}
+    UpdateRot = Action.GetDestination(Loc, Rot);
+    // End:0x6A
+    if(SetLocation(Loc))
+    {
+        PlayTeleportEffect(false, true);
+        // End:0x4D
+        if(UpdateRot)
+        {
+            SetRotation(Rot);
+        }
+        ForceNetRelevant();
+        bUpdateSimulatedPosition = true;
+        bNetDirty = true;        
+    }
+    else
+    {
+        WarnInternal("Unable to teleport to" @ string(Loc));
+    }
+    //return;    
 }
 
-/**
- *	Handler for the SeqAct_SetBlockRigidBody action. Allows level designer to toggle the rigid-body blocking
- *	flag on an Actor, and will handle updating the physics engine etc.
- */
 simulated function OnSetBlockRigidBody(SeqAct_SetBlockRigidBody Action)
 {
-	if(CollisionComponent != None)
-	{
-		// Turn on
-		if(Action.InputLinks[0].bHasImpulse)
-		{
-			CollisionComponent.SetBlockRigidBody(true);
-		}
-		// Turn off
-		else if(Action.InputLinks[1].bHasImpulse)
-		{
-			CollisionComponent.SetBlockRigidBody(false);
-		}
-	}
+    // End:0x70
+    if(CollisionComponent != none)
+    {
+        // End:0x3F
+        if(Action.InputLinks[0].bHasImpulse)
+        {
+            CollisionComponent.SetBlockRigidBody(true);            
+        }
+        else
+        {
+            // End:0x70
+            if(Action.InputLinks[1].bHasImpulse)
+            {
+                CollisionComponent.SetBlockRigidBody(false);
+            }
+        }
+    }
+    //return;    
 }
 
-/** Handler for the SeqAct_SetPhysics action, allowing designer to change the Physics mode of an Actor. */
 simulated function OnSetPhysics(SeqAct_SetPhysics Action)
 {
-	ForceNetRelevant();
-	SetPhysics( Action.NewPhysics );
-	if (RemoteRole != ROLE_None)
-	{
-		if (Physics != PHYS_None)
-		{
-			bUpdateSimulatedPosition = true;
-			if (bOnlyDirtyReplication)
-			{
-				// SetPhysics() doesn't set bNetDirty, but we need it in this case
-				bNetDirty = true;
-			}
-		}
-		SetForcedInitialReplicatedProperty(Property'Engine.Actor.Physics', (Physics == default.Physics));
-	}
+    ForceNetRelevant();
+    SetPhysics(Action.newPhysics, Action.bWakePhysics);
+    // End:0x80
+    if(RemoteRole != ROLE_None)
+    {
+        // End:0x65
+        if(Physics != 0)
+        {
+            bUpdateSimulatedPosition = true;
+            // End:0x65
+            if(bOnlyDirtyReplication)
+            {
+                bNetDirty = true;
+            }
+        }
+        SetForcedInitialReplicatedProperty(ByteProperty'Actor.Physics', Physics == default.Physics);
+    }
+    //return;    
 }
 
-/** Handler for collision action, allow designer to toggle collide/block actors */
 function OnChangeCollision(SeqAct_ChangeCollision Action)
 {
-	// if the action is out of date then use the previous properties
-	if (Action.ObjInstanceVersion < Action.GetObjClassVersion())
-	{
-		SetCollision( Action.bCollideActors, Action.bBlockActors, Action.bIgnoreEncroachers );
-	}
-	else
-	{
-		// otherwise use the new collision type
-		SetCollisionType(Action.CollisionType);
-	}
-	ForceNetRelevant();
-	if (RemoteRole != ROLE_None)
-	{
-		// force replicate flags if necessary
-		SetForcedInitialReplicatedProperty(Property'Engine.Actor.bCollideActors', (bCollideActors == default.bCollideActors));
-		SetForcedInitialReplicatedProperty(Property'Engine.Actor.bBlockActors', (bBlockActors == default.bBlockActors));
-		// don't bother with bIgnoreEncroachers as it isn't editable
-	}
+    // End:0x7E
+    if(Action.ObjInstanceVersion < Action.GetObjClassVersion())
+    {
+        SetCollision(Action.bCollideActors, Action.bBlockActors, Action.bIgnoreEncroachers);
+        CollisionComponent.SetBlockRigidBody(Action.bBlockActors);        
+    }
+    else
+    {
+        SetCollisionType(Action.CollisionType);
+    }
+    ForceNetRelevant();
+    // End:0xDF
+    if(RemoteRole != ROLE_None)
+    {
+        SetForcedInitialReplicatedProperty(BoolProperty'Actor.bCollideActors', bCollideActors == default.bCollideActors);
+        SetForcedInitialReplicatedProperty(BoolProperty'Actor.bBlockActors', bBlockActors == default.bBlockActors);
+    }
+    //return;    
 }
 
-/** Handler for SeqAct_ToggleHidden, just sets bHidden. */
 simulated function OnToggleHidden(SeqAct_ToggleHidden Action)
 {
-	local int AttachIdx, IgnoreIdx;
-	local Actor A;
+    local int AttachIdx, IgnoreIdx;
+    local Actor A;
 
-	// Iterate through based actors and toggle them as well
-	if( Action.bToggleBasedActors )
-	{
-		for( AttachIdx = 0; AttachIdx < Attached.Length; AttachIdx++ )
-		{
-			A = Attached[AttachIdx];
-			for( IgnoreIdx = 0; IgnoreIdx < Action.IgnoreBasedClasses.Length; IgnoreIdx++ )
-			{
-				if( ClassIsChildOf( A.Class, Action.IgnoreBasedClasses[IgnoreIdx]) )
-				{
-					A = None;
-					break;
-				}
-			}
-			if( A == None )
-				continue;
+    // End:0xCB
+    if(Action.bToggleBasedActors)
+    {
+        AttachIdx = 0;
+        J0x1A:
 
-			A.OnToggleHidden( Action );
-		}
-	}
+        // End:0xCB [Loop If]
+        if(AttachIdx < Attached.Length)
+        {
+            A = Attached[AttachIdx];
+            IgnoreIdx = 0;
+            J0x42:
 
-	if (Action.InputLinks[0].bHasImpulse)
-	{
-		SetHidden(True);
-	}
-	else if (Action.InputLinks[1].bHasImpulse)
-	{
-		SetHidden(False);
-	}
-	else
-	{
-		SetHidden(!bHidden);
-	}
+            // End:0x9A [Loop If]
+            if(IgnoreIdx < Action.IgnoreBasedClasses.Length)
+            {
+                // End:0x90
+                if(ClassIsChildOf(A.Class, Action.IgnoreBasedClasses[IgnoreIdx]))
+                {
+                    A = none;
+                    // [Explicit Break]
+                    goto J0x9A;
+                }
+                IgnoreIdx++;
+                // [Loop Continue]
+                goto J0x42;
+            }
+            J0x9A:
 
-	ForceNetRelevant();
-	if (RemoteRole != ROLE_None)
-	{
-		SetForcedInitialReplicatedProperty(Property'Engine.Actor.bHidden', (bHidden == default.bHidden));
-	}
+            // End:0xA8
+            if(A == none)
+            {
+                // [Explicit Continue]
+                goto J0xC1;
+            }
+            A.OnToggleHidden(Action);
+            J0xC1:
+
+            AttachIdx++;
+            // [Loop Continue]
+            goto J0x1A;
+        }
+    }
+    // End:0xF9
+    if(Action.InputLinks[0].bHasImpulse)
+    {
+        SetHidden(true);        
+    }
+    else
+    {
+        // End:0x127
+        if(Action.InputLinks[1].bHasImpulse)
+        {
+            SetHidden(false);            
+        }
+        else
+        {
+            SetHidden(!bHidden);
+        }
+    }
+    ForceNetRelevant();
+    // End:0x16C
+    if(RemoteRole != ROLE_None)
+    {
+        SetForcedInitialReplicatedProperty(BoolProperty'Actor.bHidden', bHidden == default.bHidden);
+    }
+    // End:0x1CD
+    if(Action.bToggleCollision)
+    {
+        SetCollision(!bHidden);
+        CollisionComponent.SetBlockRigidBody(!bHidden);
+        // End:0x1CD
+        if(RemoteRole != ROLE_None)
+        {
+            SetForcedInitialReplicatedProperty(BoolProperty'Actor.bCollideActors', bCollideActors == default.bCollideActors);
+        }
+    }
+    //return;    
 }
 
-/** Attach an actor to another one. Kismet action. */
 function OnAttachToActor(SeqAct_AttachToActor Action)
 {
-	local int			idx;
-	local Actor			Attachment;
-	local Controller	C;
-	local Array<Object> ObjVars;
+    local int Idx;
+    local Actor Attachment;
+    local Controller C;
+    local array<Object> ObjVars;
 
-	Action.GetObjectVars(ObjVars,"Attachment");
-	for( idx=0; idx<ObjVars.Length && Attachment == None; idx++ )
-	{
-		Attachment = Actor(ObjVars[idx]);
+    Action.GetObjectVars(ObjVars, "Attachment");
+    Idx = 0;
+    J0x28:
 
-		// If its a player variable, attach the Pawn, not the controller
-		C = Controller(Attachment);
-		if( C != None && C.Pawn != None )
-		{
-			Attachment = C.Pawn;
-		}
+    // End:0x17D [Loop If]
+    if((Idx < ObjVars.Length) && Attachment == none)
+    {
+        Attachment = Actor(ObjVars[Idx]);
+        C = Controller(Attachment);
+        // End:0xA2
+        if((C != none) && C.Pawn != none)
+        {
+            Attachment = C.Pawn;
+        }
+        // End:0x173
+        if(Attachment != none)
+        {
+            // End:0xD4
+            if(Action.bDetach)
+            {
+                Attachment.SetBase(none);
+                // [Explicit Continue]
+                goto J0x173;
+            }
+            C = Controller(self);
+            // End:0x12D
+            if((C != none) && C.Pawn != none)
+            {
+                C.Pawn.DoKismetAttachment(Attachment, Action);                
+            }
+            else
+            {
+                DoKismetAttachment(Attachment, Action);
+            }
+            // End:0x173
+            if(Action.bUseTickGroup)
+            {
+                Attachment.SetTickGroup(Action.TickGroup);
+            }
+        }
+        J0x173:
 
-		if( Attachment != None )
-		{
-			if( Action.bDetach )
-			{
-				Attachment.SetBase(None);
-			}
-			else
-			{
-				// if we're a controller and have a pawn, then attach to pawn instead.
-				C = Controller(Self);
-				if( C != None && C.Pawn != None )
-				{
-					C.Pawn.DoKismetAttachment(Attachment, Action);
-				}
-				else
-				{
-					DoKismetAttachment(Attachment, Action);
-				}
-			}
-		}
-	}
+        Idx++;
+        // [Loop Continue]
+        goto J0x28;
+    }
+    //return;    
 }
 
-
-/** Performs actual attachment. Can be subclassed for class specific behaviors. */
 function DoKismetAttachment(Actor Attachment, SeqAct_AttachToActor Action)
 {
-	local bool		bOldCollideActors, bOldBlockActors;
-	local vector	X, Y, Z;
+    local bool bOldCollideActors, bOldBlockActors;
+    local Vector X, Y, Z;
 
-	Attachment.SetBase(None);
-	Attachment.SetHardAttach(Action.bHardAttach);
-
-	if( Action.bUseRelativeOffset || Action.bUseRelativeRotation )
-	{
-		// Disable collision, so we can successfully move the attachment
-		bOldCollideActors	= Attachment.bCollideActors;
-		bOldBlockActors		= Attachment.bBlockActors;
-
-		Attachment.SetCollision(FALSE, FALSE);
-
-		if( Action.bUseRelativeRotation )
-		{
-			Attachment.SetRotation(Rotation + Action.RelativeRotation);
-		}
-
-		// if we're using the offset, place attachment relatively to the target
-		if( Action.bUseRelativeOffset )
-		{
-			GetAxes(Rotation, X, Y, Z);
-			Attachment.SetLocation(Location + Action.RelativeOffset.X * X + Action.RelativeOffset.Y * Y + Action.RelativeOffset.Z * Z);
-		}
-
-		// restore previous collision
-		Attachment.SetCollision(bOldCollideActors, bOldBlockActors);
-	}
-
-	// Attach Actor to Base
-	Attachment.SetBase(Self);
-
-	Attachment.ForceNetRelevant();
-	// changing base doesn't set bNetDirty by default as that can happen through per-frame behavior like physics
-	// however, in this case we need it so we do it manually
-	Attachment.bNetDirty = true;
-	// force replicate offsets if necessary
-	if (Attachment.RemoteRole != ROLE_None && (Attachment.bStatic || Attachment.bNoDelete))
-	{
-		Attachment.SetForcedInitialReplicatedProperty(Property'Engine.Actor.RelativeLocation', (Attachment.RelativeLocation == Attachment.default.RelativeLocation));
-		Attachment.SetForcedInitialReplicatedProperty(Property'Engine.Actor.RelativeRotation', (Attachment.RelativeRotation == Attachment.default.RelativeRotation));
-	}
+    Attachment.bIgnoreBaseRotation = Action.bIgnoreBaseRotation;
+    Attachment.SetBase(none);
+    Attachment.SetHardAttach(Action.bHardAttach);
+    // End:0x1AD
+    if(Action.bUseRelativeOffset || Action.bUseRelativeRotation)
+    {
+        bOldCollideActors = Attachment.bCollideActors;
+        bOldBlockActors = Attachment.bBlockActors;
+        Attachment.SetCollision(false, false);
+        // End:0xEF
+        if(Action.bUseRelativeRotation)
+        {
+            Attachment.SetRotation(Rotation + Action.RelativeRotation);
+        }
+        // End:0x193
+        if(Action.bUseRelativeOffset)
+        {
+            GetAxes(Rotation, X, Y, Z);
+            Attachment.SetLocation(((Location + (Action.RelativeOffset.X * X)) + (Action.RelativeOffset.Y * Y)) + (Action.RelativeOffset.Z * Z));
+        }
+        Attachment.SetCollision(bOldCollideActors, bOldBlockActors);
+    }
+    Attachment.SetBase(self);
+    Attachment.ForceNetRelevant();
+    Attachment.bNetDirty = true;
+    // End:0x292
+    if(Attachment.RemoteRole != ROLE_None && Attachment.bStatic || Attachment.bNoDelete)
+    {
+        Attachment.SetForcedInitialReplicatedProperty(StructProperty'Actor.RelativeLocation', Attachment.RelativeLocation == Attachment.default.RelativeLocation);
+        Attachment.SetForcedInitialReplicatedProperty(StructProperty'Actor.RelativeRotation', Attachment.RelativeRotation == Attachment.default.RelativeRotation);
+    }
+    //return;    
 }
 
-
-/**
- * Force this actor to make a noise that the AI may hear
- */
-simulated function OnMakeNoise( SeqAct_MakeNoise Action )
+simulated function OnMakeNoise(SeqAct_MakeNoise Action)
 {
-	MakeNoise( Action.Loudness, 'ScriptNoise' );
+    MakeNoise(Action.Loudness, 'ScriptNoise');
+    //return;    
 }
 
-/**
- * Event called when an AnimNodeSequence (in the animation tree of one of this Actor's SkeletalMeshComponents) reaches the end and stops.
- * Will not get called if bLooping is 'true' on the AnimNodeSequence.
- * bCauseActorAnimEnd must be set 'true' on the AnimNodeSequence for this event to get generated.
- *
- * @param	SeqNode		- Node that finished playing. You can get to the SkeletalMeshComponent by looking at SeqNode->SkelComponent
- * @param	PlayedTime	- Time played on this animation. (play rate independant).
- * @param	ExcessTime	- how much time overlapped beyond end of animation. (play rate independant).
- */
-event OnAnimEnd(AnimNodeSequence SeqNode, float PlayedTime, float ExcessTime);
+event OnAnimEnd(AnimNodeSequence SeqNode, float PlayedTime, float ExcessTime)
+{
+    //return;    
+}
 
-/**
- * Event called when a PlayAnim is called AnimNodeSequence in the animation tree of one of this Actor's SkeletalMeshComponents.
- * bCauseActorAnimPlay must be set 'true' on the AnimNodeSequence for this event to get generated.
- *
- * @param	SeqNode - Node had PlayAnim called. You can get to the SkeletalMeshComponent by looking at SeqNode->SkelComponent
- */
-event OnAnimPlay(AnimNodeSequence SeqNode);
+event OnAnimPlay(AnimNodeSequence SeqNode)
+{
+    //return;    
+}
 
-// AnimControl Matinee Track Support
+event BeginAnimControl(array<AnimSet> InAnimSets)
+{
+    //return;    
+}
 
-/** Called when we start an AnimControl track operating on this Actor. Supplied is the set of AnimSets we are going to want to play from. */
-event BeginAnimControl(array<AnimSet> InAnimSets);
+event SetAnimPosition(name SlotName, int ChannelIndex, name InAnimSeqName, float InPosition, bool bFireNotifies, bool bLooping)
+{
+    //return;    
+}
 
-/** Called each from while the Matinee action is running, with the desired sequence name and position we want to be at. */
-event SetAnimPosition(name SlotName, int ChannelIndex, name InAnimSeqName, float InPosition, bool bFireNotifies, bool bLooping);
+event SetAnimDirectorBoneName(name BoneName)
+{
+    //return;    
+}
 
+event FinishAnimControl()
+{
+    //return;    
+}
 
-/** Called when we are done with the AnimControl track. */
-event FinishAnimControl();
+event bool PlayActorFaceFXAnim(FaceFXAnimSet AnimSet, string GroupName, string SeqName, SoundCue SoundCueToPlay)
+{
+    //return ReturnValue;    
+}
 
-/**
- * Play FaceFX animations on this Actor.
- * Returns TRUE if succeeded, if failed, a log warning will be issued.
- */
-event bool PlayActorFaceFXAnim(FaceFXAnimSet AnimSet, String GroupName, String SeqName, SoundCue SoundCueToPlay );
+event StopActorFaceFXAnim()
+{
+    //return;    
+}
 
-/** Stop any matinee FaceFX animations on this Actor. */
-event StopActorFaceFXAnim();
+event SetFaceFXRegister(string RegisterName, float Value, byte RegOp)
+{
+    //return;    
+}
 
-/** Called each frame by Matinee to update the weight of a particular MorphNodeWeight. */
-event SetMorphWeight(name MorphNodeName, float MorphWeight);
+event SetMorphWeight(name MorphNodeName, float MorphWeight)
+{
+    //return;    
+}
 
-/** Called each frame by Matinee to update the scaling on a SkelControl. */
-event SetSkelControlScale(name SkelControlName, float Scale);
+event SetSkelControlScale(name SkelControlName, float Scale)
+{
+    //return;    
+}
 
-
-/**
- * Returns TRUE if Actor is playing a FaceFX anim.
- * Implement in sub-class.
- */
 simulated function bool IsActorPlayingFaceFXAnim()
 {
-	return FALSE;
+    return false;
+    //return ReturnValue;    
 }
 
-/**
-* Returns FALSE if Actor can play facefx
-* Implement in sub-class.
-*/
 simulated function bool CanActorPlayFaceFXAnim()
 {
-	return TRUE;
+    return true;
+    //return ReturnValue;    
 }
 
-/** Used by Matinee in-game to mount FaceFXAnimSets before playing animations. */
-event FaceFXAsset GetActorFaceFXAsset();
+event FaceFXAsset GetActorFaceFXAsset()
+{
+    //return ReturnValue;    
+}
 
-// for AI... bots have perfect aim shooting non-pawn stationary targets
 function bool IsStationary()
 {
-	return true;
+    return true;
+    //return ReturnValue;    
 }
 
-/**
- * returns the point of view of the actor.
- * note that this doesn't mean the camera, but the 'eyes' of the actor.
- * For example, for a Pawn, this would define the eye height location,
- * and view rotation (which is different from the pawn rotation which has a zeroed pitch component).
- * A camera first person view will typically use this view point. Most traces (weapon, AI) will be done from this view point.
- *
- * @param	out_Location - location of view point
- * @param	out_Rotation - view rotation of actor.
- */
-simulated event GetActorEyesViewPoint( out vector out_Location, out Rotator out_Rotation )
+simulated event GetActorEyesViewPoint(out Vector out_Location, out Rotator out_Rotation)
 {
-	out_Location = Location;
-	out_Rotation = Rotation;
+    out_Location = Location;
+    out_Rotation = Rotation;
+    //return;    
 }
 
-/**
- * Searches the owner chain looking for a player.
- */
+// Export UActor::execIsPlayerOwned(FFrame&, void* const)
 native simulated function bool IsPlayerOwned();
 
-/* PawnBaseDied()
-The pawn on which this actor is based has just died
-*/
-function PawnBaseDied();
+function PawnBaseDied()
+{
+    //return;    
+}
 
-/*
- * default implementation calls eventScriptGetTeamNum()
- */
-simulated native function byte GetTeamNum();
+// Export UActor::execGetTeamNum(FFrame&, void* const)
+native simulated function byte GetTeamNum();
 
 simulated event byte ScriptGetTeamNum()
 {
-	return 255;
+    return 255;
+    //return ReturnValue;    
 }
 
 simulated function string GetLocationStringFor(PlayerReplicationInfo PRI)
 {
-	return "";
+    return "";
+    //return ReturnValue;    
 }
 
-simulated function NotifyLocalPlayerTeamReceived();
+simulated function NotifyLocalPlayerTeamReceived()
+{
+    //return;    
+}
 
-/** Used by PlayerController.FindGoodView() in RoundEnded State */
 simulated function FindGoodEndView(PlayerController PC, out Rotator GoodRotation)
 {
-	GoodRotation = PC.Rotation;
+    GoodRotation = PC.Rotation;
+    //return;    
 }
 
-/**
- * @param RequestedBy - the Actor requesting the target location
- * @param bRequestAlternateLoc (optional) - return a secondary target location if there are multiple
- * @return the optimal location to fire weapons at this actor
- */
-simulated native function vector GetTargetLocation(optional actor RequestedBy, optional bool bRequestAlternateLoc) const;
+// Export UActor::execGetTargetLocation(FFrame&, void* const)
+native simulated function Vector GetTargetLocation(optional Actor RequestedBy, optional bool bRequestAlternateLoc);
 
-/** called when this Actor was spawned by a Kismet actor factory (SeqAct_ActorFactory)
- *	after all other spawn events (PostBeginPlay(), etc) have been called
- */
-event SpawnedByKismet();
+// Export UActor::execGetFOVCheckLocation(FFrame&, void* const)
+native simulated function Vector GetFOVCheckLocation();
 
-/**
- * implemented by pickup type Actors to do things following a successful pickup
- * @param P the Pawn that picked us up
- *
- * @todo remove this and fix up the DenyPickupQuery() calls that use this
- */
-function PickedUpBy(Pawn P);
+event SpawnedByKismet()
+{
+    //return;    
+}
 
-/** called when a SeqAct_Interp action starts interpolating this Actor via matinee
- * @note this function is called on clients for actors that are interpolated clientside via MatineeActor
- * @param InterpAction the SeqAct_Interp that is affecting the Actor
- */
-simulated event InterpolationStarted(SeqAct_Interp InterpAction);
+function PickedUpBy(Pawn P)
+{
+    //return;    
+}
 
-/** called when a SeqAct_Interp action finished interpolating this Actor
- * @note this function is called on clients for actors that are interpolated clientside via MatineeActor
- * @param InterpAction the SeqAct_Interp that was affecting the Actor
- */
-simulated event InterpolationFinished(SeqAct_Interp InterpAction);
+simulated event InterpolationStarted(SeqAct_Interp InterpAction)
+{
+    //return;    
+}
 
-/** called when a SeqAct_Interp action affecting this Actor received an event that changed its properties
- *	(paused, reversed direction, etc)
- * @note this function is called on clients for actors that are interpolated clientside via MatineeActor
- * @param InterpAction the SeqAct_Interp that is affecting the Actor
- */
-simulated event InterpolationChanged(SeqAct_Interp InterpAction);
+simulated event InterpolationFinished(SeqAct_Interp InterpAction)
+{
+    //return;    
+}
 
-/** Called when a PrimitiveComponent this Actor owns has:
- *     -bNotifyRigidBodyCollision set to true
- *     -ScriptRigidBodyCollisionThreshold > 0
- *     -it is involved in a physics collision where the relative velocity exceeds ScriptRigidBodyCollisionThreshold
- *
- * @param HitComponent the component of this Actor that collided
- * @param OtherComponent the other component that collided
- * @param RigidCollisionData information on the collision itslef, including contact points
- * @param ContactIndex the element in each ContactInfos' ContactVelocity and PhysMaterial arrays that corresponds
- *			to this Actor/HitComponent
- */
-event RigidBodyCollision( PrimitiveComponent HitComponent, PrimitiveComponent OtherComponent,
-				const out CollisionImpactData RigidCollisionData, int ContactIndex );
+simulated event InterpolationChanged(SeqAct_Interp InterpAction)
+{
+    //return;    
+}
 
-/**
- *	Called each frame (for each wheel) when an SVehicle has a wheel in contact with this Actor.
- *	Not called on Actors that have bWorldGeometry or bStatic set to TRUE.
- */
-event OnRanOver(SVehicle Vehicle, PrimitiveComponent RunOverComponent, int WheelIndex);
+event RigidBodyCollision(PrimitiveComponent HitComponent, PrimitiveComponent OtherComponent, const out CollisionImpactData RigidCollisionData, int ContactIndex, float Speed, int Index0, int Index1)
+{
+    //return;    
+}
 
-/** function used to update where icon for this actor should be rendered on the HUD
- *  @param NewHUDLocation is a vector whose X and Y components are the X and Y components of this actor's icon's 2D position on the HUD
- */
-simulated native function SetHUDLocation(vector NewHUDLocation);
+event OnRanOver(SVehicle Vehicle, PrimitiveComponent RunOverComponent, int WheelIndex)
+{
+    //return;    
+}
 
-/**
-Hook to allow actors to render HUD overlays for themselves.
-Assumes that appropriate font has already been set
-*/
-simulated native function NativePostRenderFor(PlayerController PC, Canvas Canvas, vector CameraPosition, vector CameraDir);
+// Export UActor::execSetHUDLocation(FFrame&, void* const)
+native simulated function SetHUDLocation(Vector NewHUDLocation);
 
-/**
-Script function called by NativePostRenderFor().
-*/
-simulated event PostRenderFor(PlayerController PC, Canvas Canvas, vector CameraPosition, vector CameraDir);
+// Export UActor::execNativePostRenderFor(FFrame&, void* const)
+native simulated function NativePostRenderFor(PlayerController PC, Canvas Canvas, Vector CameraPosition, Vector CameraDir);
 
-/**
- * Notification that root motion mode changed.
- * Called only from SkelMeshComponents that have bRootMotionModeChangeNotify set.
- * This is useful for synchronizing movements.
- * For intance, when using RMM_Translate, and the event is called, we know that root motion will kick in on next frame.
- * It is possible to kill in-game physics, and then use root motion seemlessly.
- */
-simulated event RootMotionModeChanged(SkeletalMeshComponent SkelComp);
+simulated event PostRenderFor(PlayerController PC, Canvas Canvas, Vector CameraPosition, Vector CameraDir)
+{
+    //return;    
+}
 
-/**
- * Notification called after root motion has been extracted, and before it's been used.
- * This notification can be used to alter extracted root motion before it is forwarded to physics.
- * It is only called when bRootMotionExtractedNotify is TRUE on the SkeletalMeshComponent.
- * @note: It is fairly slow in Script, so enable only when really needed.
- */
-simulated event RootMotionExtracted(SkeletalMeshComponent SkelComp, out BoneAtom ExtractedRootMotionDelta);
+simulated event RootMotionModeChanged(SkeletalMeshComponent SkelComp)
+{
+    //return;    
+}
 
-/** called after initializing the AnimTree for the given SkeletalMeshComponent that has this Actor as its Owner
- * this is a good place to cache references to skeletal controllers, etc that the Actor modifies
- */
-event PostInitAnimTree(SkeletalMeshComponent SkelComp);
+simulated event RootMotionExtracted(SkeletalMeshComponent SkelComp, out BoneAtom ExtractedRootMotionDelta)
+{
+    //return;    
+}
 
-/** Looks up the GUID of a package on disk. The package must NOT be in the autodownload cache.
- * This may require loading the header of the package in question and is therefore slow.
- */
+event PostInitAnimTree(SkeletalMeshComponent SkelComp)
+{
+    //return;    
+}
+
+function OnToggleIsInteresting(SeqAct_Toggle ToggleAction)
+{
+    // End:0x28
+    if(ToggleAction.InputLinks[0].bHasImpulse)
+    {
+        bIsPointOfInterest = true;
+    }
+    // End:0x50
+    if(ToggleAction.InputLinks[1].bHasImpulse)
+    {
+        bIsPointOfInterest = false;
+    }
+    // End:0x80
+    if(ToggleAction.InputLinks[2].bHasImpulse)
+    {
+        bIsPointOfInterest = !bIsPointOfInterest;
+    }
+    //return;    
+}
+
+event PostRestreamed()
+{
+    //return;    
+}
+
+event PreStreamOut()
+{
+    //return;    
+}
+
+function GetSoundInfo(out array<Thought> ThoughtList)
+{
+    //return;    
+}
+
+event bool LinkToActor(Actor LinkTarget)
+{
+    return false;
+    //return ReturnValue;    
+}
+
+event bool UnlinkToActor(Actor LinkTarget)
+{
+    return false;
+    //return ReturnValue;    
+}
+
+// Export UActor::execGetPackageGuid(FFrame&, void* const)
 native static final function Guid GetPackageGuid(name PackageName);
 
-/** Notification forwarded from RB_BodyInstance, when a spring is over extended and disabled. */
-simulated event OnRigidBodySpringOverextension(RB_BodyInstance BodyInstance);
-
-/** whether this Actor is in the persistent level, i.e. not a sublevel */
-native final function bool IsInPersistentLevel() const;
-
-
-/**
- * Returns aim-friction zone extents for this actor.
- * Extents are in world units centered around Actor's location, and assumed to be
- * oriented to face the viewer (like a billboard sprite).
- */
-simulated function GetAimFrictionExtent(out float Width, out float Height, out vector Center)
+simulated event OnRigidBodySpringOverextension(RB_BodyInstance BodyInstance)
 {
-	if (bCanBeFrictionedTo)
-	{
-		// Note this will be increasingly inaccurate with increasing vertical viewing angle.
-		// Consider transforming extents.
-		GetBoundingCylinder(Width, Height);
-	}
-	else
-	{
-		Width = 0.f;
-		Height = 0.f;
-	}
-	Center = Location;
+    //return;    
 }
 
-/**
- * Returns aim-adhesion zone extents for this actor.
- * Extents are in world units centered around Actor's location, and assumed to be
- * oriented to face the viewer (like a billboard sprite).
- */
-simulated function GetAimAdhesionExtent(out float Width, out float Height, out vector Center)
+// Export UActor::execIsInPersistentLevel(FFrame&, void* const)
+native final function bool IsInPersistentLevel();
+
+simulated function GetAimFrictionExtent(out float Width, out float Height, out Vector Center)
 {
-	if (bCanBeAdheredTo)
-	{
-		// Note this will be increasingly inaccurate with increasing vertical viewing angle.
-		// Consider transforming extents.
-		GetBoundingCylinder(Width, Height);
-	}
-	else
-	{
-		Width = 0.f;
-		Height = 0.f;
-	}
-	Center = Location;
+    // End:0x20
+    if(bCanBeFrictionedTo)
+    {
+        GetBoundingCylinder(Width, Height);        
+    }
+    else
+    {
+        Width = 0.0000000;
+        Height = 0.0000000;
+    }
+    Center = Location;
+    //return;    
 }
 
-/**
- * Kismet action that forces the streaming system to disregard the normal logic for the specified duration and
- * instead always load all mip-levels for all textures used by this material.
- *
- * @param Action	- The Kismet action that triggered.
- */
+simulated function GetAimAdhesionExtent(out float Width, out float Height, out Vector Center)
+{
+    // End:0x20
+    if(bCanBeAdheredTo)
+    {
+        GetBoundingCylinder(Width, Height);        
+    }
+    else
+    {
+        Width = 0.0000000;
+        Height = 0.0000000;
+    }
+    Center = Location;
+    //return;    
+}
+
 simulated function OnForceMaterialMipsResident(SeqAct_ForceMaterialMipsResident Action)
 {
-	local PlayerController PC;
-	local int MaterialIdx;
-	
-	for( MaterialIdx = 0; MaterialIdx < Action.ForceMaterials.Length; MaterialIdx++ )
-	{
-		// Set this for all clients.
-		foreach WorldInfo.AllControllers(class'PlayerController',PC)
-		{
-			PC.ClientSetForceMipLevelsToBeResident( Action.ForceMaterials[MaterialIdx], Action.ForceDuration );
-		}
-	}
+    local PlayerController PC;
+    local int MaterialIdx;
+
+    MaterialIdx = 0;
+    J0x07:
+
+    // End:0x82 [Loop If]
+    if(MaterialIdx < Action.ForceMaterials.Length)
+    {
+        // End:0x77
+        foreach WorldInfo.AllControllers(Class'PlayerController', PC)
+        {
+            PC.ClientSetForceMipLevelsToBeResident(Action.ForceMaterials[MaterialIdx], Action.ForceDuration);            
+        }        
+        MaterialIdx++;
+        // [Loop Continue]
+        goto J0x07;
+    }
+    //return;    
 }
 
-/**
- * Called by AnimNotify_PlayParticleEffect
- * Looks for a socket name first then bone name
- *
- * @param AnimNotifyData The AnimNotify_PlayParticleEffect which will have all of the various params on it
- */
-event PlayParticleEffect( const AnimNotify_PlayParticleEffect AnimNotifyData );
+event PlayParticleEffect(const AnimNotify_PlayParticleEffect AnimNotifyData)
+{
+    //return;    
+}
 
+// Export UActor::execSupportsKismetModification(FFrame&, void* const)
+native final function bool SupportsKismetModification(SequenceOp AskingOp, out string Reason);
 
-/** whether this Actor can be modified by Kismet actions
- * primarily used by error checking to warn LDs when their Kismet may not apply changes correctly (especially on clients)
- * @param AskingOp - Kismet operation to which this Actor is linked
- * @return whether the AskingOp can correctly modify this Actor
- */
-native final virtual function bool SupportsKismetModification(SequenceOp AskingOp) const;
+simulated event AnimTreeUpdated(SkeletalMeshComponent SkelMesh)
+{
+    //return;    
+}
 
-/** Notification called when one of our meshes gets his AnimTree updated */
-simulated event AnimTreeUpdated(SkeletalMeshComponent SkelMesh);
+simulated event PostDemoRewind()
+{
+    //return;    
+}
+
+function SetInvestigationArray(array<InvestigationData> NewInfo)
+{
+    InvestigationDataArray = NewInfo;
+    //return;    
+}
+
+event SetInvestigateHighlighted(MaterialInstanceConstant highMat, bool On)
+{
+    //return;    
+}
 
 defaultproperties
 {
-	// For safety, make everything before the async work. Move actors to
-	// the during group one at a time to find bugs.
-	TickGroup=TG_PreAsyncWork
-	CustomTimeDilation=+1.0
-
-	DrawScale=+00001.000000
-	DrawScale3D=(X=1,Y=1,Z=1)
-	bJustTeleported=true
-	Role=ROLE_Authority
-	RemoteRole=ROLE_None
-	bMovable=true
-	InitialState=None
-	bHiddenEdGroup=false
-	bReplicateMovement=true
-	bRouteBeginPlayEvenIfStatic=TRUE
-	bPushedByEncroachers=true
-
-	SupportedEvents(0)=class'SeqEvent_Touch'
-	SupportedEvents(1)=class'SeqEvent_Destroyed'
-	SupportedEvents(2)=class'SeqEvent_TakeDamage'
-	ReplicatedCollisionType=COLLIDE_Max
-
-	bAllowFluidSurfaceInteraction=TRUE
+    bLoadIfPhysXLevel0=true
+    bLoadIfPhysXLevel1=true
+    bLoadIfPhysXLevel2=true
+    bPushedByEncroachers=true
+    bRouteBeginPlayEvenIfStatic=true
+    bCanStepUpOn=true
+    bReplicateMovement=true
+    bAllowFluidSurfaceInteraction=true
+    bAutomaticPerformPhysics=true
+    bMovable=true
+    bJustTeleported=true
+    bBatmanCanClimb=true
+    bValidLineLauncherTarget=true
+    bValidGelTarget=true
+    DrawScale=1.0000000
+    DrawScale3D=(X=1.0000000,Y=1.0000000,Z=1.0000000)
+    CustomTimeDilation=1.0000000
+    Role=ROLE_Authority
+    ReplicatedCollisionType=None
+    FramesTillInvestigateSightCheck=255
+    SupportedEvents[0]=Class'SeqEvent_Touch'
+    SupportedEvents[1]=Class'SeqEvent_Destroyed'
+    SupportedEvents[2]=Class'SeqEvent_TakeDamage'
 }

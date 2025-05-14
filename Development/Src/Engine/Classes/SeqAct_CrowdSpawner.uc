@@ -1,237 +1,120 @@
-/**
-* Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
-*/
-
 class SeqAct_CrowdSpawner extends SeqAct_Latent
-	native(Sequence);
+    native(Sequence);
 
-/** Set by kismet action inputs - controls whether we are actively spawning agents. */
-var		bool	bSpawningActive;
-
-/** Do extra line checks to place agent on BSP surface as they move - faster than bConformToWorld. */
-var()	bool	bConformToBSP;
-
-/** Do extra line checks to place agent on any world surface as they move. */
-var()	bool	bConformToWorld;
-
-/** How far to trace to conform agent to the bsp/world. */
-var()	float	ConformTraceDist;
-
-/** Every how many frames the 'conform' line check is done. */
-var()	int		ConformTraceInterval;
-
-/** Scale the agent mesh bounds, used for weapon collision */
-var()	vector	CollisionBoxScaling;
-
-/** Cached set of assigned move targets. */
-var transient array<CrowdAttractor>		AssignedMoveTargets;
-/** Cached set of spawn locations. */
-var	transient array<Actor>				SpawnLocs;
-/** Cached set of assigned action-at target. */
-var transient array<CrowdAttractor>		AssignedActionTargets;
-
-// Spawner stuff
-
-/** How many agents per second will be spawned at the target actor(s).  */
-var()	float	SpawnRate;
-/** The maximum number of agents alive at one time. If agents are destroyed, more will spawn to meet this number. */
-var()	int		SpawnNum;
-/** If TRUE, agents that are totally removed (ie blown up) are respawned */
-var()	bool	bRespawnDeadAgents;
-/** Radius around target actor(s) to spawn agents. */
-var()	float	Radius;
-/** Spawn in a line rather than in a circle. */
-var()	bool	bLineSpawner;
-/** Whether to spawn agents only at the edge of the circle, or at any point within the circle. */
-var()	bool	bSpawnAtEdge;
-
-/** If TRUE, reduce the number of crowd members we spawn in splitscreen */
-var()	bool	bReduceNumInSplitScreen;
-/** Whether we have already done the number reduction */
-var		bool	bHasReducedNumberDueToSplitScreen;
-/** How much to reduce number by in splitscreen */
-var()	float	SplitScreenNumReduction;
-
-/** Used by spawning code to accumulate partial spawning */
-var		float	Remainder;
-/** Class of agent spawned by this action */
-var		class<CrowdAgent>	AgentClass;
-
-// Agent force stuff
-
-/** Controls how far around an agent the system looks when finding the average speed. */
-var()	float	AwareRadius;
-/** Every how many frames the agents 'awareness' is updated (attractors and other agents */
-var()	int		AwareUpdateInterval;
-
-
-/** How hard agents are pushed apart when they overlap. */
-var()	float	AvoidOtherStrength;
-/** The radius used to check overlap between agents (basically how big an agent is). */
-var()	float	AvoidOtherRadius;
-/** How aggressively an agent matches the speed of its neighbours. */
-var()	float	MatchVelStrength;
-
-/** How hard agents are pushed back when they are too far from a path.  */
-var()	float	ToPathStrength;
-/** How strongly agents are encouraged to 'flow' along the path direction (towards  their target). */
-var()	float	FollowPathStrength;
-/** How close agents will stay to a path. */
-var()	float	PathDistance;
-/** If TRUE, only use paths with nodes flagged as bCrowdPath */
-var()	bool	bUseOnlyCrowdPaths;
-
-/** The constant force applied to agents to move them towards their target. */
-var()	float	ToAttractorStrength;
-
-
-/** When an agent is spawned, its individual damping is randomly chosen from this range. In this way, there is variety in the speed that agents move. */
-var()	float	MinVelDamping;
-var()	float	MaxVelDamping;
-
-// Agent animation stuff
-
-/** How long a agent should stop when performing an action anim */
-var(Action)		RawDistributionFloat	ActionDuration;
-/** What the time between 'ambient' actions should be.   */
-var(Action)		RawDistributionFloat	ActionInterval;
-/** What the time between 'target' actions should be */
-var(Action)		RawDistributionFloat	TargetActionInterval;
-/** Array of names of action animations to play. If array is empty, actions will not occur */
-var(Action)		array<name>				ActionAnimNames;
-
-/** DEPRECATED */
-var				array<name>				TargetActionAnimNames;
-
-/** Contains info about action to perform at a 'target'. */
 struct native CrowdTargetActionInfo
 {
-	/** Name of animation */
-	var()	name	AnimName;
-	/** If TRUE, call SpawnActionEffect when this action happens */
-	var()	bool	bFireEffects;
+    var() name AnimName;
+    var() bool bFireEffects;
+
+    structdefaultproperties
+    {
+        AnimName="None"
+        bFireEffects=false
+    }
 };
-/** Actions to perform at an Attractor with bActionAtThisAttractor set. */
-var(Action)		array<CrowdTargetActionInfo>	TargetActions;
 
-/** Maximum number of times that SpawnActionEffect can be called each second. */
-var(Action)		float							MaxEffectsPerSecond;
-/** How many more times SpawnActionEffect can get called this frame. */
-var				transient float					RemaingEffectsThisFrame;
-
-/** Optional animation to play when agent is spawned. Root motion is enabled during this animation so you can, for example, have an agent crawl from a hole */
-var(Action)		name					SpawnAnimName;
-/** Set of possible animation names to play when agent dies */
-var(Action)		array<name>				DeathAnimNames;
-/** How quickly to blend to and from an action animation when it plays */
-var(Action)		float					ActionBlendTime;
-/** Minimum time between actions occuring */
-var(Action)		float					ReActionDelay;
-/** When a 'target' action occurs, agent will rotate to face the CrowdAttractor. This controls how fast that turn happens */
-var(Action)		float					RotateToTargetSpeed;
-
-/** Below this speed, the walking animation is used */
-var()	float	SpeedBlendStart;
-/** Above this speed, the running animation is used. Between this and SpeedBlendStart the animations are blended */
-var()	float	SpeedBlendEnd;
-
-/** This controls how the animation playback rate changes based on the speed of the agent */
-var()	float	AnimVelRate;
-/** Limits how quickly blending between running and walking can happen. */
-var()	float	MaxSpeedBlendChangeSpeed;
-/** Name of sync group for movement, whose rate is scaled */
-var()	name	MoveSyncGroupName;
-
-/** Crowd agents rotate to face the direction they are travelling. This value limits how quickly they turn to do this, to avoid them spinning too quickly */
-var()	float	MaxYawRate;
-
-/** DEPRECATD */
-var		SkeletalMesh		FlockMesh;
-/** The SkeletalMeshes to use for flock members */
-var()	Array<SkeletalMesh>	FlockMeshes;
-
-/** Optional array of materials to pick randomly from and apply upon spawn. */
-var()	array<MaterialInterface>	RandomMaterials;
-/** Min 3D drawscale to apply to the agent mesh */
-var()	vector			FlockMeshMinScale3D;
-/** Max 3D drawscale to apply to the agent mesh */
-var()	vector			FlockMeshMaxScale3D;
-/** Locks scaling to a linear interpolation between FlockMeshMinScale3D and FlockMeshMaxScale3D */
-var()	bool			bFlockScaleUniform;
-
-/** The AnimSets to use for each flock member */
-var()	array<AnimSet>	FlockAnimSets;
-
-/** DEPRECATED */
-var		name			WalkAnimName;
-/** The names of the animation loops to use when moving slowly */
-var()	array<name>		WalkAnimNames;
-/** DEPRECATED */
-var		name			RunAnimName;
-/** The name of the animations to use when moving more quickly */
-var()	array<name>		RunAnimNames;
-
-/** The AnimTree to use as a template for each agent */
-var()	AnimTree		FlockAnimTree;
-/** How much damage an agent needs to take before it dies */
-var()	int				Health;
-/** Not currently used at engine level, but can be used in your own CrowdAgent subclasses for explosive-type damage deaths */
-var()	ParticleSystem	ExplosiveDeathEffect;
-var()	ParticleSystem	ExplosiveDeathEffectNonExtremeContent;
-
-/** Again, not currently used, but could be used in custom CrowdAgent subclasses */
-var()	float			ExplosiveDeathEffectScale;
-
-/** Used to keep track of currently spawned crowd members. */
-var array<CrowdAgent> SpawnedList;
-
-/** If TRUE, draw debug information about agents and paths they are trying to stay near. */
-var()	bool			bDrawDebugPathInfo;
-/** If TRUE, draw debug info showing hit box for weapons. */
-var()	bool			bDrawDebugHitBox;
-/** If TRUE, draw debug info showing hit desired move target. */
-var()	bool			bDrawDebugMoveTarget;
-
-/** Lighting channels to put the agents in. */
-var(Lighting)	LightingChannelContainer	FlockLighting;
-/** Whether to enable the light environment on crowd members. */
-var(Lighting)	bool						bEnableCrowdLightEnvironment;
-
-/** Info about mesh we might want to use as an attachment. */
 struct native CrowdAttachmentInfo
 {
-	/** Pointer to mesh to attach */
-	var()	StaticMesh		StaticMesh;
-	/** Chance of choosing this attachment. */
-	var()	float			Chance;
-	/** Scaling applied to mesh when attached */
-	var()	vector			Scale3D;
+    var() StaticMesh StaticMesh;
+    var() float Chance;
+    var() Vector Scale3D;
 
-	structdefaultproperties
-	{
-		Chance=1.0
-		Scale3D=(X=1.0,Y=1.0,Z=1.0)
-	}
+    structdefaultproperties
+    {
+        StaticMesh=none
+        Chance=1.0000000
+        Scale3D=(X=1.0000000,Y=1.0000000,Z=1.0000000)
+    }
 };
 
-/** Info about things you can attach to one socket. */
 struct native CrowdAttachmentList
 {
-	/** Name of socket to attach mesh to */
-	var()	name SocketName;
-	/** List of possible meshes to attach to this socket. */
-	var()	array<CrowdAttachmentInfo>	List;
+    var() name SocketName;
+    var() array<CrowdAttachmentInfo> List;
+
+    structdefaultproperties
+    {
+        SocketName="None"
+        List=none
+    }
 };
 
-/** List of sets of meshes to attach to agent.  */
-var() array<CrowdAttachmentList>	Attachments;
-
-/** OverlappedActorEvent will be called on the CrowdAgent if it overlaps an actor of these */
-var() array< class<Actor> >			ReportOverlapsWithClass<AllowAbstract>;
-
-
-/** Used for replicating crowd inputs to clients. */
-var		CrowdReplicationActor		RepActor;
+var bool bSpawningActive;
+var() bool bConformToBSP;
+var() bool bConformToWorld;
+var() bool bRespawnDeadAgents;
+var() bool bLineSpawner;
+var() bool bSpawnAtEdge;
+var() bool bReduceNumInSplitScreen;
+var bool bHasReducedNumberDueToSplitScreen;
+var() bool bUseOnlyCrowdPaths;
+var() bool bFlockScaleUniform;
+var() bool bDrawDebugPathInfo;
+var() bool bDrawDebugHitBox;
+var() bool bDrawDebugMoveTarget;
+var(Lighting) bool bEnableCrowdLightEnvironment;
+var() float ConformTraceDist;
+var() int ConformTraceInterval;
+var() Vector CollisionBoxScaling;
+var transient array<CrowdAttractor> AssignedMoveTargets;
+var transient array<Actor> SpawnLocs;
+var transient array<CrowdAttractor> AssignedActionTargets;
+var() float SpawnRate;
+var() int SpawnNum;
+var() float Radius;
+var() float SplitScreenNumReduction;
+var float Remainder;
+var class<CrowdAgent> AgentClass;
+var() float AwareRadius;
+var() int AwareUpdateInterval;
+var() float AvoidOtherStrength;
+var() float AvoidOtherRadius;
+var() float MatchVelStrength;
+var() float ToPathStrength;
+var() float FollowPathStrength;
+var() float PathDistance;
+var() float ToAttractorStrength;
+var() float MinVelDamping;
+var() float MaxVelDamping;
+var(Action) RawDistributionFloat ActionDuration;
+var(Action) RawDistributionFloat ActionInterval;
+var(Action) RawDistributionFloat TargetActionInterval;
+var(Action) array<name> ActionAnimNames;
+var array<name> TargetActionAnimNames;
+var(Action) array<CrowdTargetActionInfo> TargetActions;
+var(Action) float MaxEffectsPerSecond;
+var transient float RemaingEffectsThisFrame;
+var(Action) name SpawnAnimName;
+var(Action) array<name> DeathAnimNames;
+var(Action) float ActionBlendTime;
+var(Action) float ReActionDelay;
+var(Action) float RotateToTargetSpeed;
+var() float SpeedBlendStart;
+var() float SpeedBlendEnd;
+var() float AnimVelRate;
+var() float MaxSpeedBlendChangeSpeed;
+var() name MoveSyncGroupName;
+var() float MaxYawRate;
+var SkeletalMesh FlockMesh;
+var() array<SkeletalMesh> FlockMeshes;
+var() array<MaterialInterface> RandomMaterials;
+var() Vector FlockMeshMinScale3D;
+var() Vector FlockMeshMaxScale3D;
+var() array<AnimSet> FlockAnimSets;
+var name WalkAnimName;
+var() array<name> WalkAnimNames;
+var name RunAnimName;
+var() array<name> RunAnimNames;
+var() AnimTree FlockAnimTree;
+var() int Health;
+var() ParticleSystem ExplosiveDeathEffect;
+var() ParticleSystem ExplosiveDeathEffectNonExtremeContent;
+var() float ExplosiveDeathEffectScale;
+var array<CrowdAgent> SpawnedList;
+var(Lighting) LightingChannelContainer FlockLighting;
+var() array<CrowdAttachmentList> Attachments;
+var() array< class<Actor> > ReportOverlapsWithClass;
+var CrowdReplicationActor RepActor;
 
 cpptext
 {
@@ -244,286 +127,286 @@ cpptext
 	void UpdateAgent(class ACrowdAgent* Agent, FLOAT DeltaTime);
 };
 
-/** Cache SpawnLocs and AssignedMoveTargets from attached Kismet vars. */
+// Export USeqAct_CrowdSpawner::execCacheSpawnerVars(FFrame&, void* const)
 native simulated function CacheSpawnerVars();
-/** Immediately destroy all agents spawned by this action. */
+
+// Export USeqAct_CrowdSpawner::execKillAgents(FFrame&, void* const)
 native simulated function KillAgents();
-/** Manually update spwaning (for use on clients where action does not become active) */
+
+// Export USeqAct_CrowdSpawner::execUpdateSpawning(FFrame&, void* const)
 native simulated function UpdateSpawning(float DeltaSeconds);
 
-/** Create any attachments */
 simulated function CreateAttachments(CrowdAgent Agent)
 {
-	local int		AttachIdx, InfoIdx, PickedInfoIdx;
-	local float		ChanceTotal, RandVal;
-	local StaticMeshComponent	StaticMeshComp;
-	local bool		bUseSocket, bUseBone;
+    local int AttachIdx, InfoIdx, PickedInfoIdx;
+    local float ChanceTotal, RandVal;
+    local StaticMeshComponent StaticMeshComp;
+    local bool bUseSocket, bUseBone;
 
-	// Iterate over each list/attachment point.
-	for(AttachIdx=0; AttachIdx < Attachments.length; AttachIdx++ )
-	{
-		// Skip over empty lists
-		if(Attachments[AttachIdx].List.length == 0)
-		{
-			continue;
-		}
+    AttachIdx = 0;
+    J0x07:
 
-		// We need to choose one from he list, using the 'Chance' values.
-		// First we need to total of all of them
-		ChanceTotal = 0.0;
-		for(InfoIdx=0; InfoIdx < Attachments[AttachIdx].List.length; InfoIdx++)
-		{
-			ChanceTotal += Attachments[AttachIdx].List[InfoIdx].Chance;
-		}
-		// Now pick a value between 0.0 and ChanceTotal
-		RandVal = FRand() * ChanceTotal;
+    // End:0x3CF [Loop If]
+    if(AttachIdx < Attachments.Length)
+    {
+        // End:0x37
+        if(Attachments[AttachIdx].List.Length == 0)
+        {
+            // [Explicit Continue]
+            goto J0x3C5;
+        }
+        ChanceTotal = 0.0000000;
+        InfoIdx = 0;
+        J0x49:
 
-		// Now go over list again - when we pass RandVal, that is our attachment
-		ChanceTotal = 0.0;
-		for(InfoIdx=0; InfoIdx < Attachments[AttachIdx].List.length; InfoIdx++)
-		{
-			ChanceTotal += Attachments[AttachIdx].List[InfoIdx].Chance;
-			if(ChanceTotal >= RandVal)
-			{
-				PickedInfoIdx = InfoIdx;
-				break;
-			}
-		}
+        // End:0xA2 [Loop If]
+        if(InfoIdx < Attachments[AttachIdx].List.Length)
+        {
+            ChanceTotal += Attachments[AttachIdx].List[InfoIdx].Chance;
+            InfoIdx++;
+            // [Loop Continue]
+            goto J0x49;
+        }
+        RandVal = FRand() * ChanceTotal;
+        ChanceTotal = 0.0000000;
+        InfoIdx = 0;
+        J0xC3:
 
-		// Ok, so now we know what we want to attach.
-		if( Attachments[AttachIdx].List[PickedInfoIdx].StaticMesh != None )
-		{
-			// See if name is a socket or a bone (if both, favours socket)
-			bUseSocket = (Agent.SkeletalMeshComponent.GetSocketByName(Attachments[AttachIdx].SocketName) != None);
-			bUseBone = (Agent.SkeletalMeshComponent.MatchRefBone(Attachments[AttachIdx].SocketName) != INDEX_NONE);
+        // End:0x139 [Loop If]
+        if(InfoIdx < Attachments[AttachIdx].List.Length)
+        {
+            ChanceTotal += Attachments[AttachIdx].List[InfoIdx].Chance;
+            // End:0x12F
+            if(ChanceTotal >= RandVal)
+            {
+                PickedInfoIdx = InfoIdx;
+                // [Explicit Break]
+                goto J0x139;
+            }
+            InfoIdx++;
+            // [Loop Continue]
+            goto J0xC3;
+        }
+        J0x139:
 
-			// See if we found valid attachment point
-			if(bUseSocket || bUseBone)
-			{
-				// Actually create the StaticMeshComponent
-				StaticMeshComp = new(Agent) class'StaticMeshComponent';
-				StaticMeshComp.SetStaticMesh( Attachments[AttachIdx].List[PickedInfoIdx].StaticMesh );
-				StaticMeshComp.SetActorCollision(FALSE, FALSE);
-				StaticMeshComp.SetScale3D( Attachments[AttachIdx].List[PickedInfoIdx].Scale3D );
-				StaticMeshComp.SetLightEnvironment(Agent.LightEnvironment);
+        // End:0x3C5
+        if(Attachments[AttachIdx].List[PickedInfoIdx].StaticMesh != none)
+        {
+            bUseSocket = Agent.SkeletalMeshComponent.GetSocketByName(Attachments[AttachIdx].SocketName) != none;
+            bUseBone = Agent.SkeletalMeshComponent.MatchRefBone(Attachments[AttachIdx].SocketName) != -1;
+            // End:0x32B
+            if(bUseSocket || bUseBone)
+            {
+                StaticMeshComp = new (Agent) Class'StaticMeshComponent';
+                StaticMeshComp.SetStaticMesh(Attachments[AttachIdx].List[PickedInfoIdx].StaticMesh);
+                StaticMeshComp.SetActorCollision(false, false);
+                StaticMeshComp.SetScale3D(Attachments[AttachIdx].List[PickedInfoIdx].Scale3D);
+                StaticMeshComp.SetLightEnvironment(Agent.LightEnvironment);
+                // End:0x2F0
+                if(bUseSocket)
+                {
+                    Agent.SkeletalMeshComponent.AttachComponentToSocket(StaticMeshComp, Attachments[AttachIdx].SocketName);                    
+                }
+                else
+                {
+                    Agent.SkeletalMeshComponent.AttachComponent(StaticMeshComp, Attachments[AttachIdx].SocketName);
+                }
+                // [Explicit Continue]
+                goto J0x3C5;
+            }
+            LogInternal(((("CrowdAgent: WARNING: Could not find socket or bone called '" $ string(Attachments[AttachIdx].SocketName)) $ "' for mesh '") @ string(Attachments[AttachIdx].List[PickedInfoIdx].StaticMesh)) $ "'");
+        }
+        J0x3C5:
 
-				// Attach it to socket or bone
-				if(bUseSocket)
-				{
-					Agent.SkeletalMeshComponent.AttachComponentToSocket(StaticMeshComp, Attachments[AttachIdx].SocketName);
-				}
-				else
-				{
-					Agent.SkeletalMeshComponent.AttachComponent(StaticMeshComp, Attachments[AttachIdx].SocketName);		
-				}
-			}
-			else
-			{
-				`log("CrowdAgent: WARNING: Could not find socket or bone called '"$Attachments[AttachIdx].SocketName$"' for mesh '"@Attachments[AttachIdx].List[PickedInfoIdx].StaticMesh$"'");
-			}
-		}
-	}
+        AttachIdx++;
+        // [Loop Continue]
+        goto J0x07;
+    }
+    //return;    
 }
 
-/** Called fro C++ to actually create a new CrowdAgent actor, and initialise it */
 event CrowdAgent SpawnAgent(Actor SpawnLoc)
 {
-	local rotator	Rot;
-	local vector	SpawnPos, SpawnLine, AgentScale3D;
-	local CrowdAgent	Agent;
-	local float		RandScale;
+    local Rotator Rot;
+    local Vector SpawnPos, SpawnLine, AgentScale3D;
+    local CrowdAgent Agent;
+    local float RandScale;
 
-	// LINE SPAWN
-	if(bLineSpawner)
-	{
-		// Scale between -1.0 and 1.0
-		RandScale = -1.0 + (2.0 * FRand());
-		// Get line along which to spawn.
-		SpawnLine = vect(0,1,0) >> SpawnLoc.Rotation;
-		// Now make the position
-		SpawnPos = SpawnLoc.Location + (RandScale * SpawnLine * Radius);
-
-		// Always face same way as spawn location
-		Rot.Yaw = SpawnLoc.Rotation.Yaw;
-	}
-	// CIRCLE SPAWN
-	else
-	{
-		Rot = RotRand(false);
-		Rot.Pitch = 0;
-
-		if(bSpawnAtEdge)
-		{
-			SpawnPos = SpawnLoc.Location + ((vect(1,0,0) * Radius) >> Rot);
-		}
-		else
-		{
-			SpawnPos = SpawnLoc.Location + ((vect(1,0,0) * FRand() * Radius) >> Rot);
-		}
-	}
-
-
-	Agent = SpawnLoc.Spawn( AgentClass,,,SpawnPos,Rot);
-
-	// Choose a random range
-	if(bFlockScaleUniform)
-	{
-		AgentScale3D = FlockMeshMinScale3D + (FRand() * (FlockMeshMaxScale3D - FlockMeshMinScale3D));
-	}
-	else
-	{
-		AgentScale3D.X = RandRange(FlockMeshMinScale3D.X, FlockMeshMaxScale3D.X);
-		AgentScale3D.Y = RandRange(FlockMeshMinScale3D.Y, FlockMeshMaxScale3D.Y);
-		AgentScale3D.Z = RandRange(FlockMeshMinScale3D.Z, FlockMeshMaxScale3D.Z);
-	}
-	Agent.SetDrawScale3D(AgentScale3D);
-
-	Agent.SkeletalMeshComponent.AnimSets = FlockAnimSets;
-	Agent.SkeletalMeshComponent.SetSkeletalMesh(FlockMeshes[Rand(FlockMeshes.length)]);
-	Agent.SkeletalMeshComponent.SetAnimTreeTemplate(FlockAnimTree);
-	Agent.SkeletalMeshComponent.SetLightingChannels(FlockLighting);
-	Agent.SkeletalMeshComponent.LineCheckBoundsScale = CollisionBoxScaling;
-
-	// If desired, enable light env
-	if(bEnableCrowdLightEnvironment)
-	{
-		Agent.LightEnvironment.SetEnabled(TRUE);
-	}
-	// If not, detach to stop it even getting updated
-	else
-	{
-		Agent.DetachComponent(Agent.LightEnvironment);
-	}
-
-	// Apply random material if some are set
-	if(RandomMaterials.length > 0)
-	{
-		Agent.SkeletalMeshComponent.SetMaterial(0, RandomMaterials[Rand(RandomMaterials.length)]);
-	}
-
-	// Do attachments
-	CreateAttachments(Agent);
-
-	// Cache pointers to anim nodes
-	Agent.SpeedBlendNode = AnimNodeBlend(Agent.SkeletalMeshComponent.Animations.FindAnimNode('SpeedBlendNode'));
-	Agent.ActionBlendNode = AnimNodeBlend(Agent.SkeletalMeshComponent.Animations.FindAnimNode('ActionBlendNode'));
-	Agent.ActionSeqNode = AnimNodeSequence(Agent.SkeletalMeshComponent.Animations.FindAnimNode('ActionSeqNode'));
-	Agent.WalkSeqNode = AnimNodeSequence(Agent.SkeletalMeshComponent.Animations.FindAnimNode('WalkSeqNode'));
-	Agent.RunSeqNode = AnimNodeSequence(Agent.SkeletalMeshComponent.Animations.FindAnimNode('RunSeqNode'));
-	Agent.AgentTree = AnimTree(Agent.SkeletalMeshComponent.Animations);
-
-	// Assign random walk/run cycle
-	if(Agent.WalkSeqNode != None)
-	{
-		Agent.WalkSeqNode.SetAnim(WalkAnimNames[Rand(WalkAnimNames.length)]);
-	}
-
-	if(Agent.RunSeqNode != None)
-	{
-		Agent.RunSeqNode.SetAnim(RunAnimNames[Rand(RunAnimNames.length)]);
-	}
-
-	if(Agent.ActionSeqNode != None)
-	{
-		Agent.ActionSeqNode.bZeroRootTranslation = TRUE;
-	}
-
-	Agent.VelDamping = MinVelDamping + (FRand() * (MaxVelDamping - MinVelDamping));
-	Agent.Health = Health;
-	Agent.Spawner = self;
-
-	return Agent;
+    // End:0x9C
+    if(bLineSpawner)
+    {
+        RandScale = -1.0000000 + (2.0000000 * FRand());
+        SpawnLine = vect(0.0000000, 1.0000000, 0.0000000) >> SpawnLoc.Rotation;
+        SpawnPos = SpawnLoc.Location + ((RandScale * SpawnLine) * Radius);
+        Rot.Yaw = SpawnLoc.Rotation.Yaw;        
+    }
+    else
+    {
+        Rot = RotRand(false);
+        Rot.Pitch = 0;
+        // End:0xF7
+        if(bSpawnAtEdge)
+        {
+            SpawnPos = SpawnLoc.Location + ((vect(1.0000000, 0.0000000, 0.0000000) * Radius) >> Rot);            
+        }
+        else
+        {
+            SpawnPos = SpawnLoc.Location + (((vect(1.0000000, 0.0000000, 0.0000000) * FRand()) * Radius) >> Rot);
+        }
+    }
+    Agent = SpawnLoc.Spawn(AgentClass,,, SpawnPos, Rot);
+    // End:0x180
+    if(bFlockScaleUniform)
+    {
+        AgentScale3D = FlockMeshMinScale3D + (FRand() * (FlockMeshMaxScale3D - FlockMeshMinScale3D));        
+    }
+    else
+    {
+        AgentScale3D.X = RandRange(FlockMeshMinScale3D.X, FlockMeshMaxScale3D.X);
+        AgentScale3D.Y = RandRange(FlockMeshMinScale3D.Y, FlockMeshMaxScale3D.Y);
+        AgentScale3D.Z = RandRange(FlockMeshMinScale3D.Z, FlockMeshMaxScale3D.Z);
+    }
+    Agent.SetDrawScale3D(AgentScale3D);
+    Agent.SkeletalMeshComponent.AnimSets = FlockAnimSets;
+    // End:0x28F
+    if(FlockMeshes.Length > 0)
+    {
+        Agent.SkeletalMeshComponent.SetSkeletalMesh(FlockMeshes[Rand(FlockMeshes.Length)]);
+    }
+    Agent.SkeletalMeshComponent.SetAnimTreeTemplate(FlockAnimTree);
+    Agent.SkeletalMeshComponent.SetLightingChannels(FlockLighting);
+    Agent.SkeletalMeshComponent.LineCheckBoundsScale = CollisionBoxScaling;
+    // End:0x313
+    if(bEnableCrowdLightEnvironment)
+    {
+        Agent.LightEnvironment.SetEnabled(true);        
+    }
+    else
+    {
+        Agent.DetachComponent(Agent.LightEnvironment);
+    }
+    // End:0x36B
+    if(RandomMaterials.Length > 0)
+    {
+        Agent.SkeletalMeshComponent.SetMaterial(0, RandomMaterials[Rand(RandomMaterials.Length)]);
+    }
+    CreateAttachments(Agent);
+    Agent.SpeedBlendNode = AnimNodeBlend(Agent.SkeletalMeshComponent.FindAnimNode('SpeedBlendNode'));
+    Agent.ActionBlendNode = AnimNodeBlend(Agent.SkeletalMeshComponent.FindAnimNode('ActionBlendNode'));
+    Agent.ActionSeqNode = AnimNodeSequence(Agent.SkeletalMeshComponent.FindAnimNode('ActionSeqNode'));
+    Agent.WalkSeqNode = AnimNodeSequence(Agent.SkeletalMeshComponent.FindAnimNode('WalkSeqNode'));
+    Agent.RunSeqNode = AnimNodeSequence(Agent.SkeletalMeshComponent.FindAnimNode('RunSeqNode'));
+    Agent.AgentTree = AnimTree(Agent.SkeletalMeshComponent.Animations);
+    // End:0x501
+    if(Agent.WalkSeqNode != none)
+    {
+        Agent.WalkSeqNode.SetAnim(WalkAnimNames[Rand(WalkAnimNames.Length)]);
+    }
+    // End:0x542
+    if(Agent.RunSeqNode != none)
+    {
+        Agent.RunSeqNode.SetAnim(RunAnimNames[Rand(RunAnimNames.Length)]);
+    }
+    // End:0x573
+    if(Agent.ActionSeqNode != none)
+    {
+        Agent.ActionSeqNode.bZeroRootTranslation = true;
+    }
+    Agent.VelDamping = MinVelDamping + (FRand() * (MaxVelDamping - MinVelDamping));
+    Agent.Health = Health;
+    Agent.Spawner = self;
+    return Agent;
+    //return ReturnValue;    
 }
 
 static event int GetObjClassVersion()
 {
-	return Super.GetObjClassVersion() + 1;
+    return super(SequenceObject).GetObjClassVersion() + 1;
+    //return ReturnValue;    
 }
 
 defaultproperties
 {
-	ObjName="Crowd Spawner"
-	ObjCategory="Crowd"
-
-	InputLinks(0)=(LinkDesc="Start")
-	InputLinks(1)=(LinkDesc="Stop")
-	InputLinks(2)=(LinkDesc="Destroy All")
-
-	OutputLinks.Empty
-
-	VariableLinks(1)=(ExpectedType=class'SeqVar_Object',LinkDesc="Attractors")
-
-	AgentClass=class'Engine.CrowdAgent'
-
-	FlockLighting=(Crowd=TRUE,bInitialized=TRUE)
-
-	Radius=200
-	SpawnRate=10
-	SpawnNum=100
-	bRespawnDeadAgents=TRUE
-
-	bReduceNumInSplitScreen=TRUE
-	SplitScreenNumReduction=0.5
-
-	Health=100
-
-	ConformTraceDist=75.0
-	ConformTraceInterval=10
-
-	AvoidOtherStrength=1500.0
-	AvoidOtherRadius=100.0
-
-	MatchVelStrength=0.6
-
-	AwareRadius=200.0
-	AwareUpdateInterval=15
-
-	FollowPathStrength=30.0
-	ToPathStrength=200.0
-	PathDistance=300.0
-
-	ToAttractorStrength=50.0
-
-	ExplosiveDeathEffectScale=1.0
-
-	FlockMeshMinScale3D=(X=1.0,Y=1.0,Z=1.0)
-	FlockMeshMaxScale3D=(X=1.0,Y=1.0,Z=1.0)
-	bFlockScaleUniform=TRUE
-
-	CollisionBoxScaling=(X=1.0,Y=1.0,Z=1.0)
-
-	Begin Object Class=DistributionFloatUniform Name=DistributionActionDuration
-		Min=0.8
-		Max=1.2
-	End Object
-	ActionDuration=(Distribution=DistributionActionDuration)
-
-	Begin Object Class=DistributionFloatUniform Name=DistributionTargetActionInterval
-		Min=1.0
-		Max=5.0
-	End Object
-	TargetActionInterval=(Distribution=DistributionTargetActionInterval)
-
-	Begin Object Class=DistributionFloatUniform Name=DistributionActionInterval
-		Min=10.0
-		Max=20.0
-	End Object
-	ActionInterval=(Distribution=DistributionActionInterval)
-
-	MaxEffectsPerSecond=10.0
-
-	MinVelDamping=0.001
-	MaxVelDamping=0.003
-
-	ActionBlendTime=0.1
-	ReActionDelay=1.0
-	RotateToTargetSpeed=0.1
-
-	SpeedBlendStart=150.0
-	SpeedBlendEnd=180.0
-
-	AnimVelRate=0.0098
-	MaxSpeedBlendChangeSpeed=2.0
-	MoveSyncGroupName=MoveGroup
-	MaxYawRate=40000.0
+    bRespawnDeadAgents=true
+    bReduceNumInSplitScreen=true
+    bFlockScaleUniform=true
+    ConformTraceDist=75.0000000
+    ConformTraceInterval=10
+    CollisionBoxScaling=(X=1.0000000,Y=1.0000000,Z=1.0000000)
+    SpawnRate=10.0000000
+    SpawnNum=100
+    Radius=200.0000000
+    SplitScreenNumReduction=0.5000000
+    AgentClass=Class'CrowdAgent'
+    AwareRadius=200.0000000
+    AwareUpdateInterval=15
+    AvoidOtherStrength=1500.0000000
+    AvoidOtherRadius=100.0000000
+    MatchVelStrength=0.6000000
+    ToPathStrength=200.0000000
+    FollowPathStrength=30.0000000
+    PathDistance=300.0000000
+    ToAttractorStrength=50.0000000
+    MinVelDamping=0.0010000
+    MaxVelDamping=0.0030000
+    ActionDuration=(Distribution=// Reference: DistributionFloatUniform'Default__SeqAct_CrowdSpawner.DistributionActionDuration'
+    // TemplateOwnerClass: none
+    // TemplateOwnerName: 'DistributionActionDuration'
+    begin object name="DistributionActionDuration" class=Class'DistributionFloatUniform'
+        Min=0.8000000
+        Max=1.2000000
+    end object
+    Distribution=DistributionActionDuration,Type=0,Op=2,LookupTableNumElements=2,LookupTableChunkSize=2,LookupTable=LookupTable[0]=0.8000000
+    LookupTable[1]=1.2000000
+    LookupTable[2]=0.8000000
+    LookupTable[3]=1.2000000
+    LookupTable[4]=0.8000000
+    LookupTable[5]=1.2000000,LookupTableTimeScale=0.0000000,LookupTableStartTime=0.0000000)
+    ActionInterval=(Distribution=// Reference: DistributionFloatUniform'Default__SeqAct_CrowdSpawner.DistributionActionInterval'
+    // TemplateOwnerClass: none
+    // TemplateOwnerName: 'DistributionActionInterval'
+    begin object name="DistributionActionInterval" class=Class'DistributionFloatUniform'
+        Min=10.0000000
+        Max=20.0000000
+    end object
+    Distribution=DistributionActionInterval,Type=0,Op=2,LookupTableNumElements=2,LookupTableChunkSize=2,LookupTable=LookupTable[0]=10.0000000
+    LookupTable[1]=20.0000000
+    LookupTable[2]=10.0000000
+    LookupTable[3]=20.0000000
+    LookupTable[4]=10.0000000
+    LookupTable[5]=20.0000000,LookupTableTimeScale=0.0000000,LookupTableStartTime=0.0000000)
+    TargetActionInterval=(Distribution=// Reference: DistributionFloatUniform'Default__SeqAct_CrowdSpawner.DistributionTargetActionInterval'
+    // TemplateOwnerClass: none
+    // TemplateOwnerName: 'DistributionTargetActionInterval'
+    begin object name="DistributionTargetActionInterval" class=Class'DistributionFloatUniform'
+        Min=1.0000000
+        Max=5.0000000
+    end object
+    Distribution=DistributionTargetActionInterval,Type=0,Op=2,LookupTableNumElements=2,LookupTableChunkSize=2,LookupTable=LookupTable[0]=1.0000000
+    LookupTable[1]=5.0000000
+    LookupTable[2]=1.0000000
+    LookupTable[3]=5.0000000
+    LookupTable[4]=1.0000000
+    LookupTable[5]=5.0000000,LookupTableTimeScale=0.0000000,LookupTableStartTime=0.0000000)
+    MaxEffectsPerSecond=10.0000000
+    ActionBlendTime=0.1000000
+    ReActionDelay=1.0000000
+    RotateToTargetSpeed=0.1000000
+    SpeedBlendStart=150.0000000
+    SpeedBlendEnd=180.0000000
+    AnimVelRate=0.0098000
+    MaxSpeedBlendChangeSpeed=2.0000000
+    MoveSyncGroupName="MoveGroup"
+    MaxYawRate=40000.0000000
+    FlockMeshMinScale3D=(X=1.0000000,Y=1.0000000,Z=1.0000000)
+    FlockMeshMaxScale3D=(X=1.0000000,Y=1.0000000,Z=1.0000000)
+    Health=100
+    ExplosiveDeathEffectScale=1.0000000
+    FlockLighting=(bInitialized=true,BSP=false,Static=false,Dynamic=false,CompositeDynamic=false,Skybox=false,Unnamed_1=false,Unnamed_2=false,Unnamed_3=false,Unnamed_4=false,PhysXDestruction=false,Cinematic_1=false,Cinematic_2=false,Cinematic_3=false,Cinematic_4=false,Cinematic_5=false,Cinematic_6=false,Cinematic_7=false,Cinematic_8=false,Cinematic_9=false,Cinematic_10=false,Gameplay_1=false,Gameplay_2=false,Gameplay_3=false,PhysXEffects=false,Crowd=true,Plant=false,Prop=false,Character=false,CinematicExclusive_1=false,CinematicExclusive_2=false,TVExclusive=false)
+    InputLinks[0]=(LinkDesc="Start",bHasImpulse=false,QueuedActivations=0,bDisabled=false,bDisabledPIE=false,LinkedOp=none,DrawY=0,bHidden=false,ActivateDelay=0.0000000)
+    InputLinks[1]=(LinkDesc="Stop",bHasImpulse=false,QueuedActivations=0,bDisabled=false,bDisabledPIE=false,LinkedOp=none,DrawY=0,bHidden=false,ActivateDelay=0.0000000)
+    InputLinks[2]=(LinkDesc="Destroy All",bHasImpulse=false,QueuedActivations=0,bDisabled=false,bDisabledPIE=false,LinkedOp=none,DrawY=0,bHidden=false,ActivateDelay=0.0000000)
+    OutputLinks=none
+    VariableLinks[0]=(ExpectedType=Class'SeqVar_Object',LinkedVariables=none,LinkDesc="Target",LinkVar="None",PropertyName="Targets",bWriteable=false,bModifiesLinkedObject=false,bHidden=false,MinVars=1,MaxVars=255,DrawX=0,CachedProperty=none)
+    VariableLinks[1]=(ExpectedType=Class'SeqVar_Object',LinkedVariables=none,LinkDesc="Attractors",LinkVar="None",PropertyName="None",bWriteable=false,bModifiesLinkedObject=false,bHidden=false,MinVars=1,MaxVars=255,DrawX=0,CachedProperty=none)
 }

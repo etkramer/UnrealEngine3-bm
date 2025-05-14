@@ -1,48 +1,25 @@
-/**
- * Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
- */
 class SeqAct_AttachToActor extends SequenceAction;
 
-/** if true, then attachments will be detached. */
-var() bool		bDetach;
+var() bool bDetach;
+var() bool bHardAttach;
+var() bool bUseRelativeOffset;
+var() bool bUseRelativeRotation;
+var() bool bIgnoreBaseRotation;
+var() bool bUseTickGroup;
+var() name BoneName;
+var() Vector RelativeOffset;
+var() Rotator RelativeRotation;
+var() Object.ETickingGroup TickGroup;
 
-/** Should hard attach to the actor */
-var() bool		bHardAttach;
-
-/** Bone Name to use for attachment */
-var() Name		BoneName;
-
-/** true if attachment should be set relatively to the target, using an offset */
-var() bool		bUseRelativeOffset;
-
-/** offset to use when attaching */
-var() vector	RelativeOffset;
-
-/** Use relative rotation offset */
-var() bool		bUseRelativeRotation;
-
-/** relative rotation */
-var()	Rotator	RelativeRotation;
-
-/**
- * Return the version number for this class.  Child classes should increment this method by calling Super then adding
- * a individual class version to the result.  When a class is first created, the number should be 0; each time one of the
- * link arrays is modified (VariableLinks, OutputLinks, InputLinks, etc.), the number that is added to the result of
- * Super.GetObjClassVersion() should be incremented by 1.
- *
- * @return	the version number for this specific class.
- */
 static event int GetObjClassVersion()
 {
-	return Super.GetObjClassVersion() + 1;
+    return super(SequenceObject).GetObjClassVersion() + 1;
+    //return ReturnValue;    
 }
 
 defaultproperties
 {
-	ObjName="Attach to Actor"
-	ObjCategory="Actor"
-
-	VariableLinks(1)=(ExpectedType=class'SeqVar_Object',LinkDesc="Attachment")
-
-	bHardAttach=TRUE
+    bHardAttach=true
+    VariableLinks[0]=(ExpectedType=Class'SeqVar_Object',LinkedVariables=none,LinkDesc="Target",LinkVar="None",PropertyName="Targets",bWriteable=false,bModifiesLinkedObject=false,bHidden=false,MinVars=1,MaxVars=255,DrawX=0,CachedProperty=none)
+    VariableLinks[1]=(ExpectedType=Class'SeqVar_Object',LinkedVariables=none,LinkDesc="Attachment",LinkVar="None",PropertyName="None",bWriteable=false,bModifiesLinkedObject=false,bHidden=false,MinVars=1,MaxVars=255,DrawX=0,CachedProperty=none)
 }

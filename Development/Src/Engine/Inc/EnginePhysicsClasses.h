@@ -17,13 +17,6 @@
 #ifndef INCLUDED_ENGINE_PHYSICS_ENUMS
 #define INCLUDED_ENGINE_PHYSICS_ENUMS 1
 
-enum EWheelSide
-{
-    SIDE_None               =0,
-    SIDE_Left               =1,
-    SIDE_Right              =2,
-    SIDE_MAX                =3,
-};
 enum ESleepFamily
 {
     SF_Normal               =0,
@@ -47,13 +40,26 @@ enum EPhysEffectType
 #define AUTOGENERATE_FUNCTION(cls,idx,name)
 #endif
 
-AUTOGENERATE_NAME(SuspensionHeavyShift)
+AUTOGENERATE_NAME(DestroyIfFallenOutOfWorld)
+AUTOGENERATE_NAME(SetPhysicalCollisionProperties)
 
 #ifndef NAMES_ONLY
 
 #ifndef INCLUDED_ENGINE_PHYSICS_CLASSES
 #define INCLUDED_ENGINE_PHYSICS_CLASSES 1
 
+struct KActor_eventDestroyIfFallenOutOfWorld_Parms
+{
+    KActor_eventDestroyIfFallenOutOfWorld_Parms(EEventParm)
+    {
+    }
+};
+struct KActor_eventSetPhysicalCollisionProperties_Parms
+{
+    KActor_eventSetPhysicalCollisionProperties_Parms(EEventParm)
+    {
+    }
+};
 class AKActor : public ADynamicSMActor
 {
 public:
@@ -98,6 +104,14 @@ public:
     {
         P_FINISH;
         ResolveRBState();
+    }
+    void eventDestroyIfFallenOutOfWorld()
+    {
+        ProcessEvent(FindFunctionChecked(ENGINE_DestroyIfFallenOutOfWorld),NULL);
+    }
+    void eventSetPhysicalCollisionProperties()
+    {
+        ProcessEvent(FindFunctionChecked(ENGINE_SetPhysicalCollisionProperties),NULL);
     }
     DECLARE_CLASS(AKActor,ADynamicSMActor,0|CLASS_NativeReplication,Engine)
 	// UObject interface
@@ -168,161 +182,6 @@ public:
 
 	UBOOL ShouldTrace(UPrimitiveComponent* Primitive, AActor *SourceActor, DWORD TraceFlags);
 	UBOOL IgnoreBlockingBy(const AActor* Other);
-};
-
-struct FVehicleState
-{
-    FRigidBodyState RBState;
-    BYTE ServerBrake;
-    BYTE ServerGas;
-    BYTE ServerSteering;
-    BYTE ServerRise;
-    BITFIELD bServerHandbrake:1 GCC_BITFIELD_MAGIC;
-    INT ServerView;
-
-    /** Constructors */
-    FVehicleState() {}
-    FVehicleState(EEventParm)
-    {
-        appMemzero(this, sizeof(FVehicleState));
-    }
-};
-
-struct SVehicle_eventSuspensionHeavyShift_Parms
-{
-    FLOAT Delta;
-    SVehicle_eventSuspensionHeavyShift_Parms(EEventParm)
-    {
-    }
-};
-class ASVehicle : public AVehicle
-{
-public:
-    //## BEGIN PROPS SVehicle
-    class USVehicleSimBase* SimObj;
-    TArrayNoInit<class USVehicleWheel*> Wheels;
-    FVector COMOffset;
-    FVector InertiaTensorMultiplier;
-    BITFIELD bStayUpright:1;
-    BITFIELD bUseSuspensionAxis:1;
-    BITFIELD bUpdateWheelShapes:1;
-    BITFIELD bVehicleOnGround:1;
-    BITFIELD bVehicleOnWater:1;
-    BITFIELD bIsInverted:1;
-    BITFIELD bChassisTouchingGround:1;
-    BITFIELD bWasChassisTouchingGroundLastTick:1;
-    BITFIELD bCanFlip:1;
-    BITFIELD bFlipRight:1;
-    BITFIELD bIsUprighting:1;
-    BITFIELD bOutputHandbrake:1;
-    BITFIELD bHoldingDownHandbrake:1;
-    FLOAT StayUprightRollResistAngle;
-    FLOAT StayUprightPitchResistAngle;
-    FLOAT StayUprightStiffness;
-    FLOAT StayUprightDamping;
-    class URB_StayUprightSetup* StayUprightConstraintSetup;
-    class URB_ConstraintInstance* StayUprightConstraintInstance;
-    FLOAT HeavySuspensionShiftPercent;
-    FLOAT MaxSpeed;
-    FLOAT MaxAngularVelocity;
-    FLOAT TimeOffGround;
-    FLOAT UprightLiftStrength;
-    FLOAT UprightTorqueStrength;
-    FLOAT UprightTime;
-    FLOAT UprightStartTime;
-    class UAudioComponent* EngineSound;
-    class UAudioComponent* SquealSound;
-    class USoundCue* CollisionSound;
-    class USoundCue* EnterVehicleSound;
-    class USoundCue* ExitVehicleSound;
-    FLOAT CollisionIntervalSecs;
-    FLOAT SquealThreshold;
-    FLOAT SquealLatThreshold;
-    FLOAT LatAngleVolumeMult;
-    FLOAT EngineStartOffsetSecs;
-    FLOAT EngineStopOffsetSecs;
-    FLOAT LastCollisionSoundTime;
-    FLOAT OutputBrake;
-    FLOAT OutputGas;
-    FLOAT OutputSteering;
-    FLOAT OutputRise;
-    FLOAT ForwardVel;
-    INT NumPoweredWheels;
-    FVector BaseOffset;
-    FLOAT CamDist;
-    INT DriverViewPitch;
-    INT DriverViewYaw;
-    struct FVehicleState VState;
-    FLOAT AngErrorAccumulator;
-    FLOAT RadialImpulseScaling;
-    //## END PROPS SVehicle
-
-    void SetWheelCollision(INT WheelNum,UBOOL bCollision);
-    virtual void InitVehicleRagdoll(class USkeletalMesh* RagdollMesh,class UPhysicsAsset* RagdollPhysAsset,FVector ActorMove,UBOOL bClearAnimTree);
-    virtual UBOOL HasWheelsOnGround();
-    DECLARE_FUNCTION(execSetWheelCollision)
-    {
-        P_GET_INT(WheelNum);
-        P_GET_UBOOL(bCollision);
-        P_FINISH;
-        SetWheelCollision(WheelNum,bCollision);
-    }
-    DECLARE_FUNCTION(execInitVehicleRagdoll)
-    {
-        P_GET_OBJECT(USkeletalMesh,RagdollMesh);
-        P_GET_OBJECT(UPhysicsAsset,RagdollPhysAsset);
-        P_GET_STRUCT(FVector,ActorMove);
-        P_GET_UBOOL(bClearAnimTree);
-        P_FINISH;
-        InitVehicleRagdoll(RagdollMesh,RagdollPhysAsset,ActorMove,bClearAnimTree);
-    }
-    DECLARE_FUNCTION(execHasWheelsOnGround)
-    {
-        P_FINISH;
-        *(UBOOL*)Result=HasWheelsOnGround();
-    }
-    void eventSuspensionHeavyShift(FLOAT Delta)
-    {
-        SVehicle_eventSuspensionHeavyShift_Parms Parms(EC_EventParm);
-        Parms.Delta=Delta;
-        ProcessEvent(FindFunctionChecked(ENGINE_SuspensionHeavyShift),&Parms);
-    }
-    DECLARE_ABSTRACT_CLASS(ASVehicle,AVehicle,0|CLASS_Config|CLASS_NativeReplication,Engine)
-	// UObject interface
-	virtual void PostEditChange(UProperty* PropertyThatChanged);
-
-	// Actor interface.
-	virtual void physRigidBody(FLOAT DeltaTime);
-	virtual void TickSimulated( FLOAT DeltaSeconds );
-	virtual void TickAuthoritative( FLOAT DeltaSeconds );
-	virtual void setPhysics(BYTE NewPhysics, AActor *NewFloor, FVector NewFloorV);
-	virtual void PostNetReceiveLocation();
-	INT* GetOptimizedRepList( BYTE* InDefault, FPropertyRetirement* Retire, INT* Ptr, UPackageMap* Map, UActorChannel* Channel );
-
-	// SVehicle interface.
-	virtual void VehiclePackRBState();
-	virtual void VehicleUnpackRBState();
-	virtual FVector GetDampingForce(const FVector& InForce);
-
-	// Physics interface
-	virtual void AddForce(FVector Force);
-	virtual void AddImpulse(FVector Impulse);
-	virtual void AddTorque(FVector Torque);
-	virtual UBOOL IsSleeping();
-
-#if WITH_NOVODEX
-
-    virtual void OnRigidBodyCollision(const FRigidBodyCollisionInfo& Info0, const FRigidBodyCollisionInfo& Info1, const FCollisionImpactData& RigidCollisionData);
-	virtual void ModifyNxActorDesc(NxActorDesc& ActorDesc,UPrimitiveComponent* PrimComp, const class NxGroupsMask& GroupsMask, UINT MatIndex);
-	virtual void PostInitRigidBody(NxActor* nActor, NxActorDesc& ActorDesc, UPrimitiveComponent* PrimComp);
-	virtual void PreTermRigidBody(NxActor* nActor);
-	virtual void TermRBPhys(FRBPhysScene* Scene);
-#endif
-
-	virtual void UpdateVehicle(ASVehicle* Vehicle, FLOAT DeltaTime) {}
-
-	/** Set any params on wheel particle effect */
-	virtual void SetWheelEffectParams(USVehicleWheel* VW, FLOAT SlipVel);
 };
 
 class ARB_ConstraintActor : public AActor
@@ -595,149 +454,6 @@ public:
 
 	virtual void Tick(FLOAT DeltaTime);
 	virtual void TermComponentRBPhys(FRBPhysScene* InScene);
-};
-
-class USVehicleSimBase : public UActorComponent
-{
-public:
-    //## BEGIN PROPS SVehicleSimBase
-    FLOAT WheelSuspensionStiffness;
-    FLOAT WheelSuspensionDamping;
-    FLOAT WheelSuspensionBias;
-    FLOAT WheelLongExtremumSlip;
-    FLOAT WheelLongExtremumValue;
-    FLOAT WheelLongAsymptoteSlip;
-    FLOAT WheelLongAsymptoteValue;
-    FLOAT WheelLatExtremumSlip;
-    FLOAT WheelLatExtremumValue;
-    FLOAT WheelLatAsymptoteSlip;
-    FLOAT WheelLatAsymptoteValue;
-    FLOAT WheelInertia;
-    BITFIELD bWheelSpeedOverride:1;
-    BITFIELD bClampedFrictionModel:1;
-    BITFIELD bAutoDrive:1;
-    FLOAT AutoDriveSteer;
-    //## END PROPS SVehicleSimBase
-
-    DECLARE_CLASS(USVehicleSimBase,UActorComponent,0,Engine)
-	virtual void ProcessCarInput(ASVehicle* Vehicle) {}
-	virtual void UpdateVehicle(ASVehicle* Vehicle, FLOAT DeltaTime) {}
-
-#if WITH_NOVODEX
-	virtual void SetNxWheelShapeParams(class NxWheelShape* WheelShape, USVehicleWheel* VW, FLOAT LongGripScale=1.f, FLOAT LatGripScale=1.f);
-	virtual void SetNxWheelShapeTireForceFunctions(class NxWheelShape* WheelShape, USVehicleWheel* VW, FLOAT LongGripScale=1.f, FLOAT LatGripScale=1.f);
-#endif
-
-	/** Returns a float representative of the vehcile's engine output. */
-	virtual FLOAT GetEngineOutput(ASVehicle* Vehicle) { return 0.0f; }
-};
-
-class USVehicleSimCar : public USVehicleSimBase
-{
-public:
-    //## BEGIN PROPS SVehicleSimCar
-    FLOAT ChassisTorqueScale;
-    FInterpCurveFloat MaxSteerAngleCurve;
-    FLOAT SteerSpeed;
-    FLOAT ReverseThrottle;
-    FLOAT EngineBrakeFactor;
-    FLOAT MaxBrakeTorque;
-    FLOAT StopThreshold;
-    BITFIELD bIsDriving:1;
-    FLOAT ActualSteering;
-    FLOAT TimeSinceThrottle;
-    //## END PROPS SVehicleSimCar
-
-    DECLARE_CLASS(USVehicleSimCar,USVehicleSimBase,0,Engine)
-	// SVehicleSimBase interface.
-	virtual void ProcessCarInput(ASVehicle* Vehicle);
-	virtual void UpdateHandbrake(ASVehicle* Vehicle);
-};
-
-class USVehicleSimTank : public USVehicleSimCar
-{
-public:
-    //## BEGIN PROPS SVehicleSimTank
-    FLOAT LeftTrackVel;
-    FLOAT RightTrackVel;
-    FLOAT LeftTrackTorque;
-    FLOAT RightTrackTorque;
-    FLOAT MaxEngineTorque;
-    FLOAT EngineDamping;
-    FLOAT InsideTrackTorqueFactor;
-    FLOAT SteeringLatStiffnessFactor;
-    FLOAT TurnInPlaceThrottle;
-    FLOAT TurnMaxGripReduction;
-    FLOAT TurnGripScaleRate;
-    BITFIELD bTurnInPlaceOnSteer:1;
-    //## END PROPS SVehicleSimTank
-
-    DECLARE_CLASS(USVehicleSimTank,USVehicleSimCar,0,Engine)
-	// SVehicleSimBase interface.
-	virtual void ProcessCarInput(ASVehicle* Vehicle);
-	virtual void UpdateVehicle(ASVehicle* Vehicle, FLOAT DeltaTime);
-	virtual void ApplyWheels(FLOAT InLeftTrackVel, FLOAT InRightTrackVel, ASVehicle* Vehicle);
-};
-
-class USVehicleWheel : public UComponent
-{
-public:
-    //## BEGIN PROPS SVehicleWheel
-    FLOAT Steer;
-    FLOAT MotorTorque;
-    FLOAT BrakeTorque;
-    FLOAT ChassisTorque;
-    BITFIELD bPoweredWheel:1;
-    BITFIELD bHoverWheel:1;
-    BITFIELD bCollidesVehicles:1;
-    BITFIELD bCollidesPawns:1;
-    BITFIELD bIsSquealing:1;
-    BITFIELD bWheelOnGround:1;
-    FLOAT SteerFactor;
-    FName SkelControlName;
-    class USkelControlWheel* WheelControl;
-    FName BoneName;
-    FVector BoneOffset;
-    FLOAT WheelRadius;
-    FLOAT SuspensionTravel;
-    FLOAT SuspensionSpeed;
-    class UParticleSystem* WheelParticleSystem;
-    BYTE Side;
-    FLOAT LongSlipFactor;
-    FLOAT LatSlipFactor;
-    FLOAT HandbrakeLongSlipFactor;
-    FLOAT HandbrakeLatSlipFactor;
-    FLOAT ParkedSlipFactor;
-    FVector WheelPosition;
-    FLOAT SpinVel;
-    FLOAT LongSlipRatio;
-    FLOAT LatSlipAngle;
-    FVector ContactNormal;
-    FVector LongDirection;
-    FVector LatDirection;
-    FLOAT ContactForce;
-    FLOAT LongImpulse;
-    FLOAT LatImpulse;
-    FLOAT DesiredSuspensionPosition;
-    FLOAT SuspensionPosition;
-    FLOAT CurrentRotation;
-    FPointer WheelShape;
-    INT WheelMaterialIndex;
-    class UClass* WheelPSCClass;
-    class UParticleSystemComponent* WheelParticleComp;
-    FName SlipParticleParamName;
-    //## END PROPS SVehicleWheel
-
-    DECLARE_CLASS(USVehicleWheel,UComponent,0,Engine)
-#if WITH_NOVODEX
-	class NxWheelShape* GetNxWheelShape()
-	{
-		return (NxWheelShape*)WheelShape;
-	}
-#endif
-
-	/** @return whether this wheel wants a particle component attached to it */
-	virtual UBOOL WantsParticleComponent();
 };
 
 class URB_BodySetup : public UKMeshProps
@@ -1699,9 +1415,6 @@ AUTOGENERATE_FUNCTION(ARB_LineImpulseActor,-1,execFireLineImpulse);
 AUTOGENERATE_FUNCTION(URB_RadialImpulseComponent,-1,execFireImpulse);
 AUTOGENERATE_FUNCTION(URB_Spring,-1,execClear);
 AUTOGENERATE_FUNCTION(URB_Spring,-1,execSetComponents);
-AUTOGENERATE_FUNCTION(ASVehicle,-1,execHasWheelsOnGround);
-AUTOGENERATE_FUNCTION(ASVehicle,-1,execInitVehicleRagdoll);
-AUTOGENERATE_FUNCTION(ASVehicle,-1,execSetWheelCollision);
 
 #ifndef NAMES_ONLY
 #undef AUTOGENERATE_NAME
@@ -1740,11 +1453,6 @@ DECLARE_NATIVE_TYPE(Engine,URB_SkelJointSetup);
 DECLARE_NATIVE_TYPE(Engine,URB_Spring);
 DECLARE_NATIVE_TYPE(Engine,URB_StayUprightSetup);
 DECLARE_NATIVE_TYPE(Engine,ARB_Thruster);
-DECLARE_NATIVE_TYPE(Engine,ASVehicle);
-DECLARE_NATIVE_TYPE(Engine,USVehicleSimBase);
-DECLARE_NATIVE_TYPE(Engine,USVehicleSimCar);
-DECLARE_NATIVE_TYPE(Engine,USVehicleSimTank);
-DECLARE_NATIVE_TYPE(Engine,USVehicleWheel);
 
 #define AUTO_INITIALIZE_REGISTRANTS_ENGINE_PHYSICS \
 	AKActor::StaticClass(); \
@@ -1787,12 +1495,6 @@ DECLARE_NATIVE_TYPE(Engine,USVehicleWheel);
 	GNativeLookupFuncs[Lookup++] = &FindEngineURB_SpringNative; \
 	URB_StayUprightSetup::StaticClass(); \
 	ARB_Thruster::StaticClass(); \
-	ASVehicle::StaticClass(); \
-	GNativeLookupFuncs[Lookup++] = &FindEngineASVehicleNative; \
-	USVehicleSimBase::StaticClass(); \
-	USVehicleSimCar::StaticClass(); \
-	USVehicleSimTank::StaticClass(); \
-	USVehicleWheel::StaticClass(); \
 
 #endif // ENGINE_PHYSICS_NATIVE_DEFS
 
@@ -1935,15 +1637,6 @@ NATIVE_INFO(URB_Spring) GEngineURB_SpringNatives[] =
 };
 IMPLEMENT_NATIVE_HANDLER(Engine,URB_Spring);
 
-NATIVE_INFO(ASVehicle) GEngineASVehicleNatives[] = 
-{ 
-	MAP_NATIVE(ASVehicle,execHasWheelsOnGround)
-	MAP_NATIVE(ASVehicle,execInitVehicleRagdoll)
-	MAP_NATIVE(ASVehicle,execSetWheelCollision)
-	{NULL,NULL}
-};
-IMPLEMENT_NATIVE_HANDLER(Engine,ASVehicle);
-
 #endif // NATIVES_ONLY
 #endif // STATIC_LINKING_MOJO
 
@@ -2011,21 +1704,6 @@ VERIFY_CLASS_SIZE_NODIE(URB_Spring)
 VERIFY_CLASS_SIZE_NODIE(URB_StayUprightSetup)
 VERIFY_CLASS_OFFSET_NODIE(A,RB_Thruster,ThrustStrength)
 VERIFY_CLASS_SIZE_NODIE(ARB_Thruster)
-VERIFY_CLASS_OFFSET_NODIE(A,SVehicle,SimObj)
-VERIFY_CLASS_OFFSET_NODIE(A,SVehicle,RadialImpulseScaling)
-VERIFY_CLASS_SIZE_NODIE(ASVehicle)
-VERIFY_CLASS_OFFSET_NODIE(U,SVehicleSimBase,WheelSuspensionStiffness)
-VERIFY_CLASS_OFFSET_NODIE(U,SVehicleSimBase,AutoDriveSteer)
-VERIFY_CLASS_SIZE_NODIE(USVehicleSimBase)
-VERIFY_CLASS_OFFSET_NODIE(U,SVehicleSimCar,ChassisTorqueScale)
-VERIFY_CLASS_OFFSET_NODIE(U,SVehicleSimCar,TimeSinceThrottle)
-VERIFY_CLASS_SIZE_NODIE(USVehicleSimCar)
-VERIFY_CLASS_OFFSET_NODIE(U,SVehicleSimTank,LeftTrackVel)
-VERIFY_CLASS_OFFSET_NODIE(U,SVehicleSimTank,TurnGripScaleRate)
-VERIFY_CLASS_SIZE_NODIE(USVehicleSimTank)
-VERIFY_CLASS_OFFSET_NODIE(U,SVehicleWheel,Steer)
-VERIFY_CLASS_OFFSET_NODIE(U,SVehicleWheel,SlipParticleParamName)
-VERIFY_CLASS_SIZE_NODIE(USVehicleWheel)
 #endif // VERIFY_CLASS_SIZES
 #endif // !ENUMS_ONLY
 

@@ -1,28 +1,18 @@
-/**
- * Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
- */
 class SeqAct_ToggleHidden extends SeqAct_Toggle;
 
+var() bool bToggleCollision;
 var() bool bToggleBasedActors;
 var() array< class<Actor> > IgnoreBasedClasses;
 
-/**
- * Determines whether this class should be displayed in the list of available ops in the UI's kismet editor.
- *
- * @param	TargetObject	the widget that this SequenceObject would be attached to.
- *
- * @return	TRUE if this sequence object should be available for use in the UI kismet editor
- */
-event bool IsValidUISequenceObject( optional UIScreenObject TargetObject )
+event bool IsValidUISequenceObject(optional UIScreenObject TargetObject)
 {
-	return false;
+    return false;
+    //return ReturnValue;    
 }
 
 defaultproperties
 {
-	ObjName="Toggle Hidden"
-	ObjCategory="Toggle"
-
-	InputLinks(0)=(LinkDesc="Hide")
-	InputLinks(1)=(LinkDesc="UnHide")
+    InputLinks[0]=(LinkDesc="Hide",bHasImpulse=false,QueuedActivations=0,bDisabled=false,bDisabledPIE=false,LinkedOp=none,DrawY=0,bHidden=false,ActivateDelay=0.0000000)
+    InputLinks[1]=(LinkDesc="UnHide",bHasImpulse=false,QueuedActivations=0,bDisabled=false,bDisabledPIE=false,LinkedOp=none,DrawY=0,bHidden=false,ActivateDelay=0.0000000)
+    InputLinks[2]=(LinkDesc="Toggle",bHasImpulse=false,QueuedActivations=0,bDisabled=false,bDisabledPIE=false,LinkedOp=none,DrawY=0,bHidden=false,ActivateDelay=0.0000000)
 }

@@ -1,11 +1,6 @@
-/**
- * Base class for all Kismet related objects.
- * Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
- */
 class SequenceObject extends Object
-	native(Sequence)
-	abstract
-	hidecategories(Object);
+    abstract
+    native(Sequence);
 
 cpptext
 {
@@ -167,120 +162,61 @@ cpptext
 	virtual void PostPathBuild( AScout* Scout ) {}
 }
 
-/** Class vs instance version, for offering updates in the Kismet editor */
-var const			int	ObjInstanceVersion;
-
-/** Sequence that contains this object */
-var const noimport Sequence ParentSequence;
-
-/** Visual position of this object within a sequence */
-var editoronly int ObjPosX, ObjPosY;
-
-/** Text label that describes this object */
+var const int ObjInstanceVersion;
+var noimport const Sequence ParentSequence;
+var editoronly int ObjPosX;
+var editoronly int ObjPosY;
 var editoronly string ObjName;
-
-/**
- * Editor category for this object.  Determines which kismet submenu this object
- * should be placed in
- */
 var editoronly string ObjCategory;
-
-/** Color used to draw the object */
-var editoronly color ObjColor;
-
-// BM1
+var editoronly Color ObjColor;
 var Color ObjTitleColor;
-
-/** User editable text comment */
 var() string ObjComment;
+var bool bDeletable;
+var bool bDrawFirst;
+var bool bDrawLast;
+var() bool bOutputObjCommentToScreen;
+var bool bSuppressAutoComment;
+var int DrawWidth;
+var int DrawHeight;
 
-/** Whether or not this object is deletable. */
-var		bool					bDeletable;
-
-/** Should this object be drawn in the first pass? */
-var		bool					bDrawFirst;
-
-/** Should this object be drawn in the last pass? */
-var		bool					bDrawLast;
-
-/** Should this object display ObjComment when activated? */
-var()	bool					bOutputObjCommentToScreen;
-
-/** Should we suppress the 'auto' comment text - values of properties flagged with the 'autocomment' metadata string. */
-var()	bool					bSuppressAutoComment;
-
-/** Cached drawing dimensions */
-var		int						DrawWidth, DrawHeight;
-
-/** Writes out the specified text to a dedicated scripting log file.
- * @param LogText the text to print
- * @param bWarning true if this is a warning message.
- * 	Warning messages are also sent to the normal game log and appear onscreen if Engine's configurable bOnScreenKismetWarnings is true
- */
+// Export USequenceObject::execScriptLog(FFrame&, void* const)
 native final function ScriptLog(string LogText, optional bool bWarning = true);
 
-/** Returns the current world's WorldInfo, useful for spawning actors and such. */
+// Export USequenceObject::execGetWorldInfo(FFrame&, void* const)
 native final function WorldInfo GetWorldInfo();
 
-/**
- * Determines whether this class should be displayed in the list of available ops in the level kismet editor.
- *
- * @return	TRUE if this sequence object should be available for use in the level kismet editor
- */
 event bool IsValidLevelSequenceObject()
 {
-	return true;
+    return true;
+    //return ReturnValue;    
 }
 
-/**
- * Determines whether objects of this class are allowed to be pasted into level sequences.
- *
- * @return	TRUE if this sequence object can be pasted into level sequences.
- */
 event bool IsPastingIntoLevelSequenceAllowed()
 {
-	return IsValidLevelSequenceObject();
+    return IsValidLevelSequenceObject();
+    //return ReturnValue;    
 }
 
-/**
- * Determines whether this class should be displayed in the list of available ops in the UI's kismet editor.
- *
- * @param	TargetObject	the widget that this SequenceObject would be attached to.
- *
- * @return	TRUE if this sequence object should be available for use in the UI kismet editor
- */
-event bool IsValidUISequenceObject( optional UIScreenObject TargetObject )
+event bool IsValidUISequenceObject(optional UIScreenObject TargetObject)
 {
-	return false;
+    return false;
+    //return ReturnValue;    
 }
 
-/**
- * Determines whether objects of this class are allowed to be pasted into UI sequences.
- *
- * @return	TRUE if this sequence object can be pasted into UI sequences.
- */
 event bool IsPastingIntoUISequenceAllowed()
 {
-	return IsValidUISequenceObject();
+    return IsValidUISequenceObject();
+    //return ReturnValue;    
 }
 
-/**
- * Return the version number for this class.  Child classes should increment this method by calling Super then adding
- * a individual class version to the result.  When a class is first created, the number should be 0; each time one of the
- * link arrays is modified (VariableLinks, OutputLinks, InputLinks, etc.), the number that is added to the result of
- * Super.GetObjClassVersion() should be incremented by 1.
- *
- * @return	the version number for this specific class.
- */
 static event int GetObjClassVersion()
 {
-	return 1;
+    return 1;
+    //return ReturnValue;    
 }
 
 defaultproperties
 {
-	bDeletable=true
-	ObjName="Undefined"
-	ObjColor=(R=255,G=255,B=255,A=255)
-	bSuppressAutoComment=true
+    ObjTitleColor=(R=112,G=112,B=112,A=255)
+    bDeletable=true
 }

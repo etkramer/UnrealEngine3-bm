@@ -713,8 +713,16 @@ public:
     BITFIELD bRandomizeWithoutReplacement:1;
     TArrayNoInit<UBOOL> HasBeenUsed;
     INT NumRandomUsed;
+    INT LastRandomUsed;
+    INT NextRandomToForce;
     //## END PROPS SoundNodeRandom
 
+    virtual void PickNextNodeInAdvance();
+    DECLARE_FUNCTION(execPickNextNodeInAdvance)
+    {
+        P_FINISH;
+        PickNextNodeInAdvance();
+    }
     DECLARE_CLASS(USoundNodeRandom,USoundNode,0,Engine)
 	// USoundNode interface.
 	
@@ -979,6 +987,7 @@ public:
 #endif // !INCLUDED_ENGINE_SOUND_CLASSES
 #endif // !NAMES_ONLY
 
+AUTOGENERATE_FUNCTION(USoundNodeRandom,-1,execPickNextNodeInAdvance);
 
 #ifndef NAMES_ONLY
 #undef AUTOGENERATE_NAME
@@ -1036,12 +1045,20 @@ DECLARE_NATIVE_TYPE(Engine,USoundNodeWaveParam);
 	USoundNodeModulatorContinuous::StaticClass(); \
 	USoundNodeOscillator::StaticClass(); \
 	USoundNodeRandom::StaticClass(); \
+	GNativeLookupFuncs[Lookup++] = &FindEngineUSoundNodeRandomNative; \
 	USoundNodeWave::StaticClass(); \
 	USoundNodeWaveParam::StaticClass(); \
 
 #endif // ENGINE_SOUND_NATIVE_DEFS
 
 #ifdef NATIVES_ONLY
+NATIVE_INFO(USoundNodeRandom) GEngineUSoundNodeRandomNatives[] = 
+{ 
+	MAP_NATIVE(USoundNodeRandom,execPickNextNodeInAdvance)
+	{NULL,NULL}
+};
+IMPLEMENT_NATIVE_HANDLER(Engine,USoundNodeRandom);
+
 #endif // NATIVES_ONLY
 #endif // STATIC_LINKING_MOJO
 
@@ -1132,7 +1149,7 @@ VERIFY_CLASS_OFFSET_NODIE(U,SoundNodeOscillator,Amplitude)
 VERIFY_CLASS_OFFSET_NODIE(U,SoundNodeOscillator,Center)
 VERIFY_CLASS_SIZE_NODIE(USoundNodeOscillator)
 VERIFY_CLASS_OFFSET_NODIE(U,SoundNodeRandom,Weights)
-VERIFY_CLASS_OFFSET_NODIE(U,SoundNodeRandom,NumRandomUsed)
+VERIFY_CLASS_OFFSET_NODIE(U,SoundNodeRandom,NextRandomToForce)
 VERIFY_CLASS_SIZE_NODIE(USoundNodeRandom)
 VERIFY_CLASS_OFFSET_NODIE(U,SoundNodeWave,CompressionQuality)
 VERIFY_CLASS_OFFSET_NODIE(U,SoundNodeWave,FaceFXAnimName)

@@ -1,54 +1,43 @@
-//=============================================================================
-// The brush class.
-// Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
-//=============================================================================
 class Brush extends Actor
-	hidecategories(Object)
+    native
+    hidecategories(Object)
 	hidecategories(Movement)
-	hidecategories(Display)
-	native;
+	hidecategories(Display);
 
-//-----------------------------------------------------------------------------
-// Variables.
-
-// CSG operation performed in editor.
-var() enum ECsgOper
+enum ECsgOper
 {
-	CSG_Active,			// Active brush.
-	CSG_Add,			// Add to world.
-	CSG_Subtract,		// Subtract from world.
-	CSG_Intersect,		// Form from intersection with world.
-	CSG_Deintersect,	// Form from negative intersection with world.
-} CsgOper;
-
-// Information.
-var() color BrushColor;
-var	  int	PolyFlags;
-var() bool  bColored;
-var bool	bSolidWhenSelected;
-
-var export const Model	Brush;
-var editconst const BrushComponent BrushComponent;
-
-// Selection information for geometry mode
+    CSG_Active,                     // 0
+    CSG_Add,                        // 1
+    CSG_Subtract,                   // 2
+    CSG_Intersect,                  // 3
+    CSG_Deintersect,                // 4
+    CSG_MAX                         // 5
+};
 
 struct native export GeomSelection
 {
-	var int		Type;			// EGeometrySelectionType_
-	var int		Index;			// Index into the geometry data structures
-	var int		SelectionIndex;	// The selection index of this item
-	var float	SelStrength;	// The strength of the selection (used for soft selection)
+    var int Type;
+    var int Index;
+    var int SelectionIndex;
+    var float SelStrength;
+
+    structdefaultproperties
+    {
+        Type=0
+        Index=0
+        SelectionIndex=0
+        SelStrength=0.0000000
+    }
 };
 
-/**
- * Stores selection information from geometry mode.  This is the only information that we can't
- * regenerate by looking at the source brushes following an undo operation.
- */
- 
-var array<GeomSelection>	SavedSelections;
-
-//-----------------------------------------------------------------------------
-// cpptext.
+var() Brush.ECsgOper CsgOper;
+var() Color BrushColor;
+var int PolyFlags;
+var() bool bColored;
+var bool bSolidWhenSelected;
+var const export Model Brush;
+var const editconst export editinline BrushComponent BrushComponent;
+var editoronly array<GeomSelection> SavedSelections;
 
 cpptext
 {
@@ -105,14 +94,16 @@ cpptext
 
 defaultproperties
 {
-	Begin Object Class=BrushComponent Name=BrushComponent0
-	End Object
-	BrushComponent=BrushComponent0
-	CollisionComponent=BrushComponent0
-	Components.Add(BrushComponent0)
-
-	bStatic=True
-	bHidden=True
-	bNoDelete=True
-	bEdShouldSnap=True
+    // Reference: BrushComponent'Default__Brush.BrushComponent0'
+    // TemplateOwnerClass: none
+    // TemplateOwnerName: 'BrushComponent0'
+    begin object name="BrushComponent0" class=Class'BrushComponent'
+    end object
+    BrushComponent=BrushComponent0
+    bStatic=true
+    bHidden=true
+    bNoDelete=true
+    bEdShouldSnap=true
+    Components[0]=BrushComponent0
+    CollisionComponent=BrushComponent0
 }

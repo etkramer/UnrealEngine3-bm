@@ -1,305 +1,188 @@
-//=============================================================================
-// Pawn, the base class of all actors that can be controlled by players or AI.
-//
-// Pawns are the physical representations of players and creatures in a level.
-// Pawns have a mesh, collision, and physics.  Pawns can take damage, make sounds,
-// and hold weapons and other inventory.  In short, they are responsible for all
-// physical interaction between the player or AI and the world.
-//
-// Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
-//=============================================================================
 class Pawn extends Actor
-	abstract
-	native
-	placeable
-	config(Game)
-	nativereplication;
+    abstract
+    native
+    nativereplication
+    config(Game)
+    placeable;
 
-var const float			MaxStepHeight,
-						MaxJumpHeight;
-var const float			WalkableFloorZ;		/** minimum z value for floor normal (if less, not a walkable floor for this pawn) */
+enum EPathSearchType
+{
+    PST_Default,                    // 0
+    PST_Breadth,                    // 1
+    PST_NewBestPathTo,              // 2
+    PST_Constraint,                 // 3
+    PST_MAX                         // 4
+};
 
-//-----------------------------------------------------------------------------
-// Pawn variables.
-
+var const float MaxStepHeight;
+var const float MaxJumpHeight;
+var const float WalkableFloorZ;
 var repnotify Controller Controller;
-
-/** Chained pawn list */
 var const Pawn NextPawn;
-
-// cache net relevancy test
-var float				NetRelevancyTime;
-var playerController	LastRealViewer;
-var actor				LastViewer;
-
-// Physics related flags.
-var bool		bUpAndOut;			// used by swimming
-var bool		bIsWalking;			// currently walking (can't jump, affects animations)
-
-// Crouching
-var				bool	bWantsToCrouch;		// if true crouched (physics will automatically reduce collision height to CrouchHeight)
-var		const	bool	bIsCrouched;		// set by physics to specify that pawn is currently crouched
-var		const	bool	bTryToUncrouch;		// when auto-crouch during movement, continually try to uncrouch
-var()			bool	bCanCrouch;			// if true, this pawn is capable of crouching
-
-// BM1
+var float NetRelevancyTime;
+var PlayerController LastRealViewer;
+var Actor LastViewer;
+var bool bUpAndOut;
+var bool bIsWalking;
+var bool bWantsToCrouch;
+var const bool bIsCrouched;
+var const bool bTryToUncrouch;
+var() bool bCanCrouch;
 var bool bCrouchCollisionCheck;
-
-var bool		bCrawler;			// crawling - pitch and roll based on surface pawn is on
-
-/** Used by movement natives to slow pawn as it reaches its destination to prevent overshooting */
-var const bool	bReducedSpeed;
-
-var bool		bJumpCapable;
-var	bool		bCanJump;			// movement capabilities - used by AI
-var	bool		bCanWalk;
-var	bool		bCanSwim;
-var	bool		bCanFly;
-var	bool		bCanClimbLadders;
-var	bool		bCanStrafe;
-var	bool		bAvoidLedges;		// don't get too close to ledges
-var	bool		bStopAtLedges;		// if bAvoidLedges and bStopAtLedges, Pawn doesn't try to walk along the edge at all
-var const bool	bSimulateGravity;	// simulate gravity for this pawn on network clients when predicting position (true if pawn is walking or falling)
-var	bool		bIgnoreForces;		// if true, not affected by external forces
-var	bool		bCanWalkOffLedges;	// Can still fall off ledges, even when walking (for Player Controlled pawns)
-var bool		bCanBeBaseForPawns;	// all your 'base', are belong to us
-var const bool	bSimGravityDisabled;	// used on network clients
-var bool		bDirectHitWall;		// always call pawn hitwall directly (no controller notifyhitwall)
-var const bool	bPushesRigidBodies;	// Will do a check to find nearby PHYS_RigidBody actors and will give them a 'soft' push.
-var	bool		bForceFloorCheck;	// force the pawn in PHYS_Walking to do a check for a valid floor even if he hasn't moved.	Cleared after next floor check.
-var bool		bForceKeepAnchor;	// Force ValidAnchor function to accept any non-NULL anchor as valid (used to override when we want to set anchor for path finding)
-
-// BM1
+var bool bCrawler;
+var const bool bReducedSpeed;
+var bool bJumpCapable;
+var bool bCanJump;
+var bool bCanWalk;
+var bool bCanSwim;
+var bool bCanFly;
+var bool bCanClimbLadders;
+var bool bCanStrafe;
+var bool bAvoidLedges;
+var bool bStopAtLedges;
+var const bool bSimulateGravity;
+var bool bIgnoreForces;
+var bool bCanWalkOffLedges;
+var bool bCanBeBaseForPawns;
+var const bool bSimGravityDisabled;
+var bool bDirectHitWall;
+var const bool bPushesRigidBodies;
+var bool bForceFloorCheck;
+var bool bForceKeepAnchor;
 var bool bRootMotionOverridesFallingXY;
-
-//@fixme - remove these post-ship, as they aren't general enough to warrant being placed here
-var config bool bCanMantle;			// can this pawn mantle over cover
-var config bool bCanClimbUp;		// can this pawn climb up cover wall
-var		   bool bCanClimbCeilings;	// can this pawn climb ceiling nodes
-var config bool bCanSwatTurn;		// can this pawn swat turn between cover
-var config bool bCanLeap;			// can this pawn use LeapReachSpec
-var config bool	bCanCoverSlip;		// can this pawn coverslip
-
-/** if set, display "MAP HAS PATHING ERRORS" and message in the log when a Pawn fails a full path search */
+var config bool bCanMantle;
+var config bool bCanClimbUp;
+var bool bCanClimbCeilings;
+var config bool bCanSwatTurn;
+var config bool bCanLeap;
+var config bool bCanCoverSlip;
 var globalconfig bool bDisplayPathErrors;
-
-// AI related flags
-var		bool	bIsFemale;
-var		bool	bCanPickupInventory;	// if true, will pickup inventory when touching pickup actors
-var		bool	bAmbientCreature;		// AIs will ignore me
-var(AI) bool	bLOSHearing;			// can hear sounds from line-of-sight sources (which are close enough to hear)
-										// bLOSHearing=true is like UT/Unreal hearing
-var(AI) bool	bMuffledHearing;		// can hear sounds through walls (but muffled - sound distance increased to double plus 4x the distance through walls
-var(AI) bool	bDontPossess;			// if true, Pawn won't be possessed at game start
-var		bool	bAutoFire;				// used for third person weapon anims/effects
-var		bool	bRollToDesired;			// Update roll when turning to desired rotation (normally false)
-var		bool	bStationary;			// pawn can't move
-
-var		bool	bCachedRelevant;		// network relevancy caching flag
-var		bool	bSpecialHUD;
-var		bool	bNoWeaponFiring;
-var		bool	bCanUse;				// can this pawn use things?
-var		bool	bModifyReachSpecCost;	// pawn should call virtual function to modify reach spec costs
-var		bool	bModifyNavPointDest;	// pawn should call virtual function to modify destination location when moving to nav point
-/** set if Pawn counts as a vehicle for pathfinding checks (so don't use bBlockedForVehicles nodes, etc) */
+var bool bIsFemale;
+var bool bCanPickupInventory;
+var bool bAmbientCreature;
+var(AI) bool bLOSHearing;
+var(AI) bool bMuffledHearing;
+var(AI) bool bDontPossess;
+var bool bAutoFire;
+var bool bRollToDesired;
+var bool bStationary;
+var bool bCachedRelevant;
+var bool bSpecialHUD;
+var bool bNoWeaponFiring;
+var bool bCanUse;
+var bool bModifyReachSpecCost;
+var bool bModifyNavPointDest;
 var bool bPathfindsAsVehicle;
-
-// BM1
 var bool bIsRoaming;
 var bool bForceMaxAnchorChecks;
-
-var	bool	bRunPhysicsWithNoController;	// When there is no Controller, Walking Physics abort and force a velocity and acceleration of 0. Set this to TRUE to override.
-var bool	bForceMaxAccel;	// ignores Acceleration component, and forces max AccelRate to drive Pawn at full velocity.
-
-/** this flag forces APawn::CalcVelocity() to just use RMVelocity directly */
+var bool bRunPhysicsWithNoController;
+var bool bForceMaxAccel;
 var bool bForceRMVelocity;
-
-/** this flag forces APawn::CalcVelocity() to never use root motion derived velocity */
 var bool bForceRegularVelocity;
-
-var bool				bPlayedDeath;			// set when death animation has been played (used in network games)
-
-// BM1
+var bool bPlayedDeath;
 var bool bCanTraverse;
 var bool bUseSimplePhysWalking;
 var bool bUseComplexStepUpCode;
 var bool bIsBatman;
-
-var		const	float	UncrouchTime;		// when auto-crouch during movement, continually try to uncrouch once this decrements to zero
-var				float	CrouchHeight;		// CollisionHeight when crouching
-var				float	CrouchRadius;		// CollisionRadius when crouching
-var		const	int		FullHeight;			// cached for pathfinding
-
-/** Pawn multiplies cost of NavigationPoints that don't have bPreferredVehiclePath set by this number */
+var const float UncrouchTime;
+var float CrouchHeight;
+var float CrouchRadius;
+var const int FullHeight;
 var float NonPreferredVehiclePathMultiplier;
-
-// AI basics.
-enum EPathSearchType
-{
-	PST_Default,
-	PST_Breadth,
-	PST_NewBestPathTo,
-	PST_Constraint,
-};
-var EPathSearchType	PathSearchType;
-
-/** replicated to we can see where remote clients are looking */
-var		const	byte	RemoteViewPitch;
-
-/** increased when weapon fires. 0 = not firing. 1 - 255 = firing */
-var repnotify	byte	FlashCount;
-/** firing mode used when firing */
-var	repnotify	byte	FiringMode;
-
-/** List of search constraints for pathing */
-var PathConstraint		PathConstraintList;
-var PathGoalEvaluator	PathGoalList;
-
-var		float	DesiredSpeed;
-var		float	MaxDesiredSpeed;
-var(AI) float	HearingThreshold;	// max distance at which a makenoise(1.0) loudness sound can be heard
-var(AI)	float	Alertness;			// -1 to 1 ->Used within specific states for varying reaction to stimuli
-var(AI)	float	SightRadius;		// Maximum seeing distance.
-var(AI)	float	PeripheralVision;	// Cosine of limits of peripheral vision.
-var const float	AvgPhysicsTime;		// Physics updating time monitoring (for AI monitoring reaching destinations)
-var			  float		  Mass;				// Mass of this pawn.
-var			  float		  Buoyancy;			// Water buoyancy. A ratio (1.0 = neutral buoyancy, 0.0 = no buoyancy)
-var		float	MeleeRange;			// Max range for melee attack (not including collision radii)
-var const NavigationPoint Anchor;			// current nearest path;
-var const NavigationPoint LastAnchor;		// recent nearest path
-var		float	FindAnchorFailedTime;	// last time a FindPath() attempt failed to find an anchor.
-var		float	LastValidAnchorTime;	// last time a valid anchor was found
-var		float	DestinationOffset;	// used to vary destination over NavigationPoints
-var		float	NextPathRadius;		// radius of next path in route
-var		vector	SerpentineDir;		// serpentine direction
-var		float	SerpentineDist;
-var		float	SerpentineTime;		// how long to stay straight before strafing again
-var		float	SpawnTime;
-var		int		MaxPitchLimit;		// limit on view pitching
-
-// BM1
+var Pawn.EPathSearchType PathSearchType;
+var const byte RemoteViewPitch;
+var repnotify byte FlashCount;
+var repnotify byte FiringMode;
+var PathConstraint PathConstraintList;
+var PathGoalEvaluator PathGoalList;
+var float DesiredSpeed;
+var float MaxDesiredSpeed;
+var(AI) float HearingThreshold;
+var(AI) float Alertness;
+var(AI) float SightRadius;
+var(AI) float PeripheralVision;
+var const float AvgPhysicsTime;
+var float Mass;
+var float Buoyancy;
+var float MeleeRange;
+var const NavigationPoint Anchor;
+var const NavigationPoint LastAnchor;
+var float FindAnchorFailedTime;
+var float LastValidAnchorTime;
+var float DestinationOffset;
+var float NextPathRadius;
+var Vector SerpentineDir;
+var float SerpentineDist;
+var float SerpentineTime;
+var float SpawnTime;
+var int MaxPitchLimit;
 var int MaxPathLength;
-
-// Movement.
-var float	GroundSpeed;	// The maximum ground speed.
-var float	WaterSpeed;		// The maximum swimming speed.
-var float	AirSpeed;		// The maximum flying speed.
-var float	LadderSpeed;	// Ladder climbing speed
-var float	AccelRate;		// max acceleration rate
-var float	JumpZ;			// vertical acceleration w/ jump
-var float	OutofWaterZ;	/** z velocity applied when pawn tries to get out of water */
-var float	MaxOutOfWaterStepHeight;	/** Maximum step height for getting out of water */
-var float	AirControl;		// amount of AirControl available to the pawn
-var float	WalkingPct;		// pct. of running speed that walking speed is
-var float	CrouchedPct;	// pct. of running speed that crouched walking speed is
-var float	MaxFallSpeed;	// max speed pawn can land without taking damage
-/** AI will take paths that require a landing velocity less than (MaxFallSpeed * AIMaxFallSpeedFactor) */
+var float GroundSpeed;
+var float WaterSpeed;
+var float AirSpeed;
+var float LadderSpeed;
+var float AccelRate;
+var float JumpZ;
+var float OutofWaterZ;
+var float MaxOutOfWaterStepHeight;
+var float AirControl;
+var float WalkingPct;
+var float CrouchedPct;
+var float MaxFallSpeed;
 var float AIMaxFallSpeedFactor;
-
-var(Camera) float	BaseEyeHeight;	// Base eye height above collision center.
-var(Camera) float		EyeHeight;		// Current eye height, adjusted for bobbing and stairs.
-var	vector			Floor;			// Normal of floor pawn is standing on (only used by PHYS_Spider and PHYS_Walking)
-var float			SplashTime;		// time of last splash
-var float			OldZ;			// Old Z Location - used for eyeheight smoothing
-var transient PhysicsVolume HeadVolume;		// physics volume of head
-var() int Health;		/** amount of health this Pawn has */
-var() int HealthMax;		/** normal maximum health of Pawn - defaults to default.Health unless explicitly set otherwise */
-var	float			BreathTime;		// used for getting BreathTimer() messages (for no air, etc.)
-var float			UnderWaterTime; // how much time pawn can go without air (in seconds)
-var	float			LastPainTime;	// last time pawn played a takehit animation (updated in PlayHit())
-
-/** RootMotion derived velocity calculated by APawn::CalcVelocity() (used when replaying client moves in net games (since can't rely on animation when replaying moves)) */
-var vector RMVelocity;
-
-// Sound and noise management
-// remember location and position of last noises propagated
-var const	vector		noise1spot;
-var const	float		noise1time;
-var const	pawn		noise1other;
-var const	float		noise1loudness;
-var const	vector		noise2spot;
-var const	float		noise2time;
-var const	pawn		noise2other;
-var const	float		noise2loudness;
-
+var(Camera) float BaseEyeHeight;
+var(Camera) float EyeHeight;
+var Vector Floor;
+var float SplashTime;
+var float OldZ;
+var transient PhysicsVolume HeadVolume;
+var() int Health;
+var() int HealthMax;
+var float BreathTime;
+var float UnderWaterTime;
+var float LastPainTime;
+var Vector RMVelocity;
+var const Vector noise1spot;
+var const float noise1time;
+var const Pawn noise1other;
+var const float noise1loudness;
+var const Vector noise2spot;
+var const float noise2time;
+var const Pawn noise2other;
+var const float noise2loudness;
 var float SoundDampening;
 var float DamageScaling;
-
-var localized  string MenuName; // Name used for this pawn type in menus (e.g. player selection)
-
-var class<AIController> ControllerClass;	// default class to use when pawn is controlled by AI
-
-var RepNotify PlayerReplicationInfo PlayerReplicationInfo;
-
-var LadderVolume OnLadder;		// ladder currently being climbed
-
-var name LandMovementState;		// PlayerControllerState to use when moving on land or air
-var name WaterMovementState;	// PlayerControllerState to use when moving in water
-
-var PlayerStart LastStartSpot;	// used to avoid spawn camping
+var const localized string MenuName;
+var class<AIController> ControllerClass;
+var repnotify PlayerReplicationInfo PlayerReplicationInfo;
+var LadderVolume OnLadder;
+var name LandMovementState;
+var name WaterMovementState;
+var PlayerStart LastStartSpot;
 var float LastStartTime;
-
-var vector				TakeHitLocation;		// location of last hit (for playing hit/death anims)
-var class<DamageType>	HitDamageType;			// damage type of last hit (for playing hit/death anims)
-var vector				TearOffMomentum;		// momentum to apply when torn off (bTearOff == true)
-
-var() SkeletalMeshComponent	Mesh;
-
-var	CylinderComponent		CylinderComponent;
-
-var()	float				RBPushRadius; // Unreal units
-var()	float				RBPushStrength;
-
-var	repnotify	Vehicle DrivenVehicle;
-
-var float AlwaysRelevantDistanceSquared;	// always relevant to other clients if closer than this distance to viewer, and have controller
-
-/** Radius that is checked for nearby vehicles when pressing use */
-var() float	VehicleCheckRadius;
-
-var Controller LastHitBy; //give kill credit to this guy if hit momentum causes pawn to fall to his death
-
-var()	float	ViewPitchMin;
-var()	float	ViewPitchMax;
-
-/** Max difference between pawn's Rotation.Yaw and DesiredRotation.Yaw for pawn to be considered as having reached its desired rotation */
-var		int		AllowedYawError;
-
-/** Inventory Manager */
-var class<InventoryManager>		InventoryManagerClass;
-var repnotify InventoryManager			InvManager;
-
-/** Weapon currently held by Pawn */
-var()	Weapon					Weapon;
-
-/**
- * This next group of replicated properties are used to cause 3rd person effects on
- * remote clients.	FlashLocation and FlashCount are altered by the weapon to denote that
- * a shot has occured and FiringMode is used to determine what type of shot.
- */
-
-/** Hit Location of instant hit weapons. vect(0,0,0) = not firing. */
-var repnotify	vector	FlashLocation;
-/** last FlashLocation that was an actual shot, i.e. not counting clears to (0,0,0)
- * this is used to make sure we set unique values to FlashLocation for consecutive shots even when there was a clear in between,
- * so that if a client missed the clear due to low net update rate, it still gets the new firing location
- */
-var vector LastFiringFlashLocation;
-/** tracks the number of consecutive shots. Note that this is not replicated, so it's not correct on remote clients. It's only updated when the pawn is relevant. */
-var				int		ShotCount;
-
-/** set in InitRagdoll() to old CollisionComponent (since it must be Mesh for ragdolls) so that TermRagdoll() can restore it */
-var PrimitiveComponent PreRagdollCollisionComponent;
-
-/** Physics object created to create contacts with physics objects, used to push them around. */
-var	native const pointer	PhysicsPushBody;
-
-/** @HACK: count of times processLanded() was called but it failed without changing physics for some reason
- * so we can detect and avoid a rare case where Pawns get stuck in that state
- */
+var Vector TakeHitLocation;
+var class<DamageType> HitDamageType;
+var Vector TearOffMomentum;
+var() export editinline SkeletalMeshComponent Mesh;
+var export editinline CylinderComponent CylinderComponent;
+var() float RBPushRadius;
+var() float RBPushStrength;
+var repnotify Vehicle DrivenVehicle;
+var float AlwaysRelevantDistanceSquared;
+var() float VehicleCheckRadius;
+var Controller LastHitBy;
+var() float ViewPitchMin;
+var() float ViewPitchMax;
+var int AllowedYawError;
+var class<InventoryManager> InventoryManagerClass;
+var repnotify InventoryManager InvManager;
+var() Weapon Weapon;
+var repnotify Vector FlashLocation;
+var Vector LastFiringFlashLocation;
+var int ShotCount;
+var export editinline PrimitiveComponent PreRagdollCollisionComponent;
+var RB_BodyInstance PhysicsPushBody;
 var int FailedLandingCount;
-
-// BM1
 var Vector walkFailPoint;
 var Actor LinkedCullPawn;
 
@@ -509,2857 +392,2778 @@ replication
 		RemoteViewPitch;
 }
 
-/** Generic Set/Get for BasedPosition */
-native static final function SetBasedPosition( out BasedPosition BP, Vector Pos, optional Actor ForcedBase );
-native static final function Vector GetBasedPosition( BasedPosition BP );
+// Export UPawn::execSetBasedPosition(FFrame&, void* const)
+native static final function SetBasedPosition(out BasedPosition BP, Vector pos, optional Actor ForcedBase);
 
-/** Check on various replicated data and act accordingly. */
-simulated event ReplicatedEvent( name VarName )
+// Export UPawn::execGetBasedPosition(FFrame&, void* const)
+native static final function Vector GetBasedPosition(BasedPosition BP);
+
+simulated event ReplicatedEvent(name VarName)
 {
-	//`log( WorldInfo.TimeSeconds @ GetFuncName() @ "VarName:" @ VarName );
-
-	super.ReplicatedEvent( VarName );
-
-	if( VarName == 'FlashCount' )	// FlashCount and FlashLocation are changed when a weapon is fired.
-	{
-		FlashCountUpdated( true );
-	}
-	else if( VarName == 'FlashLocation' ) // FlashCount and FlashLocation are changed when a weapon is fired.
-	{
-		FlashLocationUpdated( true );
-	}
-	else if( VarName == 'FiringMode' )
-	{
-		FiringModeUpdated( true );
-	}
-	else if ( VarName == 'DrivenVehicle' )
-	{
-		if ( DrivenVehicle != None )
-		{
-			// since pawn doesn't have a PRI while driving, and may become initially relevant while driving,
-			// we may only be able to ascertain the pawn's team (for team coloring, etc.) through its drivenvehicle
-			NotifyTeamChanged();
-		}
-	}
-	else if ( VarName == 'PlayerReplicationInfo' )
-	{
-		NotifyTeamChanged();
-	}
-	else if ( VarName == 'Controller' )
-	{
-		if ( (Controller != None) && (Controller.Pawn == None) )
-		{
-			Controller.Pawn = self;
-			if ( (PlayerController(Controller) != None)
-				&& (PlayerController(Controller).ViewTarget == Controller) )
-				PlayerController(Controller).SetViewTarget(self);
-		}
-	}
+    super.ReplicatedEvent(VarName);
+    // End:0x2C
+    if(VarName == 'FlashCount')
+    {
+        FlashCountUpdated(true);        
+    }
+    else
+    {
+        // End:0x4D
+        if(VarName == 'FlashLocation')
+        {
+            FlashLocationUpdated(true);            
+        }
+        else
+        {
+            // End:0x6E
+            if(VarName == 'FiringMode')
+            {
+                FiringModeUpdated(true);                
+            }
+            else
+            {
+                // End:0x99
+                if(VarName == 'DrivenVehicle')
+                {
+                    // End:0x96
+                    if(DrivenVehicle != none)
+                    {
+                        NotifyTeamChanged();
+                    }                    
+                }
+                else
+                {
+                    // End:0xB9
+                    if(VarName == 'PlayerReplicationInfo')
+                    {
+                        NotifyTeamChanged();                        
+                    }
+                    else
+                    {
+                        // End:0x14A
+                        if(VarName == 'Controller')
+                        {
+                            // End:0x14A
+                            if((Controller != none) && Controller.Pawn == none)
+                            {
+                                Controller.Pawn = self;
+                                // End:0x14A
+                                if((PlayerController(Controller) != none) && PlayerController(Controller).ViewTarget == Controller)
+                                {
+                                    PlayerController(Controller).SetViewTarget(self);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    //return;    
 }
 
+// Export UPawn::execIsAliveAndWell(FFrame&, void* const)
+native final simulated function bool IsAliveAndWell();
 
-// =============================================================
+// Export UPawn::execAdjustDestination(FFrame&, void* const)
+native final function Vector AdjustDestination(Actor GoalActor, optional Vector Dest);
 
-/** Returns TRUE if Pawn is alive and doing well */
-final virtual simulated native function bool IsAliveAndWell() const;
+// Export UPawn::execValidAnchor(FFrame&, void* const)
+native final function bool ValidAnchor();
 
-final native virtual function Vector AdjustDestination( Actor GoalActor, optional Vector Dest );
+// Export UPawn::execSuggestJumpVelocity(FFrame&, void* const)
+native function bool SuggestJumpVelocity(out Vector JumpVelocity, Vector Destination, Vector Start);
 
-/** Is the current anchor valid? */
-final native function bool ValidAnchor();
+// Export UPawn::execIsValidTargetFor(FFrame&, void* const)
+native function bool IsValidTargetFor(const Controller C);
 
-/**
-SuggestJumpVelocity()
-returns true if succesful jump from start to destination is possible
-returns a suggested initial falling velocity in JumpVelocity
-Uses GroundSpeed and JumpZ as limits
-*/
-native function bool SuggestJumpVelocity(out vector JumpVelocity, vector Destination, vector Start);
+// Export UPawn::execIsValidEnemyTargetFor(FFrame&, void* const)
+native function bool IsValidEnemyTargetFor(const PlayerReplicationInfo PRI, bool bNoPRIisEnemy);
 
-/** returns if we are a valid enemy for C
- * checks things like whether we're alive, teammates, etc
- * server only; always returns false on clients
- * obsolete - use IsValidEnemyTargetFor() instead!
- */
-native function bool IsValidTargetFor( const Controller C) const;
-
-/** returns if we are a valid enemy for PRI
- * checks things like whether we're alive, teammates, etc
- * works on clients and servers
- */
-native function bool IsValidEnemyTargetFor(const PlayerReplicationInfo PRI, bool bNoPRIisEnemy) const;
-
-/**
-@RETURN true if pawn is invisible to AI
-*/
+// Export UPawn::execIsInvisible(FFrame&, void* const)
 native function bool IsInvisible();
 
-/**
- * Set Pawn ViewPitch, so we can see where remote clients are looking.
- *
- * @param	NewRemoteViewPitch	Pitch component to replicate to remote (non owned) clients.
- */
-native final function SetRemoteViewPitch( int NewRemoteViewPitch );
+// Export UPawn::execSetRemoteViewPitch(FFrame&, void* const)
+native final function SetRemoteViewPitch(int NewRemoteViewPitch);
 
-native function SetAnchor( NavigationPoint NewAnchor );
-native function NavigationPoint GetBestAnchor( Actor TestActor, Vector TestLocation, bool bStartPoint, bool bOnlyCheckVisible, out float out_Dist );
+// Export UPawn::execSetAnchor(FFrame&, void* const)
+native function SetAnchor(NavigationPoint NewAnchor);
+
+// Export UPawn::execGetBestAnchor(FFrame&, void* const)
+native function NavigationPoint GetBestAnchor(Actor TestActor, Vector TestLocation, bool bStartPoint, bool bOnlyCheckVisible, out float out_Dist);
+
+// Export UPawn::execReachedDestination(FFrame&, void* const)
 native function bool ReachedDestination(Actor Goal);
-native function bool ReachedPoint( Vector Point, Actor NewAnchor );
+
+// Export UPawn::execReachedPoint(FFrame&, void* const)
+native function bool ReachedPoint(Vector Point, Actor NewAnchor);
+
+// Export UPawn::execForceCrouch(FFrame&, void* const)
 native function ForceCrouch();
-native function SetPushesRigidBodies( bool NewPush );
-native final virtual function bool ReachedDesiredRotation();
 
-native function GetBoundingCylinder(out float CollisionRadius, out float CollisionHeight) const;
+// Export UPawn::execSetPushesRigidBodies(FFrame&, void* const)
+native function SetPushesRigidBodies(bool NewPush);
 
-/** Allow pawn to add special cost to path */
-function int SpecialCostForPath( ReachSpec Path ) { return NavigationPoint(Path.End.Actor).Cost; }
-/** Pawn can be considered a valid enemy */
-simulated function bool IsValidEnemy() { return true; }
+// Export UPawn::execReachedDesiredRotation(FFrame&, void* const)
+native final function bool ReachedDesiredRotation();
 
-/**
- * Does the following:
- *	- Assign the SkeletalMeshComponent 'Mesh' to the CollisionComponent
- *	- Call InitArticulated on the SkeletalMeshComponent.
- *	- Change the physics mode to PHYS_RigidBody
- */
+// Export UPawn::execGetBoundingCylinder(FFrame&, void* const)
+native function GetBoundingCylinder(out float CollisionRadius, out float CollisionHeight);
+
+function int SpecialCostForPath(ReachSpec Path)
+{
+    return NavigationPoint(Path.End.Actor).Cost;
+    //return ReturnValue;    
+}
+
+simulated function bool IsValidEnemy()
+{
+    return true;
+    //return ReturnValue;    
+}
+
+// Export UPawn::execInitRagdoll(FFrame&, void* const)
 native function bool InitRagdoll();
-/** the opposite of InitRagdoll(); resets CollisionComponent to the default,
- * sets physics to PHYS_Falling, and calls TermArticulated() on the SkeletalMeshComponent
- * @return true on success, false if there is no Mesh, the Mesh is not in ragdoll, or we're otherwise not able to terminate the physics
- */
+
+// Export UPawn::execTermRagdoll(FFrame&, void* const)
 native function bool TermRagdoll();
 
-/** Give pawn the chance to do something special moving between points */
-function bool SpecialMoveTo( NavigationPoint Start, NavigationPoint End, Actor Next );
+function bool SpecialMoveTo(NavigationPoint Start, NavigationPoint End, Actor Next)
+{
+    //return ReturnValue;    
+}
 
 simulated function SetBaseEyeheight()
 {
-	if ( !bIsCrouched )
-		BaseEyeheight = Default.BaseEyeheight;
-	else
-		BaseEyeheight = FMin(0.8 * CrouchHeight, CrouchHeight - 10);
+    // End:0x19
+    if(!bIsCrouched)
+    {
+        BaseEyeHeight = default.BaseEyeHeight;        
+    }
+    else
+    {
+        BaseEyeHeight = FMin(0.8000000 * CrouchHeight, CrouchHeight - float(10));
+    }
+    //return;    
 }
 
 function PlayerChangedTeam()
 {
-	Died( None, class'DamageType', Location );
+    Died(none, Class'DamageType', Location);
+    //return;    
 }
 
-/* Reset()
-reset actor to initial state - used when restarting level without reloading.
-*/
 function Reset()
 {
-	if ( (Controller == None) || Controller.bIsPlayer )
-	{
-		DetachFromController();
-		Destroy();
-	}
-	else
-		super.Reset();
+    // End:0x31
+    if((Controller == none) || Controller.bIsPlayer)
+    {
+        DetachFromController();
+        Destroy();        
+    }
+    else
+    {
+        super.Reset();
+    }
+    //return;    
 }
 
 function bool StopFiring()
 {
-	if( Weapon != None )
-	{
-		 Weapon.StopFire(Weapon.CurrentFireMode);
-	}
-	return TRUE;
+    // End:0x2E
+    if(Weapon != none)
+    {
+        Weapon.StopFire(Weapon.CurrentFireMode);
+    }
+    return true;
+    //return ReturnValue;    
 }
-
-
-/**
- * Pawn starts firing!
- * Called from PlayerController::StartFiring
- * Network: Local Player
- *
- * @param	FireModeNum		fire mode number
- */
 
 simulated function StartFire(byte FireModeNum)
 {
-	if( bNoWeaponFIring )
-	{
-		return;
-	}
-
-	if( InvManager != None )
-	{
-		InvManager.StartFire(FireModeNum);
-	}
+    // End:0x0B
+    if(bNoWeaponFiring)
+    {
+        return;
+    }
+    // End:0x2F
+    if(InvManager != none)
+    {
+        InvManager.StartFire(FireModeNum);
+    }
+    //return;    
 }
-
-
-/**
- * Pawn stops firing!
- * i.e. player releases fire button, this may not stop weapon firing right away. (for example press button once for a burst fire)
- * Network: Local Player
- *
- * @param	FireModeNum		fire mode number
- */
 
 simulated function StopFire(byte FireModeNum)
 {
-	if( InvManager != None )
-	{
-		InvManager.StopFire(FireModeNum);
-	}
+    // End:0x24
+    if(InvManager != none)
+    {
+        InvManager.StopFire(FireModeNum);
+    }
+    //return;    
 }
 
-
-/*********************************************************************************************
- * Remote Client Firing Magic...
- * @See Weapon::IncrementFlashCount()
- ********************************************************************************************/
-
-
-/**
- * Set firing mode replication for remote clients trigger update notification.
- * Network: LocalPlayer and Server
- */
 simulated function SetFiringMode(byte FiringModeNum)
 {
-	//`log( WorldInfo.TimeSeconds @ GetFuncName() @ "old:" @ FiringMode @  "new:" @ FiringModeNum );
-
-	if( FiringModeNum != FiringMode )
-	{
-		FiringMode		= FiringModeNum;
-		bForceNetUpdate = TRUE;
-
-		// call updated event locally
-		FiringModeUpdated(FALSE);
-	}
+    // End:0x31
+    if(FiringModeNum != FiringMode)
+    {
+        FiringMode = FiringModeNum;
+        bForceNetUpdate = true;
+        FiringModeUpdated(false);
+    }
+    //return;    
 }
 
-
-/**
- * Called when FiringMode has been updated.
- *
- * Network: ALL
- */
 simulated function FiringModeUpdated(bool bViaReplication)
 {
-	if( Weapon != None )
-	{
-		Weapon.FireModeUpdated(FiringMode, bViaReplication);
-	}
+    // End:0x2A
+    if(Weapon != none)
+    {
+        Weapon.FireModeUpdated(FiringMode, bViaReplication);
+    }
+    //return;    
 }
 
-
-/**
- * This function's responsibility is to signal clients that non-instant hit shot
- * has been fired. Call this on the server and local player.
- *
- * Network: Server and Local Player
- */
-simulated function IncrementFlashCount( Weapon Who, byte FireModeNum )
+simulated function IncrementFlashCount(Weapon Who, byte FireModeNum)
 {
-	bForceNetUpdate = TRUE;	// Force replication
-	FlashCount++;
-	// Make sure it's not 0, because it means the weapon stopped firing!
-	if( FlashCount == 0 )
-	{
-		FlashCount += 2;
-	}
-
-	// Make sure firing mode is updated
-	SetFiringMode(FireModeNum);
-
-	// This weapon has fired.
-	FlashCountUpdated(FALSE);
+    bForceNetUpdate = true;
+    FlashCount++;
+    // End:0x28
+    if(FlashCount == 0)
+    {
+        FlashCount += 2;
+    }
+    SetFiringMode(FireModeNum);
+    FlashCountUpdated(false);
+    //return;    
 }
 
-
-/**
- * Clear flashCount variable. and call WeaponStoppedFiring event.
- * Call this on the server and local player.
- *
- * Network: Server or Local Player
- */
 simulated function ClearFlashCount(Weapon Who)
 {
-	if( FlashCount != 0 )
-	{
-		bForceNetUpdate = TRUE;	// Force replication
-		FlashCount		= 0;
-
-		// This weapon stopped firing
-		FlashCountUpdated(FALSE);
-	}
+    // End:0x2B
+    if(FlashCount != 0)
+    {
+        bForceNetUpdate = true;
+        FlashCount = 0;
+        FlashCountUpdated(false);
+    }
+    //return;    
 }
 
-
-/**
- * This function sets up the Location of a hit to be replicated to all remote clients.
- * It is also responsible for fudging a shot at (0,0,0).
- *
- * Network: Server only
- */
-function SetFlashLocation(Weapon Who, byte FireModeNum, vector NewLoc)
+function SetFlashLocation(Weapon Who, byte FireModeNum, Vector NewLoc)
 {
-	// Make sure 2 consecutive flash locations are different, for replication
-	if( NewLoc == LastFiringFlashLocation )
-	{
-		NewLoc += vect(0,0,1);
-	}
-
-	// If we are aiming at the origin, aim slightly up since we use 0,0,0 to denote
-	// not firing.
-	if( NewLoc == vect(0,0,0) )
-	{
-		NewLoc = vect(0,0,1);
-	}
-
-	bForceNetUpdate = TRUE; // Force replication
-	FlashLocation	= NewLoc;
-	LastFiringFlashLocation = NewLoc;
-
-	// Make sure firing mode is updated
-	SetFiringMode(FireModeNum);
-
-	// This weapon has fired.
-	FlashLocationUpdated(FALSE);
+    // End:0x23
+    if(NewLoc == LastFiringFlashLocation)
+    {
+        NewLoc += vect(0.0000000, 0.0000000, 1.0000000);
+    }
+    // End:0x4D
+    if(NewLoc == vect(0.0000000, 0.0000000, 0.0000000))
+    {
+        NewLoc = vect(0.0000000, 0.0000000, 1.0000000);
+    }
+    bForceNetUpdate = true;
+    FlashLocation = NewLoc;
+    LastFiringFlashLocation = NewLoc;
+    SetFiringMode(FireModeNum);
+    FlashLocationUpdated(false);
+    //return;    
 }
 
-
-/**
- * Reset flash location variable. and call stop firing.
- * Network: Server only
- */
-function ClearFlashLocation( Weapon Who )
+function ClearFlashLocation(Weapon Who)
 {
-	if( !IsZero( FlashLocation ) )
-	{
-		bForceNetUpdate = TRUE;	// Force replication
-		FlashLocation = vect(0,0,0);
-
-		FlashLocationUpdated(FALSE);
-	}
+    // End:0x33
+    if(!IsZero(FlashLocation))
+    {
+        bForceNetUpdate = true;
+        FlashLocation = vect(0.0000000, 0.0000000, 0.0000000);
+        FlashLocationUpdated(false);
+    }
+    //return;    
 }
 
-
-/**
- * Called when FlashCount has been updated.
- * Trigger appropritate events based on FlashCount's value.
- * = 0 means Weapon Stopped firing
- * > 0 means Weapon just fired
- *
- * Network: ALL
- */
-simulated function FlashCountUpdated( bool bViaReplication )
+simulated function FlashCountUpdated(bool bViaReplication)
 {
-	//`log( WorldInfo.TimeSeconds @ GetFuncName() @ "FlashCount:" @ FlashCount @ "bViaReplication:" @ bViaReplication );
-
-	if( FlashCount > 0 )
-	{
-		WeaponFired( bViaReplication );
-	}
-	else
-	{
-		WeaponStoppedFiring( bViaReplication );
-	}
+    // End:0x24
+    if(FlashCount > 0)
+    {
+        WeaponFired(bViaReplication);        
+    }
+    else
+    {
+        WeaponStoppedFiring(bViaReplication);
+    }
+    //return;    
 }
 
-
-/**
- * Called when FlashLocation has been updated.
- * Trigger appropritate events based on FlashLocation's value.
- * == (0,0,0) means Weapon Stopped firing
- * != (0,0,0) means Weapon just fired
- *
- * Network: ALL
- */
-simulated function FlashLocationUpdated( bool bViaReplication )
+simulated function FlashLocationUpdated(bool bViaReplication)
 {
-	//`log( WorldInfo.TimeSeconds @ GetFuncName() @ "FlashLocation:" @ FlashLocation @ "bViaReplication:" @ bViaReplication );
-
-	if( !IsZero(FlashLocation) )
-	{
-		WeaponFired( bViaReplication, FlashLocation );
-	}
-	else
-	{
-		WeaponStoppedFiring( bViaReplication );
-	}
+    // End:0x25
+    if(!IsZero(FlashLocation))
+    {
+        WeaponFired(bViaReplication, FlashLocation);        
+    }
+    else
+    {
+        WeaponStoppedFiring(bViaReplication);
+    }
+    //return;    
 }
 
-
-/**
- * Called when a pawn's weapon has fired and is responsibile for
- * delegating the creation of all of the different effects.
- *
- * bViaReplication denotes if this call in as the result of the
- * flashcount/flashlocation being replicated. It's used filter out
- * when to make the effects.
- *
- * Network: ALL
- */
-simulated function WeaponFired( bool bViaReplication, optional vector HitLocation )
+simulated function WeaponFired(bool bViaReplication, optional Vector HitLocation)
 {
-	// increment number of consecutive shots.
-	ShotCount++;
-
-	// By default we just call PlayFireEffects on the weapon.
-	if( Weapon != None )
-	{
-		Weapon.PlayFireEffects( FiringMode, HitLocation );
-	}
+    ShotCount++;
+    // End:0x31
+    if(Weapon != none)
+    {
+        Weapon.PlayFireEffects(FiringMode, HitLocation);
+    }
+    //return;    
 }
 
-
-/**
- * Called when a pawn's weapon has stopped firing and is responsibile for
- * delegating the destruction of all of the different effects.
- *
- * bViaReplication denotes if this call in as the result of the
- * flashcount/flashlocation being replicated.
- *
- * Network: ALL
- */
-simulated function WeaponStoppedFiring( bool bViaReplication )
+simulated function WeaponStoppedFiring(bool bViaReplication)
 {
-	// reset number of consecutive shots fired.
-	ShotCount = 0;
-
-	if (Weapon != None)
-	{
-		Weapon.StopFireEffects( FiringMode );
-	}
+    ShotCount = 0;
+    // End:0x2B
+    if(Weapon != none)
+    {
+        Weapon.StopFireEffects(FiringMode);
+    }
+    //return;    
 }
-
-
-/**
-AI Interface for combat
-**/
 
 function bool BotFire(bool bFinished)
 {
-	StartFire(ChooseFireMode());
-	return true;
+    StartFire(ChooseFireMode());
+    return true;
+    //return ReturnValue;    
 }
 
 function byte ChooseFireMode()
 {
-	return 0;
+    return 0;
+    //return ReturnValue;    
 }
 
 function bool CanAttack(Actor Other)
 {
-	if ( Weapon == None )
-		return false;
-	return Weapon.CanAttack(Other);
+    // End:0x0D
+    if(Weapon == none)
+    {
+        return false;
+    }
+    return Weapon.CanAttack(Other);
+    //return ReturnValue;    
 }
 
 function bool TooCloseToAttack(Actor Other)
 {
-	return false;
+    return false;
+    //return ReturnValue;    
 }
 
 function bool FireOnRelease()
 {
-	if (Weapon != None)
-		return Weapon.FireOnRelease();
-
-	return false;
+    // End:0x20
+    if(Weapon != none)
+    {
+        return Weapon.FireOnRelease();
+    }
+    return false;
+    //return ReturnValue;    
 }
 
 function bool HasRangedAttack()
 {
-	return ( Weapon != None );
+    return Weapon != none;
+    //return ReturnValue;    
 }
 
 function bool IsFiring()
 {
-	if (Weapon != None)
-		return Weapon.IsFiring();
-
-	return false;
+    // End:0x20
+    if(Weapon != none)
+    {
+        return Weapon.IsFiring();
+    }
+    return false;
+    //return ReturnValue;    
 }
 
-/** returns whether we need to turn to fire at the specified location */
-function bool NeedToTurn(vector targ)
+function bool NeedToTurn(Vector targ)
 {
-	local vector LookDir, AimDir;
+    local Vector LookDir, AimDir;
 
-	LookDir = Vector(Rotation);
-	LookDir.Z = 0;
-	LookDir = Normal(LookDir);
-	AimDir = targ - Location;
-	AimDir.Z = 0;
-	AimDir = Normal(AimDir);
-
-	return ((LookDir Dot AimDir) < 0.93);
+    LookDir = Vector(Rotation);
+    LookDir.Z = 0.0000000;
+    LookDir = Normal(LookDir);
+    AimDir = targ - Location;
+    AimDir.Z = 0.0000000;
+    AimDir = Normal(AimDir);
+    return (LookDir Dot AimDir) < 0.9300000;
+    //return ReturnValue;    
 }
 
-simulated function String GetHumanReadableName()
+simulated function string GetHumanReadableName()
 {
-	if ( PlayerReplicationInfo != None )
-		return PlayerReplicationInfo.PlayerName;
-	return MenuName;
+    // End:0x1B
+    if(PlayerReplicationInfo != none)
+    {
+        return PlayerReplicationInfo.PlayerName;
+    }
+    return MenuName;
+    //return ReturnValue;    
 }
 
 function PlayTeleportEffect(bool bOut, bool bSound)
 {
-	MakeNoise(1.0);
+    MakeNoise(1.0000000);
+    //return;    
 }
 
-/** NotifyTeamChanged()
-Called when PlayerReplicationInfo is replicated to this pawn, or PlayerReplicationInfo team property changes.
+simulated function NotifyTeamChanged()
+{
+    //return;    
+}
 
-Network:  client
-*/
-simulated function NotifyTeamChanged();
-
-/* PossessedBy()
- Pawn is possessed by Controller
-*/
 function PossessedBy(Controller C, bool bVehicleTransition)
 {
-	Controller			= C;
-	bForceNetUpdate = TRUE;
-
-	if ( C.PlayerReplicationInfo != None )
-	{
-		PlayerReplicationInfo = C.PlayerReplicationInfo;
-	}
-	UpdateControllerOnPossess(bVehicleTransition);
-
-	SetOwner(Controller);	// for network replication
-	Eyeheight = BaseEyeHeight;
-
-	if ( C.IsA('PlayerController') )
-	{
-		if ( WorldInfo.NetMode != NM_Standalone )
-		{
-			RemoteRole = ROLE_AutonomousProxy;
-		}
-
-		// inform client of current weapon
-		if( Weapon != None )
-		{
-			Weapon.ClientWeaponSet(FALSE);
-		}
-	}
-	else
-	{
-		RemoteRole = Default.RemoteRole;
-
-		if (Weapon != None)
-		{
-			Weapon.AIController = AIController(C);
-		}
-	}
+    Controller = C;
+    // End:0x35
+    if(C.PlayerReplicationInfo != none)
+    {
+        PlayerReplicationInfo = C.PlayerReplicationInfo;
+    }
+    UpdateControllerOnPossess(bVehicleTransition);
+    SetOwner(Controller);
+    EyeHeight = BaseEyeHeight;
+    // End:0xB6
+    if(C.IsA('PlayerController'))
+    {
+        // End:0x92
+        if(WorldInfo.NetMode != NM_Standalone)
+        {
+            RemoteRole = ROLE_AutonomousProxy;
+        }
+        // End:0xB3
+        if(Weapon != none)
+        {
+            Weapon.ClientWeaponSet(false);
+        }        
+    }
+    else
+    {
+        RemoteRole = default.RemoteRole;
+        // End:0xE6
+        if(Weapon != none)
+        {
+            Weapon.AIController = AIController(C);
+        }
+    }
+    //return;    
 }
 
-/* UpdateControllerOnPossess()
-update controller - normally, just change its rotation to match pawn rotation
-*/
 function UpdateControllerOnPossess(bool bVehicleTransition)
 {
-	// don't set pawn rotation on possess if was driving vehicle, so face
-	// same direction when get out as when driving
-	if ( !bVehicleTransition )
-	{
-		Controller.SetRotation(Rotation);
-	}
+    // End:0x1D
+    if(!bVehicleTransition)
+    {
+        Controller.SetRotation(Rotation);
+    }
+    //return;    
 }
 
 function UnPossessed()
 {
-	bForceNetUpdate = TRUE;
-
-	PlayerReplicationInfo = None;
-	SetOwner(None);
-	Controller = None;
+    LogInternalAI(("" $ string(self)) $ " Unpossessed!");
+    PlayerReplicationInfo = none;
+    SetOwner(none);
+    Controller = none;
+    //return;    
 }
 
-/**
- * returns default camera mode when viewing this pawn.
- * Mainly called when controller possesses this pawn.
- *
- * @param	PlayerController requesting the default camera view
- * @return	default camera view player should use when controlling this pawn.
- */
-simulated function name GetDefaultCameraMode( PlayerController RequestedBy )
+simulated function name GetDefaultCameraMode(PlayerController RequestedBy)
 {
-	if ( RequestedBy != None && RequestedBy.PlayerCamera != None && RequestedBy.PlayerCamera.CameraStyle == 'Fixed' )
-		return 'Fixed';
-
-	return 'FirstPerson';
+    // End:0x55
+    if(((RequestedBy != none) && RequestedBy.PlayerCamera != none) && RequestedBy.PlayerCamera.CameraStyle == 'Fixed')
+    {
+        return 'Fixed';
+    }
+    return 'FirstPerson';
+    //return ReturnValue;    
 }
 
 function DropToGround()
 {
-	bCollideWorld = True;
-	if ( Health > 0 )
-	{
-		SetCollision(true,true);
-		SetPhysics(PHYS_Falling);
-		if ( IsHumanControlled() )
-			Controller.GotoState(LandMovementState);
-	}
+    bCollideWorld = true;
+    // End:0x3C
+    if(Health > 0)
+    {
+        SetCollision(true, true);
+        SetPhysics(2);
+        // End:0x3C
+        if(IsHumanControlled())
+        {
+            Controller.GotoState(LandMovementState);
+        }
+    }
+    //return;    
 }
 
 function bool CanGrabLadder()
 {
-	return ( bCanClimbLadders
-			&& (Controller != None)
-			&& (Physics != PHYS_Ladder)
-			&& ((Physics != Phys_Falling) || (abs(Velocity.Z) <= JumpZ)) );
+    return ((bCanClimbLadders && Controller != none) && Physics != 9) && (Physics != 2) || Abs(Velocity.Z) <= JumpZ;
+    //return ReturnValue;    
 }
 
 function bool RecommendLongRangedAttack()
 {
-	return false;
+    return false;
+    //return ReturnValue;    
 }
 
 function float RangedAttackTime()
 {
-	return 0;
+    return 0.0000000;
+    //return ReturnValue;    
 }
 
-/**
- * Called every frame from PlayerInput or PlayerController::MoveAutonomous()
- * Sets bIsWalking flag, which defines if the Pawn is walking or not (affects velocity)
- *
- * @param	bNewIsWalking, new walking state.
- */
-event SetWalking( bool bNewIsWalking )
+event SetWalking(bool bNewIsWalking)
 {
-	if ( bNewIsWalking != bIsWalking )
-	{
-		bIsWalking = bNewIsWalking;
-	}
+    // End:0x1E
+    if(bNewIsWalking != bIsWalking)
+    {
+        bIsWalking = bNewIsWalking;
+    }
+    //return;    
 }
 
 simulated function bool CanSplash()
 {
-	if ( (WorldInfo.TimeSeconds - SplashTime > 0.15)
-		&& ((Physics == PHYS_Falling) || (Physics == PHYS_Flying))
-		&& (Abs(Velocity.Z) > 100) )
-	{
-		SplashTime = WorldInfo.TimeSeconds;
-		return true;
-	}
-	return false;
+    // End:0x78
+    if((((WorldInfo.TimeSeconds - SplashTime) > 0.1500000) && (Physics == 2) || Physics == 4) && Abs(Velocity.Z) > float(100))
+    {
+        SplashTime = WorldInfo.TimeSeconds;
+        return true;
+    }
+    return false;
+    //return ReturnValue;    
 }
 
 function EndClimbLadder(LadderVolume OldLadder)
 {
-	if ( Controller != None )
-		Controller.EndClimbLadder();
-	if ( Physics == PHYS_Ladder )
-		SetPhysics(PHYS_Falling);
+    // End:0x1F
+    if(Controller != none)
+    {
+        Controller.EndClimbLadder();
+    }
+    // End:0x35
+    if(Physics == 9)
+    {
+        SetPhysics(2);
+    }
+    //return;    
 }
 
 function ClimbLadder(LadderVolume L)
 {
-	OnLadder = L;
-	SetRotation(OnLadder.WallDir);
-	SetPhysics(PHYS_Ladder);
-	if ( IsHumanControlled() )
-		Controller.GotoState('PlayerClimbing');
+    OnLadder = L;
+    SetRotation(OnLadder.WallDir);
+    SetPhysics(9);
+    // End:0x44
+    if(IsHumanControlled())
+    {
+        Controller.GotoState('PlayerClimbing');
+    }
+    //return;    
 }
 
-/**
- * list important Pawn variables on canvas.	 HUD will call DisplayDebug() on the current ViewTarget when
- * the ShowDebug exec is used
- *
- * @param	HUD		- HUD with canvas to draw on
- * @input	out_YL		- Height of the current font
- * @input	out_YPos	- Y position on Canvas. out_YPos += out_YL, gives position to draw text for next debug line.
- */
 simulated function DisplayDebug(HUD HUD, out float out_YL, out float out_YPos)
 {
-	local string	T;
-	local Canvas	Canvas;
-	local AnimTree	AnimTreeRootNode;
-	local int		i;
+    local string T;
+    local Canvas Canvas;
+    local AnimTree AnimTreeRootNode;
+    local int I;
 
-	Canvas = HUD.Canvas;
+    Canvas = HUD.Canvas;
+    // End:0x76
+    if(PlayerReplicationInfo == none)
+    {
+        Canvas.DrawText("NO PLAYERREPLICATIONINFO", false);
+        out_YPos += out_YL;
+        Canvas.SetPos(4.0000000, out_YPos);        
+    }
+    else
+    {
+        PlayerReplicationInfo.DisplayDebug(HUD, out_YL, out_YPos);
+    }
+    super.DisplayDebug(HUD, out_YL, out_YPos);
+    Canvas.SetDrawColor(255, 255, 255);
+    Canvas.DrawText("Health " $ string(Health));
+    out_YPos += out_YL;
+    Canvas.SetPos(4.0000000, out_YPos);
+    // End:0x1AC
+    if(HUD.ShouldDisplayDebug('AI'))
+    {
+        Canvas.DrawText((((("Anchor " $ string(Anchor)) $ " Serpentine Dist ") $ string(SerpentineDist)) $ " Time ") $ string(SerpentineTime));
+        out_YPos += out_YL;
+        Canvas.SetPos(4.0000000, out_YPos);
+    }
+    // End:0x3F3
+    if(HUD.ShouldDisplayDebug('Physics'))
+    {
+        T = (((("Floor " $ string(Floor)) $ " DesiredSpeed ") $ string(DesiredSpeed)) $ " Crouched ") $ string(bIsCrouched);
+        // End:0x256
+        if((OnLadder != none) || Physics == 9)
+        {
+            T = (T $ " on ladder ") $ string(OnLadder);
+        }
+        Canvas.DrawText(T);
+        out_YPos += out_YL;
+        Canvas.SetPos(4.0000000, out_YPos);
+        T = "Collision Component:" @ string(CollisionComponent);
+        Canvas.DrawText(T);
+        out_YPos += out_YL;
+        Canvas.SetPos(4.0000000, out_YPos);
+        T = "bForceMaxAccel:" @ string(bForceMaxAccel);
+        Canvas.DrawText(T);
+        out_YPos += out_YL;
+        Canvas.SetPos(4.0000000, out_YPos);
+        // End:0x3F3
+        if(Mesh != none)
+        {
+            T = (("RootMotionMode:" @ string(Mesh.RootMotionMode)) @ "RootMotionVelocity:") @ string(Mesh.RootMotionVelocity);
+            Canvas.DrawText(T);
+            out_YPos += out_YL;
+            Canvas.SetPos(4.0000000, out_YPos);
+        }
+    }
+    // End:0x47D
+    if(HUD.ShouldDisplayDebug('Camera'))
+    {
+        Canvas.DrawText((("EyeHeight " $ string(EyeHeight)) $ " BaseEyeHeight ") $ string(BaseEyeHeight));
+        out_YPos += out_YL;
+        Canvas.SetPos(4.0000000, out_YPos);
+    }
+    // End:0x517
+    if(Controller == none)
+    {
+        Canvas.SetDrawColor(255, 0, 0);
+        Canvas.DrawText("NO CONTROLLER");
+        out_YPos += out_YL;
+        Canvas.SetPos(4.0000000, out_YPos);
+        HUD.PlayerOwner.DisplayDebug(HUD, out_YL, out_YPos);        
+    }
+    else
+    {
+        Controller.DisplayDebug(HUD, out_YL, out_YPos);
+    }
+    // End:0x5E6
+    if(HUD.ShouldDisplayDebug('Weapon'))
+    {
+        // End:0x5C3
+        if(Weapon == none)
+        {
+            Canvas.SetDrawColor(0, 255, 0);
+            Canvas.DrawText("NO WEAPON");
+            out_YPos += out_YL;
+            Canvas.SetPos(4.0000000, out_YPos);            
+        }
+        else
+        {
+            Weapon.DisplayDebug(HUD, out_YL, out_YPos);
+        }
+    }
+    // End:0x7A7
+    if(HUD.ShouldDisplayDebug('Animation'))
+    {
+        // End:0x7A7
+        if((Mesh != none) && Mesh.Animations != none)
+        {
+            AnimTreeRootNode = AnimTree(Mesh.Animations);
+            // End:0x7A7
+            if(AnimTreeRootNode != none)
+            {
+                Canvas.DrawText("AnimGroups count:" @ string(AnimTreeRootNode.AnimGroups.Length));
+                out_YPos += out_YL;
+                Canvas.SetPos(4.0000000, out_YPos);
+                I = 0;
+                J0x6B4:
 
-	if ( PlayerReplicationInfo == None )
-	{
-		Canvas.DrawText("NO PLAYERREPLICATIONINFO", false);
-		out_YPos += out_YL;
-		Canvas.SetPos(4,out_YPos);
-	}
-	else
-	{
-		PlayerReplicationInfo.DisplayDebug(HUD,out_YL,out_YPos);
-	}
-
-	super.DisplayDebug(HUD, out_YL, out_YPos);
-
-	Canvas.SetDrawColor(255,255,255);
-
-	Canvas.DrawText("Health "$Health);
-	out_YPos += out_YL;
-	Canvas.SetPos(4, out_YPos);
-
-	if (HUD.ShouldDisplayDebug('AI'))
-	{
-		Canvas.DrawText("Anchor "$Anchor$" Serpentine Dist "$SerpentineDist$" Time "$SerpentineTime);
-		out_YPos += out_YL;
-		Canvas.SetPos(4,out_YPos);
-	}
-
-	if (HUD.ShouldDisplayDebug('physics'))
-	{
-		T = "Floor "$Floor$" DesiredSpeed "$DesiredSpeed$" Crouched "$bIsCrouched;
-		if ( (OnLadder != None) || (Physics == PHYS_Ladder) )
-			T=T$" on ladder "$OnLadder;
-		Canvas.DrawText(T);
-		out_YPos += out_YL;
-		Canvas.SetPos(4,out_YPos);
-
-		T = "Collision Component:" @ CollisionComponent;
-		Canvas.DrawText(T);
-		out_YPos += out_YL;
-		Canvas.SetPos(4,out_YPos);
-
-		T = "bForceMaxAccel:" @ bForceMaxAccel;
-		Canvas.DrawText(T);
-		out_YPos += out_YL;
-		Canvas.SetPos(4,out_YPos);
-
-		if( Mesh != None  )
-		{
-			T = "RootMotionMode:" @ Mesh.RootMotionMode @ "RootMotionVelocity:" @ Mesh.RootMotionVelocity;
-			Canvas.DrawText(T);
-			out_YPos += out_YL;
-			Canvas.SetPos(4,out_YPos);
-		}
-	}
-
-	if (HUD.ShouldDisplayDebug('camera'))
-	{
-		Canvas.DrawText("EyeHeight "$Eyeheight$" BaseEyeHeight "$BaseEyeHeight);
-		out_YPos += out_YL;
-		Canvas.SetPos(4,out_YPos);
-	}
-
-	// Controller
-	if ( Controller == None )
-	{
-		Canvas.SetDrawColor(255,0,0);
-		Canvas.DrawText("NO CONTROLLER");
-		out_YPos += out_YL;
-		Canvas.SetPos(4,out_YPos);
-		HUD.PlayerOwner.DisplayDebug(HUD, out_YL, out_YPos);
-	}
-	else
-	{
-		Controller.DisplayDebug(HUD, out_YL, out_YPos);
-	}
-
-	// Weapon
-	if (HUD.ShouldDisplayDebug('weapon'))
-	{
-		if ( Weapon == None )
-		{
-			Canvas.SetDrawColor(0,255,0);
-			Canvas.DrawText("NO WEAPON");
-			out_YPos += out_YL;
-			Canvas.SetPos(4, out_YPos);
-		}
-		else
-			Weapon.DisplayDebug(HUD, out_YL, out_YPos);
-	}
-
-	if( HUD.ShouldDisplayDebug('animation') )
-	{
-		if( Mesh != None && Mesh.Animations != None )
-		{
-			AnimTreeRootNode = AnimTree(Mesh.Animations);
-			if( AnimTreeRootNode != None )
-			{
-				Canvas.DrawText("AnimGroups count:" @ AnimTreeRootNode.AnimGroups.Length);
-				out_YPos += out_YL;
-				Canvas.SetPos(4,out_YPos);
-
-				for(i=0; i<AnimTreeRootNode.AnimGroups.Length; i++)
-				{
-					Canvas.DrawText(" GroupName:" @ AnimTreeRootNode.AnimGroups[i].GroupName @ "NodeCount:" @ AnimTreeRootNode.AnimGroups[i].SeqNodes.Length @ "RateScale:" @ AnimTreeRootNode.AnimGroups[i].RateScale);
-					out_YPos += out_YL;
-					Canvas.SetPos(4,out_YPos);
-				}
-			}
-		}
-	}
+                // End:0x7A7 [Loop If]
+                if(I < AnimTreeRootNode.AnimGroups.Length)
+                {
+                    Canvas.DrawText(((((" GroupName:" @ string(AnimTreeRootNode.AnimGroups[I].GroupName)) @ "NodeCount:") @ string(AnimTreeRootNode.AnimGroups[I].SeqNodes.Length)) @ "RateScale:") @ string(AnimTreeRootNode.AnimGroups[I].RateScale));
+                    out_YPos += out_YL;
+                    Canvas.SetPos(4.0000000, out_YPos);
+                    I++;
+                    // [Loop Continue]
+                    goto J0x6B4;
+                }
+            }
+        }
+    }
+    //return;    
 }
 
-//***************************************
-// Interface to Pawn's Controller
+// Export UPawn::execIsHumanControlled(FFrame&, void* const)
+native final simulated function bool IsHumanControlled();
 
-/** IsHumanControlled()
-return true if controlled by a real live human on the local machine.
-On client, only local player's pawn returns true
-*/
-simulated final native function bool IsHumanControlled();
+// Export UPawn::execIsLocallyControlled(FFrame&, void* const)
+native final simulated function bool IsLocallyControlled();
 
-/** IsLocallyControlled()
-return true if controlled by local (not network) player */
-simulated final native function bool IsLocallyControlled();
+// Export UPawn::execIsPlayerPawn(FFrame&, void* const)
+native simulated function bool IsPlayerPawn();
 
-/** IsPlayerPawn()
-return true if controlled by a Player (AI or human) on local machine (any controller on server, localclient's pawn on client)
-*/
-simulated native function bool IsPlayerPawn() const;
-
-// return true if was controlled by a Player (AI or human)
 simulated function bool WasPlayerPawn()
 {
-	return false;
+    return false;
+    //return ReturnValue;    
 }
 
-// return true if viewing this pawn in first person pov. useful for determining what and where to spawn effects
 simulated function bool IsFirstPerson()
 {
-	local PlayerController PC;
+    local PlayerController PC;
 
-	PC = PlayerController(Controller);
-	return ( PC!=None && PC.UsingFirstPersonCamera() );
+    PC = PlayerController(Controller);
+    return (PC != none) && PC.UsingFirstPersonCamera();
+    //return ReturnValue;    
 }
 
-/**
- * Called from PlayerController UpdateRotation() -> ProcessViewRotation() to (pre)process player ViewRotation
- * adds delta rot (player input), applies any limits and post-processing
- * returns the final ViewRotation set on PlayerController
- *
- * @param	DeltaTime, time since last frame
- * @param	ViewRotation, actual PlayerController view rotation
- * @input	out_DeltaRot, delta rotation to be applied on ViewRotation. Represents player's input.
- * @return	processed ViewRotation to be set on PlayerController.
- */
-simulated function ProcessViewRotation( float DeltaTime, out rotator out_ViewRotation, out Rotator out_DeltaRot )
+simulated function ProcessViewRotation(float DeltaTime, out Rotator out_ViewRotation, out Rotator out_DeltaRot)
 {
-	// Add Delta Rotation
-	out_ViewRotation	+= out_DeltaRot;
-	out_DeltaRot		 = rot(0,0,0);
-
-	// Limit Player View Pitch
-	if ( PlayerController(Controller) != None )
-	{
-		out_ViewRotation = PlayerController(Controller).LimitViewRotation( out_ViewRotation, ViewPitchMin, ViewPitchMax );
-	}
+    out_ViewRotation += out_DeltaRot;
+    out_DeltaRot = rot(0, 0, 0);
+    // End:0x5E
+    if(PlayerController(Controller) != none)
+    {
+        out_ViewRotation = PlayerController(Controller).LimitViewRotation(out_ViewRotation, ViewPitchMin, ViewPitchMax);
+    }
+    //return;    
 }
 
-/**
- * returns the point of view of the actor.
- * note that this doesn't mean the camera, but the 'eyes' of the actor.
- * For example, for a Pawn, this would define the eye height location,
- * and view rotation (which is different from the pawn rotation which has a zeroed pitch component).
- * A camera first person view will typically use this view point. Most traces (weapon, AI) will be done from this view point.
- *
- * @output	out_Location, location of view point
- * @output	out_Rotation, view rotation of actor.
- */
-simulated event GetActorEyesViewPoint( out vector out_Location, out Rotator out_Rotation )
+simulated event GetActorEyesViewPoint(out Vector out_Location, out Rotator out_Rotation)
 {
-	out_Location = GetPawnViewLocation();
-	out_Rotation = GetViewRotation();
+    out_Location = GetPawnViewLocation();
+    out_Rotation = GetViewRotation();
+    //return;    
 }
 
-/** @return the rotation the Pawn is looking
- */
-simulated native event rotator GetViewRotation();
+// Export UPawn::execGetViewRotation(FFrame&, void* const)
+native simulated event Rotator GetViewRotation();
 
-/**
- * returns the Eye location of the Pawn.
- *
- * @return	Pawn's eye location
- */
-simulated native event vector GetPawnViewLocation();
+// Export UPawn::execGetPawnViewLocation(FFrame&, void* const)
+native simulated event Vector GetPawnViewLocation();
 
-/**
- * Return world location to start a weapon fire trace from.
- *
- * @return	World location where to start weapon fire traces from
- */
+simulated function Vector GetPawnViewLocLocal()
+{
+    return vect(0.0000000, 0.0000000, 1.0000000) * (BaseEyeHeight + CylinderComponent.CollisionHeight);
+    //return ReturnValue;    
+}
+
 simulated event Vector GetWeaponStartTraceLocation(optional Weapon CurrentWeapon)
 {
-	local vector	POVLoc;
-	local rotator	POVRot;
+    local Vector POVLoc;
+    local Rotator POVRot;
 
-	// If we have a controller, by default we start tracing from the player's 'eyes' location
-	// that is by default Controller.Location for AI, and camera (crosshair) location for human players.
-	if ( Controller != None )
-	{
-		Controller.GetPlayerViewPoint( POVLoc, POVRot );
-		return POVLoc;
-	}
-
-	// If we have no controller, we simply traces from pawn eyes location
-	return GetPawnViewLocation();
+    // End:0x30
+    if(Controller != none)
+    {
+        Controller.GetPlayerViewPoint(POVLoc, POVRot);
+        return POVLoc;
+    }
+    return GetPawnViewLocation();
+    //return ReturnValue;    
 }
 
-
-/**
- * returns base Aim Rotation without any adjustment (no aim error, no autolock, no adhesion.. just clean initial aim rotation!)
- *
- * @return	base Aim rotation.
- */
-simulated singular event Rotator GetBaseAimRotation()
+singular simulated event Rotator GetBaseAimRotation()
 {
-	local vector	POVLoc;
-	local rotator	POVRot;
+    local Vector POVLoc;
+    local Rotator POVRot;
 
-	// If we have a controller, by default we aim at the player's 'eyes' direction
-	// that is by default Controller.Rotation for AI, and camera (crosshair) rotation for human players.
-	if( Controller != None && !InFreeCam() )
-	{
-		Controller.GetPlayerViewPoint(POVLoc, POVRot);
-		return POVRot;
-	}
-
-	// If we have no controller, we simply use our rotation
-	POVRot = Rotation;
-
-	// If our Pitch is 0, then use RemoveViewPitch
-	if( POVRot.Pitch == 0 )
-	{
-		POVRot.Pitch = RemoteViewPitch << 8;
-	}
-
-	return POVRot;
+    // End:0x40
+    if((Controller != none) && !InFreeCam())
+    {
+        Controller.GetPlayerViewPoint(POVLoc, POVRot);
+        return POVRot;
+    }
+    POVRot = Rotation;
+    // End:0x7F
+    if(POVRot.Pitch == 0)
+    {
+        POVRot.Pitch = RemoteViewPitch << 8;
+    }
+    return POVRot;
+    //return ReturnValue;    
 }
 
-/** return true if player is viewing this Pawn in FreeCam */
 simulated event bool InFreeCam()
 {
-	local PlayerController	PC;
+    local PlayerController PC;
 
-	PC = PlayerController(Controller);
-	return (PC != None && PC.PlayerCamera != None && PC.PlayerCamera.CameraStyle == 'FreeCam');
+    PC = PlayerController(Controller);
+    return ((PC != none) && PC.PlayerCamera != none) && PC.PlayerCamera.CameraStyle == 'FreeCam';
+    //return ReturnValue;    
 }
 
-/**
- * Adjusts weapon aiming direction.
- * Gives Pawn a chance to modify its aiming. For example aim error, auto aiming, adhesion, AI help...
- * Requested by weapon prior to firing.
- *
- * @param	W, weapon about to fire
- * @param	StartFireLoc, world location of weapon fire start trace, or projectile spawn loc.
- * @param	BaseAimRot, original aiming rotation without any modifications.
- */
-simulated function Rotator GetAdjustedAimFor( Weapon W, vector StartFireLoc )
+simulated function Rotator GetAdjustedAimFor(Weapon W, Vector StartFireLoc)
 {
-	// If controller doesn't exist or we're a client, get the where the Pawn is aiming at
-	if ( Controller == None || Role < Role_Authority )
-	{
-		return GetBaseAimRotation();
-	}
-
-	// otherwise, give a chance to controller to adjust this Aim Rotation
-	return Controller.GetAdjustedAimFor( W, StartFireLoc );
+    // End:0x28
+    if((Controller == none) || Role < ROLE_Authority)
+    {
+        return GetBaseAimRotation();
+    }
+    return Controller.GetAdjustedAimFor(W, StartFireLoc);
+    //return ReturnValue;    
 }
 
-simulated function SetViewRotation(rotator NewRotation )
+simulated function SetViewRotation(Rotator NewRotation)
 {
-	if (Controller != None)
-	{
-		Controller.SetRotation(NewRotation);
-	}
-	else
-	{
-		SetRotation(NewRotation);
-	}
+    // End:0x20
+    if(Controller != none)
+    {
+        Controller.SetRotation(NewRotation);        
+    }
+    else
+    {
+        SetRotation(NewRotation);
+    }
+    //return;    
 }
 
-/**
- * PawnCalcCamera is obsolete, replaced by Actor.CalcCamera()
-*  rename implementations of PawnCalcCamera to CalcCamera
-* @FIXME - remove
- */
-simulated function bool PawnCalcCamera( float fDeltaTime, out vector out_CamLoc, out rotator out_CamRot, out float out_FOV )
+simulated function bool PawnCalcCamera(float fDeltaTime, out Vector out_CamLoc, out Rotator out_CamRot, out float out_FOV)
 {
-	return CalcCamera(fDeltaTime, out_CamLoc, out_CamRot, out_FOV);
+    return CalcCamera(fDeltaTime, out_CamLoc, out_CamRot, out_FOV);
+    //return ReturnValue;    
 }
 
 function bool InGodMode()
 {
-	return ( (Controller != None) && Controller.bGodMode );
+    return (Controller != none) && Controller.bGodMode;
+    //return ReturnValue;    
 }
 
 simulated function bool AffectedByHitEffects()
 {
-	return (Controller == None || Controller.bAffectedByHitEffects);
+    return (Controller == none) || Controller.bAffectedByHitEffects;
+    //return ReturnValue;    
 }
 
 function bool NearMoveTarget()
 {
-	if ( (Controller == None) || (Controller.MoveTarget == None) )
-		return false;
-
-	return ReachedDestination(Controller.MoveTarget);
+    // End:0x24
+    if((Controller == none) || Controller.MoveTarget == none)
+    {
+        return false;
+    }
+    return ReachedDestination(Controller.MoveTarget);
+    //return ReturnValue;    
 }
 
 function Actor GetMoveTarget()
 {
-	if ( Controller == None )
-		return None;
-
-	return Controller.MoveTarget;
+    // End:0x0D
+    if(Controller == none)
+    {
+        return none;
+    }
+    return Controller.MoveTarget;
+    //return ReturnValue;    
 }
 
-function SetMoveTarget(Actor NewTarget )
+function SetMoveTarget(Actor NewTarget)
 {
-	if ( Controller != None )
-		Controller.MoveTarget = NewTarget;
+    // End:0x20
+    if(Controller != none)
+    {
+        Controller.MoveTarget = NewTarget;
+    }
+    //return;    
 }
 
-function bool LineOfSightTo(actor Other)
+function bool LineOfSightTo(Actor Other)
 {
-	return ( (Controller != None) && Controller.LineOfSightTo(Other) );
+    return (Controller != none) && Controller.LineOfSightTo(Other);
+    //return ReturnValue;    
 }
 
-/* return a value (typically 0 to 1) adjusting pawn's perceived strength if under some special influence (like berserk)
-*/
 function float AdjustedStrength()
 {
-	return 0;
+    return 0.0000000;
+    //return ReturnValue;    
 }
 
 function HandlePickup(Inventory Inv)
 {
-	MakeNoise(0.2);
-	if ( Controller != None )
-		Controller.HandlePickup(Inv);
+    MakeNoise(0.2000000);
+    // End:0x2D
+    if(Controller != none)
+    {
+        Controller.HandlePickup(Inv);
+    }
+    //return;    
 }
 
-function ReceiveLocalizedMessage( class<LocalMessage> Message, optional int Switch, optional PlayerReplicationInfo RelatedPRI_1, optional PlayerReplicationInfo RelatedPRI_2, optional Object OptionalObject )
+function ReceiveLocalizedMessage(class<LocalMessage> Message, optional int Switch, optional PlayerReplicationInfo RelatedPRI_1, optional PlayerReplicationInfo RelatedPRI_2, optional Object OptionalObject)
 {
-	if ( PlayerController(Controller) != None )
-		PlayerController(Controller).ReceiveLocalizedMessage( Message, Switch, RelatedPRI_1, RelatedPRI_2, OptionalObject );
+    // End:0x46
+    if(PlayerController(Controller) != none)
+    {
+        PlayerController(Controller).ReceiveLocalizedMessage(Message, Switch, RelatedPRI_1, RelatedPRI_2, OptionalObject);
+    }
+    //return;    
 }
 
-event ClientMessage( coerce string S, optional Name Type )
+event ClientMessage(coerce string S, optional name Type)
 {
-	if ( PlayerController(Controller) != None )
-		PlayerController(Controller).ClientMessage( S, Type );
+    // End:0x35
+    if(PlayerController(Controller) != none)
+    {
+        PlayerController(Controller).ClientMessage(S, Type);
+    }
+    //return;    
 }
-
-//***************************************
 
 function FinishedInterpolation()
 {
-	DropToGround();
+    DropToGround();
+    //return;    
 }
 
-function JumpOutOfWater(vector jumpDir)
+function JumpOutOfWater(Vector jumpDir)
 {
-	Falling();
-	Velocity = jumpDir * WaterSpeed;
-	Acceleration = jumpDir * AccelRate;
-	velocity.Z = OutofWaterZ; //set here so physics uses this for remainder of tick
-	bUpAndOut = true;
+    Falling();
+    Velocity = jumpDir * WaterSpeed;
+    Acceleration = jumpDir * AccelRate;
+    Velocity.Z = OutofWaterZ;
+    bUpAndOut = true;
+    //return;    
 }
 
-/*
-Modify velocity called by physics before applying new velocity
-for this tick.
-
-Velocity,Acceleration, etc. have been updated by the physics, but location hasn't
-*/
-simulated event ModifyVelocity(float DeltaTime, vector OldVelocity);
+simulated event ModifyVelocity(float DeltaTime, Vector OldVelocity)
+{
+    //return;    
+}
 
 simulated event FellOutOfWorld(class<DamageType> dmgType)
 {
-	if ( Role == ROLE_Authority )
-	{
-		Health = -1;
-		Died( None, dmgType, Location );
-		if ( dmgType == None )
-		{
-			SetPhysics(PHYS_None);
-			SetHidden(True);
-			LifeSpan = FMin(LifeSpan, 1.0);
-		}
-	}
-}
-
-simulated singular event OutsideWorldBounds()
-{
-	// AI pawns on the server just destroy
-	if (Role == ROLE_Authority && PlayerController(Controller) == None)
-	{
-		Destroy();
-	}
-	else
-	{
-		// simply destroying the Pawn could cause synchronization issues with the client controlling it
-		// so kill it, disable it, and wait a while to give it time to replicate before destroying it
-		if (Role == ROLE_Authority)
-		{
-			KilledBy(self);
-		}
-		SetPhysics(PHYS_None);
-		SetHidden(True);
-		LifeSpan = FMin(LifeSpan, 1.0);
+    // End:0x5E
+    if(Role == ROLE_Authority)
+    {
+        Health = -1;
+        Died(none, dmgType, Location);
+        // End:0x5E
+        if(dmgType == none)
+        {
+            SetPhysics(0);
+            SetHidden(true);
+            LifeSpan = FMin(LifeSpan, 1.0000000);
+        }
     }
+    //return;    
 }
 
-/**
- * Makes sure a Pawn is not crouching, telling it to stand if necessary.
- */
+singular simulated event OutsideWorldBounds()
+{
+    // End:0x28
+    if((Role == ROLE_Authority) && PlayerController(Controller) == none)
+    {
+        Destroy();        
+    }
+    else
+    {
+        // End:0x43
+        if(Role == ROLE_Authority)
+        {
+            KilledBy(self);
+        }
+        SetPhysics(PHYS_None);
+        SetHidden(true);
+        LifeSpan = FMin(LifeSpan, 1.0000000);
+    }
+    //return;    
+}
+
 simulated function UnCrouch()
 {
-	if( bIsCrouched || bWantsToCrouch )
-	{
-		ShouldCrouch( false );
-	}
+    // End:0x1F
+    if(bIsCrouched || bWantsToCrouch)
+    {
+        ShouldCrouch(false);
+    }
+    //return;    
 }
 
-/**
- * Controller is requesting that pawn crouches.
- * This is not guaranteed as it depends if crouching collision cylinder can fit when Pawn is located.
- *
- * @param	bCrouch		true if Pawn should crouch.
- */
-function ShouldCrouch( bool bCrouch )
+function ShouldCrouch(bool bCrouch)
 {
-	bWantsToCrouch = bCrouch;
+    bWantsToCrouch = bCrouch;
+    //return;    
 }
 
-/**
- * Event called from native code when Pawn stops crouching.
- * Called on non owned Pawns through bIsCrouched replication.
- * Network: ALL
- *
- * @param	HeightAdjust	height difference in unreal units between default collision height, and actual crouched cylinder height.
- */
-simulated event EndCrouch( float HeightAdjust )
+simulated event EndCrouch(float HeightAdjust)
 {
-	EyeHeight -= HeightAdjust;
-	OldZ += HeightAdjust;
-	SetBaseEyeHeight();
+    EyeHeight -= HeightAdjust;
+    OldZ += HeightAdjust;
+    SetBaseEyeheight();
+    //return;    
 }
 
-/**
- * Event called from native code when Pawn starts crouching.
- * Called on non owned Pawns through bIsCrouched replication.
- * Network: ALL
- *
- * @param	HeightAdjust	height difference in unreal units between default collision height, and actual crouched cylinder height.
- */
-simulated event StartCrouch( float HeightAdjust )
+simulated event StartCrouch(float HeightAdjust)
 {
-	EyeHeight += HeightAdjust;
-	OldZ -= HeightAdjust;
-	SetBaseEyeHeight();
+    EyeHeight += HeightAdjust;
+    OldZ -= HeightAdjust;
+    SetBaseEyeheight();
+    //return;    
 }
 
-function RestartPlayer();
-function AddVelocity( vector NewVelocity, vector HitLocation, class<DamageType> damageType, optional TraceHitInfo HitInfo )
+function RestartPlayer()
 {
-	if ( bIgnoreForces || (NewVelocity == vect(0,0,0)) )
-		return;
-	if ( (Physics == PHYS_Walking)
-		|| (((Physics == PHYS_Ladder) || (Physics == PHYS_Spider)) && (NewVelocity.Z > Default.JumpZ)) )
-		SetPhysics(PHYS_Falling);
-	if ( (Velocity.Z > Default.JumpZ) && (NewVelocity.Z > 0) )
-		NewVelocity.Z *= 0.5;
-	Velocity += NewVelocity;
+    //return;    
 }
 
-function KilledBy( pawn EventInstigator )
+function AddVelocity(Vector NewVelocity, Vector HitLocation, class<DamageType> DamageType, optional TraceHitInfo HitInfo)
 {
-	local Controller Killer;
+    // End:0x25
+    if(bIgnoreForces || NewVelocity == vect(0.0000000, 0.0000000, 0.0000000))
+    {
+        return;
+    }
+    // End:0x7B
+    if((Physics == 1) || ((Physics == 9) || Physics == 8) && NewVelocity.Z > default.JumpZ)
+    {
+        SetPhysics(2);
+    }
+    // End:0xC6
+    if((Velocity.Z > default.JumpZ) && NewVelocity.Z > float(0))
+    {
+        NewVelocity.Z *= 0.5000000;
+    }
+    Velocity += NewVelocity;
+    //return;    
+}
 
-	Health = 0;
-	if ( EventInstigator != None )
-	{
-		Killer = EventInstigator.Controller;
-		LastHitBy = None;
-	}
-	Died( Killer, class'DmgType_Suicided', Location );
+function KilledBy(Pawn EventInstigator)
+{
+    local Controller Killer;
+
+    Health = 0;
+    // End:0x2E
+    if(EventInstigator != none)
+    {
+        Killer = EventInstigator.Controller;
+        LastHitBy = none;
+    }
+    Died(Killer, Class'DmgType_Suicided', Location);
+    //return;    
 }
 
 function TakeFallingDamage()
 {
-	local float EffectiveSpeed;
+    local float EffectiveSpeed;
 
-	if (Velocity.Z < -0.5 * MaxFallSpeed)
-	{
-		if ( Role == ROLE_Authority )
-		{
-			MakeNoise(1.0);
-			if (Velocity.Z < -1 * MaxFallSpeed)
-			{
-				EffectiveSpeed = Velocity.Z;
-				if (TouchingWaterVolume())
-				{
-					EffectiveSpeed += 100;
-				}
-				if (EffectiveSpeed < -1 * MaxFallSpeed)
-				{
-					TakeDamage(-100 * (EffectiveSpeed + MaxFallSpeed)/MaxFallSpeed, None, Location, vect(0,0,0), class'DmgType_Fell');
-				}
-				}
-		}
-	}
-	else if (Velocity.Z < -1.4 * JumpZ)
-		MakeNoise(0.5);
-	else if ( Velocity.Z < -0.8 * JumpZ )
-		MakeNoise(0.2);
+    // End:0xE8
+    if(Velocity.Z < (-0.5000000 * MaxFallSpeed))
+    {
+        // End:0xE5
+        if(Role == ROLE_Authority)
+        {
+            MakeNoise(1.0000000);
+            // End:0xE5
+            if(Velocity.Z < (float(-1) * MaxFallSpeed))
+            {
+                EffectiveSpeed = Velocity.Z;
+                // End:0x8B
+                if(TouchingWaterVolume())
+                {
+                    EffectiveSpeed += float(100);
+                }
+                // End:0xE5
+                if(EffectiveSpeed < (float(-1) * MaxFallSpeed))
+                {
+                    TakeDamage(int((float(-100) * (EffectiveSpeed + MaxFallSpeed)) / MaxFallSpeed), none, Location, vect(0.0000000, 0.0000000, 0.0000000), Class'DmgType_Fell');
+                }
+            }
+        }        
+    }
+    else
+    {
+        // End:0x115
+        if(Velocity.Z < (-1.4000000 * JumpZ))
+        {
+            MakeNoise(0.5000000);            
+        }
+        else
+        {
+            // End:0x13F
+            if(Velocity.Z < (-0.8000000 * JumpZ))
+            {
+                MakeNoise(0.2000000);
+            }
+        }
+    }
+    //return;    
 }
 
-function Restart();
-
-simulated function ClientReStart()
+function Restart()
 {
-	ZeroMovementVariables();
-	SetBaseEyeHeight();
+    //return;    
 }
 
-function ClientSetLocation( vector NewLocation, rotator NewRotation )
+simulated function ClientRestart()
 {
-	if ( Controller != None )
-		Controller.ClientSetLocation(NewLocation, NewRotation);
+    ZeroMovementVariables();
+    SetBaseEyeheight();
+    //return;    
 }
 
-function ClientSetRotation( rotator NewRotation )
+function ClientSetLocation(Vector NewLocation, Rotator NewRotation)
 {
-	if ( Controller != None )
-		Controller.ClientSetRotation(NewRotation);
+    // End:0x29
+    if(Controller != none)
+    {
+        Controller.ClientSetLocation(NewLocation, NewRotation);
+    }
+    //return;    
 }
 
-simulated function FaceRotation(rotator NewRotation, float DeltaTime)
+function ClientSetRotation(Rotator NewRotation)
 {
-	// Do not update Pawn's rotation depending on controller's ViewRotation if in FreeCam.
-	if (!InFreeCam())
-	{
-		if ( Physics == PHYS_Ladder )
-		{
-			NewRotation = OnLadder.Walldir;
-		}
-		else if ( (Physics == PHYS_Walking) || (Physics == PHYS_Falling) )
-		{
-			NewRotation.Pitch = 0;
-		}
-
-		SetRotation(NewRotation);
-	}
+    // End:0x25
+    if(Controller != none)
+    {
+        Controller.ClientSetRotation(NewRotation);
+    }
+    //return;    
 }
 
-//==============
-// Encroachment
-event bool EncroachingOn( actor Other )
+simulated function FaceRotation(Rotator NewRotation, float DeltaTime)
 {
-	if ( Other.bWorldGeometry || Other.bBlocksTeleport )
-		return true;
-
-	if ( ((Controller == None) || !Controller.bIsPlayer) && (Pawn(Other) != None) )
-		return true;
-
-	return false;
+    // End:0x73
+    if(!InFreeCam())
+    {
+        // End:0x37
+        if(Physics == 9)
+        {
+            NewRotation = OnLadder.WallDir;            
+        }
+        else
+        {
+            // End:0x6B
+            if((Physics == 1) || Physics == 2)
+            {
+                NewRotation.Pitch = 0;
+            }
+        }
+        SetRotation(NewRotation);
+    }
+    //return;    
 }
 
-event EncroachedBy( actor Other )
+event bool EncroachingOn(Actor Other)
 {
-	// Allow encroachment by Vehicles so they can push the pawn out of the way
-	if ( Pawn(Other) != None && Vehicle(Other) == None )
-		gibbedBy(Other);
+    // End:0x2A
+    if(Other.bWorldGeometry || Other.bBlocksTeleport)
+    {
+        return true;
+    }
+    // End:0x60
+    if(((Controller == none) || !Controller.bIsPlayer) && Pawn(Other) != none)
+    {
+        return true;
+    }
+    return false;
+    //return ReturnValue;    
 }
 
-function gibbedBy(actor Other)
+event EncroachedBy(Actor Other)
 {
-	if ( Role < ROLE_Authority )
-		return;
-	if ( Pawn(Other) != None )
-		Died(Pawn(Other).Controller, class'DmgType_Telefragged', Location);
-	else
-		Died(None, class'DmgType_Telefragged', Location);
+    // End:0x31
+    if((Pawn(Other) != none) && Vehicle(Other) == none)
+    {
+        gibbedBy(Other);
+    }
+    //return;    
 }
 
-//Base change - if new base is pawn or decoration, damage based on relative mass and old velocity
-// Also, non-players will jump off pawns immediately
+function gibbedBy(Actor Other)
+{
+    // End:0x12
+    if(Role < ROLE_Authority)
+    {
+        return;
+    }
+    // End:0x4D
+    if(Pawn(Other) != none)
+    {
+        Died(Pawn(Other).Controller, Class'DmgType_Telefragged', Location);        
+    }
+    else
+    {
+        Died(none, Class'DmgType_Telefragged', Location);
+    }
+    //return;    
+}
+
 function JumpOffPawn()
 {
-	Velocity += (100 + CylinderComponent.CollisionRadius) * VRand();
-	if ( VSize2D(Velocity) > FMax(500.0, GroundSpeed) )
-	{
-		Velocity = FMax(500.0, GroundSpeed) * Normal(Velocity);
-	}
-	Velocity.Z = 200 + CylinderComponent.CollisionHeight;
-	SetPhysics(PHYS_Falling);
+    Velocity += ((float(100) + CylinderComponent.CollisionRadius) * VRand());
+    // End:0x57
+    if(VSize2D(Velocity) > FMax(500.0000000, GroundSpeed))
+    {
+        Velocity = FMax(500.0000000, GroundSpeed) * Normal(Velocity);
+    }
+    Velocity.Z = 200.0000000 + CylinderComponent.CollisionHeight;
+    SetPhysics(2);
+    //return;    
 }
 
-/** Called when pawn cylinder embedded in another pawn.  (Collision bug that needs to be fixed).
-*/
-event StuckOnPawn(Pawn OtherPawn);
+event StuckOnPawn(Pawn OtherPawn)
+{
+    //return;    
+}
 
-/**
-  * Event called after actor's base changes.
-*/
 singular event BaseChange()
 {
-	local DynamicSMActor Dyn;
+    local DynamicSMActor Dyn;
 
-	// Pawns can only set base to non-pawns, or pawns which specifically allow it.
-	// Otherwise we do some damage and jump off.
-	if (Pawn(Base) != None && (DrivenVehicle == None || !DrivenVehicle.IsBasedOn(Base)))
-	{
-		if( !Pawn(Base).CanBeBaseForPawn(Self) )
-		{
-			Pawn(Base).CrushedBy(self);
-			JumpOffPawn();
-		}
-	}
-
-	// If it's a KActor, see if we can stand on it.
-	Dyn = DynamicSMActor(Base);
-	if( Dyn != None && !Dyn.CanBasePawn(self) )
-
-	{
-		JumpOffPawn();
-	}
+    // End:0x7C
+    if((Pawn(Base) != none) && (DrivenVehicle == none) || !DrivenVehicle.IsBasedOn(Base))
+    {
+        // End:0x7C
+        if(!Pawn(Base).CanBeBaseForPawn(self))
+        {
+            Pawn(Base).CrushedBy(self);
+            JumpOffPawn();
+        }
+    }
+    Dyn = DynamicSMActor(Base);
+    // End:0xBD
+    if((Dyn != none) && !Dyn.CanBasePawn(self))
+    {
+        JumpOffPawn();
+    }
+    //return;    
 }
 
-
-/**
- * Are we allowing this Pawn to be based on us?
- */
-simulated function bool CanBeBaseForPawn(Pawn APawn)
+simulated function bool CanBeBaseForPawn(Pawn aPawn)
 {
-	return bCanBeBaseForPawns;
+    return bCanBeBaseForPawns;
+    //return ReturnValue;    
 }
 
-/** CrushedBy()
-Called for pawns that have bCanBeBaseForPawns=false when another pawn becomes based on them
-*/
 function CrushedBy(Pawn OtherPawn)
 {
-	TakeDamage( (1-OtherPawn.Velocity.Z/400)* OtherPawn.Mass/Mass, OtherPawn.Controller,Location, vect(0,0,0) , class'DmgType_Crushed');
+    TakeDamage(int(((float(1) - (OtherPawn.Velocity.Z / float(400))) * OtherPawn.Mass) / Mass), OtherPawn.Controller, Location, vect(0.0000000, 0.0000000, 0.0000000), Class'DmgType_Crushed');
+    //return;    
 }
 
-//=============================================================================
-
-/**
- * Call this function to detach safely pawn from its controller
- *
- * @param	bDestroyController	if true, then destroy controller. (only AI Controllers, not players)
- */
-function DetachFromController( optional bool bDestroyController )
+function DetachFromController(optional bool bDestroyController)
 {
-	local Controller OldController;
+    local Controller OldController;
 
-	// if we have a controller, notify it we're getting destroyed
-	// be careful with bTearOff, we're authority on client! Make sure our controller and pawn match up.
-	if ( Controller != None && Controller.Pawn == Self )
-	{
-		OldController = Controller;
-		Controller.PawnDied( Self );
-		if ( Controller != None )
-		{
-			Controller.UnPossess();
-		}
-
-		if ( bDestroyController && OldController != None && !OldController.bDeleteMe && !OldController.bIsPlayer )
-		{
-			OldController.Destroy();
-		}
-		Controller = None;
-	}
+    // End:0xBA
+    if((Controller != none) && Controller.Pawn == self)
+    {
+        OldController = Controller;
+        Controller.PawnDied(self);
+        // End:0x62
+        if(Controller != none)
+        {
+            Controller.UnPossess();
+        }
+        // End:0xB3
+        if(((bDestroyController && OldController != none) && !OldController.bDeleteMe) && !OldController.bIsPlayer)
+        {
+            OldController.Destroy();
+        }
+        Controller = none;
+    }
+    //return;    
 }
 
 simulated event Destroyed()
 {
-	DetachFromController();
-
-	if ( InvManager != None )
-		InvManager.Destroy();
-
-	if ( WorldInfo.NetMode == NM_Client )
-		return;
-
-	// Clear anchor to avoid checkpoint crash
-	SetAnchor( None );
-
-	Weapon = None;
-
-	//debug
-	ClearPathStep();
-
-	super.Destroyed();
+    DetachFromController();
+    // End:0x23
+    if(InvManager != none)
+    {
+        InvManager.Destroy();
+    }
+    // End:0x3F
+    if(WorldInfo.NetMode == NM_Client)
+    {
+        return;
+    }
+    SetAnchor(none);
+    Weapon = none;
+    ClearPathStep();
+    super.Destroyed();
+    //return;    
 }
 
-//=============================================================================
-//
-// Called immediately before gameplay begins.
-//
 simulated event PreBeginPlay()
 {
-	// important that this comes before Super so mutators can modify it
-	if (HealthMax == 0)
-	{
-		HealthMax = default.Health;
-	}
-
-	Super.PreBeginPlay();
-
-	Instigator = self;
-	DesiredRotation = Rotation;
-	EyeHeight = BaseEyeHeight;
+    // End:0x16
+    if(HealthMax == 0)
+    {
+        HealthMax = default.Health;
+    }
+    super.PreBeginPlay();
+    Instigator = self;
+    DesiredRotation = Rotation;
+    EyeHeight = BaseEyeHeight;
+    //return;    
 }
 
 event PostBeginPlay()
 {
-	super.PostBeginPlay();
-
-	SplashTime = 0;
-	SpawnTime = WorldInfo.TimeSeconds;
-	EyeHeight	= BaseEyeHeight;
-
-	// automatically add controller to pawns which were placed in level
-	// NOTE: pawns spawned during gameplay are not automatically possessed by a controller
-	if ( WorldInfo.bStartup && (Health > 0) && !bDontPossess )
-	{
-		SpawnDefaultController();
-	}
-
-	// Spawn Inventory Container
-	if (Role == ROLE_Authority && InvManager == None && InventoryManagerClass != None)
-	{
-		InvManager = Spawn(InventoryManagerClass, Self);
-		if ( InvManager == None )
-			`log("Warning! Couldn't spawn InventoryManager" @ InventoryManagerClass @ "for" @ Self @ GetHumanReadableName() );
-		else
-			InvManager.SetupFor( Self );
-	}
-
-	//debug
-	ClearPathStep();
+    super.PostBeginPlay();
+    SplashTime = 0.0000000;
+    SpawnTime = WorldInfo.TimeSeconds;
+    EyeHeight = BaseEyeHeight;
+    // End:0x68
+    if((WorldInfo.bStartup && Health > 0) && !bDontPossess)
+    {
+        SpawnDefaultController();
+    }
+    // End:0x11A
+    if(((Role == ROLE_Authority) && InvManager == none) && InventoryManagerClass != none)
+    {
+        InvManager = Spawn(InventoryManagerClass, self);
+        // End:0x105
+        if(InvManager == none)
+        {
+            LogInternal(((("Warning! Couldn't spawn InventoryManager" @ string(InventoryManagerClass)) @ "for") @ string(self)) @ (GetHumanReadableName()));            
+        }
+        else
+        {
+            InvManager.SetupFor(self);
+        }
+    }
+    ClearPathStep();
+    //return;    
 }
 
-
-/**
- * Spawn default controller for this Pawn, get possessed by it.
- */
 function SpawnDefaultController()
 {
-	if ( Controller != None )
-	{
-		`log("SpawnDefaultController" @ Self @ ", Controller != None" @ Controller );
-		return;
-	}
+    local Controller TempController;
 
-	if ( ControllerClass != None )
-	{
-		Controller = Spawn(ControllerClass);
-	}
-
-	if ( Controller != None )
-	{
-		Controller.Possess( Self, false );
-	}
+    // End:0x4E
+    if(Controller != none)
+    {
+        LogInternal((("SpawnDefaultController" @ string(self)) @ ", Controller != None") @ string(Controller));
+        return;
+    }
+    // End:0x70
+    if(ControllerClass != none)
+    {
+        TempController = Spawn(ControllerClass);
+    }
+    // End:0x9C
+    if(TempController != none)
+    {
+        TempController.Possess(self, false);
+        Controller = TempController;
+    }
+    //return;    
 }
 
-/**
- * Deletes the current controller if it exists and creates a new one
- * using the specified class.
- * Event called from Kismet.
- *
- * @param		inAction - scripted action that was activated
- */
 function OnAssignController(SeqAct_AssignController inAction)
 {
-
-	if ( inAction.ControllerClass != None )
-	{
-		if ( Controller != None )
-		{
-			DetachFromController( true );
-		}
-
-		Controller = Spawn(inAction.ControllerClass);
-		Controller.Possess( Self, false );
-
-		// Set class as the default one if pawn is restarted.
-		if ( Controller.IsA('AIController') )
-		{
-			ControllerClass = class<AIController>(Controller.Class);
-		}
-	}
-	else
-	{
-		`warn("Assign controller w/o a class specified!");
-	}
+    // End:0x97
+    if(inAction.ControllerClass != none)
+    {
+        // End:0x2B
+        if(Controller != none)
+        {
+            DetachFromController(true);
+        }
+        Controller = Spawn(inAction.ControllerClass);
+        Controller.Possess(self, false);
+        // End:0x94
+        if(Controller.IsA('AIController'))
+        {
+            ControllerClass = class<AIController>(Controller.Class);
+        }        
+    }
+    else
+    {
+        WarnInternal("Assign controller w/o a class specified!");
+    }
+    //return;    
 }
 
-/**
- * Iterates through the list of item classes specified in the action
- * and creates instances that are addeed to this Pawn's inventory.
- *
- * @param		inAction - scripted action that was activated
- */
-simulated function OnGiveInventory(SeqAct_GiveInventory InAction)
+simulated function OnGiveInventory(SeqAct_GiveInventory inAction)
 {
-	local int Idx;
-	local class<Inventory> InvClass;
+    local int Idx;
+    local class<Inventory> InvClass;
 
-	if (InAction.bClearExisting)
-	{
-		InvManager.DiscardInventory();
-	}
+    // End:0x27
+    if(inAction.bClearExisting)
+    {
+        InvManager.DiscardInventory();
+    }
+    // End:0xF0
+    if(inAction.InventoryList.Length > 0)
+    {
+        Idx = 0;
+        J0x44:
 
-	if (InAction.InventoryList.Length > 0 )
-	{
-		for (Idx = 0; Idx < InAction.InventoryList.Length; Idx++)
-		{
-			InvClass = InAction.InventoryList[idx];
-			if (InvClass != None)
-			{
-				// only create if it doesn't already exist
-				if (FindInventoryType(InvClass,FALSE) == None)
-				{
-					CreateInventory(InvClass);
-				}
-			}
-			else
-			{
-				InAction.ScriptLog("WARNING: Attempting to give NULL inventory!");
-			}
-		}
-	}
-	else
-	{
-		InAction.ScriptLog("WARNING: Give Inventory without any inventory specified!");
-	}
+        // End:0xED [Loop If]
+        if(Idx < inAction.InventoryList.Length)
+        {
+            InvClass = inAction.InventoryList[Idx];
+            // End:0xA5
+            if(InvClass != none)
+            {
+                // End:0xA2
+                if(FindInventoryType(InvClass, false) == none)
+                {
+                    CreateInventory(InvClass);
+                }
+                // [Explicit Continue]
+                goto J0xE3;
+            }
+            inAction.ScriptLog("WARNING: Attempting to give NULL inventory!");
+            J0xE3:
+
+            Idx++;
+            // [Loop Continue]
+            goto J0x44;
+        }        
+    }
+    else
+    {
+        inAction.ScriptLog("WARNING: Give Inventory without any inventory specified!");
+    }
+    //return;    
 }
 
-function Gasp();
+function Gasp()
+{
+    //return;    
+}
 
 function SetMovementPhysics()
 {
-	// check for water volume
-	if (PhysicsVolume.bWaterVolume)
-	{
-		SetPhysics(PHYS_Swimming);
-	}
-	else if (Physics != PHYS_Falling)
-	{
-		SetPhysics(PHYS_Falling);
-	}
+    // End:0x1C
+    if(PhysicsVolume.bWaterVolume)
+    {
+        SetPhysics(3);        
+    }
+    else
+    {
+        // End:0x32
+        if(Physics != 2)
+        {
+            SetPhysics(2);
+        }
+    }
+    //return;    
 }
 
-/* AdjustDamage()
-adjust damage based on inventory, other attributes
-*/
-function AdjustDamage( out int inDamage, out Vector momentum, Controller instigatedBy, Vector hitlocation, class<DamageType> damageType, optional TraceHitInfo HitInfo );
+function AdjustDamage(out int inDamage, out Vector Momentum, Controller InstigatedBy, Vector HitLocation, class<DamageType> DamageType, optional TraceHitInfo HitInfo)
+{
+    //return;    
+}
 
 function bool HealDamage(int Amount, Controller Healer, class<DamageType> DamageType)
 {
-	// not if already dead or already at full
-	if (Health > 0 && Health < HealthMax)
-	{
-		Health = Min(HealthMax, Health + Amount);
-		return true;
-	}
-	else
-	{
-		return false;
-	}
+    // End:0x3A
+    if((Health > 0) && Health < HealthMax)
+    {
+        Health = Min(HealthMax, Health + Amount);
+        return true;        
+    }
+    else
+    {
+        return false;
+    }
+    //return ReturnValue;    
 }
 
-/** Take a list of bones passed to TakeRadiusDamageOnBones and remove the ones that don't matter */
-function PruneDamagedBoneList( out array<Name> Bones );
-
-/**
- *	Damage radius applied to specific bones on the skeletal mesh
- */
-event bool TakeRadiusDamageOnBones
-(
- Controller			InstigatedBy,
- float				BaseDamage,
- float				DamageRadius,
-class<DamageType>	DamageType,
-	float				Momentum,
-	vector				HurtOrigin,
-	bool				bFullDamage,
-	Actor				DamageCauser,
-	array<Name>			Bones
-	)
+function PruneDamagedBoneList(out array<name> Bones)
 {
-
-	local int			Idx;
-	local TraceHitInfo	HitInfo;
-	local bool			bResult;
-	local float			DamageScale, Dist;
-	local vector		Dir, BoneLoc;
-
-	PruneDamagedBoneList( Bones );
-
-	for( Idx = 0; Idx < Bones.Length; Idx++ )
-	{
-		HitInfo.BoneName	 = Bones[Idx];
-		HitInfo.HitComponent = Mesh;
-
-		BoneLoc = Mesh.GetBoneLocation(Bones[Idx]);
-		Dir		= BoneLoc - HurtOrigin;
-		Dist	= VSize(Dir);
-		Dir		= Normal(Dir);
-		if( bFullDamage )
-		{
-			DamageScale = 1.f;
-		}
-		else
-		{
-			DamageScale = 1.f - Dist/DamageRadius;
-		}
-
-		if( DamageScale > 0.f )
-		{
-			TakeDamage
-			(
-				DamageScale * BaseDamage,
-				InstigatedBy,
-				BoneLoc,
-				DamageScale * Momentum * Dir,
-				DamageType,
-				HitInfo,
-				DamageCauser
-			);
-		}
-
-		bResult = TRUE;
-	}
-
-	return bResult;
+    //return;    
 }
 
-/** sends any notifications to anything that needs to know this pawn has taken damage */
-function NotifyTakeHit(Controller InstigatedBy, vector HitLocation, int Damage, class<DamageType> DamageType, vector Momentum)
+event bool TakeRadiusDamageOnBones(Controller InstigatedBy, float BaseDamage, float DamageRadius, class<DamageType> DamageType, float Momentum, Vector HurtOrigin, bool bFullDamage, Actor DamageCauser, array<name> Bones)
 {
-	if (Controller != None)
-	{
-		Controller.NotifyTakeHit(InstigatedBy, HitLocation, Damage, DamageType, Momentum);
-	}
+    local int Idx;
+    local TraceHitInfo HitInfo;
+    local bool bResult;
+    local float DamageScale, Dist;
+    local Vector Dir, BoneLoc;
+
+    PruneDamagedBoneList(Bones);
+    Idx = 0;
+    J0x16:
+
+    // End:0x13B [Loop If]
+    if(Idx < Bones.Length)
+    {
+        HitInfo.BoneName = Bones[Idx];
+        HitInfo.HitComponent = Mesh;
+        BoneLoc = Mesh.GetBoneLocation(Bones[Idx]);
+        Dir = BoneLoc - HurtOrigin;
+        Dist = VSize(Dir);
+        Dir = Normal(Dir);
+        // End:0xBD
+        if(bFullDamage)
+        {
+            DamageScale = 1.0000000;            
+        }
+        else
+        {
+            DamageScale = 1.0000000 - (Dist / DamageRadius);
+        }
+        // End:0x129
+        if(DamageScale > 0.0000000)
+        {
+            TakeDamage(int(DamageScale * BaseDamage), InstigatedBy, BoneLoc, (DamageScale * Momentum) * Dir, DamageType, HitInfo, DamageCauser);
+        }
+        bResult = true;
+        Idx++;
+        // [Loop Continue]
+        goto J0x16;
+    }
+    return bResult;
+    //return ReturnValue;    
 }
 
-function controller SetKillInstigator(Controller InstigatedBy, class<DamageType> DamageType)
+function NotifyTakeHit(Controller InstigatedBy, Vector HitLocation, int Damage, class<DamageType> DamageType, Vector Momentum)
 {
-	if ( (InstigatedBy != None) && (InstigatedBy != Controller) )
-	{
-		return InstigatedBy;
-	}
-	else if ( DamageType.default.bCausedByWorld && (LastHitBy != None) )
-	{
-		return LastHitBy;
-	}
-	return InstigatedBy;
+    // End:0x38
+    if(Controller != none)
+    {
+        Controller.NotifyTakeHit(InstigatedBy, HitLocation, Damage, DamageType, Momentum);
+    }
+    //return;    
 }
 
-event TakeDamage(int Damage, Controller InstigatedBy, vector HitLocation, vector Momentum, class<DamageType> DamageType, optional TraceHitInfo HitInfo, optional Actor DamageCauser)
+function Controller SetKillInstigator(Controller InstigatedBy, class<DamageType> DamageType)
 {
-	local int actualDamage;
-	local PlayerController PC;
-	local Controller Killer;
-
-	if ( (Role < ROLE_Authority) || (Health <= 0) )
-	{
-		return;
-	}
-
-	if ( damagetype == None )
-	{
-		if ( InstigatedBy == None )
-			`warn("No damagetype for damage with no instigator");
-		else
-			`warn("No damagetype for damage by "$instigatedby.pawn$" with weapon "$InstigatedBy.Pawn.Weapon);
-		//scripttrace();
-		DamageType = class'DamageType';
-	}
-	Damage = Max(Damage, 0);
-
-	if (Physics == PHYS_None && DrivenVehicle == None)
-	{
-		SetMovementPhysics();
-	}
-	if (Physics == PHYS_Walking && damageType.default.bExtraMomentumZ)
-	{
-		momentum.Z = FMax(momentum.Z, 0.4 * VSize(momentum));
-	}
-	momentum = momentum/Mass;
-
-	if ( DrivenVehicle != None )
-	{
-		DrivenVehicle.AdjustDriverDamage( Damage, InstigatedBy, HitLocation, Momentum, DamageType );
-	}
-
-	ActualDamage = Damage;
-	WorldInfo.Game.ReduceDamage(ActualDamage, self, instigatedBy, HitLocation, Momentum, DamageType);
-	AdjustDamage(ActualDamage, Momentum, instigatedBy, HitLocation, DamageType, HitInfo);
-
-	// call Actor's version to handle any SeqEvent_TakeDamage for scripting
-	Super.TakeDamage(ActualDamage, InstigatedBy, HitLocation, Momentum, DamageType, HitInfo, DamageCauser);
-
-	Health -= actualDamage;
-	if (HitLocation == vect(0,0,0))
-	{
-		HitLocation = Location;
-	}
-
-	if ( Health <= 0 )
-	{
-		PC = PlayerController(Controller);
-		// play force feedback for death
-		if (PC != None)
-		{
-			PC.ClientPlayForceFeedbackWaveform(damageType.default.KilledFFWaveform);
-		}
-		// pawn died
-		Killer = SetKillInstigator(InstigatedBy, DamageType);
-		TearOffMomentum = momentum;
-		Died(Killer, damageType, HitLocation);
-	}
-	else
-	{
-		AddVelocity( momentum, HitLocation, DamageType, HitInfo );
-		NotifyTakeHit(InstigatedBy, HitLocation, ActualDamage, DamageType, Momentum);
-		if (DrivenVehicle != None)
-		{
-			DrivenVehicle.NotifyDriverTakeHit(InstigatedBy, HitLocation, actualDamage, DamageType, Momentum);
-		}
-		if ( instigatedBy != None && instigatedBy != controller )
-		{
-			LastHitBy = instigatedBy;
-		}
-	}
-	PlayHit(actualDamage,InstigatedBy, hitLocation, damageType, Momentum, HitInfo);
-	MakeNoise(1.0);
+    // End:0x25
+    if((InstigatedBy != none) && InstigatedBy != Controller)
+    {
+        return InstigatedBy;        
+    }
+    else
+    {
+        // End:0x4B
+        if(DamageType.default.bCausedByWorld && LastHitBy != none)
+        {
+            return LastHitBy;
+        }
+    }
+    return InstigatedBy;
+    //return ReturnValue;    
 }
 
-/*
- * Queries the PRI and returns our current team index.
- */
-simulated native function byte GetTeamNum();
+event TakeDamage(int Damage, Controller InstigatedBy, Vector HitLocation, Vector Momentum, class<DamageType> DamageType, optional TraceHitInfo HitInfo, optional Actor DamageCauser)
+{
+    local int actualDamage;
+    local PlayerController PC;
+    local Controller Killer;
 
+    // End:0x21
+    if((Role < ROLE_Authority) || Health <= 0)
+    {
+        return;
+    }
+    // End:0xD5
+    if(DamageType == none)
+    {
+        // End:0x69
+        if(InstigatedBy == none)
+        {
+            WarnInternal("No damagetype for damage with no instigator");            
+        }
+        else
+        {
+            WarnInternal((("No damagetype for damage by " $ string(InstigatedBy.Pawn)) $ " with weapon ") $ string(InstigatedBy.Pawn.Weapon));
+        }
+        DamageType = Class'DamageType';
+    }
+    Damage = Max(Damage, 0);
+    // End:0x139
+    if((Physics == 1) && DamageType.default.bExtraMomentumZ)
+    {
+        Momentum.Z = FMax(Momentum.Z, 0.4000000 * VSize(Momentum));
+    }
+    Momentum = Momentum / Mass;
+    actualDamage = Damage;
+    WorldInfo.Game.ReduceDamage(actualDamage, self, InstigatedBy, HitLocation, Momentum, DamageType);
+    AdjustDamage(actualDamage, Momentum, InstigatedBy, HitLocation, DamageType, HitInfo);
+    super.TakeDamage(actualDamage, InstigatedBy, HitLocation, Momentum, DamageType, HitInfo, DamageCauser);
+    Health -= actualDamage;
+    // End:0x20D
+    if(HitLocation == vect(0.0000000, 0.0000000, 0.0000000))
+    {
+        HitLocation = Location;
+    }
+    // End:0x297
+    if(Health <= 0)
+    {
+        PC = PlayerController(Controller);
+        // End:0x256
+        if(PC != none)
+        {
+            PC.ClientPlayForceFeedbackWaveform(DamageType.default.KilledFFWaveform);
+        }
+        Killer = SetKillInstigator(InstigatedBy, DamageType);
+        TearOffMomentum = Momentum;
+        Died(Killer, DamageType, HitLocation);        
+    }
+    else
+    {
+        NotifyTakeHit(InstigatedBy, HitLocation, actualDamage, DamageType, Momentum);
+        // End:0x2C5
+        if(DrivenVehicle != none)
+        {
+        }
+        // End:0x2EC
+        if((InstigatedBy != none) && InstigatedBy != Controller)
+        {
+            LastHitBy = InstigatedBy;
+        }
+    }
+    PlayHit(float(actualDamage), InstigatedBy, HitLocation, DamageType, Momentum, HitInfo);
+    MakeNoise(1.0000000);
+    //return;    
+}
+
+// Export UPawn::execGetTeamNum(FFrame&, void* const)
+native simulated function byte GetTeamNum();
 
 simulated function TeamInfo GetTeam()
 {
-	if (Controller != None && Controller.PlayerReplicationInfo != None)
-	{
-		return Controller.PlayerReplicationInfo.Team;
-	}
-	else if (PlayerReplicationInfo != None)
-	{
-		return PlayerReplicationInfo.Team;
-	}
-	else if (DrivenVehicle != None && DrivenVehicle.PlayerReplicationInfo != None)
-	{
-		return DrivenVehicle.PlayerReplicationInfo.Team;
-	}
-	else
-	{
-		return None;
-	}
+    // End:0x3F
+    if((Controller != none) && Controller.PlayerReplicationInfo != none)
+    {
+        return Controller.PlayerReplicationInfo.Team;        
+    }
+    else
+    {
+        // End:0x5D
+        if(PlayerReplicationInfo != none)
+        {
+            return PlayerReplicationInfo.Team;            
+        }
+        else
+        {
+            // End:0x9C
+            if((DrivenVehicle != none) && DrivenVehicle.PlayerReplicationInfo != none)
+            {
+                return DrivenVehicle.PlayerReplicationInfo.Team;                
+            }
+            else
+            {
+                return none;
+            }
+        }
+    }
+    //return ReturnValue;    
 }
 
-/** Returns true of pawns are on the same team, false otherwise */
-simulated event bool IsSameTeam( Pawn Other )
+simulated event bool IsSameTeam(Pawn Other)
 {
-	 return ( Other != None &&
-		Other.GetTeam() != None &&
-		Other.GetTeam() == GetTeam() );
+    return ((Other != none) && Other.GetTeam() != none) && Other.GetTeam() == (GetTeam());
+    //return ReturnValue;    
 }
 
-/**
- * This pawn has died.
- *
- * @param	Killer			Who killed this pawn
- * @param	DamageType		What killed it
- * @param	HitLocation		Where did the hit occur
- *
- * @returns true if allowed
- */
-function bool Died(Controller Killer, class<DamageType> DamageType, vector HitLocation)
+function bool Died(Controller Killer, class<DamageType> DamageType, Vector HitLocation)
 {
-	local SeqAct_Latent Action;
+    local SeqAct_Latent Action;
 
-	// ensure a valid damagetype
-	if ( damageType == None )
-	{
-		damageType = class'DamageType';
-	}
-	// if already destroyed or level transition is occuring then ignore
-	if ( bDeleteMe || WorldInfo.Game == None || WorldInfo.Game.bLevelChange )
-	{
-		return FALSE;
-	}
-	// if this is an environmental death then refer to the previous killer so that they receive credit (knocked into lava pits, etc)
-	if ( DamageType.default.bCausedByWorld && (Killer == None || Killer == Controller) && LastHitBy != None )
-	{
-		Killer = LastHitBy;
-	}
-	// gameinfo hook to prevent deaths
-	// WARNING - don't prevent bot suicides - they suicide when really needed
-	if ( WorldInfo.Game.PreventDeath(self, Killer, damageType, HitLocation) )
-	{
-		Health = max(Health, 1);
-		return false;
-	}
-	Health = Min(0, Health);
-	// activate death events
-	TriggerEventClass( class'SeqEvent_Death', self );
-	// and abort any latent actions
-	foreach LatentActions(Action)
-	{
-		Action.AbortFor(self);
-	}
-	LatentActions.Length = 0;
-	// notify the vehicle we are currently driving
-	if ( DrivenVehicle != None )
-	{
-		Velocity = DrivenVehicle.Velocity;
-		DrivenVehicle.DriverDied(DamageType);
-	}
-	else if ( Weapon != None )
-	{
-		Weapon.HolderDied();
-		ThrowActiveWeapon( DamageType );
-	}
-	// notify the gameinfo of the death
-	if ( Controller != None )
-	{
-		WorldInfo.Game.Killed(Killer, Controller, self, damageType);
-	}
-	else
-	{
-		WorldInfo.Game.Killed(Killer, Controller(Owner), self, damageType);
-	}
-	DrivenVehicle = None;
-	// notify inventory manager
-	if ( InvManager != None )
-	{
-		InvManager.OwnerEvent('died');
-		// and destroy
-		InvManager.Destroy();
-		InvManager = None;
-	}
-	// push the corpse upward (@fixme - somebody please remove this?)
-	Velocity.Z *= 1.3;
-	// if this is a human player then force a replication update
-	if ( IsHumanControlled() )
-	{
-		PlayerController(Controller).ForceDeathUpdate();
-	}
-	PlayDying(DamageType, HitLocation);
-	return TRUE;
+    // End:0x16
+    if(DamageType == none)
+    {
+        DamageType = Class'DamageType';
+    }
+    // End:0x57
+    if((bDeleteMe || WorldInfo.Game == none) || WorldInfo.Game.bLevelChange)
+    {
+        return false;
+    }
+    // End:0xA0
+    if((DamageType.default.bCausedByWorld && (Killer == none) || Killer == Controller) && LastHitBy != none)
+    {
+        Killer = LastHitBy;
+    }
+    // End:0xE1
+    if(WorldInfo.Game.PreventDeath(self, Killer, DamageType, HitLocation))
+    {
+        Health = Max(Health, 1);
+        return false;
+    }
+    Health = Min(0, Health);
+    TriggerEventClass(Class'SeqEvent_Death', self);
+    // End:0x127
+    foreach LatentActions(Action)
+    {
+        Action.AbortFor(self);        
+    }    
+    LatentActions.Length = 0;
+    // End:0x13E
+    if(DrivenVehicle != none)
+    {        
+    }
+    else
+    {
+        // End:0x16C
+        if(Weapon != none)
+        {
+            Weapon.HolderDied();
+            ThrowActiveWeapon(DamageType);
+        }
+    }
+    // End:0x1A8
+    if(Controller != none)
+    {
+        WorldInfo.Game.Killed(Killer, Controller, self, DamageType);        
+    }
+    else
+    {
+        WorldInfo.Game.Killed(Killer, Controller(Owner), self, DamageType);
+    }
+    DrivenVehicle = none;
+    // End:0x21E
+    if(InvManager != none)
+    {
+        InvManager.OwnerEvent('Died');
+        InvManager.Destroy();
+        InvManager = none;
+    }
+    Velocity.Z *= 1.3000000;
+    // End:0x257
+    if(IsHumanControlled())
+    {
+        PlayerController(Controller).ForceDeathUpdate();
+    }
+    PlayDying(DamageType, HitLocation);
+    return true;
+    //return ReturnValue;    
 }
 
-event Falling();
-
-event HitWall(vector HitNormal, actor Wall, PrimitiveComponent WallComp);
-
-event Landed(vector HitNormal, Actor FloorActor)
+event Falling()
 {
-	TakeFallingDamage();
-	if ( Health > 0 )
-		PlayLanded(Velocity.Z);
-	LastHitBy = None;
+    //return;    
+}
+
+event HitWall(Vector HitNormal, Actor Wall, PrimitiveComponent WallComp)
+{
+    //return;    
+}
+
+event AnimationTriggerCallback(name TagName, array<string> Params, AnimSet TagAnimSet, float Time)
+{
+    LogInternal("Pawn::AnimationTriggerCallback" @ string(TagName));
+    //return;    
+}
+
+event Landed(Vector HitNormal, Actor FloorActor)
+{
+    TakeFallingDamage();
+    // End:0x2F
+    if(Health > 0)
+    {
+        PlayLanded(Velocity.Z);
+    }
+    LastHitBy = none;
+    //return;    
 }
 
 event HeadVolumeChange(PhysicsVolume newHeadVolume)
 {
-	if ( (WorldInfo.NetMode == NM_Client) || (Controller == None) )
-		return;
-	if ( HeadVolume.bWaterVolume )
-	{
-		if (!newHeadVolume.bWaterVolume)
-		{
-			if ( Controller.bIsPlayer && (BreathTime > 0) && (BreathTime < 8) )
-				Gasp();
-			BreathTime = -1.0;
-		}
-	}
-	else if ( newHeadVolume.bWaterVolume )
-	{
-		BreathTime = UnderWaterTime;
-	}
+    // End:0x29
+    if((WorldInfo.NetMode == NM_Client) || Controller == none)
+    {
+        return;
+    }
+    // End:0x9B
+    if(HeadVolume.bWaterVolume)
+    {
+        // End:0x98
+        if(!newHeadVolume.bWaterVolume)
+        {
+            // End:0x8D
+            if((Controller.bIsPlayer && BreathTime > float(0)) && BreathTime < float(8))
+            {
+                Gasp();
+            }
+            BreathTime = -1.0000000;
+        }        
+    }
+    else
+    {
+        // End:0xB9
+        if(newHeadVolume.bWaterVolume)
+        {
+            BreathTime = UnderWaterTime;
+        }
+    }
+    //return;    
 }
 
 function bool TouchingWaterVolume()
 {
-	local PhysicsVolume V;
+    local PhysicsVolume V;
 
-	ForEach TouchingActors(class'PhysicsVolume',V)
-		if ( V.bWaterVolume )
-			return true;
-
-	return false;
+    // End:0x27
+    foreach TouchingActors(Class'PhysicsVolume', V)
+    {
+        // End:0x26
+        if(V.bWaterVolume)
+        {            
+            return true;
+        }        
+    }    
+    return false;
+    //return ReturnValue;    
 }
-
-//Pain timer just expired.
-//Check what zone I'm in (and which parts are)
-//based on that cause damage, and reset BreathTime
 
 function bool IsInPain()
 {
-	local PhysicsVolume V;
+    local PhysicsVolume V;
 
-	ForEach TouchingActors(class'PhysicsVolume',V)
-		if ( V.bPainCausing && (V.DamagePerSec > 0) )
-			return true;
-	return false;
+    // End:0x40
+    foreach TouchingActors(Class'PhysicsVolume', V)
+    {
+        // End:0x3F
+        if(V.bPainCausing && V.DamagePerSec > float(0))
+        {            
+            return true;
+        }        
+    }    
+    return false;
+    //return ReturnValue;    
 }
 
 event BreathTimer()
 {
-	if ( HeadVolume.bWaterVolume )
-	{
-		if ( (Health < 0) || (WorldInfo.NetMode == NM_Client) || (DrivenVehicle != None) )
-			return;
-		TakeDrowningDamage();
-		if ( Health > 0 )
-			BreathTime = 2.0;
-	}
-	else
-	{
-		BreathTime = 0.0;
-	}
+    // End:0x6C
+    if(HeadVolume.bWaterVolume)
+    {
+        // End:0x49
+        if(((Health < 0) || WorldInfo.NetMode == NM_Client) || DrivenVehicle != none)
+        {
+            return;
+        }
+        TakeDrowningDamage();
+        // End:0x69
+        if(Health > 0)
+        {
+            BreathTime = 2.0000000;
+        }        
+    }
+    else
+    {
+        BreathTime = 0.0000000;
+    }
+    //return;    
 }
 
-function TakeDrowningDamage();
-
-function bool CheckWaterJump(out vector WallNormal)
+function TakeDrowningDamage()
 {
-	local actor HitActor;
-	local vector HitLocation, HitNormal, Checkpoint, start, checkNorm, Extent;
-
-	if ( AIController(Controller) != None )
-	{
-		if ( Controller.InLatentExecution(Controller.LATENT_MOVETOWARD) && (Controller.Movetarget != None)
-			&& !Controller.MoveTarget.PhysicsVolume.bWaterVolume )
-		{
-			CheckPoint = Normal(Controller.MoveTarget.Location - Location);
-		}
-		else
-		{
-			Checkpoint = Acceleration;
-		}
-		Checkpoint.Z = 0.0;
-	}
-	if ( Checkpoint == vect(0,0,0) )
-	{
-		Checkpoint = vector(Rotation);
-	}
-	Checkpoint.Z = 0.0;
-	checkNorm = Normal(Checkpoint);
-	Checkpoint = Location + 1.2 * CylinderComponent.CollisionRadius * checkNorm;
-	Extent = CylinderComponent.CollisionRadius * vect(1,1,0);
-	Extent.Z = CylinderComponent.CollisionHeight;
-	HitActor = Trace(HitLocation, HitNormal, Checkpoint, Location, true, Extent,,TRACEFLAG_Blocking);
-	if ( (HitActor != None) && (Pawn(HitActor) == None) )
-	{
-		WallNormal = -1 * HitNormal;
-		start = Location;
-		start.Z += MaxOutOfWaterStepHeight;
-		checkPoint = start + 3.2 * CylinderComponent.CollisionRadius * WallNormal;
-		HitActor = Trace(HitLocation, HitNormal, Checkpoint, start, true,,,TRACEFLAG_Blocking);
-		if ( (HitActor == None) || (HitNormal.Z > 0.7) )
-			return true;
-	}
-
-	return false;
+    //return;    
 }
 
-//Player Jumped
-function bool DoJump( bool bUpdating )
+function bool CheckWaterJump(out Vector WallNormal)
 {
-	if (bJumpCapable && !bIsCrouched && !bWantsToCrouch && (Physics == PHYS_Walking || Physics == PHYS_Ladder || Physics == PHYS_Spider))
-	{
-		if ( Physics == PHYS_Spider )
-			Velocity = JumpZ * Floor;
-		else if ( Physics == PHYS_Ladder )
-			Velocity.Z = 0;
-		else if ( bIsWalking )
-			Velocity.Z = Default.JumpZ;
-		else
-			Velocity.Z = JumpZ;
-		if (Base != None && !Base.bWorldGeometry && Base.Velocity.Z > 0.f)
-		{
-			Velocity.Z += Base.Velocity.Z;
-		}
-		SetPhysics(PHYS_Falling);
-		return true;
-	}
-	return false;
+    local Actor HitActor;
+    local Vector HitLocation, HitNormal, Checkpoint, Start, checkNorm, Extent;
+
+    // End:0xC0
+    if(AIController(Controller) != none)
+    {
+        // End:0x9F
+        if((Controller.InLatentExecution(Controller.LATENT_MOVETOWARD) && Controller.MoveTarget != none) && !Controller.MoveTarget.PhysicsVolume.bWaterVolume)
+        {
+            Checkpoint = Normal(Controller.MoveTarget.Location - Location);            
+        }
+        else
+        {
+            Checkpoint = Acceleration;
+        }
+        Checkpoint.Z = 0.0000000;
+    }
+    // End:0xE4
+    if(Checkpoint == vect(0.0000000, 0.0000000, 0.0000000))
+    {
+        Checkpoint = Vector(Rotation);
+    }
+    Checkpoint.Z = 0.0000000;
+    checkNorm = Normal(Checkpoint);
+    Checkpoint = Location + ((1.2000000 * CylinderComponent.CollisionRadius) * checkNorm);
+    Extent = CylinderComponent.CollisionRadius * vect(1.0000000, 1.0000000, 0.0000000);
+    Extent.Z = CylinderComponent.CollisionHeight;
+    HitActor = Trace(HitLocation, HitNormal, Checkpoint, Location, true, Extent,, 8);
+    // End:0x263
+    if((HitActor != none) && Pawn(HitActor) == none)
+    {
+        WallNormal = float(-1) * HitNormal;
+        Start = Location;
+        Start.Z += MaxOutOfWaterStepHeight;
+        Checkpoint = Start + ((3.2000000 * CylinderComponent.CollisionRadius) * WallNormal);
+        HitActor = Trace(HitLocation, HitNormal, Checkpoint, Start, true,,, 8);
+        // End:0x263
+        if((HitActor == none) || HitNormal.Z > 0.7000000)
+        {
+            return true;
+        }
+    }
+    return false;
+    //return ReturnValue;    
 }
 
-function PlayDyingSound();
-
-function PlayHit(float Damage, Controller InstigatedBy, vector HitLocation, class<DamageType> damageType, vector Momentum, TraceHitInfo HitInfo)
+function bool DoJump(bool bUpdating)
 {
-	if ( (Damage <= 0) && ((Controller == None) || !Controller.bGodMode) )
-		return;
-
-	LastPainTime = WorldInfo.TimeSeconds;
+    // End:0x15B
+    if(((bJumpCapable && !bIsCrouched) && !bWantsToCrouch) && ((Physics == 1) || Physics == 9) || Physics == 8)
+    {
+        // End:0x7E
+        if(Physics == 8)
+        {
+            Velocity = JumpZ * Floor;            
+        }
+        else
+        {
+            // End:0xA7
+            if(Physics == 9)
+            {
+                Velocity.Z = 0.0000000;                
+            }
+            else
+            {
+                // End:0xC9
+                if(bIsWalking)
+                {
+                    Velocity.Z = default.JumpZ;                    
+                }
+                else
+                {
+                    Velocity.Z = JumpZ;
+                }
+            }
+        }
+        // End:0x153
+        if(((Base != none) && !Base.bWorldGeometry) && Base.Velocity.Z > 0.0000000)
+        {
+            Velocity.Z += Base.Velocity.Z;
+        }
+        SetPhysics(2);
+        return true;
+    }
+    return false;
+    //return ReturnValue;    
 }
 
-/** TurnOff()
-Freeze pawn - stop sounds, animations, physics, weapon firing
-*/
+function PlayDyingSound()
+{
+    //return;    
+}
+
+function PlayHit(float Damage, Controller InstigatedBy, Vector HitLocation, class<DamageType> DamageType, Vector Momentum, TraceHitInfo HitInfo)
+{
+    // End:0x33
+    if((Damage <= float(0)) && (Controller == none) || !Controller.bGodMode)
+    {
+        return;
+    }
+    LastPainTime = WorldInfo.TimeSeconds;
+    //return;    
+}
+
 simulated function TurnOff()
 {
-	if (Role == ROLE_Authority)
-	{
-		RemoteRole = ROLE_SimulatedProxy;
-	}
-	if (WorldInfo.NetMode != NM_DedicatedServer && Mesh != None)
-	{
-		Mesh.bPauseAnims = true;
-		if (Physics == PHYS_RigidBody)
-		{
-			Mesh.PhysicsWeight = 1.0;
-			Mesh.bUpdateKinematicBonesFromAnimation = false;
-		}
-	}
-	SetCollision(true,false);
-	bNoWeaponFiring = true;
-	Velocity = vect(0,0,0);
-	SetPhysics(PHYS_None);
-	bIgnoreForces = true;
-	if (Weapon != None)
-	{
-		Weapon.StopFire(Weapon.CurrentFireMode);
-	}
-
+    // End:0x18
+    if(Role == ROLE_Authority)
+    {
+        RemoteRole = ROLE_SimulatedProxy;
+    }
+    // End:0x88
+    if((WorldInfo.NetMode != NM_DedicatedServer) && Mesh != none)
+    {
+        Mesh.bPauseAnims = true;
+        // End:0x88
+        if(Physics == 10)
+        {
+            Mesh.PhysicsWeight = 1.0000000;
+            Mesh.bUpdateKinematicBonesFromAnimation = false;
+        }
+    }
+    SetCollision(true, false);
+    bNoWeaponFiring = true;
+    Velocity = vect(0.0000000, 0.0000000, 0.0000000);
+    SetPhysics(0);
+    bIgnoreForces = true;
+    // End:0xE5
+    if(Weapon != none)
+    {
+        Weapon.StopFire(Weapon.CurrentFireMode);
+    }
+    //return;    
 }
 
-State Dying
+simulated function PlayDying(class<DamageType> DamageType, Vector HitLoc)
 {
-ignores Bump, HitWall, HeadVolumeChange, PhysicsVolumeChange, Falling, BreathTimer, FellOutOfWorld;
-
-	simulated function PlayWeaponSwitch(Weapon OldWeapon, Weapon NewWeapon) {}
-	simulated function PlayNextAnimation() {}
-	singular event BaseChange() {}
-	event Landed(vector HitNormal, Actor FloorActor) {}
-
-	function bool Died(Controller Killer, class<DamageType> damageType, vector HitLocation);
-
-	  simulated singular event OutsideWorldBounds()
-	  {
-		  SetPhysics(PHYS_None);
-		  SetHidden(True);
-		  LifeSpan = FMin(LifeSpan, 1.0);
-	  }
-
-	event Timer()
-	{
-		if ( !PlayerCanSeeMe() )
-		{
-			Destroy();
-		}
-		else
-		{
-			SetTimer(2.0, false);
-		}
-	}
-
-	event TakeDamage(int Damage, Controller EventInstigator, vector HitLocation, vector Momentum, class<DamageType> DamageType, optional TraceHitInfo HitInfo, optional Actor DamageCauser)
-	{
-		SetPhysics(PHYS_Falling);
-
-		if ( (Physics == PHYS_None) && (Momentum.Z < 0) )
-			Momentum.Z *= -1;
-
-		Velocity += 3 * momentum/(Mass + 200);
-
-		if ( damagetype == None )
-		{
-			// `warn("No damagetype for damage by "$instigatedby.pawn$" with weapon "$InstigatedBy.Pawn.Weapon);
-			DamageType = class'DamageType';
-		}
-
-		Damage *= DamageType.default.GibModifier;
-		Health -= Damage;
-	}
-
-	/**
-	  * Set physics for dying pawn
-	  * Always set to falling, unless already a ragdoll
-	  */
-	function SetDyingPhysics()
-	{
-		if ( Physics != PHYS_RigidBody )
-		{
-			SetPhysics(PHYS_Falling);
-		}
-	}
-
-	event BeginState(Name PreviousStateName)
-	{
-		local Actor A;
-		local array<SequenceEvent> TouchEvents;
-		local int i;
-
-		if ( bTearOff && (WorldInfo.NetMode == NM_DedicatedServer) )
-			LifeSpan = 2.0;
-		else
-			SetTimer(5.0, false);
-
-		SetDyingPhysics();
-
-		SetCollision(true, false);
-
-		if ( Controller != None )
-		{
-			if ( Controller.bIsPlayer )
-			{
-				DetachFromController();
-			}
-			else
-			{
-				Controller.Destroy();
-			}
-		}
-
-		foreach TouchingActors(class'Actor', A)
-		{
-			if (A.FindEventsOfClass(class'SeqEvent_Touch', TouchEvents))
-			{
-				for (i = 0; i < TouchEvents.length; i++)
-				{
-					SeqEvent_Touch(TouchEvents[i]).NotifyTouchingPawnDied(self);
-				}
-				// clear array for next iteration
-				TouchEvents.length = 0;
-			}
-		}
-		foreach BasedActors(class'Actor', A)
-		{
-			A.PawnBaseDied();
-		}
-	}
-
-Begin:
-	Sleep(0.2);
-	PlayDyingSound();
-}
-
-//=============================================================================
-// Animation interface for controllers
-
-/* PlayXXX() function called by controller to play transient animation actions
-*/
-/* PlayDying() is called on server/standalone game when killed
-and also on net client when pawn gets bTearOff set to true (and bPlayedDeath is false)
-*/
-simulated function PlayDying(class<DamageType> DamageType, vector HitLoc)
-{
-	GotoState('Dying');
-	bReplicateMovement = false;
-	bTearOff = true;
-	Velocity += TearOffMomentum;
-	SetPhysics(PHYS_Falling);
-	bPlayedDeath = true;
+    GotoState('Dying');
+    bReplicateMovement = false;
+    bTearOff = true;
+    Velocity += TearOffMomentum;
+    bPlayedDeath = true;
+    //return;    
 }
 
 simulated event TornOff()
 {
-	// assume dead if bTearOff
-	if ( !bPlayedDeath )
-	{
-		PlayDying(HitDamageType,TakeHitLocation);
-	}
+    // End:0x1F
+    if(!bPlayedDeath)
+    {
+        PlayDying(HitDamageType, TakeHitLocation);
+    }
+    //return;    
 }
 
-/**
- * PlayFootStepSound()
- * called by AnimNotify_Footstep
- *
- * FootDown specifies which foot hit
- */
-event PlayFootStepSound(int FootDown);
+event PlayFootStepSound(int FootDown)
+{
+    //return;    
+}
 
-
-//=============================================================================
-// Pawn internal animation functions
-
-// Animation group checks (usually implemented in subclass)
+event PlayFoleySound(int Foley)
+{
+    //return;    
+}
 
 function bool CannotJumpNow()
 {
-	return false;
+    return false;
+    //return ReturnValue;    
 }
 
-function PlayLanded(float impactVel);
+function PlayLanded(float ImpactVel)
+{
+    //return;    
+}
 
+// Export UPawn::execGetVehicleBase(FFrame&, void* const)
 native function Vehicle GetVehicleBase();
 
 function Suicide()
 {
-	KilledBy(self);
+    KilledBy(self);
+    //return;    
 }
 
-// toss out a weapon
-// check before throwing
 simulated function bool CanThrowWeapon()
 {
-	return ( (Weapon != None) && Weapon.CanThrow() );
+    return (Weapon != none) && Weapon.CanThrow();
+    //return ReturnValue;    
 }
 
-/************************************************************************************
- * Vehicle driving
- ***********************************************************************************/
-
-
-/**
- * StartDriving() and StopDriving() also called on clients
- * on transitions of DrivenVehicle variable.
- * Network: ALL
- */
 simulated event StartDriving(Vehicle V)
 {
-	StopFiring();
-	if ( Health <= 0 )
-		return;
-
-	DrivenVehicle = V;
-	bForceNetUpdate = TRUE;
-
-	// Move the driver into position, and attach to car.
-	ShouldCrouch(false);
-	bIgnoreForces = true;
-	bCanTeleport = false;
-	BreathTime = 0.0;
-	V.AttachDriver( Self );
+    StopFiring();
+    // End:0x17
+    if(Health <= 0)
+    {
+        return;
+    }
+    DrivenVehicle = V;
+    bForceNetUpdate = true;
+    ShouldCrouch(false);
+    bIgnoreForces = true;
+    bCanTeleport = false;
+    BreathTime = 0.0000000;
+    //return;    
 }
 
-/**
- * StartDriving() and StopDriving() also called on clients
- * on transitions of DrivenVehicle variable.
- * Network: ALL
- */
 simulated event StopDriving(Vehicle V)
 {
-	if ( Mesh != None )
-	{
-		Mesh.SetCullDistance(Default.Mesh.CachedMaxDrawDistance);
-		Mesh.SetShadowParent(None);
-	}
-	bForceNetUpdate = TRUE;
-	if (V != None  )
-	{
-		V.StopFiring();
-	}
-
-	if ( Physics == PHYS_RigidBody )
-	{
-		return;
-	}
-
-	DrivenVehicle = None;
-	bIgnoreForces = false;
-	SetHardAttach(false);
-	bCanTeleport = true;
-	bCollideWorld = true;
-
-	if ( V != None )
-	{
-		V.DetachDriver( Self );
-	}
-
-	SetCollision(true, true);
-
-	if ( Role == ROLE_Authority )
-	{
-		if ( PhysicsVolume.bWaterVolume && (Health > 0) )
-		{
-			SetPhysics(PHYS_Swimming);
-		}
-		else
-		{
-			SetPhysics(PHYS_Falling);
-		}
-		SetBase(None);
-		SetHidden(False);
-	}
+    // End:0x3B
+    if(Mesh != none)
+    {
+        Mesh.SetCullDistance(default.Mesh.CachedMaxDrawDistance);
+        Mesh.SetShadowParent(none);
+    }
+    bForceNetUpdate = true;
+    // End:0x62
+    if(V != none)
+    {
+        V.StopFiring();
+    }
+    // End:0x74
+    if(Physics == 10)
+    {
+        return;
+    }
+    DrivenVehicle = none;
+    bIgnoreForces = false;
+    SetHardAttach(false);
+    bCanTeleport = true;
+    bCollideWorld = true;
+    SetCollision(true, true);
+    // End:0xF1
+    if(Role == ROLE_Authority)
+    {
+        // End:0xD9
+        if(PhysicsVolume.bWaterVolume && Health > 0)
+        {
+            SetPhysics(3);            
+        }
+        else
+        {
+            SetPhysics(2);
+        }
+        SetBase(none);
+        SetHidden(false);
+    }
+    //return;    
 }
 
-//
-// Inventory related functions
-//
-
-/* AddDefaultInventory:
-	Add Pawn default Inventory.
-	Called from GameInfo.AddDefaultInventory()
-*/
-function AddDefaultInventory();
-
-/* epic ===============================================
-* ::CreateInventory
-*
-* Create Inventory Item, adds it to the Pawn's Inventory
-* And returns it for post processing.
-*
-* =====================================================
-*/
-event final Inventory CreateInventory( class<Inventory> NewInvClass, optional bool bDoNotActivate )
+function AddDefaultInventory()
 {
-	if ( InvManager != None )
-		return InvManager.CreateInventory( NewInvClass, bDoNotActivate );
-
-	return None;
+    //return;    
 }
 
-/* FindInventoryType:
-	returns the inventory item of the requested class if it exists in this Pawn's inventory
-*/
-simulated final function Inventory FindInventoryType(class<Inventory> DesiredClass, optional bool bAllowSubclass)
+final event Inventory CreateInventory(class<Inventory> NewInvClass, optional bool bDoNotActivate)
 {
-	return (InvManager != None) ? InvManager.FindInventoryType(DesiredClass, bAllowSubclass) : None;
+    // End:0x2C
+    if(InvManager != none)
+    {
+        return InvManager.CreateInventory(NewInvClass, bDoNotActivate);
+    }
+    return none;
+    //return ReturnValue;    
 }
 
-/** Hook called from HUD actor. Gives access to HUD and Canvas */
-simulated function DrawHUD( HUD H )
+final simulated function Inventory FindInventoryType(class<Inventory> DesiredClass, optional bool bAllowSubclass)
 {
-	if ( InvManager != None )
-	{
-		InvManager.DrawHUD( H );
-	}
+    return ((InvManager != none) ? InvManager.FindInventoryType(DesiredClass, bAllowSubclass) : none);
+    //return ReturnValue;    
 }
 
-/**
- * Toss active weapon using default settings (location+velocity).
- *
- * @param DamageType  allows this function to do different behaviors based on the damage type
- */
-function ThrowActiveWeapon( optional class<DamageType> DamageType )
+simulated function DrawHUD(HUD H)
 {
-	if ( Weapon != None )
-	{
-		TossInventory(Weapon, , DamageType);
-	}
+    // End:0x24
+    if(InvManager != none)
+    {
+        InvManager.DrawHUD(H);
+    }
+    //return;    
+}
+
+function ThrowActiveWeapon(optional class<DamageType> DamageType)
+{
+    // End:0x21
+    if(Weapon != none)
+    {
+        TossInventory(Weapon,, DamageType);
+    }
+    //return;    
 }
 
 function OnThrowActiveWeapon(SeqAct_ThrowActiveWeapon Action)
 {
-	ThrowActiveWeapon();
+    ThrowActiveWeapon();
+    //return;    
 }
 
-function TossInventory( Inventory Inv, optional vector ForceVelocity, optional class<DamageType> DamageType )
+function TossInventory(Inventory Inv, optional Vector ForceVelocity, optional class<DamageType> DamageType)
 {
-	local vector	POVLoc, TossVel;
-	local rotator	POVRot;
-	local Vector	X,Y,Z;
+    local Vector POVLoc, TossVel;
+    local Rotator POVRot;
+    local Vector X, Y, Z;
 
-	if ( ForceVelocity != vect(0,0,0) )
-	{
-		TossVel = ForceVelocity;
-	}
-	else
-	{
-		GetActorEyesViewPoint(POVLoc, POVRot);
-		TossVel = Vector(POVRot);
-		TossVel = TossVel * ((Velocity Dot TossVel) + 500) + Vect(0,0,200);
-	}
-
-	GetAxes(Rotation, X, Y, Z);
-	Inv.DropFrom(Location + 0.8 * CylinderComponent.CollisionRadius * X - 0.5 * CylinderComponent.CollisionRadius * Y, TossVel);
+    // End:0x27
+    if(ForceVelocity != vect(0.0000000, 0.0000000, 0.0000000))
+    {
+        TossVel = ForceVelocity;        
+    }
+    else
+    {
+        GetActorEyesViewPoint(POVLoc, POVRot);
+        TossVel = Vector(POVRot);
+        TossVel = (TossVel * ((Velocity Dot TossVel) + float(500))) + vect(0.0000000, 0.0000000, 200.0000000);
+    }
+    GetAxes(Rotation, X, Y, Z);
+    Inv.DropFrom((Location + ((0.8000000 * CylinderComponent.CollisionRadius) * X)) - ((0.5000000 * CylinderComponent.CollisionRadius) * Y), TossVel);
+    //return;    
 }
 
-/* SetActiveWeapon
-	Set this weapon as the Pawn's active weapon
-*/
-simulated function SetActiveWeapon( Weapon NewWeapon )
+simulated function SetActiveWeapon(Weapon NewWeapon)
 {
-	if ( InvManager != None )
-	{
-		InvManager.SetCurrentWeapon( NewWeapon );
-	}
+    // End:0x26
+    if(InvManager != none)
+    {
+        InvManager.SetCurrentWeapon(NewWeapon);
+    }
+    //return;    
 }
 
+simulated function PlayWeaponSwitch(Weapon OldWeapon, Weapon NewWeapon)
+{
+    //return;    
+}
 
-/**
- * Player just changed weapon. Called from InventoryManager::ChangedWeapon().
- * Network: Local Player and Server.
- *
- * @param	OldWeapon	Old weapon held by Pawn.
- * @param	NewWeapon	New weapon held by Pawn.
- */
-simulated function PlayWeaponSwitch(Weapon OldWeapon, Weapon NewWeapon);
-
-// Cheats - invoked by CheatManager
 function bool CheatWalk()
 {
-	UnderWaterTime = Default.UnderWaterTime;
-	SetCollision(true, true);
-	SetPhysics(PHYS_Falling);
-	bCollideWorld = true;
-	SetPushesRigidBodies(Default.bPushesRigidBodies);
-	return true;
+    UnderWaterTime = default.UnderWaterTime;
+    SetCollision(true, true);
+    SetPhysics(2);
+    bCollideWorld = true;
+    SetPushesRigidBodies(default.bPushesRigidBodies);
+    return true;
+    //return ReturnValue;    
 }
 
 function bool CheatGhost()
 {
-	UnderWaterTime = -1.0;
-	SetCollision(false, false);
-	bCollideWorld = false;
-	SetPushesRigidBodies(false);
-	return true;
+    UnderWaterTime = -1.0000000;
+    SetCollision(false, false);
+    bCollideWorld = false;
+    SetPushesRigidBodies(false);
+    return true;
+    //return ReturnValue;    
 }
 
 function bool CheatFly()
 {
-	UnderWaterTime = Default.UnderWaterTime;
-	SetCollision(true, true);
-	bCollideWorld = true;
-	return true;
+    UnderWaterTime = default.UnderWaterTime;
+    SetCollision(true, true);
+    bCollideWorld = true;
+    return true;
+    //return ReturnValue;    
 }
 
-/**
- * Returns the collision radius of our cylinder
- * collision component.
- *
- * @return	the collision radius of our pawn
- */
 simulated function float GetCollisionRadius()
 {
-	return (CylinderComponent != None) ? CylinderComponent.CollisionRadius : 0.f;
+    return ((CylinderComponent != none) ? CylinderComponent.CollisionRadius : 0.0000000);
+    //return ReturnValue;    
 }
 
-/**
- * Returns the collision height of our cylinder
- * collision component.
- *
- * @return	collision height of our pawn
- */
 simulated function float GetCollisionHeight()
 {
-	return (CylinderComponent != None) ? CylinderComponent.CollisionHeight : 0.f;
+    return ((CylinderComponent != none) ? CylinderComponent.CollisionHeight : 0.0000000);
+    //return ReturnValue;    
 }
 
-/** @return a vector representing the box around this pawn's cylinder collision component, for use with traces */
-simulated final function vector GetCollisionExtent()
+final simulated function Vector GetCollisionExtent()
 {
-	local vector Extent;
+    local Vector Extent;
 
-	Extent = GetCollisionRadius() * vect(1,1,0);
-	Extent.Z = GetCollisionHeight();
-	return Extent;
+    Extent = (GetCollisionRadius()) * vect(1.0000000, 1.0000000, 0.0000000);
+    Extent.Z = GetCollisionHeight();
+    return Extent;
+    //return ReturnValue;    
 }
-
-/**
- * Pawns by nature are not stationary.	Override if you want exact findingds
- */
 
 function bool IsStationary()
 {
-	return false;
+    return false;
+    //return ReturnValue;    
 }
 
 event SpawnedByKismet()
 {
-	// notify controller
-	if (Controller != None)
-	{
-		Controller.SpawnedByKismet();
-	}
+    // End:0x1F
+    if(Controller != none)
+    {
+        Controller.SpawnedByKismet();
+    }
+    //return;    
 }
 
-
-/** Performs actual attachment. Can be subclassed for class specific behaviors. */
 function DoKismetAttachment(Actor Attachment, SeqAct_AttachToActor Action)
 {
-	local bool	bOldCollideActors, bOldBlockActors, bValidBone, bValidSocket;
+    local bool bOldCollideActors, bOldBlockActors, bValidBone, bValidSocket;
 
-	// If a bone/socket has been specified, see if it is valid
-	if( Mesh != None && Action.BoneName != '' )
-	{
-		// See if the bone name refers to an existing socket on the skeletal mesh.
-		bValidSocket	= (Mesh.GetSocketByName(Action.BoneName) != None);
-		bValidBone		= (Mesh.MatchRefBone(Action.BoneName) != INDEX_NONE);
-
-		// Issue a warning if we were expecting to attach to a bone/socket, but it could not be found.
-		if( !bValidBone && !bValidSocket )
-		{
-			`log(WorldInfo.TimeSeconds @ class @ GetFuncName() @ "bone or socket" @ Action.BoneName @ "not found on actor" @ Self @ "with mesh" @ Mesh);
-		}
-	}
-
-	// Special case for handling relative location/rotation w/ bone or socket
-	if( bValidBone || bValidSocket )
-	{
-		// disable collision, so we can successfully move the attachment
-		bOldCollideActors	= Attachment.bCollideActors;
-		bOldBlockActors		= Attachment.bBlockActors;
-		Attachment.SetCollision(FALSE, FALSE);
-		Attachment.SetHardAttach(Action.bHardAttach);
-
-		// Sockets by default move the actor to the socket location.
-		// This is not the case for bones!
-		// So if we use relative offsets, then first move attachment to bone's location.
-		if( bValidBone && !bValidSocket )
-		{
-			if( Action.bUseRelativeOffset )
-			{
-				Attachment.SetLocation(Mesh.GetBoneLocation(Action.BoneName));
-			}
-
-			if( Action.bUseRelativeRotation )
-			{
-				Attachment.SetRotation(QuatToRotator(Mesh.GetBoneQuaternion(Action.BoneName)));
-			}
-		}
-
-		// Attach attachment to base.
-		Attachment.SetBase(Self,, Mesh, Action.BoneName);
-
-		if( Action.bUseRelativeRotation )
-		{
-			Attachment.SetRelativeRotation(Attachment.RelativeRotation + Action.RelativeRotation);
-		}
-
-		// if we're using the offset, place attachment relatively to the target
-		if( Action.bUseRelativeOffset )
-		{
-			Attachment.SetRelativeLocation(Attachment.RelativeLocation + Action.RelativeOffset);
-		}
-
-		// restore previous collision
-		Attachment.SetCollision(bOldCollideActors, bOldBlockActors);
-	}
-	else
-	{
-		// otherwise base on location
-		Super.DoKismetAttachment(Attachment, Action);
-	}
+    // End:0x115
+    if((Mesh != none) && Action.BoneName != 'None')
+    {
+        bValidSocket = Mesh.GetSocketByName(Action.BoneName) != none;
+        bValidBone = Mesh.MatchRefBone(Action.BoneName) != -1;
+        // End:0x115
+        if(!bValidBone && !bValidSocket)
+        {
+            LogInternal((((((((string(WorldInfo.TimeSeconds) @ string(Class)) @ string(GetFuncName())) @ "bone or socket") @ string(Action.BoneName)) @ "not found on actor") @ string(self)) @ "with mesh") @ string(Mesh));
+        }
+    }
+    // End:0x2EA
+    if(bValidBone || bValidSocket)
+    {
+        bOldCollideActors = Attachment.bCollideActors;
+        bOldBlockActors = Attachment.bBlockActors;
+        Attachment.SetCollision(false, false);
+        Attachment.SetHardAttach(Action.bHardAttach);
+        // End:0x223
+        if(bValidBone && !bValidSocket)
+        {
+            // End:0x1DD
+            if(Action.bUseRelativeOffset)
+            {
+                Attachment.SetLocation(Mesh.GetBoneLocation(Action.BoneName));
+            }
+            // End:0x223
+            if(Action.bUseRelativeRotation)
+            {
+                Attachment.SetRotation(QuatToRotator(Mesh.GetBoneQuaternion(Action.BoneName)));
+            }
+        }
+        Attachment.SetBase(self,, Mesh, Action.BoneName);
+        // End:0x28A
+        if(Action.bUseRelativeRotation)
+        {
+            Attachment.SetRelativeRotation(Attachment.RelativeRotation + Action.RelativeRotation);
+        }
+        // End:0x2CD
+        if(Action.bUseRelativeOffset)
+        {
+            Attachment.SetRelativeLocation(Attachment.RelativeLocation + Action.RelativeOffset);
+        }
+        Attachment.SetCollision(bOldCollideActors, bOldBlockActors);        
+    }
+    else
+    {
+        super.DoKismetAttachment(Attachment, Action);
+    }
+    //return;    
 }
 
-
-/** returns the amount this pawn's damage should be scaled by */
 function float GetDamageScaling()
 {
-	return DamageScaling;
+    return DamageScaling;
+    //return ReturnValue;    
 }
 
-/** PoweredUp()
-returns true if pawn has game play advantages, as defined by specific game implementation.
-*/
 function bool PoweredUp()
 {
-	return (DamageScaling > 1);
+    return DamageScaling > float(1);
+    //return ReturnValue;    
 }
 
-/** InCombat()
-returns true if pawn is currently in combat, as defined by specific game implementation.
-*/
 function bool InCombat()
 {
-	return false;
+    return false;
+    //return ReturnValue;    
 }
 
 function OnSetMaterial(SeqAct_SetMaterial Action)
 {
-	if (Mesh != None)
-	{
-		Mesh.SetMaterial( Action.MaterialIndex, Action.NewMaterial );
-	}
+    // End:0x3D
+    if(Mesh != none)
+    {
+        Mesh.SetMaterial(Action.MaterialIndex, Action.NewMaterial);
+    }
+    //return;    
 }
 
-/** Kismet teleport handler, overridden so that updating rotation properly updates our Controller as well */
+function OnSetMaterialInstance(RSeqAct_SetMaterialInstance Action)
+{
+    // End:0x3D
+    if(Mesh != none)
+    {
+        Mesh.SetMaterial(Action.MaterialIndex, Action.NewMaterial);
+    }
+    //return;    
+}
+
+event EmitOnTeleport()
+{
+    OnTeleport(none);
+    //return;    
+}
+
 simulated function OnTeleport(SeqAct_Teleport Action)
 {
-	local array<Object> objVars;
-	local int idx;
-	local Actor destActor;
-	local Controller C;
+    local bool UpdateRot;
+    local Vector Loc;
+    local Rotator Rot;
 
-	// find the first supplied actor
-	Action.GetObjectVars(objVars,"Destination");
-	for (idx = 0; idx < objVars.Length && destActor == None; idx++)
-	{
-		destActor = Actor(objVars[idx]);
-
-		// If its a player variable, teleport to the Pawn not the Controller.
-		C = Controller(destActor);
-		if(C != None && C.Pawn != None)
-		{
-			destActor = C.Pawn;
-		}
-	}
-	// and set to that actor's location
-	if (destActor != None && SetLocation(destActor.Location))
-	{
-		PlayTeleportEffect(false, true);
-		if (Action.bUpdateRotation)
-		{
-			SetRotation(destActor.Rotation);
-			if (Controller != None)
-			{
-				Controller.SetRotation(destActor.Rotation);
-				Controller.ClientSetRotation(destActor.Rotation);
-			}
-		}
-	}
-	else
-	{
-		`warn("Unable to teleport to"@destActor);
-	}
-
-	// Tell controller we teleported (Pass None to avoid recursion)
-	if( Controller != None )
-	{
-		Controller.OnTeleport( None );
-	}
+    UpdateRot = Action.GetDestination(Loc, Rot);
+    // End:0x87
+    if(SetLocation(Loc))
+    {
+        PlayTeleportEffect(false, true);
+        // End:0x84
+        if(UpdateRot)
+        {
+            SetRotation(Rot);
+            // End:0x84
+            if(Controller != none)
+            {
+                Controller.SetRotation(Rot);
+                Controller.ClientSetRotation(Rot);
+            }
+        }        
+    }
+    else
+    {
+        WarnInternal("Unable to teleport to" @ string(Loc));
+    }
+    // End:0xC9
+    if(Controller != none)
+    {
+        Controller.OnTeleport(none);
+    }
+    //return;    
 }
 
-/**
- * NOTE: using this function for things that are "fired off" immediately at spawn (e.g. res in effect) and never "updated" again
- * this check will always return false.  For effects that are getting updated this code will be able to return true over time due to the
- * LastRenderTime being updated even if the pawn stays in the same location.
- **/
-simulated function bool EffectIsRelevant(vector SpawnLocation, bool bForceDedicated, optional float CullDistance )
+simulated function bool EffectIsRelevant(Vector SpawnLocation, bool bForceDedicated, optional float CullDistance)
 {
-	local PlayerController P;
+    local PlayerController P;
 
-	if ( WorldInfo.NetMode == NM_DedicatedServer )
-	{
-		return bForceDedicated;
-	}
-
-	if ( (WorldInfo.NetMode == NM_ListenServer) && (WorldInfo.Game.NumPlayers + WorldInfo.Game.NumSpectators > 1) )
-	{
-		if ( bForceDedicated )
-			return true;
-		if ( IsHumanControlled() && IsLocallyControlled() )
-			return true;
-	}
-	else if ( IsHumanControlled() )
-	{
-		return true;
-	}
-
-	if ((SpawnLocation != Location) || WorldInfo.TimeSeconds - LastRenderTime < 1.0)
-	{
-		foreach LocalPlayerControllers(class'PlayerController', P)
-		{
-			if (P.ViewTarget != None && (P.Pawn == self || CheckMaxEffectDistance(P, SpawnLocation, CullDistance)))
-			{
-				return true;
-			}
-		}
-	}
-	return false;
+    // End:0x22
+    if(WorldInfo.NetMode == NM_DedicatedServer)
+    {
+        return bForceDedicated;
+    }
+    // End:0x9C
+    if((WorldInfo.NetMode == NM_ListenServer) && (WorldInfo.Game.NumPlayers + WorldInfo.Game.NumSpectators) > 1)
+    {
+        // End:0x83
+        if(bForceDedicated)
+        {
+            return true;
+        }
+        // End:0x99
+        if(IsHumanControlled() && IsLocallyControlled())
+        {
+            return true;
+        }        
+    }
+    else
+    {
+        // End:0xA7
+        if(IsHumanControlled())
+        {
+            return true;
+        }
+    }
+    // End:0x13A
+    if((SpawnLocation != Location) || (WorldInfo.TimeSeconds - LastRenderTime) < 1.0000000)
+    {
+        // End:0x139
+        foreach LocalPlayerControllers(Class'PlayerController', P)
+        {
+            // End:0x138
+            if((P.ViewTarget != none) && (P.Pawn == self) || CheckMaxEffectDistance(P, SpawnLocation, CullDistance))
+            {                
+                return true;
+            }            
+        }        
+    }
+    return false;
+    //return ReturnValue;    
 }
 
-final event MessagePlayer( coerce String Msg )
+event bool IsInLoadedVisibleWorld()
 {
-`if(`notdefined(FINAL_RELEASE))
-	local PlayerController PC;
-
-	foreach LocalPlayerControllers(class'PlayerController', PC)
-	{
-		PC.ClientMessage( Msg );
-	}
-`endif
+    return true;
+    //return ReturnValue;    
 }
 
-/** moves the camera in or out */
-simulated function AdjustCameraScale(bool bMoveCameraIn);
+final event MessagePlayer(coerce string msg)
+{
+    local PlayerController PC;
+
+    // End:0x2F
+    foreach LocalPlayerControllers(Class'PlayerController', PC)
+    {
+        PC.ClientMessage(msg);        
+    }    
+    //return;    
+}
+
+simulated function AdjustCameraScale(bool bMoveCameraIn)
+{
+    //return;    
+}
 
 simulated event BecomeViewTarget(PlayerController PC)
 {
-	if (PhysicsVolume != None)
-	{
-		PhysicsVolume.NotifyPawnBecameViewTarget(self, PC);
-	}
+    // End:0x25
+    if(PhysicsVolume != none)
+    {
+        PhysicsVolume.NotifyPawnBecameViewTarget(self, PC);
+    }
+    //return;    
 }
 
-/** For AI debugging */
 event SoakPause()
 {
-	local PlayerController PC;
+    local PlayerController PC;
 
-	ForEach WorldInfo.LocalPlayerControllers(class'PlayerController', PC)
-	{
-		PC.SoakPause(self);
-		break;
-	}
+    // End:0x36
+    foreach WorldInfo.LocalPlayerControllers(Class'PlayerController', PC)
+    {
+        PC.SoakPause(self);
+        // End:0x36
+        break;        
+    }    
+    //return;    
 }
 
+// Export UPawn::execClearConstraints(FFrame&, void* const)
 native function ClearConstraints();
-native function AddPathConstraint( PathConstraint Constraint );
-native function AddGoalEvaluator( PathGoalEvaluator Evaluator );
 
-/**
- * Path shaping creation functions...
- * these functions by default will just new the class, but this offers a handy
- * interface to override for to do things like pool the constraints
- */
-function PathConstraint CreatePathConstraint( class<PathConstraint> ConstraintClass )
+// Export UPawn::execAddPathConstraint(FFrame&, void* const)
+native function AddPathConstraint(PathConstraint Constraint);
+
+// Export UPawn::execAddGoalEvaluator(FFrame&, void* const)
+native function AddGoalEvaluator(PathGoalEvaluator Evaluator);
+
+function PathConstraint CreatePathConstraint(class<PathConstraint> ConstraintClass)
 {
-	return new(self) ConstraintClass;
-}
-function PathGoalEvaluator CreatePathGoalEvaluator( class<PathGoalEvaluator> GoalEvalClass )
-{
-	return new(self) GoalEvalClass;
+    return new (self) ConstraintClass;
+    //return ReturnValue;    
 }
 
-native function IncrementPathStep( int Cnt, Canvas C );
-native function IncrementPathChild( int Cnt, Canvas C );
-native function DrawPathStep( Canvas C );
-native function	ClearPathStep();
+function PathGoalEvaluator CreatePathGoalEvaluator(class<PathGoalEvaluator> GoalEvalClass)
+{
+    return new (self) GoalEvalClass;
+    //return ReturnValue;    
+}
+
+// Export UPawn::execIncrementPathStep(FFrame&, void* const)
+native function IncrementPathStep(int Cnt, Canvas C);
+
+// Export UPawn::execIncrementPathChild(FFrame&, void* const)
+native function IncrementPathChild(int Cnt, Canvas C);
+
+// Export UPawn::execDrawPathStep(FFrame&, void* const)
+native function DrawPathStep(Canvas C);
+
+// Export UPawn::execClearPathStep(FFrame&, void* const)
+native function ClearPathStep();
 
 simulated function ZeroMovementVariables()
 {
-	Velocity = vect(0,0,0);
-	Acceleration = vect(0,0,0);
+    Velocity = vect(0.0000000, 0.0000000, 0.0000000);
+    Acceleration = vect(0.0000000, 0.0000000, 0.0000000);
+    //return;    
 }
 
-
-/** Kismet Action to add/remove FaceFXAnimSets. */
-simulated function OnAddRemoveFaceFXAnimSet( SeqAct_AddRemoveFaceFXAnimSet InAction )
+simulated function SetCinematicMode(bool bInCinematicMode)
 {
-	local int AnimSetIdx;
-
-	if( ( Mesh != none )
-		&& ( Mesh.SkeletalMesh != none )
-		&& ( Mesh.SkeletalMesh.FaceFXAsset != none )
-		)
-	{
-		for( AnimSetIdx = 0; AnimSetIdx < InAction.FaceFXAnimSets.Length; ++AnimSetIdx )
-		{
-			// Add FaceFXAnimSets
-			if( InAction.InputLinks[0].bHasImpulse )
-			{
-				Mesh.SkeletalMesh.FaceFXAsset.MountFaceFXAnimSet( InAction.FaceFXAnimSets[AnimSetIdx] );
-				//`log( "Add FaceFXAnimSets" @ InAction.FaceFXAnimSets[AnimSetIdx] );
-			}
-			// Remove FaceFXAnimSets
-			else if( InAction.InputLinks[1].bHasImpulse )
-			{
-				Mesh.SkeletalMesh.FaceFXAsset.UnmountFaceFXAnimSet( InAction.FaceFXAnimSets[AnimSetIdx] );
-				//`log( "Remove FaceFXAnimSets" @ InAction.FaceFXAnimSets[AnimSetIdx] );
-			}
-		}
-	}
+    //return;    
 }
 
-simulated function SetCinematicMode( bool bInCinematicMode );
+event PreventedWalkingOverLedge()
+{
+    //return;    
+}
+
+state Dying
+{
+    // ignores BreathTimer, FellOutOfWorld, PlayWeaponSwitch, PlayNextAnimation, BaseChange, Landed, 
+	//     Died;
+
+    ignores BreathTimer, FellOutOfWorld, PlayWeaponSwitch, BaseChange, Landed,
+        Died;
+
+    singular simulated event OutsideWorldBounds()
+    {
+        SetPhysics(0);
+        SetHidden(true);
+        LifeSpan = FMin(LifeSpan, 1.0000000);
+        //return;        
+    }
+
+    event Timer()
+    {
+        // End:0x0E
+        if(!PlayerCanSeeMe())
+        {
+            Destroy();            
+        }
+        else
+        {
+            SetTimer(2.0000000, false);
+        }
+        //return;        
+    }
+
+    event TakeDamage(int Damage, Controller EventInstigator, Vector HitLocation, Vector Momentum, class<DamageType> DamageType, optional TraceHitInfo HitInfo, optional Actor DamageCauser)
+    {
+        SetPhysics(2);
+        // End:0x4B
+        if((Physics == 0) && Momentum.Z < float(0))
+        {
+            Momentum.Z *= float(-1);
+        }
+        Velocity += ((float(3) * Momentum) / (Mass + float(200)));
+        // End:0x80
+        if(DamageType == none)
+        {
+            DamageType = Class'DamageType';
+        }
+        Damage *= DamageType.default.GibModifier;
+        Health -= Damage;
+        //return;        
+    }
+
+    function SetDyingPhysics()
+    {
+        // End:0x2F
+        if(Physics != 10)
+        {
+            // End:0x29
+            if(Physics == 4)
+            {
+                SetPhysics(2);                
+            }
+            else
+            {
+                SetPhysics(1);
+            }
+        }
+        //return;        
+    }
+
+    event BeginState(name PreviousStateName)
+    {
+        local Actor A;
+        local array<SequenceEvent> TouchEvents;
+        local int I;
+
+        // End:0x33
+        if(bTearOff && WorldInfo.NetMode == NM_DedicatedServer)
+        {
+            LifeSpan = 2.0000000;            
+        }
+        else
+        {
+            SetTimer(5.0000000, false);
+        }
+        SetDyingPhysics();
+        SetCollision(true, false);
+        // End:0x8E
+        if(Controller != none)
+        {
+            // End:0x7A
+            if(Controller.bIsPlayer)
+            {
+                DetachFromController();                
+            }
+            else
+            {
+                Controller.Destroy();
+                Controller = none;
+            }
+        }
+        // End:0x106
+        foreach TouchingActors(Class'Actor', A)
+        {
+            // End:0x105
+            if(A.FindEventsOfClass(Class'SeqEvent_Touch', TouchEvents))
+            {
+                I = 0;
+                J0xC3:
+
+                // End:0xFD [Loop If]
+                if(I < TouchEvents.Length)
+                {
+                    SeqEvent_Touch(TouchEvents[I]).NotifyTouchingPawnDied(self);
+                    I++;
+                    // [Loop Continue]
+                    goto J0xC3;
+                }
+                TouchEvents.Length = 0;
+            }            
+        }        
+        // End:0x12C
+        foreach BasedActors(Class'Actor', A)
+        {
+            A.PawnBaseDied();            
+        }        
+        //return;        
+    }
+Begin:
+
+    Sleep(0.2000000);
+    PlayDyingSound();
+    stop;        
+}
 
 defaultproperties
 {
-	Begin Object Class=SpriteComponent Name=Sprite
-		Sprite=Texture2D'EditorResources.S_Actor'
-		HiddenGame=True
-		AlwaysLoadOnClient=False
-		AlwaysLoadOnServer=False
-	End Object
-	Components.Add(Sprite)
-
-	// Pawns often manipulate physics components so need to be done pre-async
-	TickGroup=TG_PreAsyncWork
-
-	InventoryManagerClass=class'InventoryManager'
-	ControllerClass=class'AIController'
-
-	// Flags
-	bCanBeDamaged=true
-	bCanCrouch=false
-	bCanFly=false
-	bCanJump=true
-	bCanSwim=false
-	bCanTeleport=true
-	bCanWalk=true
-	bJumpCapable=true
-	bProjTarget=true
-	bSimulateGravity=true
-	bShouldBaseAtStartup=true
-
-	// Locomotion
-	LandMovementState=PlayerWalking
-	WaterMovementState=PlayerSwimming
-
-	AccelRate=+02048.000000
-	DesiredSpeed=+00001.000000
-	MaxDesiredSpeed=+00001.000000
-	MaxFallSpeed=+1200.0
-	AIMaxFallSpeedFactor=1.0
-	NonPreferredVehiclePathMultiplier=1.0
-
-	AirSpeed=+00600.000000
-	GroundSpeed=+00600.000000
-	JumpZ=+00420.000000
-	OutofWaterZ=+420.0
-	LadderSpeed=+200.0
-	WaterSpeed=+00300.000000
-
-	AirControl=+0.05
-
-	CrouchedPct=+0.5
-	WalkingPct=+0.5
-
-	// Sound
-	bLOSHearing=true
-	HearingThreshold=+2800.0
-	SoundDampening=+00001.000000
-	noise1time=-00010.000000
-	noise2time=-00010.000000
-
-	// Physics
-	AvgPhysicsTime=+00000.100000
-	bPushesRigidBodies=false
-	RBPushRadius=10.0
-	RBPushStrength=50.0
-
-	// FOV / Sight
-	ViewPitchMin=-16384
-	ViewPitchMax=16383
-	RotationRate=(Pitch=20000,Yaw=20000,Roll=20000)
-	MaxPitchLimit=3072
-
-	SightRadius=+05000.000000
-
-	// Network
-	RemoteRole=ROLE_SimulatedProxy
-	bUpdateSimulatedPosition=true
-	bStasis=false
-
-	// GamePlay
-	bCanUse=true
-	DamageScaling=+00001.000000
-	Health=100
-
-	// Collision
-	BaseEyeHeight=+00064.000000
-	EyeHeight=+00054.000000
-
-	CrouchHeight=+40.0
-	CrouchRadius=+34.0
-
-	MaxStepHeight=35.0
-	MaxJumpHeight=96.0
-	WalkableFloorZ=0.7		   // 0.7 ~= 45 degree angle for floor
-	MaxOutOfWaterStepHeight=40.0
-	AllowedYawError=2000
-	Mass=+00100.000000
-
-	bCollideActors=true
-	bCollideWorld=true
-	bBlockActors=true
-
-	Begin Object Class=CylinderComponent Name=CollisionCylinder
-		CollisionRadius=+0034.000000
-		CollisionHeight=+0078.000000
-		BlockNonZeroExtent=true
-		BlockZeroExtent=true
-		BlockActors=true
-		CollideActors=true
-	End Object
-	CollisionComponent=CollisionCylinder
-	CylinderComponent=CollisionCylinder
-	Components.Add(CollisionCylinder)
-
-	Begin Object Class=ArrowComponent Name=Arrow
-		ArrowColor=(R=150,G=200,B=255)
-		bTreatAsASprite=True
-	End Object
-	Components.Add(Arrow)
-
-	VehicleCheckRadius=150
+    MaxStepHeight=35.0000000
+    MaxJumpHeight=96.0000000
+    WalkableFloorZ=0.7000000
+    bCrouchCollisionCheck=true
+    bJumpCapable=true
+    bCanJump=true
+    bCanWalk=true
+    bSimulateGravity=true
+    bLOSHearing=true
+    bCanUse=true
+    CrouchHeight=40.0000000
+    CrouchRadius=34.0000000
+    NonPreferredVehiclePathMultiplier=1.0000000
+    DesiredSpeed=1.0000000
+    MaxDesiredSpeed=1.0000000
+    HearingThreshold=2800.0000000
+    SightRadius=5000.0000000
+    AvgPhysicsTime=0.1000000
+    Mass=100.0000000
+    MaxPitchLimit=3072
+    MaxPathLength=-1
+    GroundSpeed=600.0000000
+    WaterSpeed=300.0000000
+    AirSpeed=600.0000000
+    LadderSpeed=200.0000000
+    AccelRate=2048.0000000
+    JumpZ=420.0000000
+    OutofWaterZ=420.0000000
+    MaxOutOfWaterStepHeight=40.0000000
+    AirControl=0.0500000
+    WalkingPct=0.5000000
+    CrouchedPct=0.5000000
+    MaxFallSpeed=1200.0000000
+    AIMaxFallSpeedFactor=1.0000000
+    BaseEyeHeight=64.0000000
+    EyeHeight=54.0000000
+    Health=100
+    noise1time=-10.0000000
+    noise2time=-10.0000000
+    SoundDampening=1.0000000
+    DamageScaling=1.0000000
+    ControllerClass=Class'AIController'
+    LandMovementState="PlayerWalking"
+    WaterMovementState="PlayerSwimming"
+    // Reference: CylinderComponent'Default__Pawn.CollisionCylinder'
+    // TemplateOwnerClass: none
+    // TemplateOwnerName: 'CollisionCylinder'
+    begin object name="CollisionCylinder" class=Class'CylinderComponent'
+        CollisionHeight=78.0000000
+        CollisionRadius=34.0000000
+        CollideActors=true
+        BlockActors=true
+    end object
+    CylinderComponent=CollisionCylinder
+    RBPushRadius=10.0000000
+    RBPushStrength=50.0000000
+    VehicleCheckRadius=150.0000000
+    ViewPitchMin=-16384.0000000
+    ViewPitchMax=16383.0000000
+    AllowedYawError=2000
+    InventoryManagerClass=Class'InventoryManager'
+    bUpdateSimulatedPosition=true
+    bCanBeDamaged=true
+    bShouldBaseAtStartup=true
+    bCanTeleport=true
+    bCollideActors=true
+    bCollideWorld=true
+    bBlockActors=true
+    bProjTarget=true
+    Components[0]=none
+    Components[1]=CollisionCylinder
+    Components[2]=none
+    RemoteRole=ROLE_SimulatedProxy
+    CollisionComponent=CollisionCylinder
+    RotationRate=(Pitch=20000,Yaw=20000,Roll=20000)
 }

@@ -1,11 +1,8 @@
-/**
- * Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
- */
 class ActorFactoryAmbientSound extends ActorFactory
-	config(Editor)
-	collapsecategories
-	hidecategories(Object)
-	native;
+    native
+    config(Editor)
+    editinlinenew
+    collapsecategories;
 
 cpptext
 {
@@ -15,10 +12,10 @@ cpptext
 	virtual FString GetMenuName();
 }
 
-var()	SoundCue		AmbientSoundCue;
+var() SoundCue AmbientSoundCue;
 
 defaultproperties
 {
-	MenuName="Add AmbientSound"
-	NewActorClass=class'Engine.AmbientSound'
+    MenuName="Add AmbientSound"
+    NewActorClass=Class'AmbientSound'
 }

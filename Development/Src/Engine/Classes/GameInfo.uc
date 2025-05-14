@@ -3560,7 +3560,7 @@ function ShowSurveyForAllClients(string QuestionId, string Context)
 
 	foreach WorldInfo.AllControllers(class'PlayerController',PC)
 	{
-		PC.ClientShowSurvey(QuestionId,Context);
+		// PC.ClientShowSurvey(QuestionId,Context);
 	}
 }
 

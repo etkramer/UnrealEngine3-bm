@@ -1,19 +1,10 @@
-//=============================================================================
-// Volume:  a bounding volume
-// touch() and untouch() notifications to the volume as actors enter or leave it
-// enteredvolume() and leftvolume() notifications when center of actor enters the volume
-// pawns with bIsPlayer==true  cause playerenteredvolume notifications instead of actorenteredvolume()
-// Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
-//=============================================================================
 class Volume extends Brush
-	native
-	nativereplication;
+    native
+    nativereplication
+    notplaceable;
 
-/** Should pawns be forced to walk when inside this volume? */
 var() bool bForcePawnWalk;
-/** Should process all actors within this volume */
 var() bool bProcessAllActors;
-
 
 cpptext
 {
@@ -26,45 +17,58 @@ cpptext
 	virtual INT* GetOptimizedRepList(BYTE* Recent, FPropertyRetirement* Retire, INT* Ptr, UPackageMap* Map, UActorChannel* Channel);
 }
 
-native noexport function bool Encompasses(Actor Other); // returns true if center of actor is within volume
+// Export UVolume::execEncompasses(FFrame&, void* const)
+native function bool Encompasses(Actor Other);
 
-/**	Handling Toggle event from Kismet. */
+// Export UVolume::execEncompassesPoint(FFrame&, void* const)
+native function bool EncompassesPoint(Vector Point);
+
 simulated function OnToggle(SeqAct_Toggle Action)
 {
-	// Turn ON
-	if (Action.InputLinks[0].bHasImpulse)
-	{
-		if(!bCollideActors)
-		{
-			SetCollision(true, bBlockActors);
-		}
-	}
-	// Turn OFF
-	else if (Action.InputLinks[1].bHasImpulse)
-	{
-		if(bCollideActors)
-		{
-			SetCollision(false, bBlockActors);
-		}
-	}
-	// Toggle
-	else if (Action.InputLinks[2].bHasImpulse)
-	{
-		SetCollision(!bCollideActors, bBlockActors);
-	}
-
-	ForceNetRelevant();
-
-	SetForcedInitialReplicatedProperty(Property'Engine.Actor.bCollideActors', (bCollideActors == default.bCollideActors));
+    // End:0x39
+    if(Action.InputLinks[0].bHasImpulse)
+    {
+        // End:0x36
+        if(!bCollideActors)
+        {
+            SetCollision(true, bBlockActors);
+        }        
+    }
+    else
+    {
+        // End:0x70
+        if(Action.InputLinks[1].bHasImpulse)
+        {
+            // End:0x6D
+            if(bCollideActors)
+            {
+                SetCollision(false, bBlockActors);
+            }            
+        }
+        else
+        {
+            // End:0xA3
+            if(Action.InputLinks[2].bHasImpulse)
+            {
+                SetCollision(!bCollideActors, bBlockActors);
+            }
+        }
+    }
+    ForceNetRelevant();
+    SetForcedInitialReplicatedProperty(BoolProperty'Actor.bCollideActors', bCollideActors == default.bCollideActors);
+    //return;    
 }
 
 simulated event CollisionChanged()
 {
-	// rigid body collision should match Unreal collision
-	CollisionComponent.SetBlockRigidBody(bCollideActors && bBlockActors);
+    CollisionComponent.SetBlockRigidBody(bCollideActors && bBlockActors);
+    //return;    
 }
 
-event ProcessActorSetVolume( Actor Other );
+event ProcessActorSetVolume(Actor Other)
+{
+    //return;    
+}
 
 cpptext
 {
@@ -73,18 +77,22 @@ cpptext
 
 defaultproperties
 {
-	Begin Object Name=BrushComponent0
-		CollideActors=true
-		bAcceptsLights=true
-		LightingChannels=(Dynamic=TRUE,bInitialized=TRUE)
-		BlockActors=false
-		BlockZeroExtent=false
-		BlockNonZeroExtent=true
-		BlockRigidBody=false
-		AlwaysLoadOnClient=True
-		AlwaysLoadOnServer=True
-	End Object
-
-	bCollideActors=True
-	bSkipActorPropertyReplication=true
+    // Reference: BrushComponent'Default__Volume.BrushComponent0'
+    // TemplateOwnerClass: none
+    // TemplateOwnerName: 'BrushComponent0'
+    // Archetype: BrushComponent'Default__Brush.BrushComponent0'
+    begin object name="BrushComponent0"
+        LightingChannels=(bInitialized=true,Dynamic=true)
+        bAcceptsLights=true
+        CollideActors=true
+        BlockNonZeroExtent=true
+        bDisableAllRigidBody=true
+        AlwaysLoadOnClient=true
+        AlwaysLoadOnServer=true
+    end object
+    BrushComponent=BrushComponent0
+    bSkipActorPropertyReplication=true
+    bCollideActors=true
+    Components[0]=BrushComponent0
+    CollisionComponent=BrushComponent0
 }

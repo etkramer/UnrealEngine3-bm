@@ -1,80 +1,55 @@
-/**
- * Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
- */
 class MeshComponent extends PrimitiveComponent
-	native
-	noexport
-	abstract;
+    abstract
+    native
+    noexport;
 
-/** Per-Component material overrides.  These must NOT be set directly or a race condition can occur between GC and the rendering thread. */
-var(Rendering) const array<MaterialInterface>	Materials;
+var(Rendering) const array<MaterialInterface> Materials;
 
-/**
- * @param ElementIndex - The element to access the material of.
- * @return the material used by the indexed element of this mesh.
- */
+// Export UMeshComponent::execGetUseSimpleBoxCollision(FFrame&, void* const)
+native function bool GetUseSimpleBoxCollision();
+
+// Export UMeshComponent::execGetUseSimpleLineCollision(FFrame&, void* const)
+native function bool GetUseSimpleLineCollision();
+
+// Export UMeshComponent::execGetMaterial(FFrame&, void* const)
 native function MaterialInterface GetMaterial(int ElementIndex);
 
-/**
- * Changes the material applied to an element of the mesh.
- * @param ElementIndex - The element to access the material of.
- * @return the material used by the indexed element of this mesh.
- */
+// Export UMeshComponent::execSetMaterial(FFrame&, void* const)
 native function SetMaterial(int ElementIndex, MaterialInterface Material);
 
-/** @return The total number of elements in the mesh. */
+// Export UMeshComponent::execGetNumElements(FFrame&, void* const)
 native function int GetNumElements();
 
-/**
- *	Tell the streaming system to start loading all textures with all mip-levels.
- *	@param Seconds							Number of seconds to force all mip-levels to be resident
- *	@param bPrioritizeCharacterTextures		Whether character textures should be prioritized for a while by the streaming system
- */
-native final function PrestreamTextures( float Seconds, bool bPrioritizeCharacterTextures );
+// Export UMeshComponent::execPrestreamTextures(FFrame&, void* const)
+native final function PrestreamTextures(float Seconds, bool bPrioritizeCharacterTextures);
 
-/**
- * Creates a material instance for the specified element index.  The parent of the instance is set to the material being replaced.
- * @param ElementIndex - The index of the skin to replace the material for.
- */
 function MaterialInstanceConstant CreateAndSetMaterialInstanceConstant(int ElementIndex)
 {
-	local MaterialInstanceConstant Instance;
+    local MaterialInstanceConstant Instance;
 
-	// Create the material instance.
-	Instance = new(Outer) class'MaterialInstanceConstant';
-	Instance.SetParent(GetMaterial(ElementIndex));
-
-	// Assign it to the given mesh element.
-	// This MUST be done after setting the parent; otherwise the component will use the default material in place of the invalid material instance.
-	SetMaterial(ElementIndex,Instance);
-
-	return Instance;
+    Instance = new (Outer) Class'MaterialInstanceConstant';
+    Instance.SetParent(GetMaterial(ElementIndex));
+    SetMaterial(ElementIndex, Instance);
+    return Instance;
+    //return ReturnValue;    
 }
 
-/**
-* Creates a material instance for the specified element index.  The parent of the instance is set to the material being replaced.
-* @param ElementIndex - The index of the skin to replace the material for.
-*/
 function MaterialInstanceTimeVarying CreateAndSetMaterialInstanceTimeVarying(int ElementIndex)
 {
-	local MaterialInstanceTimeVarying Instance;
+    local MaterialInstanceTimeVarying Instance;
 
-	// Create the material instance.
-	Instance = new(Outer) class'MaterialInstanceTimeVarying';
-	Instance.SetParent(GetMaterial(ElementIndex));
-
-	// Assign it to the given mesh element.
-	SetMaterial(ElementIndex,Instance);
-
-	return Instance;
+    Instance = new (Outer) Class'MaterialInstanceTimeVarying';
+    Instance.SetParent(GetMaterial(ElementIndex));
+    SetMaterial(ElementIndex, Instance);
+    return Instance;
+    //return ReturnValue;    
 }
-
 
 defaultproperties
 {
-	CastShadow=TRUE
-	bAcceptsLights=TRUE
-	bUseAsOccluder=TRUE
-	bCullModulatedShadowOnBackfaces=TRUE
-	bCullModulatedShadowOnEmissive=TRUE
+    bUseAsOccluder=true
+    CastShadow=true
+    bAcceptsLights=true
+    bCullModulatedShadowOnBackfaces=true
+    bCullModulatedShadowOnEmissive=true
 }

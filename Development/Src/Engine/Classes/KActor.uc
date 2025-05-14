@@ -1,11 +1,8 @@
-/**
- * Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
- */
 class KActor extends DynamicSMActor
-	native(Physics)
-	nativereplication
-	placeable
-	showcategories(Navigation);
+    native(Physics)
+    nativereplication
+    placeable
+    showcategories(Navigation);
 
 cpptext
 {
@@ -27,393 +24,426 @@ cpptext
 	virtual void TickSpecial(FLOAT DeltaSeconds);
 }
 
-var()	bool	bDamageAppliesImpulse;
+var() bool bDamageAppliesImpulse;
 var() repnotify bool bWakeOnLevelStart;
-
-var				bool						bCurrentSlide;
-var				bool						bSlideActive;
-
-// BM1
-var() 			bool 						bDontBlockActors;
-
-/** Enable 'Stay upright' torque, that tries to keep Z axis of KActor pointing along world Z */
-var(StayUprightSpring)	bool				bEnableStayUprightSpring;
-
-/** If TRUE limit the maximum speed this object can move. */
-var()	bool	bLimitMaxPhysicsVelocity;
-
-/** whether we need to replicate RBState - used to avoid it for bNoDelete KActors that haven't moved or been awakened yet
- * as in that case the client should already have the same data
- */
-var transient bool	bNeedsRBStateReplication;
-
-/** 
- * Set TRUE to disable collisions with Pawn rigid bodies on clients.  Set this to true if using optimizations that 
- * could cause the server to miss or ignore contacts that the client might dtect with this KActor, which could cause 
- * vibration, rubberbanding, and general visual badness.
- */
-var bool			bDisableClientSidePawnInteractions;
-
-// Impact effects
-var				ParticleSystemComponent		ImpactEffectComponent;
-var				AudioComponent				ImpactSoundComponent;
-var				AudioComponent				ImpactSoundComponent2; // @TODO: This could be turned into a dynamic array; but for the moment just 2 will do.
-var				float						LastImpactTime;
-var				PhysEffectInfo				ImpactEffectInfo;
-
-// BM1
-var				RB_ForceComponent			ImpactForceComponent;
-
-// Slide effects
-var				ParticleSystemComponent		SlideEffectComponent;
-var				AudioComponent				SlideSoundComponent;
-var				float						LastSlideTime;
-var				PhysEffectInfo				SlideEffectInfo;
-
-/** Torque applied to try and keep KActor horizontal. */
-var(StayUprightSpring)	float		StayUprightTorqueFactor;
-
-/** Max torque that can be applied to try and keep KActor horizontal */
-var(StayUprightSpring)	float		StayUprightMaxTorque;
-
-/** If bLimitMaxPhysicsVelocity is TRUE, this is how fast the object can move. */
-var()	float	MaxPhysicsVelocity;
-
+var bool bCurrentSlide;
+var bool bSlideActive;
+var() bool bDontBlockActors;
+var(StayUprightSpring) bool bEnableStayUprightSpring;
+var() bool bLimitMaxPhysicsVelocity;
+var transient bool bNeedsRBStateReplication;
+var bool bDisableClientSidePawnInteractions;
+var export editinline ParticleSystemComponent ImpactEffectComponent;
+var export editinline AudioComponent ImpactSoundComponent;
+var export editinline AudioComponent ImpactSoundComponent2;
+var float LastImpactTime;
+var PhysEffectInfo ImpactEffectInfo;
+var export editinline RB_ForceComponent ImpactForceComponent;
+var export editinline ParticleSystemComponent SlideEffectComponent;
+var export editinline AudioComponent SlideSoundComponent;
+var float LastSlideTime;
+var PhysEffectInfo SlideEffectInfo;
+var(StayUprightSpring) float StayUprightTorqueFactor;
+var(StayUprightSpring) float StayUprightMaxTorque;
+var() float MaxPhysicsVelocity;
 var native const RigidBodyState RBState;
-var	native const float			AngErrorAccumulator;
-/** replicated version of DrawScale3D */
-var repnotify vector ReplicatedDrawScale3D;
+var native const float AngErrorAccumulator;
+var repnotify Vector ReplicatedDrawScale3D;
+var transient Vector InitialLocation;
+var transient Rotator InitialRotation;
 
-var transient vector InitialLocation;
-var transient rotator InitialRotation;
-
-replication
-{
-	if (!bNeedsRBStateReplication && Role == ROLE_Authority)
-		RBState;
-	if (bNetInitial && Role == ROLE_Authority)
-		bWakeOnLevelStart, ReplicatedDrawScale3D;
-}
-
-/** Util for getting the PhysicalMaterial applied to this KActor's StaticMesh. */
+// Export UKActor::execGetKActorPhysMaterial(FFrame&, void* const)
 native final function PhysicalMaterial GetKActorPhysMaterial();
 
-/** Forces the resolve the RBState regardless of wether the actor is sleeping */
+// Export UKActor::execResolveRBState(FFrame&, void* const)
 native final function ResolveRBState();
 
 simulated event PostBeginPlay()
 {
-	Super.PostBeginPlay();
-
-	if (bWakeOnLevelStart)
-	{
-		StaticMeshComponent.WakeRigidBody();
-	}
-	else
-	{
-		bNeedsRBStateReplication = !bNoDelete;
-	}
-	ReplicatedDrawScale3D = DrawScale3D * 1000.0f; // avoids effects of vector rounding
-
-	// Initialise impact/slide components (if we are being notified of physics events, and have sounds/effects set up
-	// in PhysicalMaterial applied to our static mesh.
-	if(StaticMeshComponent.bNotifyRigidBodyCollision)
-	{
-		SetPhysicalCollisionProperties();
-	}
-
-	InitialLocation = Location;
-	InitialRotation = Rotation;
-
-	if ( bDisableClientSidePawnInteractions && (Role != ROLE_Authority) )
-	{
-		// on clients, turn off collision with pawn RBs, Let replication handle collision response
-		// to avoid server/client disagreement.
-		StaticMeshComponent.SetRBCollidesWithChannel(RBCC_Pawn, FALSE);
-	}
+    super.PostBeginPlay();
+    // End:0x23
+    if(bWakeOnLevelStart)
+    {
+        StaticMeshComponent.WakeRigidBody();        
+    }
+    else
+    {
+        bNeedsRBStateReplication = !bNoDelete;
+    }
+    ReplicatedDrawScale3D = DrawScale3D * 1000.0000000;
+    // End:0x61
+    if(StaticMeshComponent.bNotifyRigidBodyCollision)
+    {
+        SetPhysicalCollisionProperties();
+    }
+    InitialLocation = Location;
+    InitialRotation = Rotation;
+    // End:0x86
+    if(bDontBlockActors)
+    {
+        SetCollision(,, false);
+    }
+    // End:0xB4
+    if(bDisableClientSidePawnInteractions && Role != ROLE_Authority)
+    {
+        StaticMeshComponent.SetRBCollidesWithChannel(2, false);
+    }
+    //return;    
 }
 
-/** called when the actor falls out of the world 'safely' (below KillZ and such) */
 simulated event FellOutOfWorld(class<DamageType> dmgType)
 {
-	ShutDown();
-	Super.FellOutOfWorld(dmgType);
+    ShutDown();
+    super(Actor).FellOutOfWorld(dmgType);
+    //return;    
 }
 
 event Destroyed()
 {
- 	// Let the components play out normally
- 	if( ImpactEffectInfo.Sound != None )
- 	{
-		if( ImpactSoundComponent != none )
-		{
-			ImpactSoundComponent.bAutoDestroy = TRUE;
-		}
-
-		if( ImpactSoundComponent2 != none )
-		{
-			ImpactSoundComponent2.bAutoDestroy = TRUE;
-		}
-	}
-
- 	if( SlideEffectInfo.Sound != None )
- 	{
- 		SlideSoundComponent.bAutoDestroy = TRUE;
- 	}
-
- 	Super.Destroyed();
- }
-
-simulated function SetPhysicalCollisionProperties()
-{
-	local PhysicalMaterial PhysMat;
-	PhysMat = GetKActorPhysMaterial();
-	// cache effect info
-	ImpactEffectInfo = PhysMat.FindPhysEffectInfo(EPMET_Impact);
-	SlideEffectInfo = PhysMat.FindPhysEffectInfo(EPMET_Slide);
-
-	if(ImpactEffectInfo.Effect != None)
-	{
-		ImpactEffectComponent = new(Outer) class'ParticleSystemComponent';
-		AttachComponent(ImpactEffectComponent);
-		ImpactEffectComponent.bAutoActivate = FALSE;
-		ImpactEffectComponent.SetTemplate(ImpactEffectInfo.Effect);
-	}
-
-	if(ImpactEffectInfo.Sound != None)
-	{
-		ImpactSoundComponent = new(Outer) class'AudioComponent';
-		AttachComponent(ImpactSoundComponent);
-		ImpactSoundComponent.SoundCue = ImpactEffectInfo.Sound;
-
-		ImpactSoundComponent2 = new(Outer) class'AudioComponent';
-		AttachComponent(ImpactSoundComponent2);
-		ImpactSoundComponent2.SoundCue = ImpactEffectInfo.Sound;
-	}
-
-	if(SlideEffectInfo.Effect != None)
-	{
-		SlideEffectComponent = new(Outer) class'ParticleSystemComponent';
-		AttachComponent(SlideEffectComponent);
-		SlideEffectComponent.bAutoActivate = FALSE;
-		SlideEffectComponent.SetTemplate(SlideEffectInfo.Effect);
-	}
-
-	if(SlideEffectInfo.Sound != None)
-	{
-		SlideSoundComponent = new(Outer) class'AudioComponent';
-		AttachComponent(SlideSoundComponent);
-		SlideSoundComponent.SoundCue = SlideEffectInfo.Sound;
-	}
+    // End:0x50
+    if(ImpactEffectInfo.Sound != none)
+    {
+        // End:0x33
+        if(ImpactSoundComponent != none)
+        {
+            ImpactSoundComponent.bAutoDestroy = true;
+        }
+        // End:0x50
+        if(ImpactSoundComponent2 != none)
+        {
+            ImpactSoundComponent2.bAutoDestroy = true;
+        }
+    }
+    // End:0x78
+    if(SlideEffectInfo.Sound != none)
+    {
+        SlideSoundComponent.bAutoDestroy = true;
+    }
+    super(Actor).Destroyed();
+    //return;    
 }
+
+simulated event SetPhysicalCollisionProperties()
+{
+    local PhysicalMaterial PhysMat;
+
+    PhysMat = GetKActorPhysMaterial();
+    ImpactEffectInfo = PhysMat.FindPhysEffectInfo(0);
+    SlideEffectInfo = PhysMat.FindPhysEffectInfo(1);
+    // End:0x61
+    if(ImpactEffectComponent != none)
+    {
+        DetachComponent(ImpactEffectComponent);
+        ImpactEffectComponent = none;
+    }
+    // End:0x7E
+    if(ImpactSoundComponent != none)
+    {
+        DetachComponent(ImpactSoundComponent);
+        ImpactSoundComponent = none;
+    }
+    // End:0x9B
+    if(ImpactSoundComponent2 != none)
+    {
+        DetachComponent(ImpactSoundComponent2);
+        ImpactSoundComponent2 = none;
+    }
+    // End:0xB8
+    if(ImpactForceComponent != none)
+    {
+        DetachComponent(ImpactForceComponent);
+        ImpactForceComponent = none;
+    }
+    // End:0xD5
+    if(SlideEffectComponent != none)
+    {
+        DetachComponent(SlideEffectComponent);
+        SlideEffectComponent = none;
+    }
+    // End:0xF2
+    if(SlideSoundComponent != none)
+    {
+        DetachComponent(SlideSoundComponent);
+        SlideSoundComponent = none;
+    }
+    // End:0x159
+    if(ImpactEffectInfo.Effect != none)
+    {
+        ImpactEffectComponent = new (Outer) Class'ParticleSystemComponent';
+        AttachComponent(ImpactEffectComponent);
+        ImpactEffectComponent.bAutoActivate = false;
+        ImpactEffectComponent.SetTemplate(ImpactEffectInfo.Effect);
+    }
+    // End:0x1ED
+    if(ImpactEffectInfo.Sound != none)
+    {
+        ImpactSoundComponent = new (Outer) Class'AudioComponent';
+        AttachComponent(ImpactSoundComponent);
+        ImpactSoundComponent.SoundCue = ImpactEffectInfo.Sound;
+        ImpactSoundComponent2 = new (Outer) Class'AudioComponent';
+        AttachComponent(ImpactSoundComponent2);
+        ImpactSoundComponent2.SoundCue = ImpactEffectInfo.Sound;
+    }
+    // End:0x233
+    if(ImpactEffectInfo.Force != none)
+    {
+        ImpactForceComponent = ImpactEffectInfo.Force.Clone();
+        AttachComponent(ImpactForceComponent);
+    }
+    // End:0x29A
+    if(SlideEffectInfo.Effect != none)
+    {
+        SlideEffectComponent = new (Outer) Class'ParticleSystemComponent';
+        AttachComponent(SlideEffectComponent);
+        SlideEffectComponent.bAutoActivate = false;
+        SlideEffectComponent.SetTemplate(SlideEffectInfo.Effect);
+    }
+    // End:0x2EF
+    if(SlideEffectInfo.Sound != none)
+    {
+        SlideSoundComponent = new (Outer) Class'AudioComponent';
+        AttachComponent(SlideSoundComponent);
+        SlideSoundComponent.SoundCue = SlideEffectInfo.Sound;
+    }
+    //return;    
+}
+
+simulated event SpawnedByKismet()
+{
+    // End:0x1D
+    if(StaticMeshComponent.bNotifyRigidBodyCollision)
+    {
+        SetPhysicalCollisionProperties();
+    }
+    InitialLocation = Location;
+    InitialRotation = Rotation;
+    //return;    
+}
+
 simulated event ReplicatedEvent(name VarName)
 {
-	local vector NewDrawScale3D;
+    local Vector NewDrawScale3D;
 
-	if (VarName == 'bWakeOnLevelStart')
-	{
-		if (bWakeOnLevelStart)
-		{
-			StaticMeshComponent.WakeRigidBody();
-		}
-	}
-	else if (VarName == nameof(ReplicatedDrawScale3D))
-	{
-		NewDrawScale3D = ReplicatedDrawScale3D / 1000.0; // needs to match multiply in PostBeginPlay()
-		SetDrawScale3D(NewDrawScale3D);
-	}
-	else
-	{
-		Super.ReplicatedEvent(VarName);
-	}
+    // End:0x30
+    if(VarName == 'bWakeOnLevelStart')
+    {
+        // End:0x2D
+        if(bWakeOnLevelStart)
+        {
+            StaticMeshComponent.WakeRigidBody();
+        }        
+    }
+    else
+    {
+        // End:0x63
+        if(VarName == 'ReplicatedDrawScale3D')
+        {
+            NewDrawScale3D = ReplicatedDrawScale3D / 1000.0000000;
+            SetDrawScale3D(NewDrawScale3D);            
+        }
+        else
+        {
+            super.ReplicatedEvent(VarName);
+        }
+    }
+    //return;    
 }
 
-function ApplyImpulse( Vector ImpulseDir, float ImpulseMag, Vector HitLocation, optional TraceHitInfo HitInfo )
+function ApplyImpulse(Vector ImpulseDir, float ImpulseMag, Vector HitLocation, optional TraceHitInfo HitInfo)
 {
-	local vector ApplyImpulse;
+    local Vector ApplyImpulse;
 
-	ImpulseDir = Normal(ImpulseDir);
-	ApplyImpulse = ImpulseDir * ImpulseMag;
-
-	if( HitInfo.HitComponent != None )
-	{
-		HitInfo.HitComponent.AddImpulse( ApplyImpulse, HitLocation, HitInfo.BoneName );
-	}
-	else
-	{	// if no HitComponent is passed, default to our CollisionComponent
-		CollisionComponent.AddImpulse( ApplyImpulse, HitLocation );
-	}
+    ImpulseDir = Normal(ImpulseDir);
+    ApplyImpulse = ImpulseDir * ImpulseMag;
+    // End:0x6F
+    if(HitInfo.HitComponent != none)
+    {
+        HitInfo.HitComponent.AddImpulse(ApplyImpulse, HitLocation, HitInfo.BoneName);        
+    }
+    else
+    {
+        CollisionComponent.AddImpulse(ApplyImpulse, HitLocation);
+    }
+    //return;    
 }
 
-/**
- * Default behaviour when shot is to apply an impulse and kick the KActor.
- */
-event TakeDamage(int Damage, Controller EventInstigator, vector HitLocation, vector Momentum, class<DamageType> DamageType, optional TraceHitInfo HitInfo, optional Actor DamageCauser)
+event TakeDamage(int Damage, Controller EventInstigator, Vector HitLocation, Vector Momentum, class<DamageType> DamageType, optional TraceHitInfo HitInfo, optional Actor DamageCauser)
 {
-	local vector ApplyImpulse;
+    local Vector ApplyImpulse;
 
-	// call Actor's version to handle any SeqEvent_TakeDamage for scripting
-	Super.TakeDamage(Damage, EventInstigator, HitLocation, Momentum, DamageType, HitInfo, DamageCauser);
-
-	if ( bDamageAppliesImpulse && damageType.default.KDamageImpulse > 0 )
-	{
-		if ( VSize(momentum) < 0.001 )
-		{
-			`Log("Zero momentum to KActor.TakeDamage");
-			return;
-		}
-
-		ApplyImpulse = Normal(momentum) * damageType.default.KDamageImpulse;
-		if ( HitInfo.HitComponent != None )
-		{
-			HitInfo.HitComponent.AddImpulse(ApplyImpulse, HitLocation, HitInfo.BoneName);
-		}
-		else
-		{	// if no HitComponent is passed, default to our CollisionComponent
-			CollisionComponent.AddImpulse(ApplyImpulse, HitLocation);
-		}
-	}
+    super(Actor).TakeDamage(Damage, EventInstigator, HitLocation, Momentum, DamageType, HitInfo, DamageCauser);
+    // End:0x110
+    if(bDamageAppliesImpulse && DamageType.default.KDamageImpulse > float(0))
+    {
+        // End:0x87
+        if(VSize(Momentum) < 0.0010000)
+        {
+            LogInternal("Zero momentum to KActor.TakeDamage");
+            return;
+        }
+        ApplyImpulse = Normal(Momentum) * DamageType.default.KDamageImpulse;
+        // End:0xF4
+        if(HitInfo.HitComponent != none)
+        {
+            HitInfo.HitComponent.AddImpulse(ApplyImpulse, HitLocation, HitInfo.BoneName);            
+        }
+        else
+        {
+            CollisionComponent.AddImpulse(ApplyImpulse, HitLocation);
+        }
+    }
+    //return;    
 }
 
-/**
- * Respond to radial damage as well.
- */
-simulated function TakeRadiusDamage
-(
-	Controller			InstigatedBy,
-	float				BaseDamage,
-	float				DamageRadius,
-	class<DamageType>	DamageType,
-	float				Momentum,
-	vector				HurtOrigin,
-	bool				bFullDamage,
-	Actor DamageCauser
-)
+simulated function TakeRadiusDamage(Controller InstigatedBy, float BaseDamage, float DamageRadius, class<DamageType> DamageType, float Momentum, Vector HurtOrigin, bool bFullDamage, Actor DamageCauser)
 {
-	local int Idx;
-	local SeqEvent_TakeDamage DmgEvt;
-	// search for any damage events
-	for (Idx = 0; Idx < GeneratedEvents.Length; Idx++)
-	{
-		DmgEvt = SeqEvent_TakeDamage(GeneratedEvents[Idx]);
-		if (DmgEvt != None)
-		{
-			// notify the event of the damage received
-			DmgEvt.HandleDamage(self, InstigatedBy, DamageType, BaseDamage);
-		}
-	}
-	if ( bDamageAppliesImpulse && damageType.default.RadialDamageImpulse > 0 && (Role == ROLE_Authority) )
-	{
-		CollisionComponent.AddRadialImpulse(HurtOrigin, DamageRadius, damageType.default.RadialDamageImpulse, RIF_Linear, damageType.default.bRadialDamageVelChange);
-	}
+    local int Idx;
+    local SeqEvent_TakeDamage DmgEvt;
+
+    Idx = 0;
+    J0x07:
+
+    // End:0x6D [Loop If]
+    if(Idx < GeneratedEvents.Length)
+    {
+        DmgEvt = SeqEvent_TakeDamage(GeneratedEvents[Idx]);
+        // End:0x63
+        if(DmgEvt != none)
+        {
+            DmgEvt.HandleDamage(self, InstigatedBy, DamageType, int(BaseDamage), HurtOrigin);
+        }
+        Idx++;
+        // [Loop Continue]
+        goto J0x07;
+    }
+    // End:0xDC
+    if((bDamageAppliesImpulse && DamageType.default.RadialDamageImpulse > float(0)) && Role == ROLE_Authority)
+    {
+        CollisionComponent.AddRadialImpulse(HurtOrigin, DamageRadius, DamageType.default.RadialDamageImpulse, 1, DamageType.default.bRadialDamageVelChange);
+    }
+    //return;    
 }
 
-/** If this KActor receives a Toggle ON event from Kismet, wake the physics up. */
-simulated function OnToggle(SeqAct_Toggle action)
+simulated function OnToggle(SeqAct_Toggle Action)
 {
-	if(action.InputLinks[0].bHasImpulse)
-	{
-		StaticMeshComponent.WakeRigidBody();
-	}
+    // End:0x31
+    if(Action.InputLinks[0].bHasImpulse)
+    {
+        StaticMeshComponent.WakeRigidBody();
+    }
+    //return;    
 }
 
-/**
- * Called upon receiving a SeqAct_Teleport action.  Grabs
- * the first destination available and attempts to teleport
- * this actor.
- *
- * @param	inAction - teleport action that was activated
- */
 simulated function OnTeleport(SeqAct_Teleport inAction)
 {
-	local array<Object> objVars;
-	local int idx;
-	local Actor destActor;
+    local Vector Loc;
+    local Rotator Rot;
 
-	// find the first supplied actor
-	inAction.GetObjectVars(objVars,"Destination");
-	for (idx = 0; idx < objVars.Length && destActor == None; idx++)
-	{
-		destActor = Actor(objVars[idx]);
-	}
-
-	// and set to that actor's location
-	if (destActor != None)
-	{
-		StaticMeshComponent.SetRBPosition(destActor.Location);
-		StaticMeshComponent.SetRBRotation(destActor.Rotation);
-		PlayTeleportEffect(false, true);
-	}
+    // End:0x52
+    if(inAction.GetDestination(Loc, Rot))
+    {
+        // End:0x4A
+        if(Physics == 10)
+        {
+            StaticMeshComponent.SetRBRotation(Rot);            
+        }
+        else
+        {
+            SetRotation(Rot);
+        }
+    }
+    // End:0x7B
+    if(Physics == 10)
+    {
+        StaticMeshComponent.SetRBPosition(Loc);        
+    }
+    else
+    {
+        SetLocation(Loc);
+    }
+    PlayTeleportEffect(false, true);
+    //return;    
 }
 
 simulated function Reset()
 {
-	StaticMeshComponent.SetRBLinearVelocity( Vect(0,0,0) );
-	StaticMeshComponent.SetRBAngularVelocity( Vect(0,0,0) );
-	StaticMeshComponent.SetRBPosition( InitialLocation );
-	StaticMeshComponent.SetRBRotation( InitialRotation );
+    StaticMeshComponent.SetRBLinearVelocity(vect(0.0000000, 0.0000000, 0.0000000));
+    StaticMeshComponent.SetRBAngularVelocity(vect(0.0000000, 0.0000000, 0.0000000));
+    StaticMeshComponent.SetRBPosition(InitialLocation);
+    StaticMeshComponent.SetRBRotation(InitialRotation);
+    // End:0x87
+    if(!bWakeOnLevelStart)
+    {
+        StaticMeshComponent.PutRigidBodyToSleep();        
+    }
+    else
+    {
+        StaticMeshComponent.WakeRigidBody();
+    }
+    ResolveRBState();
+    bForceNetUpdate = true;
+    super(Actor).Reset();
+    //return;    
+}
 
-	if (!bWakeOnLevelStart)
-	{
-		StaticMeshComponent.PutRigidBodyToSleep();
-	}
-	else
-	{
-		StaticMeshComponent.WakeRigidBody();
-	}
-
-	// Resolve the RBState and get all of the needed flags set
-	ResolveRBState();
-
-	// Force replication
-	bForceNetUpdate = TRUE;
-
-	super.Reset();
+event DestroyIfFallenOutOfWorld()
+{
+    // End:0x49
+    if(StaticMeshComponent.GetHasFallenOutOfWorld())
+    {
+        LogInternal(string(self) @ "fell out of world so destroying self.");
+        Destroy();
+    }
+    //return;    
 }
 
 defaultproperties
 {
-	TickGroup=TG_PostAsyncWork
-
-	SupportedEvents.Add(class'SeqEvent_RigidBodyCollision')
-
-	Begin Object Name=StaticMeshComponent0
-		WireframeColor=(R=0,G=255,B=128,A=255)
-		BlockRigidBody=true
-		RBChannel=RBCC_GameplayPhysics
-		RBCollideWithChannels=(Default=TRUE,BlockingVolume=TRUE,GameplayPhysics=TRUE,EffectPhysics=TRUE)
-	End Object
-
-	bDamageAppliesImpulse=true
-	bNetInitialRotation=true
-	Physics=PHYS_RigidBody
-	bStatic=false
-	bCollideWorld=false
-	bProjTarget=true
-	bBlockActors=true
-	bWorldGeometry=false
-
-	bNoDelete=true
-	bAlwaysRelevant=true
-	bSkipActorPropertyReplication=false
-	bUpdateSimulatedPosition=true
-	bReplicateMovement=true
-	RemoteRole=ROLE_SimulatedProxy
-
-	bCollideActors=true
-	bNoEncroachCheck=true
-	bBlocksTeleport=true
-	bBlocksNavigation=true
-	bPawnCanBaseOn=false
-	bSafeBaseIfAsleep=TRUE
-	bNeedsRBStateReplication=true
-
-	StayUprightTorqueFactor=1000.0
-	StayUprightMaxTorque=1500.0
-
-	MaxPhysicsVelocity=350.0
-
-	ReplicatedDrawScale3D=(X=1000.0,Y=1000.0,Z=1000.0) // set so that default scale of (1,1,1) doesn't replicate anything
-	
-	bDisableClientSidePawnInteractions=TRUE
+    bDamageAppliesImpulse=true
+    bNeedsRBStateReplication=true
+    bDisableClientSidePawnInteractions=true
+    StayUprightTorqueFactor=1000.0000000
+    StayUprightMaxTorque=1500.0000000
+    MaxPhysicsVelocity=350.0000000
+    ReplicatedDrawScale3D=(X=1000.0000000,Y=1000.0000000,Z=1000.0000000)
+    // Reference: StaticMeshComponent'Default__KActor.StaticMeshComponent0'
+    // TemplateOwnerClass: none
+    // TemplateOwnerName: 'StaticMeshComponent0'
+    // Archetype: StaticMeshComponent'Default__DynamicSMActor.StaticMeshComponent0'
+    begin object name="StaticMeshComponent0"
+        WireframeColor=(R=0,G=255,B=128,A=255)
+        LightEnvironment=DynamicLightEnvironmentComponent'Default__KActor.MyLightEnvironment'
+        RBCollideWithChannels=(Default=true,GameplayPhysics=true,EffectPhysics=true,BlockingVolume=true)
+        BlockRigidBody=true
+        RBChannel=RBCC_GameplayPhysics
+    end object
+    StaticMeshComponent=StaticMeshComponent0
+    // Reference: DynamicLightEnvironmentComponent'Default__KActor.MyLightEnvironment'
+    // TemplateOwnerClass: none
+    // TemplateOwnerName: 'MyLightEnvironment'
+    // Archetype: DynamicLightEnvironmentComponent'Default__DynamicSMActor.MyLightEnvironment'
+    begin object name="MyLightEnvironment"
+    end object
+    LightEnvironment=MyLightEnvironment
+    bPawnCanBaseOn=false
+    bSafeBaseIfAsleep=true
+    bNoDelete=true
+    bAlwaysRelevant=true
+    bUpdateSimulatedPosition=true
+    bNetInitialRotation=true
+    bBlocksNavigation=true
+    bCollideActors=true
+    bBlockActors=true
+    bProjTarget=true
+    bBlocksTeleport=true
+    bNoEncroachCheck=true
+    Components[0]=MyLightEnvironment
+    Components[1]=StaticMeshComponent0
+    Physics=PHYS_RigidBody
+    TickGroup=TG_PostAsyncWork
+    CollisionComponent=StaticMeshComponent0
+    SupportedEvents[0]=Class'SeqEvent_Touch'
+    SupportedEvents[1]=Class'SeqEvent_Destroyed'
+    SupportedEvents[2]=Class'SeqEvent_TakeDamage'
+    SupportedEvents[3]=Class'SeqEvent_RigidBodyCollision'
 }
