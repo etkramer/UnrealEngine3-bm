@@ -1,15 +1,19 @@
-/**
- * Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
- */
-
-/** This commandlet finds and displays help information on other commandlets */
 class HelpCommandlet extends Commandlet
-	native;
+    transient
+    native;
 
-/**
- * Looks at the parameters and displays help based upon those parameters
- *
- * @param Params the string containing the parameters for the commandlet
- */
+// Export UHelpCommandlet::execMain(FFrame&, void* const)
 native event int Main(string Params);
 
+defaultproperties
+{
+    HelpDescription="This commandlet displays help information on other commandlets"
+    HelpUsage="gamename.exe help <list | commandletname | webhelp commandletname>"
+    HelpWebLink="https://udn.epicgames.com/bin/view/Three/HelpCommandlet"
+    HelpParamNames[0]="list"
+    HelpParamNames[1]="commandlet name"
+    HelpParamNames[2]="webhelp"
+    HelpParamDescriptions[0]="Lists all commandlets that are available"
+    HelpParamDescriptions[1]="Displays help information for the specified commandlet"
+    HelpParamDescriptions[2]="Launches a browser with the URL of the web page that documents the commandlet"
+}

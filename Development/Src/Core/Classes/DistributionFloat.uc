@@ -1,13 +1,9 @@
-/**
- * Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
- */
 class DistributionFloat extends Component
-	inherits(FCurveEdInterface)
-	native
-	collapsecategories
-	hidecategories(Object)
-	editinlinenew
-	abstract;
+    inherits(FCurveEdInterface)
+    abstract
+    native
+    editinlinenew
+    collapsecategories;
 
 struct native RawDistributionFloat extends RawDistribution
 {
@@ -40,8 +36,7 @@ structcpptext
 	 */
 	inline UBOOL IsUniform() { return LookupTableNumElements == 2; }
 }
-
-	var() export noclear DistributionFloat Distribution;
+    var() noclear export editinline DistributionFloat Distribution;
 };
 
 cpptext
@@ -92,17 +87,11 @@ cpptext
 	virtual UBOOL NeedsLoadForServer() const;
 }
 
-
-
-/** Can this variable be baked out to a FRawDistribution? Should be TRUE 99% of the time*/
 var(Baked) bool bCanBeBaked;
-
-/** Set internally when the distribution is updated so that that FRawDistribution can know to update itself*/
 var bool bIsDirty;
 
 defaultproperties
 {
-	bCanBeBaked=true
-	// make sure the FRawDistribution is initialized
-	bIsDirty=true 
+    bCanBeBaked=true
+    bIsDirty=true
 }

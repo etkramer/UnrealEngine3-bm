@@ -2548,6 +2548,21 @@ void UObject::execDivide_IntInt( FFrame& Stack, RESULT_DECL )
 }
 IMPLEMENT_FUNCTION( UObject, 145, execDivide_IntInt );
 
+void UObject::execPercent_IntInt( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_INT(A);
+	P_GET_INT(B);
+	P_FINISH;
+
+	if (B == 0)
+	{
+		Stack.Logf(NAME_ScriptWarning, TEXT("Modulo by zero"));
+	}
+
+	*(INT*)Result = (B != 0) ? (A % B) : 0;
+}
+IMPLEMENT_FUNCTION( UObject, 253, execPercent_IntInt );
+
 void UObject::execAdd_IntInt( FFrame& Stack, RESULT_DECL )
 {
 	P_GET_INT(A);
@@ -3065,6 +3080,16 @@ void UObject::execAtan( FFrame& Stack, RESULT_DECL )
 }	
 IMPLEMENT_FUNCTION( UObject, 190, execAtan );
 
+void UObject::execAtan2( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_FLOAT(A);
+    P_GET_FLOAT(B);
+	P_FINISH;
+
+    *(FLOAT*)Result = appAtan2(A,B);
+}	
+IMPLEMENT_FUNCTION( UObject, INDEX_NONE, execAtan2 );
+
 void UObject::execExp( FFrame& Stack, RESULT_DECL )
 {
 	P_GET_FLOAT(A);
@@ -3102,6 +3127,16 @@ void UObject::execSqrt( FFrame& Stack, RESULT_DECL )
 	*(FLOAT*)Result = Sqrt;
 }	
 IMPLEMENT_FUNCTION( UObject, 193, execSqrt );
+
+void UObject::execPow( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_FLOAT(Base);
+	P_GET_FLOAT(Exp);
+	P_FINISH;
+
+	*(FLOAT*)Result = powf(Base, Exp);
+}	
+IMPLEMENT_FUNCTION( UObject, INDEX_NONE, execPow );
 
 void UObject::execSquare( FFrame& Stack, RESULT_DECL )
 {
@@ -3283,6 +3318,57 @@ void UObject::execGetDotDistance( FFrame& Stack, RESULT_DECL )
 	*(UBOOL*)Result = GetDotDistance( OutDotDist, Direction, AxisX, AxisY, AxisZ );
 }
 IMPLEMENT_FUNCTION( UObject, INDEX_NONE, execGetDotDistance);
+
+void UObject::execSphereIntersectingLine( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_VECTOR(SphereOrigin);
+	P_GET_FLOAT(SphereRadius);
+	P_GET_VECTOR(LineOrigin);
+	P_GET_VECTOR(LineDir);
+	P_GET_VECTOR_REF(ClosestPoint1);
+	P_GET_VECTOR_REF(ClosestPoint2);
+	P_FINISH;
+
+	// BM1: Not implemented
+	*(UBOOL*)Result = FALSE;
+}
+IMPLEMENT_FUNCTION( UObject, INDEX_NONE, execSphereIntersectingLine );
+
+void UObject::execPointDistSquaredToLineSegment( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_VECTOR(Point);
+	P_GET_VECTOR(Line);
+	P_GET_VECTOR(Origin);
+	P_FINISH;
+
+	// BM1: Not implemented
+	*(FLOAT*)Result = 0;
+}
+IMPLEMENT_FUNCTION( UObject, INDEX_NONE, execPointDistSquaredToLineSegment );
+
+void UObject::execPointDistAlongLineSegment( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_VECTOR(Point);
+	P_GET_VECTOR(Line);
+	P_GET_VECTOR(Origin);
+	P_FINISH;
+
+	// BM1: Not implemented
+	*(FLOAT*)Result = 0;
+}
+IMPLEMENT_FUNCTION( UObject, INDEX_NONE, execPointDistAlongLineSegment );
+
+void UObject::execPointDistAlongLine( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_VECTOR(Point);
+	P_GET_VECTOR(Line);
+	P_GET_VECTOR(Origin);
+	P_FINISH;
+
+	// BM1: Not implemented
+	*(FLOAT*)Result = 0;
+}
+IMPLEMENT_FUNCTION( UObject, INDEX_NONE, execPointDistAlongLine );
 
 void UObject::execGetAngularDistance( FFrame& Stack, RESULT_DECL )
 {
@@ -3669,6 +3755,17 @@ void UObject::execVInterpTo( FFrame& Stack, RESULT_DECL )
 	*(FVector*)Result = VInterpTo( Current, Target, DeltaTime, InterpSpeed );
 }
 IMPLEMENT_FUNCTION( UObject, -1, execVInterpTo );
+
+void UObject::execVRandRange( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_VECTOR(MinRange);
+	P_GET_VECTOR(MaxRange);
+	P_FINISH;
+
+	// BM1: Not implemented
+	*(FVector*)Result = MinRange;
+}
+IMPLEMENT_FUNCTION( UObject, -1, execVRandRange );
 
 void UObject::execClampLength( FFrame& Stack, RESULT_DECL )
 {
@@ -4555,6 +4652,16 @@ void UObject::execParseStringIntoArray(FFrame& Stack, RESULT_DECL)
 }
 IMPLEMENT_FUNCTION( UObject, INDEX_NONE, execParseStringIntoArray );
 
+void UObject::execCapitalise( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_STR(S);
+	P_FINISH;
+
+	// BM1: Not implemented
+	*(FString*)Result = S;	
+}
+IMPLEMENT_FUNCTION( UObject, 237, execCapitalise );
+
 /////////////////////////////////////////
 // Native name operators and functions //
 /////////////////////////////////////////
@@ -4984,6 +5091,14 @@ void UObject::execSaveConfig( FFrame& Stack, RESULT_DECL )
 }
 IMPLEMENT_FUNCTION( UObject, 536, execSaveConfig);
 
+void UObject::execStoreConfig( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+
+	// BM1: Not implemented
+}
+IMPLEMENT_FUNCTION( UObject, INDEX_NONE, execStoreConfig);
+
 void UObject::execStaticSaveConfig( FFrame& Stack, RESULT_DECL )
 {
 	P_FINISH;
@@ -5114,6 +5229,110 @@ void UObject::execScriptTrace(FFrame &Stack, RESULT_DECL)
 	debugf(TEXT("%s"), *Stack.GetStackTrace() );
 }
 IMPLEMENT_FUNCTION(UObject,-1,execScriptTrace);
+
+void UObject::execLogInternalBoss(FFrame &Stack, RESULT_DECL)
+{
+	P_GET_STR(S);
+	P_GET_NAME(Tag);
+	P_FINISH;
+
+	// BM1: Not implemented
+}
+IMPLEMENT_FUNCTION(UObject, -1, execLogInternalBoss);
+
+void UObject::execLogInternalAnim(FFrame &Stack, RESULT_DECL)
+{
+	P_GET_STR(S);
+	P_GET_NAME(Tag);
+	P_FINISH;
+
+	// BM1: Not implemented
+}
+IMPLEMENT_FUNCTION(UObject, -1, execLogInternalAnim);
+
+void UObject::execLogInternalPlayer(FFrame &Stack, RESULT_DECL)
+{
+	P_GET_STR(S);
+	P_GET_NAME(Tag);
+	P_FINISH;
+
+	// BM1: Not implemented
+}
+IMPLEMENT_FUNCTION(UObject, -1, execLogInternalPlayer);
+
+void UObject::execLogInternalEngine(FFrame &Stack, RESULT_DECL)
+{
+	P_GET_STR(S);
+	P_GET_NAME(Tag);
+	P_FINISH;
+
+	// BM1: Not implemented
+}
+IMPLEMENT_FUNCTION(UObject, -1, execLogInternalEngine);
+
+void UObject::execLogInternalAI(FFrame &Stack, RESULT_DECL)
+{
+	P_GET_STR(S);
+	P_GET_NAME(Tag);
+	P_FINISH;
+
+	// BM1: Not implemented
+}
+IMPLEMENT_FUNCTION(UObject, -1, execLogInternalAI);
+
+void UObject::execLogInternalAudio(FFrame &Stack, RESULT_DECL)
+{
+	P_GET_STR(S);
+	P_GET_NAME(Tag);
+	P_FINISH;
+
+	// BM1: Not implemented
+}
+IMPLEMENT_FUNCTION(UObject, -1, execLogInternalAudio);
+
+void UObject::execDoesLocalisedStringExist(FFrame &Stack, RESULT_DECL)
+{
+	P_GET_STR(PackageName);
+	P_GET_STR(SectionName);
+	P_GET_STR(KeyName);
+	P_FINISH;
+
+	// BM1: Not implemented
+	*(UBOOL*)Result = FALSE;
+}
+IMPLEMENT_FUNCTION(UObject, -1, execDoesLocalisedStringExist);
+
+void UObject::execDoesLocalisedExist(FFrame &Stack, RESULT_DECL)
+{
+	P_GET_STR(PackageSectionKeyName);
+	P_FINISH;
+
+	// BM1: Not implemented
+	*(UBOOL*)Result = FALSE;
+}
+IMPLEMENT_FUNCTION(UObject, -1, execDoesLocalisedExist);
+
+void UObject::execGetLocalised(FFrame &Stack, RESULT_DECL)
+{
+	P_GET_STR(PackageSectionKeyName);
+	P_FINISH;
+
+	// BM1: Not implemented
+	*(FString*)Result = PackageSectionKeyName;
+}
+IMPLEMENT_FUNCTION(UObject, -1, execGetLocalised);
+
+void UObject::execGetLocalisedString(FFrame &Stack, RESULT_DECL)
+{
+	P_GET_STR(PackageName);
+	P_GET_STR(SectionName);
+	P_GET_STR(KeyName);
+	P_FINISH;
+
+	// BM1: Not implemented
+	*(FString*)Result = KeyName;
+}
+IMPLEMENT_FUNCTION(UObject, -1, execGetLocalisedString);
 
 void UObject::execDebugBreak(FFrame &Stack, RESULT_DECL)
 {

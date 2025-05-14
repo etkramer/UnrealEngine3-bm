@@ -413,21 +413,14 @@ public:
     NO_DEFAULT_CONSTRUCTOR(IInterface)
 };
 
-class USubsystem : public UObject, public FExec
+class USubsystem : public UObject
 {
 public:
     //## BEGIN PROPS Subsystem
     //## END PROPS Subsystem
 
     DECLARE_ABSTRACT_CLASS(USubsystem,UObject,0|CLASS_Transient,Core)
-
-	// USubsystem interface.
-	virtual void Tick( FLOAT DeltaTime )
-	{}
-
-	// FExec interface.
-	virtual UBOOL Exec( const TCHAR* Cmd, FOutputDevice& Ar ) { return 0; }
-
+    NO_DEFAULT_CONSTRUCTOR(USubsystem)
 };
 
 #endif // !INCLUDED_CORE_CLASSES
@@ -527,11 +520,16 @@ NATIVE_INFO(UObject) GCoreUObjectNatives[] =
 	MAP_NATIVE(UObject,execGetAngularFromDotDist)
 	MAP_NATIVE(UObject,execGetAngularDistance)
 	MAP_NATIVE(UObject,execGetDotDistance)
+	MAP_NATIVE(UObject,execSphereIntersectingLine)
+	MAP_NATIVE(UObject,execPointDistSquaredToLineSegment)
+	MAP_NATIVE(UObject,execPointDistAlongLineSegment)
+	MAP_NATIVE(UObject,execPointDistAlongLine)
 	MAP_NATIVE(UObject,execPointDistToSegment)
 	MAP_NATIVE(UObject,execPointDistToLine)
 	MAP_NATIVE(UObject,execGetPerObjectConfigSections)
 	MAP_NATIVE(UObject,execStaticSaveConfig)
 	MAP_NATIVE(UObject,execSaveConfig)
+	MAP_NATIVE(UObject,execStoreConfig)
 	MAP_NATIVE(UObject,execFindObject)
 	MAP_NATIVE(UObject,execDynamicLoadObject)
 	MAP_NATIVE(UObject,execGetEnum)
@@ -549,6 +547,16 @@ NATIVE_INFO(UObject) GCoreUObjectNatives[] =
 	MAP_NATIVE(UObject,execGetFuncName)
 	MAP_NATIVE(UObject,execDebugBreak)
 	MAP_NATIVE(UObject,execScriptTrace)
+	MAP_NATIVE(UObject,execLogInternalBoss)
+	MAP_NATIVE(UObject,execLogInternalAnim)
+	MAP_NATIVE(UObject,execLogInternalPlayer)
+	MAP_NATIVE(UObject,execLogInternalEngine)
+	MAP_NATIVE(UObject,execLogInternalAI)
+	MAP_NATIVE(UObject,execLogInternalAudio)
+	MAP_NATIVE(UObject,execDoesLocalisedStringExist)
+	MAP_NATIVE(UObject,execDoesLocalisedExist)
+	MAP_NATIVE(UObject,execGetLocalised)
+	MAP_NATIVE(UObject,execGetLocalisedString)
 	MAP_NATIVE(UObject,execLocalize)
 	MAP_NATIVE(UObject,execWarnInternal)
 	MAP_NATIVE(UObject,execLogInternal)
@@ -582,6 +590,7 @@ NATIVE_INFO(UObject) GCoreUObjectNatives[] =
 	MAP_NATIVE(UObject,execEqualEqual_ObjectObject)
 	MAP_NATIVE(UObject,execPathName)
 	MAP_NATIVE(UObject,execParseStringIntoArray)
+	MAP_NATIVE(UObject,execCapitalise)
 	MAP_NATIVE(UObject,execRepl)
 	MAP_NATIVE(UObject,execAsc)
 	MAP_NATIVE(UObject,execChr)
@@ -628,6 +637,7 @@ NATIVE_INFO(UObject) GCoreUObjectNatives[] =
 	MAP_NATIVE(UObject,execEqualEqual_RotatorRotator)
 	MAP_NATIVE(UObject,execClampLength)
 	MAP_NATIVE(UObject,execVInterpTo)
+	MAP_NATIVE(UObject,execVRandRange)
 	MAP_NATIVE(UObject,execIsZero)
 	MAP_NATIVE(UObject,execProjectOnTo)
 	MAP_NATIVE(UObject,execMirrorVectorByNormal)
@@ -670,8 +680,10 @@ NATIVE_INFO(UObject) GCoreUObjectNatives[] =
 	MAP_NATIVE(UObject,execFRand)
 	MAP_NATIVE(UObject,execSquare)
 	MAP_NATIVE(UObject,execSqrt)
+	MAP_NATIVE(UObject,execPow)
 	MAP_NATIVE(UObject,execLoge)
 	MAP_NATIVE(UObject,execExp)
+	MAP_NATIVE(UObject,execAtan2)
 	MAP_NATIVE(UObject,execAtan)
 	MAP_NATIVE(UObject,execTan)
 	MAP_NATIVE(UObject,execAcos)
@@ -724,6 +736,7 @@ NATIVE_INFO(UObject) GCoreUObjectNatives[] =
 	MAP_NATIVE(UObject,execLessLess_IntInt)
 	MAP_NATIVE(UObject,execSubtract_IntInt)
 	MAP_NATIVE(UObject,execAdd_IntInt)
+	MAP_NATIVE(UObject,execPercent_IntInt)
 	MAP_NATIVE(UObject,execDivide_IntInt)
 	MAP_NATIVE(UObject,execMultiply_IntInt)
 	MAP_NATIVE(UObject,execSubtract_PreInt)

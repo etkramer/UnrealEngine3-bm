@@ -2607,6 +2607,10 @@ public:
 	DECLARE_FUNCTION(execPointDistToLine);
 	DECLARE_FUNCTION(execPointDistToSegment);
 	DECLARE_FUNCTION(execGetDotDistance);
+	DECLARE_FUNCTION(execSphereIntersectingLine);
+	DECLARE_FUNCTION(execPointDistSquaredToLineSegment);
+	DECLARE_FUNCTION(execPointDistAlongLineSegment);
+	DECLARE_FUNCTION(execPointDistAlongLine);
 	DECLARE_FUNCTION(execGetAngularDistance);
 	DECLARE_FUNCTION(execGetAngularFromDotDist);
 	DECLARE_FUNCTION(execStringToVector);
@@ -2640,6 +2644,7 @@ public:
 	DECLARE_FUNCTION(execVLerp);
 	DECLARE_FUNCTION(execVSmerp);
 	DECLARE_FUNCTION(execVInterpTo);
+	DECLARE_FUNCTION(execVRandRange);
 	DECLARE_FUNCTION(execClampLength);
     DECLARE_FUNCTION(execNormal);
     DECLARE_FUNCTION(execVSize);
@@ -2705,6 +2710,7 @@ public:
 	DECLARE_FUNCTION(execSubtract_PreInt);
 	DECLARE_FUNCTION(execMultiply_IntInt);
 	DECLARE_FUNCTION(execDivide_IntInt);
+	DECLARE_FUNCTION(execPercent_IntInt);
 	DECLARE_FUNCTION(execAdd_IntInt);
 	DECLARE_FUNCTION(execSubtract_IntInt);
 	DECLARE_FUNCTION(execLessLess_IntInt);
@@ -2758,9 +2764,11 @@ public:
 	DECLARE_FUNCTION(execAcos);
 	DECLARE_FUNCTION(execTan);
 	DECLARE_FUNCTION(execAtan);
+	DECLARE_FUNCTION(execAtan2);
 	DECLARE_FUNCTION(execExp);
 	DECLARE_FUNCTION(execLoge);
 	DECLARE_FUNCTION(execSqrt);
+	DECLARE_FUNCTION(execPow);
 	DECLARE_FUNCTION(execSquare);
 	DECLARE_FUNCTION(execRound);
 	DECLARE_FUNCTION(execFFloor);
@@ -2796,6 +2804,7 @@ public:
 	DECLARE_FUNCTION(execAsc);
 	DECLARE_FUNCTION(execRepl);
 	DECLARE_FUNCTION(execParseStringIntoArray);
+	DECLARE_FUNCTION(execCapitalise);
 	DECLARE_FUNCTION(execMatrixGetOrigin);
 	DECLARE_FUNCTION(execMatrixGetAxis);
 	DECLARE_FUNCTION(execMatrixGetRotator);
@@ -2840,6 +2849,7 @@ public:
 	DECLARE_FUNCTION(execLocalize);
 	DECLARE_FUNCTION(execNativeParm);
 	DECLARE_FUNCTION(execSaveConfig);
+	DECLARE_FUNCTION(execStoreConfig);
 	DECLARE_FUNCTION(execStaticSaveConfig);
 	DECLARE_FUNCTION(execGetPerObjectConfigSections);
 	DECLARE_FUNCTION(execGetEnum);
@@ -2851,6 +2861,16 @@ public:
 	DECLARE_FUNCTION(execGetFuncName);
 	DECLARE_FUNCTION(execDebugBreak);
 	DECLARE_FUNCTION(execScriptTrace);
+	DECLARE_FUNCTION(execLogInternalBoss);
+	DECLARE_FUNCTION(execLogInternalAnim);
+	DECLARE_FUNCTION(execLogInternalPlayer);
+	DECLARE_FUNCTION(execLogInternalEngine);
+	DECLARE_FUNCTION(execLogInternalAI);
+	DECLARE_FUNCTION(execLogInternalAudio);
+	DECLARE_FUNCTION(execDoesLocalisedStringExist);
+	DECLARE_FUNCTION(execDoesLocalisedExist);
+	DECLARE_FUNCTION(execGetLocalised);
+	DECLARE_FUNCTION(execGetLocalisedString);
 	DECLARE_FUNCTION(execSetUTracing);
 	DECLARE_FUNCTION(execIsUTracing);
 	DECLARE_FUNCTION(execHighNative0);

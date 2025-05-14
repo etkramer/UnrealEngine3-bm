@@ -1,28 +1,26 @@
-/**
- * Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
- */
 class DistributionVector extends Component
-	inherits(FCurveEdInterface)
-	native
-	collapsecategories
-	hidecategories(Object)
-	editinlinenew
-	abstract;
+    inherits(FCurveEdInterface)
+    abstract
+    native
+    editinlinenew
+    collapsecategories;
 
 enum EDistributionVectorLockFlags
 {
-    EDVLF_None,
-    EDVLF_XY,
-    EDVLF_XZ,
-    EDVLF_YZ,
-    EDVLF_XYZ
+    EDVLF_None,                     // 0
+    EDVLF_XY,                       // 1
+    EDVLF_XZ,                       // 2
+    EDVLF_YZ,                       // 3
+    EDVLF_XYZ,                      // 4
+    EDVLF_MAX                       // 5
 };
 
 enum EDistributionVectorMirrorFlags
 {
-	EDVMF_Same,
-	EDVMF_Different,
-	EDVMF_Mirror
+    EDVMF_Same,                     // 0
+    EDVMF_Different,                // 1
+    EDVMF_Mirror,                   // 2
+    EDVMF_MAX                       // 3
 };
 
 struct native RawDistributionVector extends RawDistribution
@@ -56,8 +54,7 @@ structcpptext
 	 */
 	inline UBOOL IsUniform() { return LookupTableNumElements == 2; }
 }
-
-	var() DistributionVector Distribution;
+    var() export editinline DistributionVector Distribution;
 };
 
 cpptext
@@ -115,16 +112,11 @@ cpptext
 	virtual UBOOL NeedsLoadForServer() const;
 }
 
-
-/** Can this variable be baked out to a FRawDistribution? Should be TRUE 99% of the time*/
 var(Baked) bool bCanBeBaked;
-
-/** Set internally when the distribution is updated so that that FRawDistribution can know to update itself*/
 var bool bIsDirty;
 
 defaultproperties
 {
-	bCanBeBaked=true
-	// make sure the FRawDistribution is initialized
-	bIsDirty=true 
+    bCanBeBaked=true
+    bIsDirty=true
 }
