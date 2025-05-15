@@ -341,7 +341,7 @@ var transient int ActivateCount;
 var protected{protected} duplicatetransient const transient int SearchTag;
 
 // Export USequenceOp::execHasLinkedOps(FFrame&, void* const)
-native final function bool HasLinkedOps(optional bool bConsiderInputLinks);
+native final function bool HasLinkedOps(optional bool bConsiderInputLinks) const;
 
 // Export USequenceOp::execGetLinkedObjects(FFrame&, void* const)
 native final function GetLinkedObjects(out array<SequenceObject> out_Objects, optional class<SequenceObject> ObjectType, optional bool bRecurse);
@@ -350,7 +350,7 @@ native final function GetLinkedObjects(out array<SequenceObject> out_Objects, op
 native final function GetVectorVars(out array<Vector> vecVars, optional string inDesc);
 
 // Export USequenceOp::execGetObjectVars(FFrame&, void* const)
-native final function GetObjectVars(out array<Object> ObjVars, optional string inDesc);
+native noexport final function GetObjectVars(out array<Object> ObjVars, optional string inDesc);
 
 // Export USequenceOp::execGetInterpDataVars(FFrame&, void* const)
 native noexport final function GetInterpDataVars(out array<InterpData> outIData, optional string inDesc);

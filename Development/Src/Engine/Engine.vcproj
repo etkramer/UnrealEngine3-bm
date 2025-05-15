@@ -896,10 +896,6 @@
 				>
 			</File>
 			<File
-				RelativePath="Src\UnVehicle.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\Src\UnWorld.cpp"
 				>
 			</File>

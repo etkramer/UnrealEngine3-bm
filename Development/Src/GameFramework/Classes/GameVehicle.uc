@@ -6,11 +6,8 @@
 
 class GameVehicle extends SVehicle
 	config(Game)
-	native
 	abstract
 	notplaceable;
-
-
 
 defaultproperties
 {

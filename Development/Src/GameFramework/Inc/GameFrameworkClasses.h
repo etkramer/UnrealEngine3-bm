@@ -50,16 +50,6 @@ public:
     NO_DEFAULT_CONSTRUCTOR(AGamePawn)
 };
 
-class AGameVehicle : public ASVehicle
-{
-public:
-    //## BEGIN PROPS GameVehicle
-    //## END PROPS GameVehicle
-
-    DECLARE_ABSTRACT_CLASS(AGameVehicle,ASVehicle,0|CLASS_Config,GameFramework)
-    NO_DEFAULT_CONSTRUCTOR(AGameVehicle)
-};
-
 class AGamePlayerController : public APlayerController
 {
 public:
@@ -147,7 +137,6 @@ DECLARE_NATIVE_TYPE(GameFramework,AGamePlayerController);
 DECLARE_NATIVE_TYPE(GameFramework,UGamePlayerInput);
 DECLARE_NATIVE_TYPE(GameFramework,AGameProjectile);
 DECLARE_NATIVE_TYPE(GameFramework,UGameTypes);
-DECLARE_NATIVE_TYPE(GameFramework,AGameVehicle);
 DECLARE_NATIVE_TYPE(GameFramework,AGameWeapon);
 
 #define AUTO_INITIALIZE_REGISTRANTS_GAMEFRAMEWORK \
@@ -157,7 +146,6 @@ DECLARE_NATIVE_TYPE(GameFramework,AGameWeapon);
 	UGamePlayerInput::StaticClass(); \
 	AGameProjectile::StaticClass(); \
 	UGameTypes::StaticClass(); \
-	AGameVehicle::StaticClass(); \
 	AGameWeapon::StaticClass(); \
 
 #endif // GAMEFRAMEWORK_NATIVE_DEFS
@@ -175,7 +163,6 @@ VERIFY_CLASS_SIZE_NODIE(AGamePlayerController)
 VERIFY_CLASS_SIZE_NODIE(UGamePlayerInput)
 VERIFY_CLASS_SIZE_NODIE(AGameProjectile)
 VERIFY_CLASS_SIZE_NODIE(UGameTypes)
-VERIFY_CLASS_SIZE_NODIE(AGameVehicle)
 VERIFY_CLASS_SIZE_NODIE(AGameWeapon)
 #endif // VERIFY_CLASS_SIZES
 #endif // !ENUMS_ONLY

@@ -576,10 +576,9 @@ protected:
 public:
     //## END PROPS SequenceOp
 
-    UBOOL HasLinkedOps(UBOOL bConsiderInputLinks=FALSE);
+    UBOOL HasLinkedOps(UBOOL bConsiderInputLinks=FALSE) const;
     void GetLinkedObjects(TArray<class USequenceObject*>& out_Objects,class UClass* ObjectType=NULL,UBOOL bRecurse=FALSE);
     void GetVectorVars(TArray<FVector>& vecVars,const FString& inDesc=TEXT(""));
-    void GetObjectVars(TArray<class UObject*>& ObjVars,const FString& inDesc=TEXT(""));
     void GetFloatVars(TArray<FLOAT>& floatVars,const FString& inDesc=TEXT(""));
     UBOOL ActivateOutputLink(INT OutputIdx);
     UBOOL ActivateNamedOutputLink(const FString& LinkDesc);
@@ -607,13 +606,7 @@ public:
         P_FINISH;
         GetVectorVars(vecVars,inDesc);
     }
-    DECLARE_FUNCTION(execGetObjectVars)
-    {
-        P_GET_TARRAY_REF(class UObject*,ObjVars);
-        P_GET_STR_OPTX(inDesc,TEXT(""));
-        P_FINISH;
-        GetObjectVars(ObjVars,inDesc);
-    }
+    DECLARE_FUNCTION(execGetObjectVars);
     DECLARE_FUNCTION(execGetInterpDataVars);
     DECLARE_FUNCTION(execGetBoolVars);
     DECLARE_FUNCTION(execGetFloatVars)

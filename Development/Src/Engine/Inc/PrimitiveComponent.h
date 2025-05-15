@@ -944,6 +944,22 @@ public:
 
 	DECLARE_FUNCTION(execGetRotation);
 
+	DECLARE_FUNCTION(execGetPhysicalMaterial);
+	DECLARE_FUNCTION(execGetHasFallenOutOfWorld);
+	DECLARE_FUNCTION(execSetLevelHidden);
+	DECLARE_FUNCTION(execSetDontDrawThisFrame);
+	DECLARE_FUNCTION(execSetOnlyXraySee);
+	DECLARE_FUNCTION(execSetXrayNoSee);
+	DECLARE_FUNCTION(execSetHiddenEditor);
+	DECLARE_FUNCTION(execSetContactModification);
+	DECLARE_FUNCTION(execSetRBCollisionChannels);
+	DECLARE_FUNCTION(execRigidBodyIsNearlyStill);
+	DECLARE_FUNCTION(execRigidBodyIsFullyDynamic);
+	DECLARE_FUNCTION(execGetRBLinearVelocity);
+	DECLARE_FUNCTION(execAddTorqueImpulse);
+	DECLARE_FUNCTION(execAddTorqueForce);
+	DECLARE_FUNCTION(execSetDisableAllRigidBody);
+
 #if WITH_NOVODEX
 	virtual class NxActor* GetNxActor(FName BoneName = NAME_None);
 	virtual class NxActor* GetIndexedNxActor(INT BodyIndex = INDEX_NONE);
@@ -1080,6 +1096,9 @@ public:
 	DECLARE_FUNCTION(execSetMaterial);
 	DECLARE_FUNCTION(execGetNumElements);
 	DECLARE_FUNCTION(execPrestreamTextures);
+
+	DECLARE_FUNCTION(execGetUseSimpleLineCollision);
+	DECLARE_FUNCTION(execGetUseSimpleBoxCollision);
 };
 
 //

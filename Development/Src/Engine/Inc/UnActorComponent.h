@@ -244,6 +244,8 @@ public:
 
 	DECLARE_FUNCTION(execForceUpdate);
 
+	DECLARE_FUNCTION(execQueueReattach);
+
 	DECLARE_FUNCTION(execDetachFromAny)
 	{
 		P_FINISH;
@@ -1231,6 +1233,15 @@ class UAudioComponent : public UActorComponent
 	DECLARE_FUNCTION(execFadeIn);
 	DECLARE_FUNCTION(execFadeOut);
 	DECLARE_FUNCTION(execAdjustVolume);
+	DECLARE_FUNCTION(execGetAverageVolume);
+	DECLARE_FUNCTION(execIsLooping);
+	DECLARE_FUNCTION(execSetVelocity);
+	DECLARE_FUNCTION(execSetSeekSpeed);
+	DECLARE_FUNCTION(execGetMaxDistance);
+	DECLARE_FUNCTION(execGetMinDistance);
+	DECLARE_FUNCTION(execIsPaused);
+	DECLARE_FUNCTION(execKeyOffOnMarker);
+	DECLARE_FUNCTION(execKeyOff);
 	DECLARE_FUNCTION(execResetToDefaults)
 	{
 		P_FINISH;

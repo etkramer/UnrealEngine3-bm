@@ -2259,8 +2259,6 @@ public:
     void ReattachComponent(class UActorComponent* ComponentToReattach);
     void SetTickGroup(BYTE NewTickGroup);
     UBOOL ClampRotation(FRotator& out_Rot,FRotator rBase,FRotator rUpperLimits,FRotator rLowerLimits);
-    UBOOL TraceComponent(FVector& HitLocation,FVector& HitNormal,class UPrimitiveComponent* InComponent,FVector TraceEnd,FVector TraceStart=FVector(EC_EventParm),FVector Extent=FVector(EC_EventParm),struct FTraceHitInfo* HitInfo=NULL);
-    UBOOL TraceAllPhysicsAssetInteractions(class USkeletalMeshComponent* SkelMeshComp,FVector EndTrace,FVector StartTrace,TArray<struct FImpactInfo>& out_Hits,FVector Extent=FVector(EC_EventParm));
     UBOOL FindSpot(FVector BoxExtent,FVector& SpotLocation,UBOOL DontEaryOut=FALSE);
     UBOOL ContainsPoint(FVector Spot);
     void GetComponentsBoundingBox(FBox& ActorBox) const;
@@ -2591,30 +2589,10 @@ public:
         *(UBOOL*)Result=ClampRotation(out_Rot,rBase,rUpperLimits,rLowerLimits);
     }
     DECLARE_FUNCTION(execTrace);
-    DECLARE_FUNCTION(execTraceComponent)
-    {
-        P_GET_STRUCT_REF(FVector,HitLocation);
-        P_GET_STRUCT_REF(FVector,HitNormal);
-        P_GET_OBJECT(UPrimitiveComponent,InComponent);
-        P_GET_STRUCT(FVector,TraceEnd);
-        P_GET_STRUCT_OPTX(FVector,TraceStart,FVector(EC_EventParm));
-        P_GET_STRUCT_OPTX(FVector,Extent,FVector(EC_EventParm));
-        P_GET_STRUCT_OPTX_REF(struct FTraceHitInfo,HitInfo,FTraceHitInfo(EC_EventParm));
-        P_FINISH;
-        *(UBOOL*)Result=TraceComponent(HitLocation,HitNormal,InComponent,TraceEnd,TraceStart,Extent,pHitInfo ? &HitInfo : NULL);
-    }
+    DECLARE_FUNCTION(execTraceComponent);
     DECLARE_FUNCTION(execPointCheckComponent);
     DECLARE_FUNCTION(execFastTrace);
-    DECLARE_FUNCTION(execTraceAllPhysicsAssetInteractions)
-    {
-        P_GET_OBJECT(USkeletalMeshComponent,SkelMeshComp);
-        P_GET_STRUCT(FVector,EndTrace);
-        P_GET_STRUCT(FVector,StartTrace);
-        P_GET_TARRAY_REF(struct FImpactInfo,out_Hits);
-        P_GET_STRUCT_OPTX(FVector,Extent,FVector(EC_EventParm));
-        P_FINISH;
-        *(UBOOL*)Result=TraceAllPhysicsAssetInteractions(SkelMeshComp,EndTrace,StartTrace,out_Hits,Extent);
-    }
+    DECLARE_FUNCTION(execTraceAllPhysicsAssetInteractions);
     DECLARE_FUNCTION(execFindSpot)
     {
         P_GET_STRUCT(FVector,BoxExtent);

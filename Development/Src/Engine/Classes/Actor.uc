@@ -1430,7 +1430,7 @@ simulated function VolumeBasedDestroy(PhysicsVolume PV)
 native(277) noexport final function Actor Trace(out Vector HitLocation, out Vector HitNormal, Vector TraceEnd, optional Vector TraceStart, optional bool bTraceActors, optional Vector Extent, optional out TraceHitInfo HitInfo, optional int ExtraTraceFlags);
 
 // Export UActor::execTraceComponent(FFrame&, void* const)
-native final function bool TraceComponent(out Vector HitLocation, out Vector HitNormal, PrimitiveComponent InComponent, Vector TraceEnd, optional Vector TraceStart, optional Vector Extent, optional out TraceHitInfo HitInfo);
+native noexport final function bool TraceComponent(out Vector HitLocation, out Vector HitNormal, PrimitiveComponent InComponent, Vector TraceEnd, optional Vector TraceStart, optional Vector Extent, optional out TraceHitInfo HitInfo);
 
 // Export UActor::execPointCheckComponent(FFrame&, void* const)
 native noexport final function bool PointCheckComponent(PrimitiveComponent InComponent, Vector PointLocation, Vector PointExtent);
@@ -1439,7 +1439,7 @@ native noexport final function bool PointCheckComponent(PrimitiveComponent InCom
 native(548) noexport final function bool FastTrace(Vector TraceEnd, optional Vector TraceStart, optional Vector BoxExtent, optional bool bTraceBullet);
 
 // Export UActor::execTraceAllPhysicsAssetInteractions(FFrame&, void* const)
-native final function bool TraceAllPhysicsAssetInteractions(SkeletalMeshComponent SkelMeshComp, Vector EndTrace, Vector StartTrace, out array<ImpactInfo> out_Hits, optional Vector Extent);
+native noexport final function bool TraceAllPhysicsAssetInteractions(SkeletalMeshComponent SkelMeshComp, Vector EndTrace, Vector StartTrace, out array<ImpactInfo> out_Hits, optional Vector Extent);
 
 // Export UActor::execFindSpot(FFrame&, void* const)
 native final function bool FindSpot(Vector BoxExtent, out Vector SpotLocation, optional bool DontEaryOut = false);

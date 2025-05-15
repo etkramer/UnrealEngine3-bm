@@ -111,10 +111,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\Src\GameVehicle.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\Src\GameWeapon.cpp"
 				>
 			</File>

@@ -1159,6 +1159,9 @@ public:
 	DECLARE_FUNCTION(execSetStaticMesh);
 	DECLARE_FUNCTION(execSetForceStaticDecals);
 	DECLARE_FUNCTION(execDisableRBCollisionWithSMC);
+
+	DECLARE_FUNCTION(execGetUseSimpleLineCollision);
+	DECLARE_FUNCTION(execGetUseSimpleBoxCollision);
 };
 
 /**

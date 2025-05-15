@@ -784,7 +784,11 @@ void APawn::SetPushesRigidBodies(UBOOL NewPushes)
 				NxActor* KinActor = nScene->createActor(KinActorDesc);
 				KinActor->setGroup(UNX_GROUP_NOTIFYCOLLIDE);
 				KinActor->userData = this;
+
+				#if BATMAN
+				#else
 				PhysicsPushBody = KinActor;
+				#endif
 			}
 		}
 	}
@@ -1355,7 +1359,11 @@ void AActor::OnRigidBodyCollision(const FRigidBodyCollisionInfo& Info0, const FR
 		bOriginatorIs0 = TRUE;
 		if (Info0.Component != NULL && Info0.Component->ScriptRigidBodyCollisionThreshold > 0.f && VelMag >= Info0.Component->ScriptRigidBodyCollisionThreshold)
 		{
+			#if BATMAN
+			eventRigidBodyCollision(Info0.Component, Info1.Component, RigidCollisionData, 0, 0, 0, 0);
+			#else
 			eventRigidBodyCollision(Info0.Component, Info1.Component, RigidCollisionData, 0);
+			#endif
 		}
 	}
 	else if(Info1.Actor == this)
@@ -1363,7 +1371,11 @@ void AActor::OnRigidBodyCollision(const FRigidBodyCollisionInfo& Info0, const FR
 		bOriginatorIs0 = FALSE;
 		if (Info1.Component != NULL && Info1.Component->ScriptRigidBodyCollisionThreshold > 0.f && VelMag >= Info1.Component->ScriptRigidBodyCollisionThreshold)
 		{
+			#if BATMAN
+			eventRigidBodyCollision(Info1.Component, Info0.Component, RigidCollisionData, 1, 0, 0, 0);
+			#else
 			eventRigidBodyCollision(Info1.Component, Info0.Component, RigidCollisionData, 1);
+			#endif
 		}
 	}
 	else
