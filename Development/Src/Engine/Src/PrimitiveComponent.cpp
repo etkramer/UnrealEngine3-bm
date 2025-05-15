@@ -1327,6 +1327,149 @@ void UPrimitiveComponent::execGetRotation(FFrame& Stack,RESULT_DECL)
 }
 IMPLEMENT_FUNCTION(UPrimitiveComponent,INDEX_NONE,execGetRotation);
 
+void UPrimitiveComponent::execGetPhysicalMaterial(FFrame& Stack,RESULT_DECL)
+{
+	P_GET_INT_OPTX(BodyIndex, 0);
+	P_FINISH;
+
+	// BM1: Not implemented
+	*(class UPhysicalMaterial**)Result = NULL;
+}
+IMPLEMENT_FUNCTION(UPrimitiveComponent,INDEX_NONE,execGetPhysicalMaterial);
+
+void UPrimitiveComponent::execGetHasFallenOutOfWorld(FFrame& Stack,RESULT_DECL)
+{
+	P_GET_INT_OPTX(BodyIndex, 0);
+	P_FINISH;
+
+	// BM1: Not implemented
+	*(UBOOL*)Result = FALSE;
+}
+IMPLEMENT_FUNCTION(UPrimitiveComponent,INDEX_NONE,execGetHasFallenOutOfWorld);
+
+void UPrimitiveComponent::execSetLevelHidden(FFrame& Stack,RESULT_DECL)
+{
+	P_GET_UBOOL(bNewLevelHidden);
+	P_FINISH;
+
+	// BM1: Not implemented
+}
+IMPLEMENT_FUNCTION(UPrimitiveComponent,INDEX_NONE,execSetLevelHidden);
+
+void UPrimitiveComponent::execSetDontDrawThisFrame(FFrame& Stack,RESULT_DECL)
+{
+	P_GET_UBOOL(bNewDontDrawThisFrame);
+	P_FINISH;
+
+	// BM1: Not implemented
+}
+IMPLEMENT_FUNCTION(UPrimitiveComponent,INDEX_NONE,execSetDontDrawThisFrame);
+
+void UPrimitiveComponent::execSetOnlyXraySee(FFrame& Stack,RESULT_DECL)
+{
+	P_GET_UBOOL(bNewOnlyXraySee);
+	P_FINISH;
+
+	// BM1: Not implemented
+	this->bOnlyXraySee = bNewOnlyXraySee;
+}
+IMPLEMENT_FUNCTION(UPrimitiveComponent,INDEX_NONE,execSetOnlyXraySee);
+
+void UPrimitiveComponent::execSetXrayNoSee(FFrame& Stack,RESULT_DECL)
+{
+	P_GET_UBOOL(bNewXrayNoSee);
+	P_FINISH;
+
+	// BM1: Not implemented
+	this->bXrayNoSee = bNewXrayNoSee;
+}
+IMPLEMENT_FUNCTION(UPrimitiveComponent,INDEX_NONE,execSetXrayNoSee);
+
+void UPrimitiveComponent::execSetHiddenEditor(FFrame& Stack,RESULT_DECL)
+{
+	P_GET_UBOOL(NewHidden);
+	P_FINISH;
+
+	// BM1: Not implemented
+}
+IMPLEMENT_FUNCTION(UPrimitiveComponent,INDEX_NONE,execSetHiddenEditor);
+
+void UPrimitiveComponent::execSetContactModification(FFrame& Stack,RESULT_DECL)
+{
+	P_GET_UBOOL(isEnableContactModificationCallback);
+	P_FINISH;
+
+	// BM1: Not implemented
+}
+IMPLEMENT_FUNCTION(UPrimitiveComponent,INDEX_NONE,execSetContactModification);
+
+void UPrimitiveComponent::execSetRBCollisionChannels(FFrame& Stack,RESULT_DECL)
+{
+	P_GET_STRUCT(FRBCollisionChannelContainer, Channels);
+	P_FINISH;
+
+	// BM1: Not implemented
+}
+IMPLEMENT_FUNCTION(UPrimitiveComponent,INDEX_NONE,execSetRBCollisionChannels);
+
+void UPrimitiveComponent::execRigidBodyIsNearlyStill(FFrame& Stack,RESULT_DECL)
+{
+	P_GET_NAME_OPTX(BoneName, NAME_None);
+	P_FINISH;
+
+	// BM1: Not implemented
+	*(UBOOL*)Result = FALSE;
+}
+IMPLEMENT_FUNCTION(UPrimitiveComponent,INDEX_NONE,execRigidBodyIsNearlyStill);
+
+void UPrimitiveComponent::execRigidBodyIsFullyDynamic(FFrame& Stack,RESULT_DECL)
+{
+	P_GET_NAME_OPTX(BoneName, NAME_None);
+	P_FINISH;
+
+	// BM1: Not implemented
+	*(UBOOL*)Result = TRUE;
+}
+IMPLEMENT_FUNCTION(UPrimitiveComponent,INDEX_NONE,execRigidBodyIsFullyDynamic);
+
+void UPrimitiveComponent::execGetRBLinearVelocity(FFrame& Stack,RESULT_DECL)
+{
+	P_FINISH;
+
+	// BM1: Not implemented
+	*(FVector*)Result = FVector(0,0,0);
+}
+IMPLEMENT_FUNCTION(UPrimitiveComponent,INDEX_NONE,execGetRBLinearVelocity);
+
+void UPrimitiveComponent::execAddTorqueImpulse(FFrame& Stack,RESULT_DECL)
+{
+	P_GET_VECTOR(Torgue);
+	P_GET_NAME_OPTX(BoneName, NAME_None);
+	P_FINISH;
+
+	// BM1: Not implemented
+}
+IMPLEMENT_FUNCTION(UPrimitiveComponent,INDEX_NONE,execAddTorqueImpulse);
+
+void UPrimitiveComponent::execAddTorqueForce(FFrame& Stack,RESULT_DECL)
+{
+	P_GET_VECTOR(Torgue);
+	P_GET_NAME_OPTX(BoneName, NAME_None);
+	P_FINISH;
+
+	// BM1: Not implemented
+}
+IMPLEMENT_FUNCTION(UPrimitiveComponent,INDEX_NONE,execAddTorqueForce);
+
+void UPrimitiveComponent::execSetDisableAllRigidBody(FFrame& Stack,RESULT_DECL)
+{
+	P_GET_UBOOL(bNewDisableAllRigidBody);
+	P_FINISH;
+
+	// BM1: Not implemented
+}
+IMPLEMENT_FUNCTION(UPrimitiveComponent,INDEX_NONE,execSetDisableAllRigidBody);
+
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1426,6 +1569,26 @@ void UMeshComponent::execGetNumElements(FFrame& Stack,RESULT_DECL)
 }
 
 IMPLEMENT_FUNCTION(UMeshComponent,INDEX_NONE,execGetNumElements);
+
+void UMeshComponent::execGetUseSimpleBoxCollision(FFrame& Stack,RESULT_DECL)
+{
+	P_FINISH;
+
+	// BM1: Not implemented
+	*(UBOOL*)Result = FALSE;
+}
+
+IMPLEMENT_FUNCTION(UMeshComponent,INDEX_NONE,execGetUseSimpleBoxCollision);
+
+void UMeshComponent::execGetUseSimpleLineCollision(FFrame& Stack,RESULT_DECL)
+{
+	P_FINISH;
+
+	// BM1: Not implemented
+	*(UBOOL*)Result = FALSE;
+}
+
+IMPLEMENT_FUNCTION(UMeshComponent,INDEX_NONE,execGetUseSimpleLineCollision);
 
 void UMeshComponent::execPrestreamTextures(FFrame& Stack, RESULT_DECL)
 {

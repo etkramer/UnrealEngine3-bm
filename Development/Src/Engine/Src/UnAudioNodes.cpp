@@ -1754,6 +1754,11 @@ IMPLEMENT_CLASS(USoundNodeWaveParam);
     USoundNodeRandom implementation.
 -----------------------------------------------------------------------------*/
 
+void USoundNodeRandom::PickNextNodeInAdvance()
+{
+	// BM1: Not implemented
+}
+
 void USoundNodeRandom::FixWeightsArray()
 {
 	// If weights and children got out of sync, we fix it first.

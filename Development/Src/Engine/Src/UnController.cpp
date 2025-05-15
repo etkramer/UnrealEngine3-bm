@@ -349,6 +349,12 @@ void APlayerController::ServerUpdateLevelVisibility(FName PackageName, UBOOL bIs
 	}
 }
 
+UBOOL APlayerController::AllowConsole()
+{
+	// BM1: Not Implemented
+	return TRUE;
+}
+
 /** Whether or not to allow mature language **/
 void APlayerController::SetAllowMatureLanguage( UBOOL bAllowMatureLanguge )
 {

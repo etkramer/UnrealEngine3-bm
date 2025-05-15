@@ -3118,6 +3118,12 @@ void AInterpActor::CheckForErrors()
 	}
 }
 
+UBOOL AVolume::EncompassesPoint(FVector Point)
+{
+	// BM1: Not implemented
+	return FALSE;
+}
+
 UBOOL AVolume::ShouldTrace(UPrimitiveComponent* Primitive,AActor *SourceActor, DWORD TraceFlags)
 {
 	return ( bWorldGeometry && (TraceFlags & TRACE_LevelGeometry) )

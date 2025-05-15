@@ -400,6 +400,81 @@ void AActor::UpdateComponentsInternal(UBOOL bCollisionUpdate)
 	}
 }
 
+UBOOL AActor::SetLocationForTest(FVector NewLocation,UBOOL bNoCheck)
+{
+	// BM1: Not implemented
+	return TRUE;
+}
+
+void AActor::EnableEffect(FName effectToEnable,UBOOL Enable)
+{
+	// BM1: Not implemented
+}
+
+UBOOL AActor::EffectEnabled(FName effectToEnable)
+{
+	// BM1: Not implemented
+	return FALSE;
+}
+
+void AActor::EffectValue(FName effectToEnable,FLOAT Value)
+{
+	// BM1: Not implemented
+}
+
+void AActor::EffectSoundCue(FName effectToEnable,class USoundCue* InSoundCue)
+{
+	// BM1: Not implemented
+}
+
+void AActor::EffectReverb(FName effectToEnable,class UFMODReverb* InReverb)
+{
+	// BM1: Not implemented
+}
+
+void AActor::SetMixBin(class UMixBin* mixToStart,FLOAT Time)
+{
+	// BM1: Not implemented
+}
+
+void AActor::SetRoomMixBin(class UMixBin* mixToStart)
+{
+	// BM1: Not implemented
+}
+
+void AActor::SetMixBinMix(class UMixBin* mixToSet,FLOAT Value)
+{
+	// BM1: Not implemented
+}
+
+void AActor::SetMasterMixBin(class UMixBin* mixToStart)
+{
+	// BM1: Not implemented
+}
+
+void AActor::SetExtraStasis(UBOOL NewValue)
+{
+	// BM1: Not implemented
+}
+
+FVector AActor::GetZoneVelocity()
+{
+	// BM1: Not implemented
+	return FVector(0,0,0);
+}
+
+FVector AActor::GetFOVCheckLocation()
+{
+	// BM1: Not implemented
+	return FVector(0,0,0);
+}
+
+UBOOL AActor::BlockedByVehicle()
+{
+	// BM1: Not implemented
+	return FALSE;
+}
+
 /**
  * Flags all components as dirty and then calls UpdateComponents().
  *
@@ -739,6 +814,14 @@ void UActorComponent::execForceUpdate(FFrame& Stack, RESULT_DECL)
 		}
 		UpdateComponent(GWorld->Scene, Owner, Owner->LocalToWorld());
 	}
+}
+
+void UActorComponent::execQueueReattach(FFrame& Stack, RESULT_DECL)
+{
+	P_GET_UBOOL(bTransformOnly);
+	P_FINISH;
+
+	// BM1: Not implemented
 }
 
 /**

@@ -2410,6 +2410,96 @@ void UAudioComponent::execSetFloatParameter( FFrame& Stack, RESULT_DECL )
 }
 IMPLEMENT_FUNCTION( UAudioComponent, INDEX_NONE, execSetFloatParameter );
 
+void UAudioComponent::execKeyOff( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+
+	// BM1: Not implemented
+}
+IMPLEMENT_FUNCTION( UAudioComponent, INDEX_NONE, execKeyOff );
+
+void UAudioComponent::execKeyOffOnMarker( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+
+	// BM1: Not implemented
+}
+IMPLEMENT_FUNCTION( UAudioComponent, INDEX_NONE, execKeyOffOnMarker );
+
+void UAudioComponent::execIsPaused( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+
+	// BM1: Not implemented
+	*(UBOOL*)Result = bIsPaused;
+}
+IMPLEMENT_FUNCTION( UAudioComponent, INDEX_NONE, execIsPaused );
+
+void UAudioComponent::execPause( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_UBOOL( bDoPause );
+	P_FINISH;
+
+	// BM1: Not implemented
+}
+IMPLEMENT_FUNCTION( UAudioComponent, INDEX_NONE, execPause );
+
+void UAudioComponent::execGetMinDistance( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+
+	// BM1: Not implemented
+	*(FLOAT*)Result = 0;
+}
+IMPLEMENT_FUNCTION( UAudioComponent, INDEX_NONE, execGetMinDistance );
+
+void UAudioComponent::execGetMaxDistance( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+
+	// BM1: Not implemented
+	*(FLOAT*)Result = 0;
+}
+IMPLEMENT_FUNCTION( UAudioComponent, INDEX_NONE, execGetMaxDistance );
+
+void UAudioComponent::execSetSeekSpeed( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_NAME( InName );
+	P_GET_FLOAT( InFloat );
+	P_FINISH;
+
+	// BM1: Not implemented
+}
+IMPLEMENT_FUNCTION( UAudioComponent, INDEX_NONE, execSetSeekSpeed );
+
+void UAudioComponent::execSetVelocity( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_NAME( InName );
+	P_GET_FLOAT( InFloat );
+	P_FINISH;
+
+	// BM1: Not implemented
+}
+IMPLEMENT_FUNCTION( UAudioComponent, INDEX_NONE, execSetVelocity );
+
+void UAudioComponent::execIsLooping( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+
+	// BM1: Not implemented
+	*(UBOOL*)Result = FALSE;
+}
+IMPLEMENT_FUNCTION( UAudioComponent, INDEX_NONE, execIsLooping );
+
+void UAudioComponent::execGetAverageVolume( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+
+	// BM1: Not implemented
+	*(FLOAT*)Result = 1.0f;
+}
+IMPLEMENT_FUNCTION( UAudioComponent, INDEX_NONE, execGetAverageVolume );
+
 void UAudioComponent::execSetWaveParameter( FFrame& Stack, RESULT_DECL )
 {
 	P_GET_NAME( InName );

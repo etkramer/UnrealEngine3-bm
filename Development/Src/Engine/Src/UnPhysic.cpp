@@ -113,6 +113,12 @@ FLOAT AWorldInfo::GetRBGravityZ()
 	return GetGravityZ() * RBPhysicsGravityScaling;
 }
 
+FVector APhysicsVolume::GetZoneVelocityForActor(AActor* TheActor)
+{
+	// BM1: Not implemented
+	return FVector(0,0,0);
+}
+
 FLOAT APhysicsVolume::GetGravityZ()
 {
 	return GWorld->GetGravityZ();

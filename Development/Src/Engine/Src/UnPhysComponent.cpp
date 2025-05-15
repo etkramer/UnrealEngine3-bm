@@ -4603,6 +4603,24 @@ void UStaticMeshComponent::execDisableRBCollisionWithSMC(FFrame& Stack, RESULT_D
 	DisableRBCollisionWithSMC(OtherSMC, bDisabled);
 }
 
+void UStaticMeshComponent::execGetUseSimpleLineCollision(FFrame& Stack,RESULT_DECL)
+{
+	P_FINISH;
+
+	// BM1: Not implemented
+	*(UBOOL*)Result = FALSE;
+}
+IMPLEMENT_FUNCTION(UStaticMeshComponent,INDEX_NONE,execGetUseSimpleLineCollision);
+
+void UStaticMeshComponent::execGetUseSimpleBoxCollision(FFrame& Stack,RESULT_DECL)
+{
+	P_FINISH;
+
+	// BM1: Not implemented
+	*(UBOOL*)Result = FALSE;
+}
+IMPLEMENT_FUNCTION(UStaticMeshComponent,INDEX_NONE,execGetUseSimpleBoxCollision);
+
 //////////////// BRUSH COMPONENT ///////////////
 
 void UBrushComponent::BuildSimpleBrushCollision()

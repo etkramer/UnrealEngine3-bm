@@ -1637,6 +1637,18 @@ UBOOL USequenceOp::ActivateNamedOutputLink( const FString& LinkDesc )
 	return bResult;
 }
 
+void USequenceOp::GetVectorVars(TArray<FVector>& vecVars,const FString& inDesc)
+{
+	// BM1: Not implemented
+	vecVars = TArray<FVector>();
+}
+
+void USequenceOp::GetFloatVars(TArray<FLOAT>& floatVars,const FString& inDesc)
+{
+	// BM1: Not implemented
+	floatVars = TArray<FLOAT>();
+}
+
 /**
  * Determines whether this sequence op is linked to any other sequence ops through its variable, output, event or (optionally)
  * its input links.
