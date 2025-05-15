@@ -1,14 +1,40 @@
-//=============================================================================
-// Engine: The base class of the global application object classes.
-// Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
-//=============================================================================
 class Engine extends Subsystem
-	native(GameEngine)
-	abstract
-	config(Engine)
-	transient;
+    abstract
+    transient
+    native(GameEngine)
+    config(Engine);
 
-// BM1
+enum ETransitionType
+{
+    TT_None,                        // 0
+    TT_Paused,                      // 1
+    TT_Loading,                     // 2
+    TT_Saving,                      // 3
+    TT_Connecting,                  // 4
+    TT_Precaching,                  // 5
+    TT_MAX                          // 6
+};
+
+struct native StatColorMapEntry
+{
+    var globalconfig float In;
+    var globalconfig Color Out;
+};
+
+struct native StatColorMapping
+{
+    var globalconfig string StatName;
+    var globalconfig array<config StatColorMapEntry> ColorMap;
+    var globalconfig bool DisableBlend;
+};
+
+struct native DropNoteInfo
+{
+    var Vector Location;
+    var Rotator Rotation;
+    var string Comment;
+};
+
 struct native TwistBoneFixer
 {
     var int BaseBoneIndex;
@@ -17,7 +43,6 @@ struct native TwistBoneFixer
     var float BaseYDotTwistZ;
 };
 
-// BM1
 struct native TwistBoneFixers
 {
     var bool Ok;
@@ -25,13 +50,11 @@ struct native TwistBoneFixers
     var init array<init byte> DependentBoneIndices;
 };
 
-// BM1
 struct native ParentTwistBoneFixers
 {
     var init array<init int> BoneIndices;
 };
 
-// BM1
 struct native BreathingFixerState
 {
     var bool Enabled;
@@ -40,7 +63,6 @@ struct native BreathingFixerState
     var float Spine3Scale;
 };
 
-// BM1
 struct native BreathingFixer
 {
     var bool Ok;
@@ -49,164 +71,76 @@ struct native BreathingFixer
     var int Spine3Index;
 };
 
-// Fonts.
-var private Font	TinyFont;
+var private Font TinyFont;
 var globalconfig string TinyFontName;
-
-var private Font	SmallFont;
+var private Font SmallFont;
 var globalconfig string SmallFontName;
-
-var private Font	MediumFont;
+var private Font MediumFont;
 var globalconfig string MediumFontName;
-
-var private Font	LargeFont;
+var private Font LargeFont;
 var globalconfig string LargeFontName;
-
-var private Font	SubtitleFont;
+var private Font SubtitleFont;
 var globalconfig string SubtitleFontName;
-
-/** Any additional fonts that script may use without hard-referencing the font. */
-var private array<Font>			AdditionalFonts;
-var globalconfig array<string>	AdditionalFontNames;
-
-/** The class to use for the game console. */
+var private array<Font> AdditionalFonts;
+var globalconfig array<config string> AdditionalFontNames;
 var class<Console> ConsoleClass;
 var globalconfig string ConsoleClassName;
-
-/** The class to use for the game viewport client. */
 var class<GameViewportClient> GameViewportClientClass;
 var globalconfig string GameViewportClientClassName;
-
-/** The class to use for managing the global data stores */
-var	class<DataStoreClient> DataStoreClientClass;
-var	globalconfig string DataStoreClientClassName;
-
-/** The class to use for local players. */
+var class<DataStoreClient> DataStoreClientClass;
+var globalconfig string DataStoreClientClassName;
 var class<LocalPlayer> LocalPlayerClass;
 var config string LocalPlayerClassName;
-
-/** The material used when no material is explicitly applied. */
-var Material	DefaultMaterial;
+var Material DefaultMaterial;
 var globalconfig string DefaultMaterialName;
-
-/** The decal material used for fallback case of decals */
-var Material	DefaultDecalMaterial;
+var Material DefaultDecalMaterial;
 var globalconfig string DefaultDecalMaterialName;
-
-/** A global default texture. */
-var Texture	DefaultTexture;
+var Texture DefaultTexture;
 var globalconfig string DefaultTextureName;
-
-/** The material used to render wireframe meshes. */
-var Material	WireframeMaterial;
+var Material WireframeMaterial;
 var globalconfig string WireframeMaterialName;
-
-/** A textured material with an instance parameter for the texture. */
 var Material EmissiveTexturedMaterial;
 var globalconfig string EmissiveTexturedMaterialName;
-
-/** A translucent material used to render things in geometry mode. */
-var Material	GeomMaterial;
+var Material GeomMaterial;
 var globalconfig string GeomMaterialName;
-
-/** The default fog volume material */
-var Material	DefaultFogVolumeMaterial;
+var Material DefaultFogVolumeMaterial;
 var globalconfig string DefaultFogVolumeMaterialName;
-
-/** Material used for drawing a tick mark. */
-var Material	TickMaterial;
+var Material TickMaterial;
 var globalconfig string TickMaterialName;
-
-/** Material used for drawing a cross mark. */
-var Material	CrossMaterial;
+var Material CrossMaterial;
 var globalconfig string CrossMaterialName;
-
-/** Material used for visualizing level membership in lit viewport modes. */
-var Material	LevelColorationLitMaterial;
+var Material LevelColorationLitMaterial;
 var globalconfig string LevelColorationLitMaterialName;
-
-/** Material used for visualizing level membership in unlit viewport modes. */
-var Material	LevelColorationUnlitMaterial;
+var Material LevelColorationUnlitMaterial;
 var globalconfig string LevelColorationUnlitMaterialName;
-
-/** Material used for visualizing level membership in lit viewport modes. Uses shading to show axis directions. */
-var Material	ShadedLevelColorationLitMaterial;
+var Material ShadedLevelColorationLitMaterial;
 var globalconfig string ShadedLevelColorationLitMaterialName;
-
-/** Material used for visualizing level membership in unlit viewport modes.  Uses shading to show axis directions. */
-var Material	ShadedLevelColorationUnlitMaterial;
+var Material ShadedLevelColorationUnlitMaterial;
 var globalconfig string ShadedLevelColorationUnlitMaterialName;
-
-/** Material used to indicate that the associated BSP surface should be removed. */
-var Material	RemoveSurfaceMaterial;
+var Material RemoveSurfaceMaterial;
 var globalconfig string RemoveSurfaceMaterialName;
-
-/** Material that renders vertex colour as emissive. */
-var Material	VertexColorMaterial;
+var Material VertexColorMaterial;
 var globalconfig string VertexColorMaterialName;
-
-/** The colors used to render light complexity. */
-var globalconfig array<color> LightComplexityColors;
-
-/** The colors used to render shader complexity. */
-var globalconfig array<color> ShaderComplexityColors;
-
-/** When true, pixel shader complexity is shown, otherwise vertex shader complexity is shown in the shader complexity viewmode. */
+var globalconfig array<config Color> LightComplexityColors;
+var globalconfig array<config Color> ShaderComplexityColors;
 var globalconfig bool bUsePixelShaderComplexity;
-
-/**
-* When true, pixel shader complexity is cumulative, otherwise only the last pixel drawn contributes complexity.
-* Has no effect if bUsePixelShaderComplexity is false
-*/
 var globalconfig bool bUseAdditiveComplexity;
-
 var(Settings) config bool bUseSound;
-
-/** Whether to use texture streaming. */
 var(Settings) config bool bUseTextureStreaming;
-
-/** Whether to allow background level streaming. */
 var(Settings) config bool bUseBackgroundLevelStreaming;
-
-/** Flag for completely disabling subtitles for localized sounds. */
 var(Settings) config bool bSubtitlesEnabled;
-
-/** Flag for forcibly disabling subtitles even if you try to turn them back on they will be off */
 var(Settings) config bool bSubtitlesForcedOff;
-
-/**
- *	Flag for forcing terrain to be 'static' (MinTessellationLevel = MaxTesselationLevel)
- *	Game time only...
- */
 var(Settings) config bool bForceStaticTerrain;
-
 var globalconfig bool bUseInvertedLeftStick;
-
-/** Force to CPU skinning only for skeletal mesh rendering */
-var	config		bool					bForceCPUSkinning;
-/** Whether to use post processing effects or not */
-var	config		bool					bUsePostProcessEffects;
-/** whether to send Kismet warning messages to the screen (via PlayerController::ClientMessage()) */
+var config bool bForceCPUSkinning;
+var config bool bUsePostProcessEffects;
 var config bool bOnScreenKismetWarnings;
-/** whether kismet logging is enabled. */
 var config bool bEnableKismetLogging;
-/** whether mature language is allowed **/
 var config bool bAllowMatureLanguage;
-
-/** Terrain collision viewing - If TRUE, overlay collion level else render it and overlay terrain. */
 var config bool bRenderTerrainCollisionAsOverlay;
-
-/** Do not use Ageia PhysX hardware */
 var globalconfig bool bPhysXuseGRB;
-
-/** Whether to pause the game if focus is lost. */
 var config bool bPauseOnLossOfFocus;
-
-/**
- *	If TRUE, then perform particle size checks in non FINAL_RELEASE builds.
- */
 var globalconfig bool bCheckParticleRenderSize;
-
 var config bool bDisplayDebugAudio;
 var config bool bDisplayDebugAI;
 var config bool bDisplayDebugAnim;
@@ -214,265 +148,102 @@ var config bool bDisplayDebugPlayer;
 var config bool bDisplayDebugEngine;
 var config bool bDisplayDebugBoss;
 var config bool bEnablePerfMemDump;
-
-/**
- * By default, each frame's initial scene color clear is disabled.
- * This flag can be toggled at runtime to enable clearing for development.
- */
-var globalconfig const bool			bEnableColorClear;
-
+var const globalconfig bool bEnableColorClear;
 var transient bool bUnboundActiveController;
 var transient bool bPausedCheck;
-
-/**
-* Complexity limits for the various complexity viewmode combinations.
-* These limits are used to map instruction counts to ShaderComplexityColors.
-*/
 var globalconfig float MaxPixelShaderAdditiveComplexityCount;
 var globalconfig float MaxPixelShaderOpaqueComplexityCount;
 var globalconfig float MaxVertexShaderComplexityCount;
-
-/** Range for the texture density viewmode. */
 var globalconfig float MinTextureDensity;
 var globalconfig float IdealTextureDensity;
 var globalconfig float MaxTextureDensity;
-
-struct native StatColorMapEntry
-{
-	var globalconfig float	In;
-	var globalconfig color	Out;
-};
-
-struct native StatColorMapping
-{
-	var globalconfig string	StatName;
-	var globalconfig array<StatColorMapEntry> ColorMap;
-	var globalconfig bool DisableBlend;
-};
-
-var globalconfig array<StatColorMapping>	StatColorMappings;
-
-/** A material used to render the sides of the builder brush/volumes/etc. */
-var Material	EditorBrushMaterial;
+var globalconfig array<config StatColorMapping> StatColorMappings;
+var Material EditorBrushMaterial;
 var globalconfig string EditorBrushMaterialName;
-
-/** PhysicalMaterial to use if none is defined for a particular object. */
-var	PhysicalMaterial	DefaultPhysMaterial;
+var PhysicalMaterial DefaultPhysMaterial;
 var globalconfig string DefaultPhysMaterialName;
-
-/** The material used when terrain compilation is too complex. */
-var Material	TerrainErrorMaterial;
+var Material TerrainErrorMaterial;
 var globalconfig string TerrainErrorMaterialName;
 var globalconfig int TerrainMaterialMaxTextureCount;
-
-/** This is the number of frames that are used between terrain tessellation re-calculations */
 var globalconfig int TerrainTessellationCheckCount;
-/**
- *	The radius from the view origin that terrain tessellation checks should be performed.
- *	If 0.0, every component will be checked for tessellation changes each frame.
- */
 var globalconfig float TerrainTessellationCheckDistance;
-
-/** OnlineSubsystem class to use for netplay */
-var	class<OnlineSubsystem> OnlineSubsystemClass;
+var class<OnlineSubsystem> OnlineSubsystemClass;
 var globalconfig string DefaultOnlineSubsystemName;
-
-/** Default engine post process chain used for the game and main editor view */
 var PostProcessChain DefaultPostProcess;
 var config string DefaultPostProcessName;
-
-/** post process chain used for skeletal mesh thumbnails */
 var PostProcessChain ThumbnailSkeletalMeshPostProcess;
 var config string ThumbnailSkeletalMeshPostProcessName;
-
-/** post process chain used for particle system thumbnails */
 var PostProcessChain ThumbnailParticleSystemPostProcess;
 var config string ThumbnailParticleSystemPostProcessName;
-
-/** post process chain used for material thumbnails */
 var PostProcessChain ThumbnailMaterialPostProcess;
 var config string ThumbnailMaterialPostProcessName;
-
-/** post process chain used for rendering the UI */
 var PostProcessChain DefaultUIScenePostProcess;
 var config string DefaultUIScenePostProcessName;
-
-/** Material used for drawing meshes when their collision is missing. */
-var Material	DefaultUICaretMaterial;
+var Material DefaultUICaretMaterial;
 var globalconfig string DefaultUICaretMaterialName;
-
-/** Material used for visualizing the reflection scene captures on a surface */
-var Material	SceneCaptureReflectActorMaterial;
+var Material SceneCaptureReflectActorMaterial;
 var globalconfig string SceneCaptureReflectActorMaterialName;
-
-/** Material used for visualizing the cube map scene captures on a mesh */
-var Material	SceneCaptureCubeActorMaterial;
+var Material SceneCaptureCubeActorMaterial;
 var globalconfig string SceneCaptureCubeActorMaterialName;
-
-/** Texture used to get random angles per-pixel by the Branching PCF implementation */
 var Texture2D RandomAngleTexture;
 var globalconfig string RandomAngleTextureName;
-
-/** Texture used to get random normals per-pixel */
 var Texture2D RandomNormalTexture;
 var globalconfig string RandomNormalTextureName;
-
-/** Texture used as a placeholder for terrain weight-maps to give the material the correct texture format. */
-var Texture	WeightMapPlaceholderTexture;
+var Texture WeightMapPlaceholderTexture;
 var globalconfig string WeightMapPlaceholderTextureName;
-
 var TextureFlipBook LoadingIconTexture;
-
-/** White noise sound */
 var SoundNodeWave DefaultSound;
 var globalconfig string DefaultSoundName;
-
-/** Time in seconds (game time) we should wait between purging object references to objects that are pending kill */
 var(Settings) config float TimeBetweenPurgingPendingKillObjects;
-
-// Variables.
-
-/** Abstract interface to platform-specific subsystems */
-var const client							Client;
-
-/** Viewports for all players in all game instances (all PIE windows, for example) */
-var init array<LocalPlayer>					GamePlayers;
-
-/** the viewport representing the current game instance */
-var const GameViewportClient				GameViewport;
-
-/** Array of deferred command strings/ execs that get executed at the end of the frame */
-var init array<string>	DeferredCommands;
-
-var int TickCycles, GameCycles, ClientCycles;
-
-/** Global debug manager helper object that stores configuration and state used during development */
-var const DebugManager			DebugManager;
-
-/** Entry point for RemoteControl, the in-game UI for the exec system. */
-var native pointer				RemoteControlExec{class FRemoteControlExec};
-
-// Color preferences.
-var(Colors) color
-	C_WorldBox,
-	C_BrushWire,
-	C_AddWire,
-	C_SubtractWire,
-	C_SemiSolidWire,
-	C_NonSolidWire,
-	C_WireBackground,
-	C_ScaleBoxHi,
-	C_VolumeCollision,
-	C_BSPCollision,
-	C_OrthoBackground,
-	C_Volume;
-
-/** Fudge factor for tweaking the distance based miplevel determination */
-var(Settings)	float			StreamingDistanceFactor;
-
-/** Class name of the scout to use for path building */
+var const Client Client;
+var init array<init LocalPlayer> GamePlayers;
+var const GameViewportClient GameViewport;
+var init array<init string> DeferredCommands;
+var int TickCycles;
+var int GameCycles;
+var int ClientCycles;
+var const DebugManager DebugManager;
+var native Pointer RemoteControlExec{class FRemoteControlExec};
+var(Colors) Color C_WorldBox;
+var(Colors) Color C_BrushWire;
+var(Colors) Color C_AddWire;
+var(Colors) Color C_SubtractWire;
+var(Colors) Color C_SemiSolidWire;
+var(Colors) Color C_NonSolidWire;
+var(Colors) Color C_WireBackground;
+var(Colors) Color C_ScaleBoxHi;
+var(Colors) Color C_VolumeCollision;
+var(Colors) Color C_BSPCollision;
+var(Colors) Color C_OrthoBackground;
+var(Colors) Color C_Volume;
+var(Settings) float StreamingDistanceFactor;
 var const config string ScoutClassName;
-
-/**
- * A transition type.
- */
-enum ETransitionType
-{
-	TT_None,
-	TT_Paused,
-	TT_Loading,
-	TT_Saving,
-	TT_Connecting,
-	TT_Precaching
-};
-
-/** The current transition type. */
-var ETransitionType TransitionType;
-
-/** The current transition description text. */
+var Engine.ETransitionType TransitionType;
 var string TransitionDescription;
-
-/** The gametype for the destination map */
 var string TransitionGameType;
-
-/** Level of detail range control for meshes */
-var config		float					MeshLODRange;
-
-/** camera rotation (deg) beyond which occlusion queries are ignored from previous frame (because they are likely not valid) */
+var config float MeshLODRange;
 var config float CameraRotationThreshold;
-/** camera movement beyond which occlusion queries are ignored from previous frame (because they are likely not valid) */
 var config float CameraTranslationThreshold;
-/** The amount of time a primitive is considered to be probably visible after it was last actually visible. */
 var config float PrimitiveProbablyVisibleTime;
-/** The percent of previously unoccluded primitives which are requeried every frame. */
 var config float PercentUnoccludedRequeries;
-/** Max screen pixel fraction where retesting when unoccluded is worth the GPU time. */
 var config float MaxOcclusionPixelsFraction;
-
 var globalconfig int PhysXLevel;
 var globalconfig float PhysXgrbSpacing;
-
-/** The most vertices a fluid surface can have.  The number of verts is clamped to avoid running out of memory and exposing driver bugs. */
 var config int MaxFluidNumVerts;
-
-/**
- *	Time limit (in milliseconds) for a fluid simulation update, to avoid spiraling into a bad
- *	feedback-loop with slower and slower framerate. This value is doubled in debug builds.
- */
 var config float FluidSimulationTimeLimit;
-
-/**
- *	The maximum allowed size to a ParticleEmitterInstance::Resize call.
- *	If larger, the function will return without resizing.
- */
 var config int MaxParticleResize;
-/**
-*	If the resize request is larger than this, spew out a warning to the log
-*/
 var config int MaxParticleResizeWarn;
-
-/** The maximum amount of memory any single emitter is allowed to take for its vertices */
 var config int MaxParticleVertexMemory;
 var transient int MaxParticleSpriteCount;
 var transient int MaxParticleSubUVCount;
-
-/** Material used for visualizing terrain collision. */
 var Material TerrainCollisionMaterial;
 var globalconfig string TerrainCollisionMaterialName;
-
-/** The number of times to attempt the Begin*UP call before assuming the GPU is hosed	*/
 var config int BeginUPTryCount;
-
-/** Info about one note dropped in the map during PIE. */
-struct native DropNoteInfo
-{
-	/** Location to create Note actor in edited level. */
-	var vector	Location;
-	/** Rotation to create Note actor in edited level. */
-	var rotator	Rotation;
-	/** Text to assign to Note actor in edited level. */
-	var string	Comment;
-};
-
-/**  */
-var transient array<DropNoteInfo>	PendingDroppedNotes;
-
-/** Overridable class for cover mesh rendering in-game, used to get around the editoronly restrictions needed by the base CoverMeshComponent */
+var transient array<DropNoteInfo> PendingDroppedNotes;
 var globalconfig string DynamicCoverMeshComponentName;
-
-/** Number of times to tick each client per second */
-var globalconfig float				NetClientTicksPerSecond;
-
-/**
- *	The largest step-size allowed for lens flare occlusion results
- *	before using the incremental step method.
- */
-var globalconfig float				LensFlareMaxOcclusionIncrement;
-/**
- *	The incremental step size for the above.
- */
-var globalconfig float				LensFlareOcclusionStepSize;
-
+var globalconfig float NetClientTicksPerSecond;
+var globalconfig float LensFlareMaxOcclusionIncrement;
+var globalconfig float LensFlareOcclusionStepSize;
 var export editinline transient DirectionalLightComponent TempCollisionLight;
 var export editinline transient DirectionalLightComponent TempCollisionBackLight;
 
@@ -675,103 +446,59 @@ protected:
 	 }
 }
 
-/**
- * Returns a pointer to the current world.
- */
+// Export UEngine::execGetCurrentWorldInfo(FFrame&, void* const)
 native static final function WorldInfo GetCurrentWorldInfo();
 
-/**
- * Returns version info from the engine
- */
+// Export UEngine::execGetBuildDate(FFrame&, void* const)
 native static final function string GetBuildDate();
 
-/**
- * Returns the engine's default tiny font
- */
+// Export UEngine::execGetTinyFont(FFrame&, void* const)
 native static final function Font GetTinyFont();
 
-/**
- * Returns the engine's default small font
- */
+// Export UEngine::execGetSmallFont(FFrame&, void* const)
 native static final function Font GetSmallFont();
 
-/**
- * Returns the engine's default medium font
- */
+// Export UEngine::execGetMediumFont(FFrame&, void* const)
 native static final function Font GetMediumFont();
 
-/**
- * Returns the engine's default large font
- */
+// Export UEngine::execGetLargeFont(FFrame&, void* const)
 native static final function Font GetLargeFont();
 
-/**
- * Returns the engine's default subtitle font
- */
+// Export UEngine::execGetSubtitleFont(FFrame&, void* const)
 native static final function Font GetSubtitleFont();
 
-/**
- * Returns the specified additional font.
- *
- * @param	AdditionalFontIndex		Index into the AddtionalFonts array.
- */
+// Export UEngine::execGetAdditionalFont(FFrame&, void* const)
 native static final function Font GetAdditionalFont(int AdditionalFontIndex);
 
-/** @return whether we're currently running in splitscreen (more than one local player) */
+// Export UEngine::execIsSplitScreen(FFrame&, void* const)
 native static final function bool IsSplitScreen();
 
-/** @return the audio device (will be None if sound is disabled) */
+// Export UEngine::execGetAudioDevice(FFrame&, void* const)
 native static final function AudioDevice GetAudioDevice();
 
-/** @return Returns the name of the last movie that was played. */
+// Export UEngine::execGetLastMovieName(FFrame&, void* const)
 native static final function string GetLastMovieName();
 
-
-/**
- * Play one of the LoadMap loading movies as configured by ini file
- *
- * @return TRUE if a movie was played
- */
+// Export UEngine::execPlayLoadMapMovie(FFrame&, void* const)
 native static final function bool PlayLoadMapMovie();
 
-/**
- * Stops the current movie
- *
- * @param bDelayStopUntilGameHasRendered If TRUE, the engine will delay stopping the movie until after the game has rendered at least one frame
- */
+// Export UEngine::execStopMovie(FFrame&, void* const)
 native static final function StopMovie(bool bDelayStopUntilGameHasRendered);
 
-/**
- * Removes all overlays from displaying
- */
+// Export UEngine::execRemoveAllOverlays(FFrame&, void* const)
 native static final function RemoveAllOverlays();
 
-/**
- * Adds a text overlay to the movie
- *
- * @param Font Font to use to display (must be in the root set so this will work during loads)
- * @param Text Text to display
- * @param X X location in resolution-independent coordinates (ignored if centered)
- * @param Y Y location in resolution-independent coordinates
- * @param ScaleX Text horizontal scale
- * @param ScaleY Text vertical scale
- * @param bIsCentered TRUE if the text should be centered
- */
-native static final function AddOverlay( Font Font, string Text, float X, float Y, float ScaleX, float ScaleY, bool bIsCentered );
+// Export UEngine::execAddOverlay(FFrame&, void* const)
+native static final function AddOverlay(Font Font, string Text, float X, float Y, float ScaleX, float ScaleY, bool bIsCentered);
 
-/**
- * Adds a wrapped text overlay to the movie
- *
- * @param Font Font to use to display (must be in the root set so this will work during loads)
- * @param Text Text to display
- * @param X X location in resolution-independent coordinates (ignored if centered)
- * @param Y Y location in resolution-independent coordinates
- * @param ScaleX Text horizontal scale
- * @param ScaleY Text vertical scale
- * @param WrapWidth Number of pixels before text should wrap
- */
-native static final function AddOverlayWrapped( Font Font, string Text, float X, float Y, float ScaleX, float ScaleY, float WrapWidth );
+// Export UEngine::execAddOverlayWrapped(FFrame&, void* const)
+native static final function AddOverlayWrapped(Font Font, string Text, float X, float Y, float ScaleX, float ScaleY, float WrapWidth);
 
+// Export UEngine::execGetPhysXLevel(FFrame&, void* const)
+native static final function int GetPhysXLevel();
+
+// Export UEngine::execGetPhysXuseGRB(FFrame&, void* const)
+native static final function bool GetPhysXuseGRB();
 
 defaultproperties
 {

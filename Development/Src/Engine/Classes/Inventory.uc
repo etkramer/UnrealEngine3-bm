@@ -186,7 +186,6 @@ function OwnerEvent(name EventName)
 defaultproperties
 {
     MaxDesireability=0.1000000
-    PickupMessage="Snagged an item."
     DroppedPickupClass=Class'DroppedPickup'
     bHidden=true
     bOnlyRelevantToOwner=true

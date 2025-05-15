@@ -55,7 +55,7 @@ simulated function OnToggle(SeqAct_Toggle Action)
         }
     }
     ForceNetRelevant();
-    SetForcedInitialReplicatedProperty(BoolProperty'Actor.bCollideActors', bCollideActors == default.bCollideActors);
+    SetForcedInitialReplicatedProperty(BoolProperty'bCollideActors', bCollideActors == default.bCollideActors);
     //return;    
 }
 

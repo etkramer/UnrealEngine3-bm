@@ -67,7 +67,6 @@ struct native QueuedActivationInfo
     {
         InOriginator=none
         InInstigator=none
-        ActivateIndices=none
         bPushTop=false
     }
 };

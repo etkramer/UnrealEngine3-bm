@@ -9,12 +9,6 @@ struct StaticMeshComponentLODInfo
     var private const array<ShadowMap2D> ShadowMaps;
     var private const array<Object> ShadowVertexBuffers;
     var private native const Pointer LightMap{FLightMap};
-
-    structdefaultproperties
-    {
-        ShadowMaps=none
-        ShadowVertexBuffers=none
-    }
 };
 
 var() byte ForcedLodModel;

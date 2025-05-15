@@ -246,7 +246,6 @@ structcpptext
 
     structdefaultproperties
     {
-        Links=none
         LinkDesc=""
         bHasImpulse=false
         bDisabled=false
@@ -296,7 +295,6 @@ structcpptext
     structdefaultproperties
     {
         ExpectedType=Class'SequenceVariable'
-        LinkedVariables=none
         LinkDesc=""
         LinkVar="None"
         PropertyName="None"
@@ -321,7 +319,6 @@ struct native SeqEventLink
     structdefaultproperties
     {
         ExpectedType=Class'SequenceEvent'
-        LinkedEvents=none
         LinkDesc=""
         DrawX=0
         bHidden=false

@@ -35,7 +35,6 @@ struct native CrowdAttachmentList
     structdefaultproperties
     {
         SocketName="None"
-        List=none
     }
 };
 

@@ -1399,11 +1399,8 @@ defaultproperties
     bCanThrow=true
     WeaponRange=16384.0000000
     DefaultAnimSpeed=1.0000000
-    Priority=-1.0000000
     AIRating=0.5000000
-    ItemName="Weapon"
     RespawnTime=30.0000000
     bReplicateInstigator=true
     bOnlyDirtyReplication=false
-    Components=none
 }

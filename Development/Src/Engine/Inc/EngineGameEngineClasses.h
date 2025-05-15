@@ -53,6 +53,47 @@ enum EFullyLoadPackageType
 #ifndef INCLUDED_ENGINE_GAMEENGINE_CLASSES
 #define INCLUDED_ENGINE_GAMEENGINE_CLASSES 1
 
+struct FStatColorMapEntry
+{
+    FLOAT In;
+    FColor Out;
+
+    /** Constructors */
+    FStatColorMapEntry() {}
+    FStatColorMapEntry(EEventParm)
+    {
+        appMemzero(this, sizeof(FStatColorMapEntry));
+    }
+};
+
+struct FStatColorMapping
+{
+    FStringNoInit StatName;
+    TArrayNoInit<struct FStatColorMapEntry> ColorMap;
+    BITFIELD DisableBlend:1;
+
+    /** Constructors */
+    FStatColorMapping() {}
+    FStatColorMapping(EEventParm)
+    {
+        appMemzero(this, sizeof(FStatColorMapping));
+    }
+};
+
+struct FDropNoteInfo
+{
+    FVector Location;
+    FRotator Rotation;
+    FStringNoInit Comment;
+
+    /** Constructors */
+    FDropNoteInfo() {}
+    FDropNoteInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDropNoteInfo));
+    }
+};
+
 struct FTwistBoneFixer
 {
     INT BaseBoneIndex;
@@ -121,47 +162,6 @@ struct FBreathingFixer
     FBreathingFixer(EEventParm)
     {
         appMemzero(this, sizeof(FBreathingFixer));
-    }
-};
-
-struct FStatColorMapEntry
-{
-    FLOAT In;
-    FColor Out;
-
-    /** Constructors */
-    FStatColorMapEntry() {}
-    FStatColorMapEntry(EEventParm)
-    {
-        appMemzero(this, sizeof(FStatColorMapEntry));
-    }
-};
-
-struct FStatColorMapping
-{
-    FStringNoInit StatName;
-    TArrayNoInit<struct FStatColorMapEntry> ColorMap;
-    BITFIELD DisableBlend:1;
-
-    /** Constructors */
-    FStatColorMapping() {}
-    FStatColorMapping(EEventParm)
-    {
-        appMemzero(this, sizeof(FStatColorMapping));
-    }
-};
-
-struct FDropNoteInfo
-{
-    FVector Location;
-    FRotator Rotation;
-    FStringNoInit Comment;
-
-    /** Constructors */
-    FDropNoteInfo() {}
-    FDropNoteInfo(EEventParm)
-    {
-        appMemzero(this, sizeof(FDropNoteInfo));
     }
 };
 
@@ -362,6 +362,8 @@ public:
     void RemoveAllOverlays();
     void AddOverlay(class UFont* Font,const FString& Text,FLOAT X,FLOAT Y,FLOAT ScaleX,FLOAT ScaleY,UBOOL bIsCentered);
     void AddOverlayWrapped(class UFont* Font,const FString& Text,FLOAT X,FLOAT Y,FLOAT ScaleX,FLOAT ScaleY,FLOAT WrapWidth);
+    INT GetPhysXLevel();
+    UBOOL GetPhysXuseGRB();
     DECLARE_FUNCTION(execGetCurrentWorldInfo)
     {
         P_FINISH;
@@ -457,6 +459,16 @@ public:
         P_GET_FLOAT(WrapWidth);
         P_FINISH;
         AddOverlayWrapped(Font,Text,X,Y,ScaleX,ScaleY,WrapWidth);
+    }
+    DECLARE_FUNCTION(execGetPhysXLevel)
+    {
+        P_FINISH;
+        *(INT*)Result=GetPhysXLevel();
+    }
+    DECLARE_FUNCTION(execGetPhysXuseGRB)
+    {
+        P_FINISH;
+        *(UBOOL*)Result=GetPhysXuseGRB();
     }
     DECLARE_ABSTRACT_CLASS(UEngine,USubsystem,0|CLASS_Transient|CLASS_Config,Engine)
     static const TCHAR* StaticConfigName() {return TEXT("Engine");}
@@ -964,6 +976,8 @@ public:
 #endif // !INCLUDED_ENGINE_GAMEENGINE_CLASSES
 #endif // !NAMES_ONLY
 
+AUTOGENERATE_FUNCTION(UEngine,-1,execGetPhysXuseGRB);
+AUTOGENERATE_FUNCTION(UEngine,-1,execGetPhysXLevel);
 AUTOGENERATE_FUNCTION(UEngine,-1,execAddOverlayWrapped);
 AUTOGENERATE_FUNCTION(UEngine,-1,execAddOverlay);
 AUTOGENERATE_FUNCTION(UEngine,-1,execRemoveAllOverlays);
@@ -1007,6 +1021,8 @@ DECLARE_NATIVE_TYPE(Engine,UGameEngine);
 #ifdef NATIVES_ONLY
 NATIVE_INFO(UEngine) GEngineUEngineNatives[] = 
 { 
+	MAP_NATIVE(UEngine,execGetPhysXuseGRB)
+	MAP_NATIVE(UEngine,execGetPhysXLevel)
 	MAP_NATIVE(UEngine,execAddOverlayWrapped)
 	MAP_NATIVE(UEngine,execAddOverlay)
 	MAP_NATIVE(UEngine,execRemoveAllOverlays)

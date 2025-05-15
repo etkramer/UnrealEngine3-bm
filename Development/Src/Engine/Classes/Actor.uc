@@ -180,7 +180,6 @@ struct native transient AnimSlotInfo
     structdefaultproperties
     {
         SlotName="None"
-        ChannelWeights=none
     }
 };
 
@@ -263,7 +262,6 @@ struct CollisionImpactData
 
     structdefaultproperties
     {
-        ContactInfos=none
         TotalNormalForceVector=(X=0.0000000,Y=0.0000000,Z=0.0000000)
         TotalFrictionForceVector=(X=0.0000000,Y=0.0000000,Z=0.0000000)
     }
@@ -400,7 +398,6 @@ struct native immutablewhencooked ActorReference
     structdefaultproperties
     {
         Actor=none
-        Guid=(A=0,B=0,C=0,D=0)
     }
 };
 
@@ -412,7 +409,6 @@ struct native immutablewhencooked NavReference
     structdefaultproperties
     {
         Nav=none
-        Guid=(A=0,B=0,C=0,D=0)
     }
 };
 
@@ -2600,7 +2596,7 @@ simulated function OnSetPhysics(SeqAct_SetPhysics Action)
                 bNetDirty = true;
             }
         }
-        SetForcedInitialReplicatedProperty(ByteProperty'Actor.Physics', Physics == default.Physics);
+        SetForcedInitialReplicatedProperty(ByteProperty'Physics', Physics == default.Physics);
     }
     //return;    
 }
@@ -2621,8 +2617,8 @@ function OnChangeCollision(SeqAct_ChangeCollision Action)
     // End:0xDF
     if(RemoteRole != ROLE_None)
     {
-        SetForcedInitialReplicatedProperty(BoolProperty'Actor.bCollideActors', bCollideActors == default.bCollideActors);
-        SetForcedInitialReplicatedProperty(BoolProperty'Actor.bBlockActors', bBlockActors == default.bBlockActors);
+        SetForcedInitialReplicatedProperty(BoolProperty'bCollideActors', bCollideActors == default.bCollideActors);
+        SetForcedInitialReplicatedProperty(BoolProperty'bBlockActors', bBlockActors == default.bBlockActors);
     }
     //return;    
 }
@@ -2696,7 +2692,7 @@ simulated function OnToggleHidden(SeqAct_ToggleHidden Action)
     // End:0x16C
     if(RemoteRole != ROLE_None)
     {
-        SetForcedInitialReplicatedProperty(BoolProperty'Actor.bHidden', bHidden == default.bHidden);
+        SetForcedInitialReplicatedProperty(BoolProperty'bHidden', bHidden == default.bHidden);
     }
     // End:0x1CD
     if(Action.bToggleCollision)
@@ -2706,7 +2702,7 @@ simulated function OnToggleHidden(SeqAct_ToggleHidden Action)
         // End:0x1CD
         if(RemoteRole != ROLE_None)
         {
-            SetForcedInitialReplicatedProperty(BoolProperty'Actor.bCollideActors', bCollideActors == default.bCollideActors);
+            SetForcedInitialReplicatedProperty(BoolProperty'bCollideActors', bCollideActors == default.bCollideActors);
         }
     }
     //return;    
@@ -2801,8 +2797,8 @@ function DoKismetAttachment(Actor Attachment, SeqAct_AttachToActor Action)
     // End:0x292
     if(Attachment.RemoteRole != ROLE_None && Attachment.bStatic || Attachment.bNoDelete)
     {
-        Attachment.SetForcedInitialReplicatedProperty(StructProperty'Actor.RelativeLocation', Attachment.RelativeLocation == Attachment.default.RelativeLocation);
-        Attachment.SetForcedInitialReplicatedProperty(StructProperty'Actor.RelativeRotation', Attachment.RelativeRotation == Attachment.default.RelativeRotation);
+        Attachment.SetForcedInitialReplicatedProperty(StructProperty'RelativeLocation', Attachment.RelativeLocation == Attachment.default.RelativeLocation);
+        Attachment.SetForcedInitialReplicatedProperty(StructProperty'RelativeRotation', Attachment.RelativeRotation == Attachment.default.RelativeRotation);
     }
     //return;    
 }
@@ -3161,7 +3157,6 @@ defaultproperties
     DrawScale3D=(X=1.0000000,Y=1.0000000,Z=1.0000000)
     CustomTimeDilation=1.0000000
     Role=ROLE_Authority
-    ReplicatedCollisionType=None
     FramesTillInvestigateSightCheck=255
     SupportedEvents[0]=Class'SeqEvent_Touch'
     SupportedEvents[1]=Class'SeqEvent_Destroyed'

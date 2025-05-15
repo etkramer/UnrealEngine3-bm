@@ -86,7 +86,6 @@ struct native InputMatchRequest
 
     structdefaultproperties
     {
-        Inputs=none
         MatchActor=none
         MatchFuncName="None"
         FailedFuncName="None"
@@ -5296,7 +5295,7 @@ native simulated function bool IsShowingSubtitles();
 
 function NotifyConnectionError(optional string Message = Localize("Errors", "ConnectionFailed", "Engine"), optional string Title = Localize("Errors", "ConnectionFailed_Title", "Engine"))
 {
-    LogInternal((((((((((((((("(" $ string(Name)) $ ") PlayerController::") $ string(GetFuncName())) @ "Title:'") $ Title) $ "'") @ "Message:'") $ Message) $ "'") @ "NetMode:'") $ string(GetEnum(Enum'WorldInfo.ENetMode', WorldInfo.NetMode))) $ "'") @ "Map:'") $ GetURLMap()) $ "'", 'DevNet');
+    LogInternal((((((((((((((("(" $ string(Name)) $ ") PlayerController::") $ string(GetFuncName())) @ "Title:'") $ Title) $ "'") @ "Message:'") $ Message) $ "'") @ "NetMode:'") $ string(GetEnum(Enum'ENetMode', WorldInfo.NetMode))) $ "'") @ "Map:'") $ GetURLMap()) $ "'", 'DevNet');
     // End:0x176
     if(WorldInfo.NetMode != NM_Standalone)
     {

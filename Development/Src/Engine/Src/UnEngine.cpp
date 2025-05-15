@@ -809,6 +809,17 @@ void UEngine::AddOverlay( UFont* Font, const FString& Text, FLOAT X, FLOAT Y, FL
 	GFullScreenMovie->GameThreadAddOverlay( Font, Text, X, Y, ScaleX, ScaleY, bIsCentered, FALSE, 0 );
 }
 
+INT UEngine::GetPhysXLevel()
+{
+	// BM1: Not implemented
+	return 0;
+}
+
+UBOOL UEngine::GetPhysXuseGRB()
+{
+	// BM1: Not implemented
+	return FALSE;
+}
 
 /**
  * Adds a wrapped text overlay to the movie
