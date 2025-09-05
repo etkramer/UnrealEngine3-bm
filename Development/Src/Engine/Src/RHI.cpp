@@ -11,7 +11,12 @@
 
 UBOOL GIsRHIInitialized = FALSE;
 INT GMaxTextureMipCount = MAX_TEXTURE_MIP_COUNT;
+#if BATMAN
+// BM1: Changed to 8 to match BM1
+INT GMinTextureResidentMipCount = 8;
+#else
 INT GMinTextureResidentMipCount = 7;
+#endif
 UBOOL GSupportsDepthTextures = FALSE;
 UBOOL GSupportsHardwarePCF = FALSE;
 UBOOL GSupportsFetch4 = FALSE;

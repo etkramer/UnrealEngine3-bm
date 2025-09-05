@@ -409,7 +409,12 @@ void UTexture2D::SetLinker( ULinkerLoad* LinkerLoad, INT LinkerIndex )
 {
 	// We never change linkers in the case of seekfree loading though will reset them/ set them to NULL
 	// and don't want to load the texture data in this case.
+#if BATMAN
+	// BM1: We still want to stream in textures from the .tfc, even in the non-seekfree editor.
+	if( GetLinker() && GetLinker()->LicenseeVer() >= VER_BATMAN1 )
+#else
 	if( GUseSeekFreeLoading )
+#endif
 	{
 		// Route the call to change the linker.
 		Super::SetLinker( LinkerLoad, LinkerIndex );
@@ -813,20 +818,6 @@ FTextureResource* UTexture2D::CreateResource()
 		RequestedMips	= Max( RequestedMips, 1 );
 		ResidentMips	= RequestedMips;
 	}
-
-#if BATMAN
-	// TEMPORARY HACK
-	// Until we figure out why the engine won't load mips from the .TFC, let's just only use ones that are local
-	for (INT i = 0; i < RequestedMips; i++)
-	{
-		if (Mips(Mips.Num() - 1 - i).Data.IsStoredInSeparateFile())
-		{
-			RequestedMips = i;
-			ResidentMips = RequestedMips;
-			break;
-		}
-	}
-#endif
 
 	// Unlink and relink if streamable.
 	UnlinkStreaming();
