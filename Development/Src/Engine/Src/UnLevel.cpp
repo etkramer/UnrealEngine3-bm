@@ -399,6 +399,144 @@ void ULevel::PostLoad()
 		}
 	}
 
+#if BATMAN
+	// Expand cooked collection actors on load
+	if (GIsEditor && GetLinkerLicenseeVersion() >= VER_BATMAN1)
+	{
+		for (INT ActorIndex = 0; ActorIndex < Actors.Num(); ActorIndex++)
+		{
+			AActor* Actor = Actors(ActorIndex);
+
+			// Skip null/invalid entries
+			if (Actor == NULL)
+			{
+				continue;
+			}
+
+			// Expand AStaticMeshCollectionActor
+			if (Actor->IsA(AStaticMeshCollectionActor::StaticClass()))
+			{
+				AStaticMeshCollectionActor* MeshCollection = (AStaticMeshCollectionActor*)Actor;
+
+				for (INT CompIndex = 0; CompIndex < MeshCollection->Components.Num(); CompIndex++)
+				{
+					UStaticMeshComponent* MeshComp = (UStaticMeshComponent*)MeshCollection->Components(CompIndex);
+                    AStaticMeshActor* NewActor = ConstructObject<AStaticMeshActor>(AStaticMeshActor::StaticClass(), this, MeshComp->GetFName());
+
+					// Get transform from component
+					FMatrix MeshToWorld = ((UStaticMeshComponent*)MeshComp)->CachedParentToWorld;
+
+					// Add actor to level
+					if (NewActor)
+					{
+						Actors.AddItem(NewActor);
+						NewActor->bStatic = true;
+						NewActor->WorldInfo = GetWorldInfo();
+						NewActor->Location = MeshToWorld.GetOrigin();
+						NewActor->Rotation = MeshToWorld.Rotator();
+
+                        // Remove auto-created StaticMeshComponent
+                        UStaticMeshComponent* ActorMeshComp = NewActor->StaticMeshComponent;
+                        NewActor->DetachComponent(ActorMeshComp);
+
+                        // Add our StaticMeshComponent
+                        MeshComp->Rename(NULL, NewActor, REN_ForceNoResetLoaders);
+                        NewActor->Components.AddItem(MeshComp);
+                        NewActor->StaticMeshComponent = MeshComp;
+
+						MeshCollection->Components.Remove(CompIndex--);
+					}
+				}
+
+                // Remove original actor
+				Actors.RemoveItem(MeshCollection);
+                ActorIndex--;
+			}
+
+			// Expand AStaticLightCollectionActors
+			if (Actor->IsA(AStaticLightCollectionActor::StaticClass()))
+			{
+				AStaticLightCollectionActor* LightCollection = (AStaticLightCollectionActor*)Actor;
+
+				for (INT CompIndex = 0; CompIndex < LightCollection->Components.Num(); CompIndex++)
+				{
+					ULightComponent* LightComp = (ULightComponent*)LightCollection->Components(CompIndex);
+                    ALight* NewActor = NULL;
+
+					// Choose actor class
+					if (LightComp->IsA(UPointLightComponent::StaticClass()))
+					{
+						NewActor = ConstructObject<ALight>(APointLight::StaticClass(), this, LightComp->GetFName());
+					}
+					else if (LightComp->IsA(UDirectionalLightComponent::StaticClass()))
+					{
+						NewActor = ConstructObject<ALight>(ADirectionalLight::StaticClass(), this, LightComp->GetFName());
+					}
+					else if (LightComp->IsA(USpotLightComponent::StaticClass()))
+					{
+						NewActor = ConstructObject<ALight>(ASpotLight::StaticClass(), this, LightComp->GetFName());
+					}
+					else if (LightComp->IsA(USkyLightComponent::StaticClass()))
+					{
+						NewActor = ConstructObject<ALight>(ASkyLight::StaticClass(), this, LightComp->GetFName());
+					}
+					else
+					{
+						warnf(NAME_Warning, TEXT("Unknown ULightComponent type '%s'"), *LightComp->GetClass()->GetFullName());
+					}
+
+					// Get transform from component
+					FMatrix LightToWorld = FMatrix::Identity;
+					if (LightComp->IsA(UPointLightComponent::StaticClass()))
+					{
+						LightToWorld = ((UPointLightComponent*)LightComp)->CachedParentToWorld;
+					}
+					else
+					{
+						// ULightComponent::SetParentToWorld multiplies the ParentToWorld by a matrix which flips the X and Z
+						// axis values, so in order for the component's final LightToWorld to remain the same, we'll need to
+						// flip the current value here so that when it's flipped in SetParentToWorld it ends up the correct value.
+						static FMatrix ReverseZAxisMat =
+							FMatrix(
+								FPlane(+0, +0, +1, +0),
+								FPlane(+0, +1, +0, +0),
+								FPlane(+1, +0, +0, +0),
+								FPlane(+0, +0, +0, +1)
+							);
+
+						LightToWorld = ReverseZAxisMat * LightComp->LightToWorld;
+					}
+
+					// Add actor to level
+					if (NewActor)
+					{
+						Actors.AddItem(NewActor);
+						NewActor->bStatic = true;
+						NewActor->WorldInfo = GetWorldInfo();
+						NewActor->Location = LightToWorld.GetOrigin();
+						NewActor->Rotation = LightToWorld.Rotator();
+
+                        // Remove auto-created LightComponent
+                        ULightComponent* ActorLightComp = NewActor->LightComponent;
+                        NewActor->DetachComponent(ActorLightComp);
+
+                        // Add our LightComponent
+                        LightComp->Rename(NULL, NewActor, REN_ForceNoResetLoaders);
+                        NewActor->Components.AddItem(LightComp);
+                        NewActor->LightComponent = LightComp;
+
+						LightCollection->Components.Remove(CompIndex--);
+					}
+				}
+
+                // Remove original actor
+				Actors.RemoveItem(LightCollection);
+                ActorIndex--;
+			}
+		}
+	}
+#endif
+
 	// reattach decals to receivers after level has been fully loaded
 	GEngine->IssueDecalUpdateRequest();
 }
