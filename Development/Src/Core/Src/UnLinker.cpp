@@ -1139,12 +1139,15 @@ UBOOL ULinkerLoad::SerializePackageFileSummary()
 		}
 		
 		// Don't load packages that were saved with an engine version newer than the current one.
+#if BATMAN
+#else
 		if( (Summary.GetFileVersion() > GPackageFileVersion) || (Summary.GetFileVersionLicensee() > GPackageFileLicenseeVersion) )
 		{
 			warnf(LocalizeSecure(LocalizeError(TEXT("FileVersionDump"),TEXT("Core")), *Filename, Summary.GetFileVersion(), GPackageFileVersion, Summary.GetFileVersionLicensee(), GPackageFileLicenseeVersion));
 			appThrowf(LocalizeSecure(LocalizeError(TEXT("FileVersionDump"),TEXT("Core")), *Filename, Summary.GetFileVersion(), GPackageFileVersion, Summary.GetFileVersionLicensee(), GPackageFileLicenseeVersion));
 
 		}
+#endif
 
 #if CONSOLE
 		// check that the package being loaded has the correct CookedContentVersion
@@ -3017,7 +3020,12 @@ void ULinkerLoad::Preload( UObject* Object )
 				// Make sure we serialized the right amount of stuff.
 				if( Tell()-Export.SerialOffset != Export.SerialSize )
 				{
+#if BATMAN
+					// Keep an eye on this, so far seems non-critical.
+					warnf(NAME_Error, LocalizeSecure(LocalizeError(TEXT("SerialSize"), TEXT("Core")), *Object->GetFullName(), Tell() - Export.SerialOffset, Export.SerialSize));
+#else
 					appErrorf( LocalizeSecure(LocalizeError(TEXT("SerialSize"),TEXT("Core")), *Object->GetFullName(), Tell()-Export.SerialOffset, Export.SerialSize) );
+#endif
 				}
 
 				Loader->Seek( SavedPos );
@@ -3129,6 +3137,15 @@ UObject* ULinkerLoad::CreateExport( INT Index )
 		}
 #endif
 
+#if BATMAN
+		// Don't load classes from BM packages
+		if (LicenseeVer() >= VER_BATMAN1 && Export.ClassIndex == UCLASS_INDEX)
+		{
+			//warnf(TEXT("Skipped class export %d"), Index);
+			return NULL;
+		}
+#endif
+
 		// Get the object's class.
 		UClass* LoadClass = (UClass*)IndexToObject( Export.ClassIndex );
 		if( !LoadClass && Export.ClassIndex!=UCLASS_INDEX ) // Hack to load packages with classes which do not exist.
@@ -3234,7 +3251,18 @@ UObject* ULinkerLoad::CreateExport( INT Index )
 			Export.ObjectFlags &= ~_ContextFlags;
 			if ( GIsEditor && !GIsUCC )
 			{
+#if BATMAN
+				if (LicenseeVer() >= VER_BATMAN1)
+				{
+					// We expect this to happen a lot, and EdLoadErrorf is very slow...
+				}
+				else
+				{
+#endif
 				EdLoadErrorf( FEdLoadError::TYPE_RESOURCE, *FString::Printf(TEXT("Outer object for %s"), *Export.ObjectName.ToString()) );
+#if BATMAN
+				}
+#endif
 			}
 			else
 			{

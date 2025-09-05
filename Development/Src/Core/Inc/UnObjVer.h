@@ -284,7 +284,7 @@
 // !! WARNING: other places should modify VER_LATEST_ENGINE_LICENSEE instead.
 // !!
 #define VER_LATEST_ENGINE									VER_DEPRECATED_EDITOR_POSITION
-#define VER_LATEST_ENGINE_LICENSEE							VER_BATMAN1
+#define VER_LATEST_ENGINE_LICENSEE							0
 
 // Cooked packages loaded with an older package version are recooked
 #define VER_LATEST_COOKED_PACKAGE							87

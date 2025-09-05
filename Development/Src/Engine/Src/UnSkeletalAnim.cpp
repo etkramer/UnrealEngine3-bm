@@ -1397,7 +1397,10 @@ void UAnimSequence::GetBoneAtom(FBoneAtom& OutAtom, INT TrackIndex, FLOAT Time, 
 	// Bail out if the animation data doesn't exists (e.g. was stripped by the cooker).
 	if ( RawAnimData.Num() == 0 )
 	{
+#if BATMAN
+#else
 		debugf( TEXT("UAnimSequence::GetBoneAtom : No anim data in AnimSequence!") );
+#endif
 		OutAtom.Rotation = FQuat::Identity;
 		OutAtom.Translation = FVector(0.f, 0.f, 0.f);
 		return;
@@ -1410,7 +1413,10 @@ void UAnimSequence::GetBoneAtom(FBoneAtom& OutAtom, INT TrackIndex, FLOAT Time, 
 		RawTrack.PosKeys.Num() == 0 ||
 		RawTrack.RotKeys.Num() == 0 )
 	{
+#if BATMAN
+#else
 		debugf( TEXT("UAnimSequence::GetBoneAtom : No anim data in AnimSequence!") );
+#endif
 		OutAtom.Rotation = FQuat::Identity;
 		OutAtom.Translation = FVector(0.f, 0.f, 0.f);
 		return;
