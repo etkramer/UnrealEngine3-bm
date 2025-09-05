@@ -1072,6 +1072,50 @@ public:
 	virtual INT GetLabelPadding() { return 8; }
 };
 
+class UMaterialExpressionLightingSpecularBlinnPhong : public UMaterialExpression
+{
+public:
+    //## BEGIN PROPS MaterialExpressionLightingSpecularBlinnPhong
+    FExpressionInput Power;
+    FExpressionInput PowerMin;
+    FExpressionInput PowerMax;
+    FExpressionInput FresnelPower;
+    FExpressionInput FresnelStraight;
+    FExpressionInput FresnelGlancing;
+    FExpressionInput FalloffPower;
+    FExpressionInput FalloffStraight;
+    FExpressionInput FalloffGlancing;
+    FExpressionInput Colour;
+    class UTexture* Lookup;
+    //## END PROPS MaterialExpressionLightingSpecularBlinnPhong
+
+    DECLARE_CLASS(UMaterialExpressionLightingSpecularBlinnPhong,UMaterialExpression,0,Engine)
+	virtual INT Compile(FMaterialCompiler* Compiler);
+	virtual FString GetCaption() const;
+};
+
+class UMaterialExpressionLightingSpecularPhong : public UMaterialExpression
+{
+public:
+    //## BEGIN PROPS MaterialExpressionLightingSpecularPhong
+    FExpressionInput Power;
+    FExpressionInput PowerMin;
+    FExpressionInput PowerMax;
+    FExpressionInput FresnelPower;
+    FExpressionInput FresnelStraight;
+    FExpressionInput FresnelGlancing;
+    FExpressionInput FalloffPower;
+    FExpressionInput FalloffStraight;
+    FExpressionInput FalloffGlancing;
+    FExpressionInput Colour;
+    class UTexture* Lookup;
+    //## END PROPS MaterialExpressionLightingSpecularPhong
+
+    DECLARE_CLASS(UMaterialExpressionLightingSpecularPhong,UMaterialExpression,0,Engine)
+	virtual INT Compile(FMaterialCompiler* Compiler);
+	virtual FString GetCaption() const;
+};
+
 class UMaterialExpressionLightVector : public UMaterialExpression
 {
 public:
@@ -2376,6 +2420,8 @@ DECLARE_NATIVE_TYPE(Engine,UMaterialExpressionLensFlareOcclusion);
 DECLARE_NATIVE_TYPE(Engine,UMaterialExpressionLensFlareRadialDistance);
 DECLARE_NATIVE_TYPE(Engine,UMaterialExpressionLensFlareRayDistance);
 DECLARE_NATIVE_TYPE(Engine,UMaterialExpressionLensFlareSourceDistance);
+DECLARE_NATIVE_TYPE(Engine,UMaterialExpressionLightingSpecularBlinnPhong);
+DECLARE_NATIVE_TYPE(Engine,UMaterialExpressionLightingSpecularPhong);
 DECLARE_NATIVE_TYPE(Engine,UMaterialExpressionLightVector);
 DECLARE_NATIVE_TYPE(Engine,UMaterialExpressionLinearInterpolate);
 DECLARE_NATIVE_TYPE(Engine,UMaterialExpressionMeshEmitterVertexColor);
@@ -2459,6 +2505,8 @@ DECLARE_NATIVE_TYPE(Engine,UMaterialInstanceTimeVarying);
 	UMaterialExpressionLensFlareRadialDistance::StaticClass(); \
 	UMaterialExpressionLensFlareRayDistance::StaticClass(); \
 	UMaterialExpressionLensFlareSourceDistance::StaticClass(); \
+	UMaterialExpressionLightingSpecularBlinnPhong::StaticClass(); \
+	UMaterialExpressionLightingSpecularPhong::StaticClass(); \
 	UMaterialExpressionLightVector::StaticClass(); \
 	UMaterialExpressionLinearInterpolate::StaticClass(); \
 	UMaterialExpressionMeshEmitterVertexColor::StaticClass(); \
@@ -2649,6 +2697,12 @@ VERIFY_CLASS_SIZE_NODIE(UMaterialExpressionLensFlareOcclusion)
 VERIFY_CLASS_SIZE_NODIE(UMaterialExpressionLensFlareRadialDistance)
 VERIFY_CLASS_SIZE_NODIE(UMaterialExpressionLensFlareRayDistance)
 VERIFY_CLASS_SIZE_NODIE(UMaterialExpressionLensFlareSourceDistance)
+VERIFY_CLASS_OFFSET_NODIE(U,MaterialExpressionLightingSpecularBlinnPhong,Power)
+VERIFY_CLASS_OFFSET_NODIE(U,MaterialExpressionLightingSpecularBlinnPhong,Lookup)
+VERIFY_CLASS_SIZE_NODIE(UMaterialExpressionLightingSpecularBlinnPhong)
+VERIFY_CLASS_OFFSET_NODIE(U,MaterialExpressionLightingSpecularPhong,Power)
+VERIFY_CLASS_OFFSET_NODIE(U,MaterialExpressionLightingSpecularPhong,Lookup)
+VERIFY_CLASS_SIZE_NODIE(UMaterialExpressionLightingSpecularPhong)
 VERIFY_CLASS_SIZE_NODIE(UMaterialExpressionLightVector)
 VERIFY_CLASS_OFFSET_NODIE(U,MaterialExpressionLinearInterpolate,A)
 VERIFY_CLASS_OFFSET_NODIE(U,MaterialExpressionLinearInterpolate,Alpha)

@@ -62,6 +62,8 @@ IMPLEMENT_CLASS(UMaterialExpressionLensFlareOcclusion);
 IMPLEMENT_CLASS(UMaterialExpressionLensFlareRadialDistance);
 IMPLEMENT_CLASS(UMaterialExpressionLensFlareRayDistance);
 IMPLEMENT_CLASS(UMaterialExpressionLensFlareSourceDistance);
+IMPLEMENT_CLASS(UMaterialExpressionLightingSpecularBlinnPhong);
+IMPLEMENT_CLASS(UMaterialExpressionLightingSpecularPhong);
 IMPLEMENT_CLASS(UMaterialExpressionLightVector);
 IMPLEMENT_CLASS(UMaterialExpressionScreenPosition);
 IMPLEMENT_CLASS(UMaterialExpressionPixelDepth);
@@ -2710,6 +2712,32 @@ INT UMaterialExpressionLensFlareSourceDistance::GetWidth() const
 FString UMaterialExpressionLensFlareSourceDistance::GetCaption() const
 {
 	return TEXT("LensFlare SourceDist");
+}
+
+// BM1
+INT UMaterialExpressionLightingSpecularBlinnPhong::Compile(FMaterialCompiler* Compiler)
+{
+	// TODO: Implement Blinn-Phong model
+	return Compiler->Constant3(1, 1, 1);
+}
+
+// BM1
+FString UMaterialExpressionLightingSpecularBlinnPhong::GetCaption() const
+{
+	return TEXT("Lighting Specular Blinn-Phong");
+}
+
+// BM1
+INT UMaterialExpressionLightingSpecularPhong::Compile(FMaterialCompiler* Compiler)
+{
+	// TODO: Implement Phong model
+	return Compiler->Constant3(1, 1, 1);
+}
+
+// BM1
+FString UMaterialExpressionLightingSpecularPhong::GetCaption() const
+{
+	return TEXT("Lighting Specular Phong");
 }
 
 INT UMaterialExpressionLightVector::Compile(FMaterialCompiler* Compiler)
