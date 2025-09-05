@@ -54,7 +54,7 @@ var() array<SkelMeshActorControlTarget>		ControlTargets;
 // BM1
 var() Actor LookAtTarget;
 var() interp float LookAtWeight;
-var() export editinline SkeletalMeshComponent HeadMesh;
+var() SkeletalMeshComponent HeadMesh;
 
 cpptext
 {
@@ -583,6 +583,17 @@ defaultproperties
 	End Object
 	FacialAudioComp=FaceAudioComponent
 	Components.Add(FaceAudioComponent)
+
+	begin object Class=SkeletalMeshComponent Name=HeadMesh0
+		ParentAnimComponent=SkeletalMeshComponent0
+		ParentAnimComponentMode=PACM_Add
+		bForceMeshObjectUpdates=true
+		ShadowParent=SkeletalMeshComponent0
+		LightEnvironment=MyLightEnvironment
+		CullAreaMultiplier=10.0
+	End Object
+	Components.Add(HeadMesh0)
+	HeadMesh=HeadMesh0
 
 	Physics=PHYS_None
 	bEdShouldSnap=TRUE
