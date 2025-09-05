@@ -916,9 +916,13 @@ ABrush* ULevel::GetBrush() const
 {
 	checkMsg( Actors.Num() >= 2, *GetName() );
 	ABrush* DefaultBrush = Cast<ABrush>( Actors(1) );
+#if BATMAN
+	// Tolerate null DefaultBrush (common for BM packages)
+#else
 	checkMsg( DefaultBrush != NULL, *GetName() );
 	checkMsg( DefaultBrush->BrushComponent, *GetName() );
 	checkMsg( DefaultBrush->Brush != NULL, *GetName() );
+#endif
 	return DefaultBrush;
 }
 
