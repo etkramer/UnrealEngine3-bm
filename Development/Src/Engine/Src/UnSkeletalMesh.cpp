@@ -823,7 +823,7 @@ void USkeletalMesh::Serialize( FArchive& Ar )
 	Ar << Bounds;
 #if BATMAN
 	// https://github.com/gildor2/UEViewer/blob/a0bfb468d42be831b126632fd8a0ae6b3614f981/Unreal/UnrealMesh/UnMesh3.cpp#L1978
-	if (Ar.LicenseeVer() >= VER_BATMAN1)
+	if (Ar.IsBmCooked())
 	{
 		Ar << ConservativeBounds << PerBoneBounds;
 	}
@@ -849,7 +849,7 @@ void USkeletalMesh::Serialize( FArchive& Ar )
 	Ar << PerPolyBoneKDOPs;
 
 #if BATMAN
-	if (Ar.LicenseeVer() >= VER_BATMAN1)
+	if ( Ar.IsBmCooked() )
 	{
 		// Not sure what this is. Keep an eye on it.
 		INT Unk = 0;

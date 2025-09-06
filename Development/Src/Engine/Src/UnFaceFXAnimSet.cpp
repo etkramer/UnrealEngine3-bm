@@ -343,7 +343,7 @@ void UFaceFXAnimSet::Serialize(FArchive& Ar)
 
 #if BATMAN
 		// BM1: Cooked packages don't have a DefaultFaceFXAsset value, so set our own here.
-		if (GetLinkerLicenseeVersion() >= VER_BATMAN1 && DefaultFaceFXAsset == NULL)
+		if (GetLinker() && GetLinker()->IsBmCooked() && DefaultFaceFXAsset == NULL)
 		{
 			UFaceFXAsset* FaceFXAsset = LoadObject<UFaceFXAsset>(NULL, TEXT("Batman_V2.Mesh.Batman_Head_Skin_FaceFX"), NULL, LOAD_None, NULL);
 			DefaultFaceFXAsset = FaceFXAsset;

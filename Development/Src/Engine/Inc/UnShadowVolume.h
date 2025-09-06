@@ -38,7 +38,7 @@ struct FMeshEdge
 	friend FArchive& operator<<(FArchive& Ar,FMeshEdge& E)
 	{
 		// BM: Compat with old 32-bit FMeshEdge.
-		if (Ar.LicenseeVer() < VER_BATMAN1)
+		if (!Ar.IsBmCooked())
 		{
 			INT Vertices[2], Faces[2];
 			Ar << Vertices[0] << Vertices[1] << Faces[0] << Faces[1];

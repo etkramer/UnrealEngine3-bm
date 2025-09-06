@@ -411,7 +411,7 @@ void UTexture2D::SetLinker( ULinkerLoad* LinkerLoad, INT LinkerIndex )
 	// and don't want to load the texture data in this case.
 #if BATMAN
 	// BM1: We still want to stream in textures from the .tfc, even in the non-seekfree editor.
-	if( GetLinker() && GetLinker()->LicenseeVer() >= VER_BATMAN1 )
+	if( GetLinker() && GetLinker()->IsBmCooked() )
 #else
 	if( GUseSeekFreeLoading )
 #endif

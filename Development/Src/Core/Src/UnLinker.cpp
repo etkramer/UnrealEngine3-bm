@@ -3139,7 +3139,7 @@ UObject* ULinkerLoad::CreateExport( INT Index )
 
 #if BATMAN
 		// Don't load classes from BM packages
-		if (LicenseeVer() >= VER_BATMAN1 && Export.ClassIndex == UCLASS_INDEX)
+		if (IsBmCooked() && Export.ClassIndex == UCLASS_INDEX)
 		{
 			//warnf(TEXT("Skipped class export %d"), Index);
 			return NULL;
@@ -3252,7 +3252,7 @@ UObject* ULinkerLoad::CreateExport( INT Index )
 			if ( GIsEditor && !GIsUCC )
 			{
 #if BATMAN
-				if (LicenseeVer() >= VER_BATMAN1)
+				if (IsBmCooked())
 				{
 					// We expect this to happen a lot, and EdLoadErrorf is very slow...
 				}
@@ -3517,7 +3517,7 @@ UObject* ULinkerLoad::CreateImport( INT Index )
 		||	GIsScriptPatcherActive
 #endif
 #if BATMAN
-		|| LicenseeVer() >= VER_BATMAN1
+		|| IsBmCooked()
 #endif
 			)
 		{

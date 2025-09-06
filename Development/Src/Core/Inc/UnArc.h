@@ -291,6 +291,12 @@ public:
 	FORCEINLINE UBOOL ShouldSkipBulkData()					const	{return ArShouldSkipBulkData;}
 	FORCEINLINE INT GetMaxSerializeSize()					const	{return ArMaxSerializeSize;}
 
+	// BM1
+	UBOOL IsBmCooked() const
+	{
+		return LicenseeVer() >= VER_BATMAN1 && IsPersistent() && ContainsCookedData();
+	}
+
 	/**
 	 * Sets the archive version number. Used by the code that makes sure that ULinkerLoad's internal 
 	 * archive versions match the file reader it creates.
