@@ -6340,6 +6340,14 @@ UPackage* UObject::LoadPackage( UPackage* InOuter, const TCHAR* Filename, DWORD 
             return( NULL );
 		}
 
+#if BATMAN
+		// Log when BM1 packages are loaded, so we can notice if they've been misdetected.
+		if ( Linker->IsBmCooked() )
+		{
+			warnf( NAME_Warning, TEXT("Loading BM1 package %s"), Filename );
+		}
+#endif
+
 		if( !(LoadFlags & LOAD_Verify) )
 		{
 			Linker->LoadAllObjects();
