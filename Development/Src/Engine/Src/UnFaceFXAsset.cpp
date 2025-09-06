@@ -470,6 +470,15 @@ void UFaceFXAsset::Serialize(FArchive& Ar)
 		MountedFaceFXAnimSets.Empty();
 		RawFaceFXActorBytes.Empty();
 		RawFaceFXSessionBytes.Empty();
+
+#if BATMAN
+		// BM1: Cooked packages don't have a DefaultSkelMesh value, so set our own here.
+		if (GetLinkerLicenseeVersion() >= VER_BATMAN1 && DefaultSkelMesh == NULL)
+		{
+			USkeletalMesh* SkelMesh = LoadObject<USkeletalMesh>(NULL, TEXT("Batman_V2.Mesh.Batman_Head_Skin"), NULL, LOAD_None, NULL);
+			DefaultSkelMesh = SkelMesh;
+		}
+#endif
 	
 		Ar << RawFaceFXActorBytes;
 		Ar << RawFaceFXSessionBytes;

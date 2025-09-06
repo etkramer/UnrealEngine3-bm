@@ -240,13 +240,13 @@ simulated event FinishAnimControl()
 /** Handler for Matinee wanting to play FaceFX animations in the game. */
 simulated event bool PlayActorFaceFXAnim(FaceFXAnimSet AnimSet, String GroupName, String SeqName, SoundCue SoundCueToPlay )
 {
-	return SkeletalMeshComponent.PlayFaceFXAnim(AnimSet, SeqName, GroupName, SoundCueToPlay);
+	return HeadMesh.PlayFaceFXAnim(AnimSet, SeqName, GroupName, SoundCueToPlay);
 }
 
 /** Handler for Matinee wanting to stop FaceFX animations in the game. */
 simulated event StopActorFaceFXAnim()
 {
-	SkeletalMeshComponent.StopFaceFXAnim();
+	HeadMesh.StopFaceFXAnim();
 }
 
 /** Used to let FaceFX know what component to play dialogue audio on. */
@@ -260,7 +260,7 @@ simulated function OnPlayFaceFXAnim(SeqAct_PlayFaceFXAnim inAction)
 {
 	local PlayerController PC;
 
-	SkeletalMeshComponent.PlayFaceFXAnim(inAction.FaceFXAnimSetRef, inAction.FaceFXAnimName, inAction.FaceFXGroupName, inAction.SoundCueToPlay);
+	HeadMesh.PlayFaceFXAnim(inAction.FaceFXAnimSetRef, inAction.FaceFXAnimName, inAction.FaceFXGroupName, inAction.SoundCueToPlay);
 
 	// tell non-local players to play as well
 	foreach WorldInfo.AllControllers(class'PlayerController', PC)
@@ -275,9 +275,9 @@ simulated function OnPlayFaceFXAnim(SeqAct_PlayFaceFXAnim inAction)
 /** Used by Matinee in-game to mount FaceFXAnimSets before playing animations. */
 simulated event FaceFXAsset GetActorFaceFXAsset()
 {
-	if(SkeletalMeshComponent.SkeletalMesh != None)
+	if(HeadMesh.SkeletalMesh != None)
 	{
-		return SkeletalMeshComponent.SkeletalMesh.FaceFXAsset;
+		return HeadMesh.SkeletalMesh.FaceFXAsset;
 	}
 	else
 	{
@@ -290,7 +290,7 @@ simulated event FaceFXAsset GetActorFaceFXAsset()
  */
 simulated function bool IsActorPlayingFaceFXAnim()
 {
-	return (SkeletalMeshComponent != None && SkeletalMeshComponent.IsPlayingFaceFXAnim());
+	return (HeadMesh != None && HeadMesh.IsPlayingFaceFXAnim());
 }
 
 
