@@ -1,4 +1,5 @@
-class RCinematicCameraActor extends CameraActor;
+class RCinematicCameraActor extends CameraActor
+    placeable;
 
 var transient array<AnimSet> AnimSets;
 var() Actor RelativeTo;
