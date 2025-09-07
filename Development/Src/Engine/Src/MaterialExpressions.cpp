@@ -62,7 +62,9 @@ IMPLEMENT_CLASS(UMaterialExpressionLensFlareOcclusion);
 IMPLEMENT_CLASS(UMaterialExpressionLensFlareRadialDistance);
 IMPLEMENT_CLASS(UMaterialExpressionLensFlareRayDistance);
 IMPLEMENT_CLASS(UMaterialExpressionLensFlareSourceDistance);
+IMPLEMENT_CLASS(UMaterialExpressionLightingDiffuseLambert);
 IMPLEMENT_CLASS(UMaterialExpressionLightingSpecularBlinnPhong);
+IMPLEMENT_CLASS(UMaterialExpressionLightingSpecularHeidrichSeidel);
 IMPLEMENT_CLASS(UMaterialExpressionLightingSpecularPhong);
 IMPLEMENT_CLASS(UMaterialExpressionLightVector);
 IMPLEMENT_CLASS(UMaterialExpressionScreenPosition);
@@ -2715,10 +2717,23 @@ FString UMaterialExpressionLensFlareSourceDistance::GetCaption() const
 }
 
 // BM1
+INT UMaterialExpressionLightingDiffuseLambert::Compile(FMaterialCompiler* Compiler)
+{
+	// TODO: Implement Lambert model
+	return Compiler->Constant3(0, 0, 0);
+}
+
+// BM1
+FString UMaterialExpressionLightingDiffuseLambert::GetCaption() const
+{
+	return TEXT("Lighting Diffuse Lambert");
+}
+
+// BM1
 INT UMaterialExpressionLightingSpecularBlinnPhong::Compile(FMaterialCompiler* Compiler)
 {
 	// TODO: Implement Blinn-Phong model
-	return Compiler->Constant3(1, 1, 1);
+	return Compiler->Constant3(0, 0, 0);
 }
 
 // BM1
@@ -2728,10 +2743,23 @@ FString UMaterialExpressionLightingSpecularBlinnPhong::GetCaption() const
 }
 
 // BM1
+INT UMaterialExpressionLightingSpecularHeidrichSeidel::Compile(FMaterialCompiler* Compiler)
+{
+	// TODO: Implement Heidrich-Seidel model
+	return Compiler->Constant3(0, 0, 0);
+}
+
+// BM1
+FString UMaterialExpressionLightingSpecularHeidrichSeidel::GetCaption() const
+{
+	return TEXT("Lighting Specular Heidrich-Seidel");
+}
+
+// BM1
 INT UMaterialExpressionLightingSpecularPhong::Compile(FMaterialCompiler* Compiler)
 {
 	// TODO: Implement Phong model
-	return Compiler->Constant3(1, 1, 1);
+	return Compiler->Constant3(0, 0, 0);
 }
 
 // BM1

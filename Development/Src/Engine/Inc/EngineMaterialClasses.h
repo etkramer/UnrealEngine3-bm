@@ -1072,6 +1072,25 @@ public:
 	virtual INT GetLabelPadding() { return 8; }
 };
 
+class UMaterialExpressionLightingDiffuseLambert : public UMaterialExpression
+{
+public:
+    //## BEGIN PROPS MaterialExpressionLightingDiffuseLambert
+    FExpressionInput Power;
+    FExpressionInput PowerMin;
+    FExpressionInput PowerMax;
+    FExpressionInput FresnelStraight;
+    FExpressionInput FresnelGlancing;
+    FExpressionInput FresnelPower;
+    FExpressionInput Colour;
+    class UTexture* Lookup;
+    //## END PROPS MaterialExpressionLightingDiffuseLambert
+
+    DECLARE_CLASS(UMaterialExpressionLightingDiffuseLambert,UMaterialExpression,0,Engine)
+	virtual INT Compile(FMaterialCompiler* Compiler);
+	virtual FString GetCaption() const;
+};
+
 class UMaterialExpressionLightingSpecularBlinnPhong : public UMaterialExpression
 {
 public:
@@ -1090,6 +1109,29 @@ public:
     //## END PROPS MaterialExpressionLightingSpecularBlinnPhong
 
     DECLARE_CLASS(UMaterialExpressionLightingSpecularBlinnPhong,UMaterialExpression,0,Engine)
+	virtual INT Compile(FMaterialCompiler* Compiler);
+	virtual FString GetCaption() const;
+};
+
+class UMaterialExpressionLightingSpecularHeidrichSeidel : public UMaterialExpression
+{
+public:
+    //## BEGIN PROPS MaterialExpressionLightingSpecularHeidrichSeidel
+    FExpressionInput Power;
+    FExpressionInput PowerMin;
+    FExpressionInput PowerMax;
+    FExpressionInput FresnelPower;
+    FExpressionInput FresnelStraight;
+    FExpressionInput FresnelGlancing;
+    FExpressionInput FalloffPower;
+    FExpressionInput FalloffStraight;
+    FExpressionInput FalloffGlancing;
+    FExpressionInput Colour;
+    class UTexture* Lookup;
+    BITFIELD UseAccurateTangent:1;
+    //## END PROPS MaterialExpressionLightingSpecularHeidrichSeidel
+
+    DECLARE_CLASS(UMaterialExpressionLightingSpecularHeidrichSeidel,UMaterialExpression,0,Engine)
 	virtual INT Compile(FMaterialCompiler* Compiler);
 	virtual FString GetCaption() const;
 };
@@ -2420,7 +2462,9 @@ DECLARE_NATIVE_TYPE(Engine,UMaterialExpressionLensFlareOcclusion);
 DECLARE_NATIVE_TYPE(Engine,UMaterialExpressionLensFlareRadialDistance);
 DECLARE_NATIVE_TYPE(Engine,UMaterialExpressionLensFlareRayDistance);
 DECLARE_NATIVE_TYPE(Engine,UMaterialExpressionLensFlareSourceDistance);
+DECLARE_NATIVE_TYPE(Engine,UMaterialExpressionLightingDiffuseLambert);
 DECLARE_NATIVE_TYPE(Engine,UMaterialExpressionLightingSpecularBlinnPhong);
+DECLARE_NATIVE_TYPE(Engine,UMaterialExpressionLightingSpecularHeidrichSeidel);
 DECLARE_NATIVE_TYPE(Engine,UMaterialExpressionLightingSpecularPhong);
 DECLARE_NATIVE_TYPE(Engine,UMaterialExpressionLightVector);
 DECLARE_NATIVE_TYPE(Engine,UMaterialExpressionLinearInterpolate);
@@ -2505,7 +2549,9 @@ DECLARE_NATIVE_TYPE(Engine,UMaterialInstanceTimeVarying);
 	UMaterialExpressionLensFlareRadialDistance::StaticClass(); \
 	UMaterialExpressionLensFlareRayDistance::StaticClass(); \
 	UMaterialExpressionLensFlareSourceDistance::StaticClass(); \
+	UMaterialExpressionLightingDiffuseLambert::StaticClass(); \
 	UMaterialExpressionLightingSpecularBlinnPhong::StaticClass(); \
+	UMaterialExpressionLightingSpecularHeidrichSeidel::StaticClass(); \
 	UMaterialExpressionLightingSpecularPhong::StaticClass(); \
 	UMaterialExpressionLightVector::StaticClass(); \
 	UMaterialExpressionLinearInterpolate::StaticClass(); \
@@ -2697,9 +2743,15 @@ VERIFY_CLASS_SIZE_NODIE(UMaterialExpressionLensFlareOcclusion)
 VERIFY_CLASS_SIZE_NODIE(UMaterialExpressionLensFlareRadialDistance)
 VERIFY_CLASS_SIZE_NODIE(UMaterialExpressionLensFlareRayDistance)
 VERIFY_CLASS_SIZE_NODIE(UMaterialExpressionLensFlareSourceDistance)
+VERIFY_CLASS_OFFSET_NODIE(U,MaterialExpressionLightingDiffuseLambert,Power)
+VERIFY_CLASS_OFFSET_NODIE(U,MaterialExpressionLightingDiffuseLambert,Lookup)
+VERIFY_CLASS_SIZE_NODIE(UMaterialExpressionLightingDiffuseLambert)
 VERIFY_CLASS_OFFSET_NODIE(U,MaterialExpressionLightingSpecularBlinnPhong,Power)
 VERIFY_CLASS_OFFSET_NODIE(U,MaterialExpressionLightingSpecularBlinnPhong,Lookup)
 VERIFY_CLASS_SIZE_NODIE(UMaterialExpressionLightingSpecularBlinnPhong)
+VERIFY_CLASS_OFFSET_NODIE(U,MaterialExpressionLightingSpecularHeidrichSeidel,Power)
+VERIFY_CLASS_OFFSET_NODIE(U,MaterialExpressionLightingSpecularHeidrichSeidel,Lookup)
+VERIFY_CLASS_SIZE_NODIE(UMaterialExpressionLightingSpecularHeidrichSeidel)
 VERIFY_CLASS_OFFSET_NODIE(U,MaterialExpressionLightingSpecularPhong,Power)
 VERIFY_CLASS_OFFSET_NODIE(U,MaterialExpressionLightingSpecularPhong,Lookup)
 VERIFY_CLASS_SIZE_NODIE(UMaterialExpressionLightingSpecularPhong)
