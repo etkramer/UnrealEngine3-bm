@@ -249,7 +249,7 @@ FArchive& operator<<(FArchive& Ar,FPositionVertexBuffer& VertexBuffer)
 	
 #if BATMAN
 	// https://github.com/gildor2/UEViewer/blob/a0bfb468d42be831b126632fd8a0ae6b3614f981/Unreal/UnrealMesh/UnMesh3.cpp#L2677
-	if (Ar.IsBmCooked())
+	if (Ar.IsBmCooked(TRUE))
 	{
 		Ar << VertexBuffer.bNeedsCPUAccess;
 	}
@@ -1335,7 +1335,7 @@ void UStaticMesh::Serialize(FArchive& Ar)
 	}
 
 #if BATMAN
-	if ( Ar.IsBmCooked() )
+	if ( Ar.IsBmCooked(TRUE) )
 	{
 		Ar << ForceShadowVolumes;
 	}

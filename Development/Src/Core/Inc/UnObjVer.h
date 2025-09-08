@@ -273,9 +273,13 @@
 // - Delete var - SkelControlBase: ControlPosX, ControlPosY, MaterialExpression: EditorX, EditorY
 #define VER_DEPRECATED_EDITOR_POSITION					576
 
+//  20
+// - Fake/unused version for packages produced by the editor
+#define VER_BATMAN_EDITOR									20
+
 //  21
 // - BM1 release
-#define VER_BATMAN1												21
+#define VER_BATMAN1											21
 
 // !!
 // !! NOTE: when adding a new version, change the VER_LATEST_ENGINE macro below. This will avoid needing to change UnObjVer.cpp. 
@@ -284,7 +288,7 @@
 // !! WARNING: other places should modify VER_LATEST_ENGINE_LICENSEE instead.
 // !!
 #define VER_LATEST_ENGINE									VER_DEPRECATED_EDITOR_POSITION
-#define VER_LATEST_ENGINE_LICENSEE							0
+#define VER_LATEST_ENGINE_LICENSEE							VER_BATMAN_EDITOR
 
 // Cooked packages loaded with an older package version are recooked
 #define VER_LATEST_COOKED_PACKAGE							87
