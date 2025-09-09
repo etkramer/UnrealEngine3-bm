@@ -340,8 +340,7 @@ struct FLightingChannelContainer
 			BITFIELD Unnamed_2:1;
 			BITFIELD Unnamed_3:1;
 			BITFIELD Unnamed_4:1;
-			BITFIELD Unnamed_5:1;
-			BITFIELD Unnamed_6:1;
+			BITFIELD PhysXDestruction:1;
 			BITFIELD Cinematic_1:1;
 			BITFIELD Cinematic_2:1;
 			BITFIELD Cinematic_3:1;
@@ -355,8 +354,14 @@ struct FLightingChannelContainer
 			BITFIELD Gameplay_1:1;
 			BITFIELD Gameplay_2:1;
 			BITFIELD Gameplay_3:1;
-			BITFIELD Gameplay_4:1;
+			BITFIELD PhysXEffects:1;
 			BITFIELD Crowd:1;
+			BITFIELD Plant:1;
+			BITFIELD Prop:1;
+			BITFIELD Character:1;
+			BITFIELD CinematicExclusive_1:1;
+			BITFIELD CinematicExclusive_2:1;
+			BITFIELD TVExclusive:1;
 		};
 		DWORD Bitfield;
 	};

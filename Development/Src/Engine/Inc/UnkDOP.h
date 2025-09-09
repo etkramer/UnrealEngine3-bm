@@ -1150,6 +1150,15 @@ template<typename COLL_DATA_PROVIDER, typename KDOP_IDX_TYPE> struct TkDOPTree
 	{
 		UBOOL bHit = FALSE;
 		FLOAT HitTime;
+
+#if BATMAN
+		// BM1: This is empty sometimes, causing lighting builds to crash.
+		if (Nodes.Num() == 0)
+		{
+			return FALSE;
+		}
+#endif
+
 		// Check against the first bounding volume and decide whether to go further
 		if (Nodes(0).BoundingVolume.LineCheck(Check,HitTime))
 		{
