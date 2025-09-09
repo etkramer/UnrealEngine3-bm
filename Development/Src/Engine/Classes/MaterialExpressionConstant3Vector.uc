@@ -6,6 +6,7 @@ class MaterialExpressionConstant3Vector extends MaterialExpression
 	collapsecategories
 	hidecategories(Object);
 
+var const LinearColor Colour;
 var() float	R,
 			G,
 			B;
@@ -14,6 +15,7 @@ cpptext
 {
 	virtual INT Compile(FMaterialCompiler* Compiler);
 	virtual FString GetCaption() const;
+	virtual void Serialize(FArchive& Ar);
 }
 
 defaultproperties

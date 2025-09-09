@@ -17,7 +17,7 @@ struct ExpressionInput
 };
 
 /** This variable is conlficting with Materia var, making new ones (MaterialExpressionEditor), and then deprecating this **/
-var deprecated int	EditorX,
+var editoronly int	EditorX,
 					EditorY;
 
 var editoronly int		MaterialExpressionEditorX,

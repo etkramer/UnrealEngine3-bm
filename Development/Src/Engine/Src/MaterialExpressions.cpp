@@ -1024,6 +1024,22 @@ FString UMaterialExpressionConstant3Vector::GetCaption() const
 	return FString::Printf( TEXT("%.3g,%.3g,%.3g"), R, G, B );
 }
 
+#if BATMAN
+void UMaterialExpressionConstant3Vector::Serialize(FArchive& Ar)
+{
+	Super::Serialize(Ar);
+
+	// BM1: Populate Colour field based on editor R/G/B values
+	if (Ar.IsBmCooked(TRUE))
+	{
+		Colour.R = R;
+		Colour.G = G;
+		Colour.B = B;
+		Colour.A = 1.0f;
+	}
+}
+#endif
+
 //
 //	UMaterialExpressionConstant4Vector::Compile
 //
