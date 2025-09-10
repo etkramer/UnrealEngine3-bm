@@ -308,8 +308,8 @@ defaultproperties
 	LightShadowMode=LightShadow_Normal
 	ModShadowFadeoutExponent=3.0
 	// default to PCF shadow projection
-	ShadowProjectionTechnique=ShadowProjTech_BPCF_High
-	ShadowFilterQuality=SFQ_High
+	ShadowProjectionTechnique=ShadowProjTech_Default
+	ShadowFilterQuality=SFQ_Low
 }
 
 
