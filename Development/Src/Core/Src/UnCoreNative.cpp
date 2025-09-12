@@ -728,6 +728,14 @@ void* UPackage::GetExport( const TCHAR* ExportName, UBOOL Checked ) const
  */
 void UPackage::SetDirtyFlag( UBOOL bIsDirty )
 {
+#if BATMAN
+	// BM1: Never allow cooked packages to be marked dirty
+	if ( IsBmCooked() )
+	{
+		return;
+	}
+#endif
+
 	if ( GetOutermost() != GetTransientPackage() )
 	{
 		if ( GUndo != NULL
@@ -856,6 +864,57 @@ void UPackage::PatchNetObjectList( INT NewNumNetObjects )
 		GenerationNetObjectCount.Last() += NumToAdd;
 	}
 }
+
+#if BATMAN
+
+// BM1
+UBOOL UPackage::IsBmCooked(UBOOL IncludeEditor) const
+{
+	ULinkerLoad* Linker = GetBaseLinker();
+	if (Linker)
+	{
+		return Linker->IsBmCooked(IncludeEditor);
+	}
+
+	return FALSE;
+}
+
+// BM1
+UPackage* UPackage::GetBasePackage() const
+{
+	ULinkerLoad* Linker = GetBaseLinker();
+	if (Linker)
+	{
+		return Linker->LinkerRoot;
+	}
+
+	return NULL;
+}
+
+// BM1
+ULinkerLoad* UPackage::GetBaseLinker() const
+{
+	FName BasePackageName = ForcedExportBasePackageName;
+
+	// Map packages don't set ForcedExportBasePackageName.
+	if (ContainsMap() && BasePackageName == NAME_None)
+	{
+		BasePackageName = GetFName();
+	}
+
+	if (BasePackageName != NAME_None)
+	{
+		ULinkerLoad* Linker = UObject::GetPackageLinker(NULL, *BasePackageName.ToString(), LOAD_Quiet | LOAD_NoWarn | LOAD_NoVerify, NULL, NULL);
+		if (Linker)
+		{
+			return Linker;
+		}
+	}
+
+	return GetLinker();
+}
+
+#endif
 
 
 /** adds an object to the NetObjects list

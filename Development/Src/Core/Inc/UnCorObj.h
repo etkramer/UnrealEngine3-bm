@@ -332,6 +332,12 @@ public:
 		return CurrentNumNetObjects;
 	}
 
+#if BATMAN
+	UBOOL IsBmCooked(UBOOL IncludeEditor = FALSE) const;
+	UPackage* GetBasePackage() const;
+	ULinkerLoad* GetBaseLinker() const;
+#endif
+
 	///////////////////////////////////////////////////////////////////////////
 	// SCC functions
 

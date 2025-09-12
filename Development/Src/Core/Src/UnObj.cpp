@@ -5856,7 +5856,11 @@ ULinkerLoad* UObject::GetPackageLinker
 		if( !Result )
 		{
 			//@script patcher: moved from top of function
+#if BATMAN
+			// BM1: We sometimes fail this check when loading base packages
+#else
 			check(GObjBeginLoadCount);
+#endif
 
 			// we will already have found the filename above
 			check(NewFilename.Len() > 0);

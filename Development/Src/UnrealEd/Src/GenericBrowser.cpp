@@ -5325,6 +5325,15 @@ void WxGBLeftContainer::UpdateTreeViewPackageItem(const wxTreeItemId &Item)
 
 	Package = Package->GetOuter() == NULL ? Package : Package->GetOutermost();
 
+#if BATMAN
+	// BM1: Show lock icon on cooked packages
+	if (Package->IsBmCooked())
+	{
+		TreeCtrl->SetItemImage(Item, GBTCI_SCC_ReadOnly, wxTreeItemIcon_Normal);
+		TreeCtrl->SetItemImage(Item, GBTCI_SCC_ReadOnly, wxTreeItemIcon_Selected);
+	}
+#endif
+
 	TreeCtrl->SetItemText(Item, *PackageName);
 
 	// Mark any packages the user has checked out in bold.
@@ -5461,6 +5470,18 @@ void WxGBLeftContainer::UpdateTree()
 			FString PackageName = Package->GetName();
 			FString FolderName;
 			wxTreeItemId *FolderItem = NULL;
+
+#if BATMAN
+			// BM1: Use cooked package file name as folder name
+			if (Package->IsBmCooked())
+			{
+				ULinkerLoad* Linker = Package->GetBaseLinker();
+
+				// Remove leading underscore if used.
+				FString FileName = FFilename(Linker->Filename).GetCleanFilename();
+				Package->FolderName = FName(FileName.StartsWith("_") ? (*FileName + 1) : *FileName, EFindName::FNAME_Add);
+			}
+#endif
 
 			Package->GetFolderName().ToString(FolderName);
 

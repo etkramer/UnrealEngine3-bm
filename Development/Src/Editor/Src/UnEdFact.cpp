@@ -5066,6 +5066,11 @@ UObject* UTextureFactory::FactoryCreateBinary
 
 	UTexture2D* Texture = CreateTexture( Class, InParent, Name, Flags );
 
+#if BATMAN
+	// BM1: Disable texture streaming for newly-created textures (so they won't require .tfcs in-game)
+	Texture->NeverStream = TRUE;
+#endif
+
 	const FTGAFileHeader*    TGA   = (FTGAFileHeader *)Buffer;
 	const FPCXFileHeader*    PCX   = (FPCXFileHeader *)Buffer;
 	const FBitmapFileHeader* bmf   = (FBitmapFileHeader *)(Buffer + 0);
