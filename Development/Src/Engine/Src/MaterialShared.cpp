@@ -3025,12 +3025,12 @@ public:
 
 	/**
 	* Generate shader code for transforming a vector
-	*
-	* @param	CoordType - type of transform to apply. see EMaterialVectorCoordTransform 
-	* @param	A - index for input vector parameter's code
 	*/
-	virtual INT TransformVector(BYTE CoordType,INT A)
+	virtual INT TransformVector(BYTE SourceCoordType,BYTE DestCoordType,INT A)
 	{
+		const EMaterialVectorCoordTransformSource SourceCoordinateSpace = (EMaterialVectorCoordTransformSource)SourceCoordType;
+		const EMaterialVectorCoordTransform DestinationCoordinateSpace = (EMaterialVectorCoordTransform)DestCoordType;
+
 		INT Result = INDEX_NONE;
 		if(A != INDEX_NONE)
 		{
@@ -3040,31 +3040,77 @@ public:
 			{
 				Result = Errorf(TEXT("input must be a vector (%s: %s)"),GetParameterCode(A),DescribeType(GetParameterType(A)));
 			}
-			else
+			else if (SourceCoordinateSpace == TRANSFORMSOURCE_World && DestinationCoordinateSpace == TRANSFORM_World
+				|| SourceCoordinateSpace == TRANSFORMSOURCE_Local && DestinationCoordinateSpace == TRANSFORM_Local
+				|| SourceCoordinateSpace == TRANSFORMSOURCE_Tangent && DestinationCoordinateSpace == TRANSFORM_Tangent)
+			{
+				Result = Errorf(TEXT("Source and Destination coordinate spaces must be different"));
+			}
+			else 
 			{
 				// code string to transform the input vector
 				FString CodeStr;
-				switch( CoordType )
+				if (SourceCoordinateSpace == TRANSFORMSOURCE_Tangent)
 				{
-				case TRANSFORM_World:
-					// transform from tangent to world space
-					Material->UsingTransforms |= UsedCoord_World;
-					CodeStr = FString(TEXT("TransformTangentVectorToWorld(Parameters,%s)"));
-					break;
-				case TRANSFORM_View:
-					// transform from tangent to view space
-					Material->UsingTransforms |= UsedCoord_View;
-					CodeStr = FString(TEXT("TransformTangentVectorToView(Parameters,%s)"));
-					break;
-				case TRANSFORM_Local:
-					// transform from tangent to local space
-					Material->UsingTransforms |= UsedCoord_Local;
-					CodeStr = FString(TEXT("TransformTangentVectorToLocal(Parameters,%s)"));
-					break;
-				default:
-					appErrorf( TEXT("Invalid CoordType. See EMaterialVectorCoordTransform") );
+					switch( DestinationCoordinateSpace )
+					{
+					case TRANSFORM_Local:
+						// transform from tangent to local space
+						CodeStr = FString(TEXT("TransformTangentVectorToLocal(Parameters,%s)"));
+						break;
+					case TRANSFORM_World:
+						// transform from tangent to world space
+						CodeStr = FString(TEXT("TransformTangentVectorToWorld(Parameters,%s)"));
+						break;
+					case TRANSFORM_View:
+						// transform from tangent to view space
+						CodeStr = FString(TEXT("TransformTangentVectorToView(Parameters,%s)"));
+						break;
+					default:
+						appErrorf( TEXT("Invalid DestCoordType. See EMaterialVectorCoordTransform") );
+					}
+				}
+				else if (SourceCoordinateSpace == TRANSFORMSOURCE_Local)
+				{
+					switch( DestinationCoordinateSpace )
+					{
+					case TRANSFORM_Tangent:
+						CodeStr = FString(TEXT("TransformLocalVectorToTangent(Parameters,%s)"));
+						break;
+					case TRANSFORM_World:
+						CodeStr = FString(TEXT("TransformLocalVectorToWorld(%s)"));
+						break;
+					case TRANSFORM_View:
+						CodeStr = FString(TEXT("TransformLocalVectorToView(%s)"));
+						break;
+					default:
+						appErrorf( TEXT("Invalid DestCoordType. See EMaterialVectorCoordTransform") );
+					}
+				}
+				else if (SourceCoordinateSpace == TRANSFORMSOURCE_World)
+				{
+					switch( DestinationCoordinateSpace )
+					{
+					case TRANSFORM_Tangent:
+						CodeStr = FString(TEXT("TransformWorldVectorToTangent(Parameters,%s)"));
+						break;
+					case TRANSFORM_Local:
+						CodeStr = FString(TEXT("TransformWorldVectorToLocal(%s)"));
+						break;
+					case TRANSFORM_View:
+						CodeStr = FString(TEXT("TransformWorldVectorToView(%s)"));
+						break;
+					default:
+						appErrorf( TEXT("Invalid DestCoordType. See EMaterialVectorCoordTransform") );
+					}
+				}
+				else
+				{
+					appErrorf( TEXT("Invalid SourceCoordType. See EMaterialVectorCoordTransformSource") );
 				}
 
+				Material->UsingTransforms |= UsedCoord_World;
+				
 				// we are only transforming vectors (not points) so only return a float3
 				Result = AddCodeChunk(
 					MCT_Float3,

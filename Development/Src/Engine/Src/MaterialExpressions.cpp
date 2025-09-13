@@ -3145,7 +3145,7 @@ INT UMaterialExpressionTransform::Compile(FMaterialCompiler* Compiler)
 	else
 	{
 		INT VecInputIdx = Input.Compile(Compiler);
-		Result = Compiler->TransformVector( TransformType, VecInputIdx );
+		Result = Compiler->TransformVector( TransformSourceType, TransformType, VecInputIdx );
 	}
 
 	return Result;

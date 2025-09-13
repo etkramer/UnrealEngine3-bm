@@ -27,7 +27,15 @@ enum EMaterialVectorCoordTransform
     TRANSFORM_World         =0,
     TRANSFORM_View          =1,
     TRANSFORM_Local         =2,
-    TRANSFORM_MAX           =3,
+    TRANSFORM_Tangent       =3,
+    TRANSFORM_MAX           =4,
+};
+enum EMaterialVectorCoordTransformSource
+{
+    TRANSFORMSOURCE_World   =0,
+    TRANSFORMSOURCE_Local   =1,
+    TRANSFORMSOURCE_Tangent =2,
+    TRANSFORMSOURCE_MAX     =3,
 };
 enum EMaterialPositionTransform
 {
@@ -1815,6 +1823,7 @@ class UMaterialExpressionTransform : public UMaterialExpression
 public:
     //## BEGIN PROPS MaterialExpressionTransform
     FExpressionInput Input;
+    BYTE TransformSourceType;
     BYTE TransformType;
     //## END PROPS MaterialExpressionTransform
 

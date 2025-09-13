@@ -228,7 +228,7 @@ struct FMaterialCompiler
 
 	virtual INT ComponentMask(INT Vector,UBOOL R,UBOOL G,UBOOL B,UBOOL A) = 0;
 	virtual INT AppendVector(INT A,INT B) = 0;
-	virtual INT TransformVector(BYTE CoordType,INT A) = 0;
+	virtual INT TransformVector(BYTE SourceCoordType,BYTE DestCoordType,INT A) = 0;
 	virtual INT TransformPosition(BYTE CoordType,INT A) = 0;
 
 	virtual INT LensFlareIntesity() = 0;
@@ -327,7 +327,7 @@ struct FProxyMaterialCompiler: FMaterialCompiler
 
 	virtual INT ComponentMask(INT Vector,UBOOL R,UBOOL G,UBOOL B,UBOOL A) { return Compiler->ComponentMask(Vector,R,G,B,A); }
 	virtual INT AppendVector(INT A,INT B) { return Compiler->AppendVector(A,B); }
-	virtual INT TransformVector(BYTE CoordType,INT A) { return Compiler->TransformVector(CoordType,A); }
+	virtual INT TransformVector(BYTE SourceCoordType,BYTE DestCoordType,INT A) { return Compiler->TransformVector(SourceCoordType,DestCoordType,A); }
 	virtual INT TransformPosition(BYTE CoordType,INT A) { return Compiler->TransformPosition(CoordType,A); }
 
 	virtual INT DynamicParameter() { return Compiler->DynamicParameter(); }

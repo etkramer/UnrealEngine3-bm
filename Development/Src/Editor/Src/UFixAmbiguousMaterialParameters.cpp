@@ -252,7 +252,7 @@ public:
 	{
 		return INDEX_NONE;
 	}
-	virtual INT TransformVector(BYTE CoordType,INT A)
+	virtual INT TransformVector(BYTE SourceCoordType,BYTE DestCoordType,INT A)
 	{
 		return INDEX_NONE;
 	}

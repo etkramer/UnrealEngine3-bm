@@ -9,16 +9,22 @@ class MaterialExpressionTransform extends MaterialExpression
 /** input expression for this transform */
 var ExpressionInput	Input;
 
-/** type of transform to apply to the input expression */
+/** Source coordinate space of the vector */
+var() const enum EMaterialVectorCoordTransformSource
+{
+	TRANSFORMSOURCE_World<DisplayName=World>,
+	TRANSFORMSOURCE_Local<DisplayName=Local>,
+	TRANSFORMSOURCE_Tangent<DisplayName=Tangent>
+} TransformSourceType<DisplayName=Source>;
+
+/** Destination coordinate space of the vector */
 var() const enum EMaterialVectorCoordTransform
 {
-	// transform from tangent space to world space
-	TRANSFORM_World,
-	// transform from tangent space to view space
-	TRANSFORM_View,
-	// transform from tangent space to local space
-	TRANSFORM_Local
-} TransformType;
+	TRANSFORM_World<DisplayName=World>,
+	TRANSFORM_View<DisplayName=View>,
+	TRANSFORM_Local<DisplayName=Local>,
+	TRANSFORM_Tangent<DisplayName=Tangent>
+} TransformType<DisplayName=Destination>;
 
 cpptext
 {
@@ -36,4 +42,5 @@ cpptext
 defaultproperties
 {
 	MenuCategories(0)="VectorOps"
+	TransformSourceType=TRANSFORMSOURCE_Tangent
 }
