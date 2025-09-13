@@ -274,7 +274,7 @@
 #define VER_DEPRECATED_EDITOR_POSITION					576
 
 //  20
-// - Fake/unused version for packages produced by the editor
+// - Fake/unused version for packages produced by the editor, now deprecated
 #define VER_BATMAN_EDITOR									20
 
 //  21
@@ -288,7 +288,7 @@
 // !! WARNING: other places should modify VER_LATEST_ENGINE_LICENSEE instead.
 // !!
 #define VER_LATEST_ENGINE									VER_DEPRECATED_EDITOR_POSITION
-#define VER_LATEST_ENGINE_LICENSEE							VER_BATMAN_EDITOR
+#define VER_LATEST_ENGINE_LICENSEE							VER_BATMAN1
 
 // Cooked packages loaded with an older package version are recooked
 #define VER_LATEST_COOKED_PACKAGE							87

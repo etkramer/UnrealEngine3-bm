@@ -294,7 +294,7 @@ public:
 	// BM1
 	UBOOL IsBmCooked(UBOOL IncludeEditor = FALSE) const
 	{
-		return LicenseeVer() >= (IncludeEditor ? VER_BATMAN_EDITOR : VER_BATMAN1);
+		return (LicenseeVer() >= VER_BATMAN_EDITOR) && (IncludeEditor || ArContainsCookedData);
 	}
 
 	/**
