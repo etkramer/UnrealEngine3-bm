@@ -10,7 +10,7 @@
     "version": "2.0.0",
     "tasks": [
       {
-        "label": "Build Editor",
+        "label": "Build Editor (Debug)",
         "type": "shell",
         "command": "${workspaceFolder}/Development/Build-Win11.cmd",
         "options": {
@@ -24,6 +24,23 @@
         "group": {
           "kind": "build",
           "isDefault": true
+        },
+        "problemMatcher": "$msCompile"
+      },
+      {
+        "label": "Build Editor (Release)",
+        "type": "shell",
+        "command": "${workspaceFolder}/Development/Build-Win11.cmd",
+        "options": {
+          "cwd": "${workspaceFolder}/Development"
+        },
+        "args": ["BmGame", "Release"],
+        "presentation": {
+          "echo": false,
+          "clear": true
+        },
+        "group": {
+          "kind": "build"
         },
         "problemMatcher": "$msCompile"
       }
@@ -70,7 +87,7 @@
           }
         ],
         "visualizerFile": "${workspaceFolder}/UE3.natvis",
-        "preLaunchTask": "Build Editor",
+        "preLaunchTask": "Build Editor (Debug)",
         "internalConsoleOptions": "openOnSessionStart",
         "logging": { "moduleLoad": false, "exceptions": false }
       }
