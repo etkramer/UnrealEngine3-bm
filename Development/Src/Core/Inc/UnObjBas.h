@@ -504,7 +504,7 @@ public:
 	FGuid()
 	{}
 	FGuid(FGuidImplementation InGuid)
-	: SmallGuid(InGuid.A)
+	: SmallGuid(InGuid.A ^ InGuid.B ^ InGuid.C ^ InGuid.D)
 	{}
 	FGuid( DWORD InA, DWORD InB, DWORD InC, DWORD InD )
 	: SmallGuid(InA ^ InB ^ InC ^ InD)

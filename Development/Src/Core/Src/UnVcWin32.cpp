@@ -662,11 +662,10 @@ void appCleanFileCache()
 //
 FGuid appCreateGuid()
 {
-	FGuid Result;
-	GUID FullGuid;
+	// BM1: FGuid is compacted down to 32-bits in BM1.
+	FGuidImplementation FullGuid;
 	CoCreateGuid( (GUID*)&FullGuid );
-	Result.SmallGuid = FullGuid.Data1;
-	return Result;
+	return FGuid(FullGuid);
 }
 
 /*-----------------------------------------------------------------------------
