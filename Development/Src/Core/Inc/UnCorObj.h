@@ -333,6 +333,7 @@ public:
 	}
 
 #if BATMAN
+	UBOOL IsGameCooked() const;
 	UBOOL IsBmCooked(UBOOL IncludeEditor = FALSE) const;
 	UPackage* GetBasePackage() const;
 	ULinkerLoad* GetBaseLinker() const;

@@ -5327,7 +5327,7 @@ void WxGBLeftContainer::UpdateTreeViewPackageItem(const wxTreeItemId &Item)
 
 #if BATMAN
 	// BM1: Show lock icon on cooked packages
-	if (Package->IsBmCooked())
+	if (Package->IsGameCooked())
 	{
 		TreeCtrl->SetItemImage(Item, GBTCI_SCC_ReadOnly, wxTreeItemIcon_Normal);
 		TreeCtrl->SetItemImage(Item, GBTCI_SCC_ReadOnly, wxTreeItemIcon_Selected);
@@ -5473,7 +5473,7 @@ void WxGBLeftContainer::UpdateTree()
 
 #if BATMAN
 			// BM1: Use cooked package file name as folder name
-			if (Package->IsBmCooked())
+			if (Package->IsGameCooked())
 			{
 				ULinkerLoad* Linker = Package->GetBaseLinker();
 
@@ -5627,7 +5627,7 @@ void WxGBLeftContainer::SyncToObject( UObject* InObject )
 void WxGBLeftContainer::GetSelectedPackages( TArray<UPackage*>* InPackages ) const
 {
 	InPackages->Empty();
-	
+
 #if BATMAN
 #else
 	// Cookie is necessary for iterating through the wxTreeControl

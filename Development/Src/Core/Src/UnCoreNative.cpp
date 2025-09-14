@@ -868,6 +868,18 @@ void UPackage::PatchNetObjectList( INT NewNumNetObjects )
 #if BATMAN
 
 // BM1
+UBOOL UPackage::IsGameCooked() const
+{
+	ULinkerLoad* Linker = GetBaseLinker();
+	if (Linker)
+	{
+		return Linker->IsGameCooked();
+	}
+
+	return FALSE;
+}
+
+// BM1
 UBOOL UPackage::IsBmCooked(UBOOL IncludeEditor) const
 {
 	ULinkerLoad* Linker = GetBaseLinker();

@@ -401,7 +401,7 @@ void ULevel::PostLoad()
 
 #if BATMAN
 	// Expand cooked collection actors on load
-	if (GIsEditor && GetLinker() && GetLinker()->IsBmCooked())
+	if (GIsEditor && GetLinker() && GetLinker()->IsGameCooked())
 	{
 		for (INT ActorIndex = 0; ActorIndex < Actors.Num(); ActorIndex++)
 		{

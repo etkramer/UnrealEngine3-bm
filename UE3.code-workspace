@@ -115,7 +115,7 @@
       "**/*.csproj": true,
 
       // Exclude per-user settings from search.
-      "BmGame/Config/Bm*.ini": true,
+      "BmGame/Config/Bm*.txt": true,
 
       // Exclude non-INT localizations from search.
       "Engine/Localization/CHT": true,

@@ -292,6 +292,12 @@ public:
 	FORCEINLINE INT GetMaxSerializeSize()					const	{return ArMaxSerializeSize;}
 
 	// BM1
+	UBOOL IsGameCooked() const
+	{
+		return IsBmCooked(FALSE) || Ver() <= 530;
+	}
+
+	// BM1
 	UBOOL IsBmCooked(UBOOL IncludeEditor = FALSE) const
 	{
 		return (LicenseeVer() >= VER_BATMAN_EDITOR) && (IncludeEditor || ArContainsCookedData);

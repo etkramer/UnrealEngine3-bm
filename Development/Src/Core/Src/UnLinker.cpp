@@ -3139,7 +3139,7 @@ UObject* ULinkerLoad::CreateExport( INT Index )
 
 #if BATMAN
 		// Don't load classes from BM packages
-		if (IsBmCooked() && Export.ClassIndex == UCLASS_INDEX)
+		if (IsGameCooked() && Export.ClassIndex == UCLASS_INDEX)
 		{
 			//warnf(TEXT("Skipped class export %d"), Index);
 			return NULL;
@@ -3156,6 +3156,16 @@ UObject* ULinkerLoad::CreateExport( INT Index )
 		{
 			LoadClass = UClass::StaticClass();
 		}
+
+#if BATMAN
+		UBOOL Is2007Cooked = IsGameCooked() && !IsBmCooked();
+
+		// Don't load textures from 2007 packages
+		if (Is2007Cooked && (LoadClass->GetName() == TEXT("Texture2D") || LoadClass->GetName() == TEXT("ParticleSystem")))
+		{
+			return NULL;
+		}
+#endif
 
 #if SUPPORTS_SCRIPTPATCH_CREATION
 		//@script patcher: when running the patch commandlet, we'll have multiple versions of native classes in memory, but only the first will
@@ -3252,7 +3262,7 @@ UObject* ULinkerLoad::CreateExport( INT Index )
 			if ( GIsEditor && !GIsUCC )
 			{
 #if BATMAN
-				if (IsBmCooked())
+				if (IsGameCooked())
 				{
 					// We expect this to happen a lot, and EdLoadErrorf is very slow...
 				}
@@ -3517,7 +3527,7 @@ UObject* ULinkerLoad::CreateImport( INT Index )
 		||	GIsScriptPatcherActive
 #endif
 #if BATMAN
-		|| IsBmCooked()
+		|| IsGameCooked()
 #endif
 			)
 		{
