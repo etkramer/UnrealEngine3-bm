@@ -1,8 +1,6 @@
 # Content files
 /Binaries/*
 /Engine/*
-/GearGame/*
-/BmGame/*
 /Development/External/GFx/*
 !**/MISSING_FILES.txt
 
