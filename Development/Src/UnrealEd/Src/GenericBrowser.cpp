@@ -5628,8 +5628,11 @@ void WxGBLeftContainer::GetSelectedPackages( TArray<UPackage*>* InPackages ) con
 {
 	InPackages->Empty();
 	
+#if BATMAN
+#else
 	// Cookie is necessary for iterating through the wxTreeControl
 	wxTreeItemIdValue Cookie;
+#endif
 
 	wxArrayTreeItemIds tids;
 	TreeCtrl->GetSelections( tids );
@@ -5648,6 +5651,9 @@ void WxGBLeftContainer::GetSelectedPackages( TArray<UPackage*>* InPackages ) con
 					InPackages->AddUniqueItem( ItemData->GetObjectChecked<UPackage>() );
 				}
 			}
+#if BATMAN
+			// BM1: Don't show the contents of selected folders (these can be pretty big)
+#else
 			else // We are probably on a folder
 			{
 				// Iterate over all the children in the folder and add them to out list of selected packages
@@ -5663,6 +5669,7 @@ void WxGBLeftContainer::GetSelectedPackages( TArray<UPackage*>* InPackages ) con
 					PackageId = TreeCtrl->GetNextChild(tids[x], Cookie);
 				}
 			}
+#endif
 		}
 	}
 
@@ -7571,7 +7578,11 @@ UBOOL WxGBRightContainer::InputKey(FViewport* Viewport,INT ControllerId,FName Ke
 
 			if( bSelectionChanged )
 			{
+#if BATMAN
+				// BM1: Merged preview/thumbnails view
+#else
 				if ( ViewMode == RVM_Preview )
+#endif
 				{
 					UpdateList();
 				}
@@ -7742,6 +7753,11 @@ void WxGBRightContainer::Draw( FViewport* Viewport, FCanvas* Canvas )
 						bd->GetZoomFactor(),Width,Height);
 				}
 
+#if BATMAN
+				// BM1: Force square thumbnails
+				Width = Height;
+#endif
+
 				// This is the object that will render the labels
 				UThumbnailLabelRenderer* LabelRenderer = RenderInfo->LabelRenderer;
 
@@ -7771,7 +7787,13 @@ void WxGBRightContainer::Draw( FViewport* Viewport, FCanvas* Canvas )
 						GEngine->SmallFont,Viewport,Canvas, ThumbnailOptions, LabelsWidth,
 						LabelsHeight);
 				}
+#if BATMAN
+				// BM1: Force square thumbnails
+				const DWORD MaxWidth = Width;
+				LabelsHeight = 34;
+#else
 				const DWORD MaxWidth = Max<DWORD>(Width,LabelsWidth);
+#endif
 
 				// If this thumbnail is too large for the current line, move to the next line.
 				if( XPos + MaxWidth > Viewport->GetSizeX() )
@@ -7876,7 +7898,12 @@ const TArray<UObject*>& WxGBRightContainer::GetVisibleObjects(void)
 		VisibleObjects.Empty();
 		FilteredObjects.Empty();
 
+#if BATMAN
+		// BM1: Merged preview/thumbnails view
+		if( ViewMode == RVM_Thumbnail || ViewMode == RVM_Preview )
+#else
 		if( ViewMode == RVM_Thumbnail )
+#endif
 		{
 			if( GenericBrowser )
 			{
@@ -7894,8 +7921,13 @@ const TArray<UObject*>& WxGBRightContainer::GetVisibleObjects(void)
 			}
 		}
 	}
+#if BATMAN
+	// BM1: Merged preview/thumbnails view
+	return VisibleObjects;
+#else
 	// Return the set to draw based upon our view mode
 	return ViewMode == RVM_Thumbnail ? VisibleObjects : FilteredObjects;
+#endif
 }
 
 /**

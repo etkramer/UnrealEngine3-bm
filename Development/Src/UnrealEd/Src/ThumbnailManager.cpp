@@ -353,6 +353,15 @@ void UThumbnailLabelRenderer::DrawLabels(const TArray<FString>& Labels,
 	check(Canvas && Font);
 	if (Labels.Num() > 0)
 	{
+#if BATMAN
+		// BM1: Limit object labels to 2 lines
+		while (Labels.Num() > 2)
+		{
+			TArray<FString>& LabelsNonConst = *(TArray<FString>*)&Labels;
+			LabelsNonConst.Pop();
+		}
+#endif
+
 		// Shift the text a touch down
 		Y += STD_TNAIL_HIGHLIGHT_EDGE / 2;
 		INT Ignored, LabelHeight;

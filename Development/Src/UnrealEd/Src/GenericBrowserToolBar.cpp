@@ -58,12 +58,16 @@ WxGBViewToolBar::WxGBViewToolBar( wxWindow* InParent, wxWindowID InID )
 	wxString DummyChoices[1];
 	ViewCB = new WxGBViewComboBox( this, DummyChoices );
 
+#if BATMAN
+	// BM1: Force square thumbnails
+#else
 	ViewCB->Append( TEXT("300%") );
 	ViewCB->Append( TEXT("200%") );
 	ViewCB->Append( TEXT("100%") );
 	ViewCB->Append( TEXT("50%") );
 	ViewCB->Append( TEXT("25%") );
 	ViewCB->Append( TEXT("10%") );
+#endif
 	ViewCB->Append( *LocalizeUnrealEd("64x64") );
 	ViewCB->Append( *LocalizeUnrealEd("128x128") );
 	ViewCB->Append( *LocalizeUnrealEd("256x256") );
@@ -80,7 +84,11 @@ WxGBViewToolBar::WxGBViewToolBar( wxWindow* InParent, wxWindowID InID )
 
 	AddRadioTool( ID_VIEW_LIST, TEXT(""), ListB, ListB, *LocalizeUnrealEd("List") );
 	AddRadioTool( ID_VIEW_PREVIEW, TEXT(""), PreviewB, PreviewB, *LocalizeUnrealEd("Preview") );
+#if BATMAN
+	// BM1: Merged preview/thumbnails view
+#else
 	AddRadioTool( ID_VIEW_THUMBNAIL, TEXT(""), ThumbnailB, ThumbnailB, *LocalizeUnrealEd("Thumbnails") );
+#endif
 	AddSeparator();
 	AddCheckTool( IDM_GROUPBYCLASS, TEXT(""), GroupByClassB, GroupByClassB, *LocalizeUnrealEd("ToolTip_61") );
 	AddSeparator();
