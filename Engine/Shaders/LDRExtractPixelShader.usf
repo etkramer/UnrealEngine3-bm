@@ -1,0 +1,20 @@
+/*=============================================================================
+	LDRExtractPixelShader.usf - Extracts LDR scene color from an HDR texture
+	Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
+=============================================================================*/
+
+#include "Common.usf"
+
+sampler2D SceneColorScratchTexture;
+
+void Main(
+	in float2 UV : TEXCOORD0,
+	out float4 OutColor : COLOR0
+	)
+{
+	half3 HDRSceneColor = tex2D(SceneColorScratchTexture,UV);
+	// Find the largest color component
+	half OutOfLDRangeFactor = max(HDRSceneColor.r, max(HDRSceneColor.g, HDRSceneColor.b));
+	// Store how much the largest component is out of LDR range in alpha, which will be used by post process effects.
+	OutColor = RETURN_COLOR(half4(HDRSceneColor.rgb, max(OutOfLDRangeFactor - 1.0f, 0.0f)));
+}

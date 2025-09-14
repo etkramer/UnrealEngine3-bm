@@ -1,0 +1,259 @@
+
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+// UnrealMatinee Setup Script for Maya
+// Copyright 1998-2008 Epic Games, Inc.  All Rights Reserved.
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+// Version 1.0:  Initially written by Mike Fricker on 3/20/2008.
+
+
+//
+// Instructions:
+//
+//  * Copy this script to the "/My Documents/maya/scripts/" folder
+//  * Install the ColladaMaya 3.05B if you haven't already
+//  * Start Maya
+//  * Type 'source SetupMatinee' in the Maya console.  This will load the script.
+//  * Open the COLLADA file that was exported from UnrealMatinee
+//          - Always use the File -> Open command in Maya (not File -> Import!)
+//          - In the Open dialog, make sure 'Files of Type' is set to 'COLLADA' (not 'Best Guess' or 'DAE_FBX'!)
+//  * Run the script by typing 'SetupMatinee' in the Maya console (careful, its case-sensitive!)
+//
+
+
+//
+// This script does the following:
+//
+//  * Scales up all Unreal cameras, lights and locators to an appropriate size
+//  * Turns on backface culling for Unreal meshes in the scene
+//  * Sets the clipping plane distances on all cameras to appropriate values
+//  * Configures the animation timeline range to match the scene
+//  * Sets the playback speed to play every frame up to a maximum of 30 frames per second
+//  * Fits the default camera views around the scene
+//
+
+                    
+global proc int SetupMatinee_SetLargeObjectScales( float $NewScale )
+{
+    int $NumObjectsProcessed = 0;
+    
+    string $ObjectList[] = `ls`;
+    int $ObjectCount = size( $ObjectList );
+    
+    int $CurObjectIndex;
+    for( $CurObjectIndex = 0; $CurObjectIndex < $ObjectCount; ++$CurObjectIndex )
+    {
+        string $CurObject = $ObjectList[ $CurObjectIndex ];
+        
+        string $CurObjectTypeList[] = `ls -showType $CurObject`;
+        string $CurObjectType = $CurObjectTypeList[ 1 ];
+        
+        // We only care about transforms
+        if( $CurObjectType == "transform" )
+        {
+            // Make sure this is an appropriate Unreal object
+            if( startsWith( $CurObject, "CameraActor" ) || startsWith( $CurObject, "|CameraActor" ) ||
+                startsWith( $CurObject, "DirectionalLight" ) || startsWith( $CurObject, "|DirectionalLight" ) ||
+                startsWith( $CurObject, "PointLight" ) || startsWith( $CurObject, "|PointLight" ) ||
+                startsWith( $CurObject, "SkeletalMeshActor" ) || startsWith( $CurObject, "!SkeletalMeshActor" ) )
+            {
+                // Ignore Unreal 'pivot' objects
+                if( !gmatch( $CurObject, "*_pivot" ) )
+                {
+                    // print( "Set New Scale  (Name:" + $CurObject + ", Type:" + $CurObjectType + ")\n" );
+                    
+                    // Set the scale of this object
+                    setAttr( $CurObject + ".scaleX", $NewScale );
+                    setAttr( $CurObject + ".scaleY", $NewScale );
+                    setAttr( $CurObject + ".scaleZ", $NewScale );
+
+                    ++$NumObjectsProcessed;
+                }
+            }
+        }
+    }
+  
+    return $NumObjectsProcessed;
+ }
+
+
+
+global proc int SetupMatinee_EnableBackfaceCullingForMeshes()
+{
+    int $NumObjectsProcessed = 0;
+    
+    string $ObjectList[] = `ls`;
+    int $ObjectCount = size( $ObjectList );
+    
+    int $CurObjectIndex;
+    for( $CurObjectIndex = 0; $CurObjectIndex < $ObjectCount; ++$CurObjectIndex )
+    {
+        string $CurObject = $ObjectList[ $CurObjectIndex ];
+        
+        string $CurObjectTypeList[] = `ls -showType $CurObject`;
+        string $CurObjectType = $CurObjectTypeList[ 1 ];
+        
+        // We only care about meshes
+        if( $CurObjectType == "mesh" )
+        {
+            // Make sure this is an appropriate Unreal object
+            if( startsWith( $CurObject, "StaticMesh" ) || startsWith( $CurObject, "|StaticMesh" ) ||
+                startsWith( $CurObject, "LevelMesh" ) || startsWith( $CurObject, "|LevelMesh" ) )
+            {
+                // Ignore Unreal 'pivot' objects
+                if( !gmatch( $CurObject, "*_pivot" ) )
+                {
+                    // print( "Enabled Backface Culling  (Name:" + $CurObject + ", Type:" + $CurObjectType + ")\n" );
+                    
+                    // Enable backface culling for the mesh
+                    setAttr( $CurObject + ".backfaceCulling", 3 );  // 0 = no culling, 3 = full
+
+                    ++$NumObjectsProcessed;
+                }
+            }
+        }
+    }
+  
+    return $NumObjectsProcessed;
+}
+
+
+
+
+global proc int SetupMatinee_SetupCameraClipPlanes( float $NewNear, float $NewFar )
+{
+    int $NumObjectsProcessed = 0;
+    
+    string $ObjectList[] = `ls`;
+    int $ObjectCount = size( $ObjectList );
+    
+    int $CurObjectIndex;
+    for( $CurObjectIndex = 0; $CurObjectIndex < $ObjectCount; ++$CurObjectIndex )
+    {
+        string $CurObject = $ObjectList[ $CurObjectIndex ];
+        
+        string $CurObjectTypeList[] = `ls -showType $CurObject`;
+        string $CurObjectType = $CurObjectTypeList[ 1 ];
+        
+        // We only care about cameras
+        if( $CurObjectType == "camera" )
+        {
+            // print( "Setting Camera Clip Planes (Name:" + $CurObject + ", Type:" + $CurObjectType + ")\n" );
+            
+            // Set the near and far clip plane for this camera
+            setAttr( $CurObject + ".nearClipPlane", $NewNear );
+            setAttr( $CurObject + ".farClipPlane", $NewFar );
+
+            ++$NumObjectsProcessed;
+        }
+    }
+  
+    return $NumObjectsProcessed;
+}
+
+
+
+global proc int SetupMatinee_SetupTimelineAndPlaybackSpeed()
+{
+    // print( "Setting Timeline Configuration\n" );
+    
+
+    // We'll need to iterate over objects to find the last keyframe time value
+    // NOTE: We default to a reasonable minimum so the timeline range isn't unwieldy
+    float $SceneLastKeyTime = 30.0;
+    
+    
+    int $NumObjectsProcessed = 0;
+    
+    string $ObjectList[] = `ls`;
+    int $ObjectCount = size( $ObjectList );
+    
+    int $CurObjectIndex;
+    for( $CurObjectIndex = 0; $CurObjectIndex < $ObjectCount; ++$CurObjectIndex )
+    {
+        string $CurObject = $ObjectList[ $CurObjectIndex ];
+        
+
+        // Find the time of the last key that is set for this object        
+        float $LastKeyTime = `findKeyframe -which last $CurObject`;
+        if( $LastKeyTime > 0.0 )
+        {
+            // OK, this guy has a keyframe that's at a non-zero time!
+
+            // string $CurObjectTypeList[] = `ls -showType $CurObject`;
+            // string $CurObjectType = $CurObjectTypeList[ 1 ];
+            // print( "Found Keyframed Object  (Name:" + $CurObject + ", Type:" + $CurObjectType + ")\n" );
+            
+            if( $LastKeyTime > $SceneLastKeyTime )
+            {
+                $SceneLastKeyTime = $LastKeyTime;                
+            }
+
+            ++$NumObjectsProcessed;
+        }
+    }
+  
+    
+    
+    // Matinee sequences always start at frame zero
+    playbackOptions -animationStartTime 0.0 -animationEndTime $SceneLastKeyTime;
+
+    // Set the viewed range
+    playbackOptions -minTime 0.0 -maxTime $SceneLastKeyTime;
+    
+    // Set the current frame to zero
+    currentTime 0.0;
+
+    // Set Maya to play every frame, but never play faster than 30 FPS
+    // @todo: The following isn't supported in Maya 8.5, but it works in Maya 2008+
+    //        Not really a big deal anyway, since the default playback speed is fine.
+    // playbackOptions -playbackSpeed 0.0 -maxPlaybackSpeed 30.0;
+   
+
+    return $NumObjectsProcessed;
+}
+
+
+
+global proc SetupMatinee_SetupGridSize()
+{
+    // Set the grid to match the Unreal default grid
+    grid -size 4096 -spacing 128 -divisions 8;
+}
+
+
+
+global proc SetupMatinee_FitCameraViews()
+{
+    // Frame all default Maya cameras around the scene
+    viewFit -allObjects perspShape;
+    viewFit -allObjects topShape;
+    viewFit -allObjects frontShape;
+    viewFit -allObjects sideShape;
+}
+
+
+
+global proc SetupMatinee()
+{
+    print( "Setting up Maya for the current Matinee scene...\n" );
+
+    // Scale up cameras, lights and locators
+    SetupMatinee_SetLargeObjectScales( 35.0 );
+
+    // Turn on backface culling
+    SetupMatinee_EnableBackfaceCullingForMeshes(); 
+
+    // Setup camera clip planes
+    SetupMatinee_SetupCameraClipPlanes( 25.0, 100000.0 );
+
+    // Configure the timeline and playback speed
+    SetupMatinee_SetupTimelineAndPlaybackSpeed();
+    
+    // Setup grid
+    SetupMatinee_SetupGridSize();
+
+    // Fit the camera views to the scene objects
+    SetupMatinee_FitCameraViews();    
+}
+

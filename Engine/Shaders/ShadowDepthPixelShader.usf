@@ -1,0 +1,35 @@
+/*=============================================================================
+	ShadowDepthPixelShader.usf: Pixel shader for writing shadow depth.
+	Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
+=============================================================================*/
+
+#include "Common.usf"
+#include "Material.usf"
+#include "VertexFactory.usf"
+
+void Main( 
+#if !MATERIALBLENDING_SOLID
+	FVertexFactoryInterpolants FactoryInterpolants,
+#endif
+#if !SUPPORTS_DEPTH_TEXTURES
+	float ShadowDepth : TEXCOORD4,
+#endif
+	out float4 OutColor : COLOR0
+	)
+{
+#if !MATERIALBLENDING_SOLID
+	// Evaluate the mask for masked materials
+	FMaterialParameters MaterialParameters = GetMaterialParameters(FactoryInterpolants);
+	// Note: Using default values for camera vector and screen position to reduce interpolator cost.
+	// If the mask depends on either of these it will be subtly wrong.
+	CalcMaterialParameters(MaterialParameters, 1, float3(0,0,1), float4(0,0,0,1));
+	GetMaterialClipping(MaterialParameters);
+#endif
+
+#if SUPPORTS_DEPTH_TEXTURES
+	OutColor = 0;
+#else
+	// Output depth as color
+	OutColor = ShadowDepth.xxxx;
+#endif
+}

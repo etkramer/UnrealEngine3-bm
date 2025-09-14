@@ -1,0 +1,199 @@
+/*=============================================================================
+	ParticleBeamTrailVertexFactory.hlsl: Particle vertex factory shader code.
+	Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
+=============================================================================*/
+
+float4		CameraWorldPosition;
+float4		CameraRight;
+float4		CameraUp;
+float4		ScreenAlignment;
+float4x4	LocalToWorld;
+
+struct FVertexFactoryInput
+{
+	float4	Position	: POSITION;
+	float4	OldPosition	: NORMAL;
+	float3	Size		: TANGENT;
+	float2	TexCoord	: TEXCOORD0;
+	float	Rotation	: BLENDWEIGHT0;
+	float4	Color		: TEXCOORD1;
+};
+
+struct FVertexFactoryInterpolants
+{
+#if WORLD_COORDS
+	// First row of the tangent to world matrix
+	float3	TangentToWorld0	: TANGENTTOWORLD0;
+	// Last row of the tangent to world matrix in xyz
+	float4	TangentToWorld2	: TANGENTTOWORLD2;
+#endif
+	float2	TexCoord			: TEXCOORD0;
+	float4  Color				: TEXCOORD1;
+};
+
+FMaterialParameters GetMaterialParameters(FVertexFactoryInterpolants Interpolants)
+{
+	FMaterialParameters	Result;
+
+#if NUM_MATERIAL_TEXCOORDS
+	for(int CoordinateIndex = 0;CoordinateIndex < NUM_MATERIAL_TEXCOORDS;CoordinateIndex++)
+		Result.TexCoords[CoordinateIndex] = Interpolants.TexCoord;
+#endif
+	Result.VertexColor = Interpolants.Color;
+	Result.TangentNormal = 0;
+	Result.TangentCameraVector = 0;
+	Result.TangentReflectionVector = 0;
+	Result.TangentLightVector = 0;
+	Result.ScreenPosition = 0;
+#if WORLD_COORDS
+	Result.TangentToWorld = CalcTangentToWorld(Interpolants.TangentToWorld0,Interpolants.TangentToWorld2);
+#endif
+#if MATERIAL_DECAL
+	Result.DecalAttenuation = 1;
+	Result.DecalPlaneDistance = 0;
+#endif
+	return Result;
+}
+
+#if !VERTEX_LIGHTMAP // AJS: If this is an emissive+vertex light-map shader, we can save an interpolator by skipping the light-map coordinate.
+float2 GetLightMapCoordinate(FVertexFactoryInterpolants Interpolants)
+{
+	return Interpolants.TexCoord;
+}
+#endif	//#if !VERTEX_LIGHTMAP
+
+float3 SafeNormalize(float3 V)
+{
+	return V / sqrt(max(dot(V,V),0.01));
+}
+
+void GetTangents(FVertexFactoryInput Input,out float4 Right,out float4 Up)
+{
+	float4	Position			= MulMatrix( LocalToWorld, Input.Position ),
+			OldPosition			= MulMatrix( LocalToWorld, Input.OldPosition );
+
+	float3	CameraDirection		= SafeNormalize(CameraWorldPosition.xyz - Position.xyz),
+			ParticleDirection	= SafeNormalize(Position.xyz - OldPosition.xyz);
+
+	float4	Right_Square		= CameraRight,
+			Up_Square			= CameraUp;			
+			
+	float4	Right_Rotated		= (-1.0 * cos(Input.Rotation) * Up_Square) + (sin(Input.Rotation) * Right_Square),
+			Up_Rotated			= (       sin(Input.Rotation) * Up_Square) + (cos(Input.Rotation) * Right_Square);
+
+	float4	Right_Velocity		= float4( SafeNormalize( cross( CameraDirection, ParticleDirection	) ), 0.0 ),
+			Up_Velocity			= float4( ParticleDirection, 0.0 );
+
+	//	enum EParticleScreenAlignment
+	//	{
+	//		PSA_Square,
+	//		PSA_Rectangle,
+	//		PSA_Velocity
+	//	};
+	Right				= ScreenAlignment.x > 1.5f ? Right_Velocity : Right_Rotated;
+	Up					= ScreenAlignment.x > 1.5f ? Up_Velocity	: Up_Rotated;
+}
+
+float4 CalcWorldPosition(FVertexFactoryInput Input)
+{
+	float4  TempPos = Input.Position;
+	float4  Right;
+	float4  Up;
+
+	GetTangents(Input,Right,Up);
+//	float4	WorldPosition = mul(LocalToWorld,TempPos);
+//	WorldPosition += Input.Size.y * (Input.TexCoord.y - 0.5) * Up;
+
+	float4	WorldPosition = MulMatrix(LocalToWorld,TempPos);
+
+	return WorldPosition;
+}
+
+/** derive basis vectors */
+float3x3 CalcTangentBasis(FVertexFactoryInput Input)
+{
+	float4	Right,
+			Up;
+	GetTangents(Input,Right,Up);
+	return float3x3(
+			Right.xyz,
+			Up.xyz,
+			-normalize(cross(Right.xyz,Up.xyz))
+			);
+}
+
+float4 VertexFactoryGetWorldPosition(FVertexFactoryInput Input)
+{
+	return CalcWorldPosition(Input);
+}
+
+FVertexFactoryInterpolants VertexFactoryGetInterpolants(FVertexFactoryInput Input)
+{
+	FVertexFactoryInterpolants Interpolants;
+	Interpolants.TexCoord	= Input.TexCoord;
+	Interpolants.Color		= Input.Color;
+
+#if WORLD_COORDS
+	#if SM2_PROFILE
+		// In SM2 these vectors will store the tangent basis, scaled to be between 0 and 1 to fit in the COLOR0 and COLOR1 interpolators
+		// We cannot combine the tangent to local and local to world due to insufficient temporary registers in this vertex factory
+		float3x3 TangentBasis = CalcTangentBasis(Input);
+		Interpolants.TangentToWorld2 = float4(TangentBasis[2],sign(determinant(TangentBasis))) * 0.5 + 0.5;
+		Interpolants.TangentToWorld0 = TangentBasis[0] * 0.5 + 0.5;
+	#else
+		float3x3 LocalToTangent = CalcTangentBasis(Input);
+		float3x3 TangentToLocal = transpose(LocalToTangent);
+
+		// Calculate the transform from tangent to world space
+		#if PS3
+			float3x3 TangentToWorld = mul(transpose((float3x3)LocalToWorld), TangentToLocal); 
+		#else
+			float3x3 TangentToWorld = mul((float3x3)LocalToWorld, TangentToLocal); 
+		#endif
+
+		Interpolants.TangentToWorld0 = TangentToWorld[0];
+		Interpolants.TangentToWorld2 = float4(TangentToWorld[2], sign(determinant(LocalToTangent)));
+	#endif
+#endif
+
+	return Interpolants;
+}
+
+float4 VertexFactoryGetPreviousWorldPosition(FVertexFactoryInput Input)
+{
+	return VertexFactoryGetWorldPosition(Input);
+}
+
+/**
+* Get the 3x3 tangent basis vectors for this vertex factory
+*
+* @param Input - vertex input stream structure
+* @return 3x3 matrix
+*/
+float3x3 VertexFactoryGetTangentBasis( FVertexFactoryInput Input )
+{
+	return CalcTangentBasis(Input);
+}
+
+/**
+* Transform a vector from world space to tangent space
+*
+* @param Input - vertex input stream structure
+* @param TangentBasis - 3x3 matrix to transform to tangent space
+* @param WorldVector - vector in world space to transform 
+* @return vector in tangent space
+*/
+float3 VertexFactoryWorldToTangentSpace( FVertexFactoryInput Input, float3x3 TangentBasis, float3 WorldVector )
+{
+	// we use a straight mul here because we are generating the matrix, so we don't worry about column major vs row major (which is what MulMatrix manages per-platform)
+	return mul(
+		TangentBasis,
+		WorldVector
+		);
+}
+
+half3 VertexFactoryGetWorldNormal(FVertexFactoryInput Input)
+{
+	float3x3 TangentBasis = VertexFactoryGetTangentBasis(Input);
+	return TangentBasis[2];
+}

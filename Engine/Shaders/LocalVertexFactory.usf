@@ -1,0 +1,276 @@
+/*=============================================================================
+	LocalVertexFactory.hlsl: Local vertex factory shader code.
+	Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
+=============================================================================*/
+
+#include "DecalFactoryCommon.usf"
+
+float4x4 LocalToWorld;
+float4x4 PreviousLocalToWorld;
+float3x3 WorldToLocal;
+float4 ShadowCoordinateScaleBias;
+
+struct FVertexFactoryInput
+{
+	float4	Position	: POSITION;
+	half3	TangentX	: TANGENT;
+	// TangentZ.w contains sign of tangent basis determinant
+	half4	TangentZ	: NORMAL;
+	half4	Color		: COLOR1;
+
+#if NUM_MATERIAL_TEXCOORDS
+	float2	TexCoords[NUM_MATERIAL_TEXCOORDS] : TEXCOORD0;
+#endif
+
+#if NEEDS_VERTEX_LIGHTMAP
+	float4 LightMapA : TEXCOORD5;
+	float4 LightMapB : TEXCOORD6;
+	float4 LightMapC : TEXCOORD7;
+#elif NEEDS_SIMPLE_VERTEX_LIGHTMAP
+	float4 LightMapA : TEXCOORD5;
+#endif
+
+#if NEEDS_LIGHTMAP_COORDINATE
+	float2	LightMapCoordinate : COLOR;
+#endif
+};
+
+struct FPositionOnlyVertexFactoryInput
+{
+	float4	Position	: POSITION;
+};
+
+struct FVertexFactoryInterpolants
+{
+#if WORLD_COORDS
+	// First row of the tangent to world matrix
+	float3	TangentToWorld0	: TANGENTTOWORLD0;
+	// Last row of the tangent to world matrix in xyz
+	float4	TangentToWorld2	: TANGENTTOWORLD2;
+#else
+	float4	Color : COLOR0;
+#endif
+
+#if NEEDS_LIGHTMAP_COORDINATE
+	float2	LightMapCoordinate					: TEXCOORD0;
+#if NUM_MATERIAL_TEXCOORDS
+	float4	TexCoords[(NUM_MATERIAL_TEXCOORDS+1)/2]	: TEXCOORD1;
+#endif
+#else
+#if NUM_MATERIAL_TEXCOORDS
+	float4	TexCoords[(NUM_MATERIAL_TEXCOORDS+1)/2]	: TEXCOORD0;
+#endif
+#endif
+
+#if !COMPILER_SUPPORTS_EMPTY_STRUCTS && !WORLD_COORDS && !NEEDS_LIGHTMAP_COORDINATE && !NUM_MATERIAL_TEXCOORDS
+	float4 Dummy : TEXCOORD0;
+#endif
+};
+
+FMaterialParameters GetMaterialParameters(FVertexFactoryInterpolants Interpolants)
+{
+	FMaterialParameters	Result;
+#if NUM_MATERIAL_TEXCOORDS
+	UNROLL
+	for(int CoordinateIndex = 0;CoordinateIndex < NUM_MATERIAL_TEXCOORDS;CoordinateIndex += 2)
+	{
+		Result.TexCoords[CoordinateIndex] = Interpolants.TexCoords[CoordinateIndex/2].xy;
+		if(CoordinateIndex + 1 < NUM_MATERIAL_TEXCOORDS)
+		{
+			Result.TexCoords[CoordinateIndex + 1] = Interpolants.TexCoords[CoordinateIndex/2].wz;
+		}
+	}
+#endif
+#if WORLD_COORDS
+	Result.VertexColor = 1;
+#else
+	Result.VertexColor = Interpolants.Color;
+#endif
+	Result.TangentNormal = 0;
+	Result.TangentCameraVector = 0;
+	Result.TangentReflectionVector = 0;
+	Result.ScreenPosition = 0;
+	Result.TangentLightVector = 0;
+#if WORLD_COORDS	
+	#if DECAL_FACTORY
+		Result.TangentToWorld = CalcInvTangentBasisDecal(TangentBias(Interpolants.TangentToWorld0));
+	#else
+		Result.TangentToWorld = CalcTangentToWorld(Interpolants.TangentToWorld0,Interpolants.TangentToWorld2);
+	#endif
+#endif
+#if MATERIAL_DECAL
+	#if DECAL_FACTORY && NUM_MATERIAL_TEXCOORDS > 1
+		Result.DecalAttenuation = Interpolants.TexCoords[0].z;
+		Result.DecalPlaneDistance = Interpolants.TexCoords[0].w;
+	#else
+		Result.DecalAttenuation = 1;
+		Result.DecalPlaneDistance = 0;
+	#endif
+#endif
+	return Result;
+}
+
+#if NEEDS_LIGHTMAP_COORDINATE
+float2 GetLightMapCoordinate(FVertexFactoryInterpolants Interpolants)
+{
+	return Interpolants.LightMapCoordinate;
+}
+#endif
+
+#if NEEDS_VERTEX_LIGHTMAP
+void VertexFactoryGetVertexLightMap(FVertexFactoryInput Input,out float4 LightMapA,out float4 LightMapB,out float4 LightMapC)
+{
+	LightMapA = Input.LightMapA;
+	LightMapB = Input.LightMapB;
+	LightMapC = Input.LightMapC;
+}
+#elif NEEDS_SIMPLE_VERTEX_LIGHTMAP
+void VertexFactoryGetSimpleVertexLightMap(FVertexFactoryInput Input,out float4 LightMapA)
+{
+	LightMapA = Input.LightMapA;
+}
+#endif
+
+float4 CalcWorldPosition(FVertexFactoryInput Input)
+{
+	return MulMatrix(LocalToWorld,Input.Position);
+}
+
+/**
+* Get the 3x3 tangent basis vectors for this vertex factory
+* this vertex factory will calculate the binormal on-the-fly
+*
+* @param Input - vertex input stream structure
+* @return 3x3 matrix
+*/
+float3x3 VertexFactoryGetTangentBasis( FVertexFactoryInput Input )
+{
+	float3x3 Result=0;	
+	float4 TangentZ = TangentBias(Input.TangentZ);
+
+#if DECAL_FACTORY	
+	Result = ProjectDecalTangents(float3(TangentZ.x,TangentZ.y,TangentZ.z));
+#else	
+	// pass-thru the tangent
+	Result[0] = TangentBias(Input.TangentX);
+	// pass-thru the normal
+	Result[2] = float3(TangentZ.x,TangentZ.y,TangentZ.z);
+	// derive the binormal by getting the cross product of the normal and tangent
+	Result[1] = cross(Result[2], Result[0]) * TangentZ.w;	
+#endif
+
+	return Result;
+}
+
+float4 VertexFactoryGetWorldPosition(FVertexFactoryInput Input)
+{
+	return CalcWorldPosition(Input);
+}
+
+FVertexFactoryInterpolants VertexFactoryGetInterpolants(FVertexFactoryInput Input)
+{
+	FVertexFactoryInterpolants Interpolants;
+#if NUM_MATERIAL_TEXCOORDS
+	// Ensure the unused components of the last packed texture coordinate are initialized.
+	Interpolants.TexCoords[(NUM_MATERIAL_TEXCOORDS + 1) / 2 - 1] = 0;
+
+#if MATERIAL_DECAL
+	#if DECAL_FACTORY
+	// first uv pair are the projected decal coords
+	Interpolants.TexCoords[0].xy = ComputeDecalTexCoord(Input.Position);
+	// next uv pair stores: z=decal attenutation w=distance of vertex to decal origin
+	Interpolants.TexCoords[0].z = CalcDecalAttenuation(TangentBias(Input.TangentZ).xyz);
+	Interpolants.TexCoords[0].w = CalcDistanceToDecalOrigin(Input.Position);
+	#else
+	Interpolants.TexCoords[0].xy = Input.TexCoords[0];
+	#endif
+#else
+	UNROLL
+	for(int CoordinateIndex = 0;CoordinateIndex < NUM_MATERIAL_TEXCOORDS;CoordinateIndex += 2)
+	{
+		Interpolants.TexCoords[CoordinateIndex / 2].xy = Input.TexCoords[CoordinateIndex];
+		if(CoordinateIndex + 1 < NUM_MATERIAL_TEXCOORDS)
+		{
+			Interpolants.TexCoords[CoordinateIndex / 2].wz = Input.TexCoords[CoordinateIndex + 1];
+		}
+	}
+#endif
+#endif
+
+#if NEEDS_LIGHTMAP_COORDINATE
+	Interpolants.LightMapCoordinate = Input.LightMapCoordinate * ShadowCoordinateScaleBias.xy + ShadowCoordinateScaleBias.wz;
+#endif
+
+#if WORLD_COORDS
+	#if DECAL_FACTORY
+		// pass 2x2 matrix for transforming normals as interpolant
+		float3 TangentXBiased = TangentBias(Input.TangentX);
+		float4 TangentZBiased = TangentBias(Input.TangentZ);
+		Interpolants.TangentToWorld2 = CalcDecal2x2NormalTransform(TangentXBiased, TangentZBiased.xyz, TangentZBiased.w) * 0.5 + 0.5;
+		// pass through the vertex normal (note the misnomer)
+		Interpolants.TangentToWorld0 = float3(TangentZBiased.xyz) * 0.5 + 0.5;
+	#else
+		#if SM2_PROFILE
+			// In SM2 these vectors will store the tangent basis, scaled to be between 0 and 1 to fit in the COLOR0 and COLOR1 interpolators
+			// We cannot combine the tangent to local and local to world due to insufficient temporary registers in some vertex factories (GPU skin)
+			Interpolants.TangentToWorld2 = TangentNorm(Input.TangentZ);
+			Interpolants.TangentToWorld0 = TangentNorm(Input.TangentX);
+		#else
+			float3x3 LocalToTangent = VertexFactoryGetTangentBasis(Input);
+			// The inverse of LocalToTangent is just the transpose because it is an orthonormal basis
+			float3x3 TangentToLocal = transpose(LocalToTangent);
+
+			#if PS3
+				float3x3 TangentToWorld = mul(transpose((float3x3)LocalToWorld), TangentToLocal); 
+			#else
+				float3x3 TangentToWorld = mul((float3x3)LocalToWorld, TangentToLocal); 
+			#endif
+			
+			Interpolants.TangentToWorld0 = TangentToWorld[0];
+			Interpolants.TangentToWorld2 = float4(TangentToWorld[2], TangentBias(Input.TangentZ.w));
+		#endif
+	#endif
+#else
+	Interpolants.Color = Input.Color FCOLOR_COMPONENT_SWIZZLE;
+#endif
+
+	#if !COMPILER_SUPPORTS_EMPTY_STRUCTS && !WORLD_COORDS && !NEEDS_LIGHTMAP_COORDINATE && !NUM_MATERIAL_TEXCOORDS
+		Interpolants.Dummy = float4(0,0,0,0);
+	#endif
+
+	return Interpolants;
+}
+
+/** for depth-only pass */
+float4 VertexFactoryGetWorldPosition(FPositionOnlyVertexFactoryInput Input)
+{
+	return MulMatrix(LocalToWorld,Input.Position);
+}
+
+float4 VertexFactoryGetPreviousWorldPosition(FVertexFactoryInput Input)
+{
+	return MulMatrix(PreviousLocalToWorld,Input.Position);
+}
+
+/**
+* Transform a vector from world space to tangent space
+*
+* @param Input - vertex input stream structure
+* @param TangentBasis - 3x3 matrix to transform to tangent space
+* @param WorldVector - vector in world space to transform 
+* @return vector in tangent space
+*/
+float3 VertexFactoryWorldToTangentSpace( FVertexFactoryInput Input, float3x3 TangentBasis, float3 WorldVector )
+{
+	// we use a straight mul here because we are generating the matrix, so we don't worry about column major vs row major (which is what MulMatrix manages per-platform)
+	return mul(TangentBasis, MulMatrix(WorldToLocal,WorldVector));
+}
+
+half3 VertexFactoryGetWorldNormal(FVertexFactoryInput Input)
+{
+	half4 Normal = TangentBias(Input.TangentZ);
+	Normal.w = 0;
+
+	half4 WorldNormal = MulMatrix( LocalToWorld, Normal );
+	return WorldNormal.xyz;
+}

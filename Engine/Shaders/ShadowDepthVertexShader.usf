@@ -1,0 +1,44 @@
+/*=============================================================================
+	ShadowDepthVertexShader.usf: Vertex shader for writing shadow depth.
+	Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
+=============================================================================*/
+
+#include "Common.usf"
+#include "Material.usf"
+#include "VertexFactory.usf"
+
+float4x4 ProjectionMatrix;
+
+/** Used to normalize the outputted depth */
+float InvMaxSubjectDepth;
+
+/** Tweakable depth bias */
+float DepthBias;
+
+void Main(
+	FVertexFactoryInput Input,
+#if !MATERIALBLENDING_SOLID
+	out FVertexFactoryInterpolants OutFactoryInterpolants,
+#endif
+#if !SUPPORTS_DEPTH_TEXTURES
+	out float ShadowDepth : TEXCOORD4, 
+#endif
+	out float4 OutPosition : POSITION
+	)
+{
+	float4 WorldPos = VertexFactoryGetWorldPosition(Input);
+	OutPosition = MulMatrix(ProjectionMatrix,WorldPos);
+
+	// Output linear, normalized depth
+#if SUPPORTS_DEPTH_TEXTURES
+	OutPosition.z = saturate(OutPosition.z * InvMaxSubjectDepth + DepthBias) * OutPosition.w;
+#else
+	OutPosition.z = saturate(OutPosition.z * InvMaxSubjectDepth + DepthBias) * OutPosition.w;
+	ShadowDepth = saturate(OutPosition.z * InvMaxSubjectDepth + DepthBias);
+#endif
+
+#if !MATERIALBLENDING_SOLID
+	// Masked materials need texture coords to clip
+	OutFactoryInterpolants = VertexFactoryGetInterpolants(Input);
+#endif
+}

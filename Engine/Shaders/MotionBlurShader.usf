@@ -1,0 +1,71 @@
+/*=============================================================================
+	MotionBlurPixelShader.usf: Blurs based on velocity vector.
+	Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
+=============================================================================*/
+
+#include "Common.usf"
+#include "MotionBlurCommon.usf"
+
+
+/*=============================================================================
+ * Vertex Shader
+ *============================================================================*/
+
+void MainVertexShader(
+	float4 InPosition : POSITION,
+	float2 InScreenUV : TEXCOORD0,
+	out float4 OutScreenPosition : TEXCOORD0,
+	out float4 OutPosition : POSITION
+	)
+{
+	OutPosition = InPosition;								// Target position
+	OutScreenPosition = float4(InPosition.xy,InScreenUV);	// Background UV and position
+}
+
+
+/*=============================================================================
+ * Pixel Shaders
+ *============================================================================*/
+
+
+void MainPixelShader( float4 ScreenPosition : TEXCOORD0, out float4 OutColor : COLOR0 )
+{
+	float2	ScreenUV = ScreenPosition.zw;
+	half4 Color = tex2D( SceneColorTexture, ScreenUV );
+	Color.rgb = MotionBlur( Color, ScreenPosition );
+	OutColor = RETURN_COLOR( float4(Color.rgb, 1) );
+}
+
+
+void MainPixelShaderDynamicVelocitiesOnly( float4 ScreenPosition : TEXCOORD0, out float4 OutColor : COLOR0 )
+{
+	half2	ScreenUV			= ScreenPosition.zw;
+	half2	DynamicVelocity		= tex2D( VelocityBuffer, ScreenUV ).xy;
+
+	// 0.0f (-1.0f after scale-and-bias) in the velocity buffer has special meaning. It means "use static background velocity".
+	// Velocity rendering clamps to 1/255, so every pixel it touches will fail this check.
+	half	Selector			= DynamicVelocity.r;
+	if ( Selector > 0.0f )
+	{
+		// Scale velocity from [-1,+1] to [-MAX_VELOCITY,+MAX_VELOCITY] pixels
+		half2	Velocity		= DynamicVelocity * 2.0f - 1.0f;
+		half	Scale			= dot(Velocity, Velocity);
+		half2	PixelVelocity	= Velocity*DynamicVelocityParameters.xy;
+		PixelVelocity			*= Scale;
+
+		half2 Step = PixelVelocity / NUM_SAMPLES;
+		ScreenUV -= 2*Step;
+		half3 Color = tex2D( SceneColorTexture, ClampUV(ScreenUV) ).rgb;
+		UNROLL for ( int i=1; i < NUM_SAMPLES; ++i )
+		{
+			ScreenUV += Step;
+			Color += tex2D( SceneColorTexture, ClampUV(ScreenUV) ).rgb;
+		}
+		OutColor = RETURN_COLOR( float4(Color/NUM_SAMPLES, 1) );
+	}
+	else
+	{
+		float3 Color = tex2D( SceneColorTexture, ScreenUV ).rgb;
+		OutColor = RETURN_COLOR( float4(Color, 1) );
+	}
+}

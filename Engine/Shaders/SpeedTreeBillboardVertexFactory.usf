@@ -1,0 +1,122 @@
+/*=============================================================================
+	Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
+=============================================================================*/
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// struct FVertexFactoryInput
+
+#define NUM_INPUT_TEXCOORDS_SPEEDTREE 1
+
+struct FVertexFactoryInput
+{
+	float4	Position	: POSITION;
+	half3	TangentX	: TANGENT;
+	half3	TangentY	: BINORMAL;
+	half3	TangentZ	: NORMAL;
+	
+	float2	TexCoords[NUM_INPUT_TEXCOORDS_SPEEDTREE] : TEXCOORD0;
+
+	float bIsVerticalBillboard : TEXCOORD1;
+	float BillboardIndex : TEXCOORD2;
+
+#if NEEDS_VERTEX_LIGHTMAP
+	float4 LightMapA : TEXCOORD5;
+	float4 LightMapB : TEXCOORD6;
+	float4 LightMapC : TEXCOORD7;
+#elif NEEDS_SIMPLE_VERTEX_LIGHTMAP
+	float4 LightMapA : TEXCOORD5;
+#endif
+};
+
+
+#include "SpeedTreeVertexFactoryBase.usf"
+
+/** The texture coordinates scale and bias, indexed by the billboard index. */
+float4 TextureCoordinateScaleBias[3];
+
+/** A transform from view-space to local-space. */
+float4x4 ViewToLocal;
+
+/** The billboard's opacity is modulated by the entry in this array indexed by the billboard index. */
+float BillboardMaskClipValues[3];
+
+/** Aligns a local-space vector to the view. */
+float3 AlignLocalVectorToView(float3 Vector)
+{
+	float3 CameraZ = MulMatrix(ViewToLocal,float4(0,0,1,0)).xyz;
+	float3 Up = float3(0,0,1);
+	float3 Right = normalize(cross(Up,CameraZ).xyz);
+	return Right * Vector.y + Up * Vector.z + CameraZ * Vector.x;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// CalcWorldPosition
+
+float4 CalcWorldPosition(float4x4 Transform, FVertexFactoryInput Input)
+{
+	// If the billboard is one of the two verticle billboards, align it to the view.
+	float3 Position;
+	if(Input.bIsVerticalBillboard > 0.0)
+	{
+		// Align the billboard's vertices to the view.
+		Position = AlignLocalVectorToView(Input.Position.xyz);
+	}
+	else
+	{
+		Position = Input.Position.xyz;
+	}
+	
+	return MulMatrix(Transform,MulMatrix(float4(Position,1),RotationOnlyMatrix));
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// VertexFactoryGetWorldPosition
+
+float4 VertexFactoryGetWorldPosition(FVertexFactoryInput Input)
+{
+	return CalcWorldPosition(LocalToWorld, Input);
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// VertexFactoryGetInterpolants
+
+FVertexFactoryInterpolants VertexFactoryGetInterpolants(FVertexFactoryInput Input)
+{
+	FVertexFactoryInterpolants Interpolants;
+	VertexFactoryGetWorldPositionBase(Input, Interpolants);
+
+#if NUM_MATERIAL_TEXCOORDS
+	int BillboardIndex = min((int)floor(Input.BillboardIndex),2);
+	Interpolants.TexCoords[0].xy = TextureCoordinateScaleBias[BillboardIndex].wz + 
+		TextureCoordinateScaleBias[BillboardIndex].xy * Interpolants.TexCoords[0].xy;
+#endif
+
+	// Use the appropriate mask clip value for the billboard.
+	Interpolants.VertexColor.a = -BillboardMaskClipValues[Input.BillboardIndex];
+
+	return Interpolants;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// VertexFactoryGetPreviousWorldPosition
+
+float4 VertexFactoryGetPreviousWorldPosition(FVertexFactoryInput Input)
+{
+	return CalcWorldPosition(PreviousLocalToWorld, Input);
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// GetWorldTangentBasis
+
+half3x3 GetWorldTangentBasis(FVertexFactoryInput Input)
+{
+	return MulMatrix(
+		half3x3(
+			AlignLocalVectorToView(TangentBias(Input.TangentX.xyz)),
+			AlignLocalVectorToView(TangentBias(Input.TangentY.xyz)),
+			AlignLocalVectorToView(TangentBias(Input.TangentZ.xyz))
+			),
+		(half3x3)RotationOnlyMatrix	
+		);
+}

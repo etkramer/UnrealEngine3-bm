@@ -1,0 +1,32 @@
+/*=============================================================================
+	SphericalHarmonicLightVertexShader.hlsl: Point light vertex shader.
+	Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
+=============================================================================*/
+
+#undef WORLD_COORDS
+#define WORLD_COORDS 1
+
+#include "Common.usf"
+#include "Material.usf"
+#include "VertexFactory.usf"
+
+void Main(
+	FVertexFactoryInput Input,
+	out FVertexFactoryInterpolants OutFactoryInterpolants,
+	out float3 OutCameraVector : TEXCOORD6,
+	out float4 OutPixelPosition : TEXCOORD7,
+	out float4 OutPosition : POSITION
+	)
+{
+	float4 WorldPosition = VertexFactoryGetWorldPosition(Input);
+	OutPosition = MulMatrix(ViewProjectionMatrix,WorldPosition);
+	OutFactoryInterpolants = VertexFactoryGetInterpolants(Input);
+#if WORLD_POS
+	OutPixelPosition = WorldPosition;
+#else
+	OutPixelPosition = OutPosition;
+#endif
+	float3x3 TangentBasis = VertexFactoryGetTangentBasis(Input);
+	OutCameraVector = VertexFactoryWorldToTangentSpace(Input,TangentBasis,CameraPosition.xyz - WorldPosition.xyz * CameraPosition.w);
+
+}

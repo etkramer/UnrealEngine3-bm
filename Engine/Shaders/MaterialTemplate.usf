@@ -1,0 +1,490 @@
+/**
+ * MaterialTemplate.usf:
+ * Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
+ */
+
+
+/*
+	Defined by the C++ code:
+		NUM_MATERIAL_TEXCOORDS
+		NUM_DYNAMIC_PARAMETERS
+		
+		MATERIALBLENDING_SOLID
+		MATERIALBLENDING_MASKED
+		MATERIALBLENDING_TRANSLUCENT
+		MATERIALBLENDING_ADDITIVE
+		MATERIALBLENDING_MODULATE
+
+		MATERIAL_TWOSIDED
+		MATERIAL_LIGHTINGMODEL_PHONG
+		MATERIAL_LIGHTINGMODEL_NONDIRECTIONAL
+		MATERIAL_LIGHTINGMODEL_UNLIT
+		MATERIAL_LIGHTINGMODEL_CUSTOM
+
+		WORLD_COORDS
+		WORLD_POS
+		MATERIAL_USE_GAMMA_CORRECTION
+*/
+
+#define NUM_MATERIAL_TEXCOORDS %u
+
+/* transform from post-projection to world space */
+float4x4 InvViewProjectionMatrix;
+
+/* world-space camera position */
+float3 CameraWorldPos;
+
+#if MATERIAL_DECAL
+/** Distance to far plane for the decal (local or world space) */
+float DecalFarPlaneDistance=10000;
+#endif
+
+struct FMaterialParameters
+{
+#if NUM_MATERIAL_TEXCOORDS
+	float2 TexCoords[NUM_MATERIAL_TEXCOORDS];
+#endif
+	float4	VertexColor;
+	float3	TangentNormal,
+			TangentReflectionVector,
+			TangentCameraVector;
+	half3	TangentLightVector;
+	float4	ScreenPosition;
+#if WORLD_COORDS
+	float3x3	TangentToWorld;
+#endif
+
+#if WORLD_POS
+	float3 WorldPosition;
+#endif
+
+#if MATERIAL_DECAL
+	float DecalAttenuation;
+	float DecalPlaneDistance;
+#endif
+
+#if USE_LENSFLARE
+	float LensFlareIntensity;
+	float LensFlareOcclusion;
+	float LensFlareRadialDistance;
+	float LensFlareSourceDistance;
+	float LensFlareRayDistance;
+#endif	//USE_LENSFLARE
+
+#if USE_DYNAMIC_PARAMETERS
+	float4 DynamicParameter0;
+#endif	//USE_DYNAMIC_PARAMETERS
+};
+
+// Uniform material expressions.
+%s
+
+#if WORLD_COORDS
+
+// Pixel shader parameters used by the TransformVector material compiler node,
+// And any pixel shader which needs to transform vectors out of tangent space.
+float3x3 LocalToWorldMatrix;
+float3x3 WorldToLocalMatrix;
+float3x3 WorldToViewMatrix;
+
+/** Transforms a vector from tangent space to local space */
+float3 TransformTangentVectorToLocal(FMaterialParameters Parameters, float3 InTangentVector)
+{
+#if SM2_PROFILE
+	// In SM2, Parameters.TangentToWorld is actually TangentToLocal
+	return mul(Parameters.TangentToWorld, InTangentVector);
+#else
+	// NOTE: Shouldn't use MulMatrix here, because TangentToWorld isn't passed from the CPU - it's calculated within the shader.
+	// Transform to world space and then to local space
+	return MulMatrix(WorldToLocalMatrix, mul(Parameters.TangentToWorld, InTangentVector));
+#endif
+}
+
+/** Transforms a vector from tangent space to world space */
+float3 TransformTangentVectorToWorld(FMaterialParameters Parameters, float3 InTangentVector)
+{
+#if SM2_PROFILE
+	// In SM2, Parameters.TangentToWorld is actually TangentToLocal
+	// So transform from tangent to local space, and then to world space
+	return MulMatrix(LocalToWorldMatrix, mul(Parameters.TangentToWorld, InTangentVector));
+#else
+	// Transform directly to world space
+	// The vector transform is optimized for this case, only one vector-matrix multiply is needed
+	return mul(Parameters.TangentToWorld, InTangentVector);
+#endif
+}
+
+/** Transforms a vector from tangent space to view space */
+float3 TransformTangentVectorToView(FMaterialParameters Parameters, float3 InTangentVector)
+{
+#if SM2_PROFILE
+	// In SM2, Parameters.TangentToWorld is actually TangentToLocal
+	// Transform from tangent to local, then to world, then to view space
+	return MulMatrix(WorldToViewMatrix, MulMatrix(LocalToWorldMatrix, mul(Parameters.TangentToWorld, InTangentVector)));
+#else
+	// Transform from tangent to world, and then to view space
+	return MulMatrix(WorldToViewMatrix, mul(Parameters.TangentToWorld, InTangentVector));
+#endif
+}
+#endif //#if WORLD_COORDS
+
+
+float DepthBiasedAlpha( FMaterialParameters Parameters, float InAlpha, float InBias, float InBiasScale )
+{
+	float Result;
+	half SceneDepth = PreviousDepth(Parameters.ScreenPosition);
+	float DepthBias = (1.0 - InBias) * InBiasScale;
+	float BlendAmt = saturate((SceneDepth - Parameters.ScreenPosition.w) / max(DepthBias,0.001));
+	Result = InAlpha * BlendAmt;
+	return Result;
+}
+
+float3 DepthBiasedBlend( FMaterialParameters Parameters, float3 InColor, float InBias, float InBiasScale )
+{
+	float3 Result;	
+	float3 SceneColor = PreviousLighting(Parameters.ScreenPosition).rgb;
+	half SceneDepth = PreviousDepth(Parameters.ScreenPosition);
+	float DepthBias = (1.0 - InBias) * InBiasScale;
+	
+	float BlendAmt = saturate((SceneDepth - Parameters.ScreenPosition.w) / max(DepthBias,0.001));
+	Result = lerp( SceneColor, InColor * 1.000001, BlendAmt );
+	
+	return Result;
+}
+
+/** Get the lens flare intensity */
+float GetLensFlareIntensity(FMaterialParameters Parameters)
+{
+#if USE_LENSFLARE
+	return Parameters.LensFlareIntensity;
+#else	//USE_LENSFLARE
+	return 1.0f;
+#endif	//USE_LENSFLARE
+}
+
+/** Get the lens flare occlusion */
+float GetLensFlareOcclusion(FMaterialParameters Parameters)
+{
+#if USE_LENSFLARE
+	return Parameters.LensFlareOcclusion;
+#else	//USE_LENSFLARE
+	return 1.0f;
+#endif	//USE_LENSFLARE
+}
+
+/** Get the lens flare radial distance */
+float GetLensFlareRadialDistance(FMaterialParameters Parameters)
+{
+#if USE_LENSFLARE
+	return Parameters.LensFlareRadialDistance;
+#else	//USE_LENSFLARE
+	return 0.0f;
+#endif	//USE_LENSFLARE
+}
+
+/** Get the lens flare ray distance */
+float GetLensFlareRayDistance(FMaterialParameters Parameters)
+{
+#if USE_LENSFLARE
+	return Parameters.LensFlareRayDistance;
+#else	//USE_LENSFLARE
+	return 0.0f;
+#endif	//USE_LENSFLARE
+}
+
+/** Get the lens flare source distance */
+float GetLensFlareSourceDistance(FMaterialParameters Parameters)
+{
+#if USE_LENSFLARE
+	return Parameters.LensFlareSourceDistance;
+#else	//USE_LENSFLARE
+	return 0.0f;
+#endif	//USE_LENSFLARE
+}
+
+/** Retrieve the given emitter parameter */
+float4 GetDynamicParameter(FMaterialParameters Parameters)
+{
+#if USE_DYNAMIC_PARAMETERS
+	return Parameters.DynamicParameter0;
+#else	//USE_DYNAMIC_PARAMETERS
+	return float4(1.0f, 1.0f, 1.0f, 1.0f);
+#endif	//USE_DYNAMIC_PARAMETERS
+}
+
+float2 GetMaterialTexCoord(FMaterialParameters Parameters, int CoordIdx)
+{
+#if NUM_MATERIAL_TEXCOORDS
+	#if MATERIAL_DECAL
+		return Parameters.TexCoords[0].xy;
+	#else
+		return Parameters.TexCoords[CoordIdx].xy;
+	#endif
+#else
+	return float2(0,0);
+#endif
+}
+
+half3 GetMaterialNormal(FMaterialParameters Parameters)
+{
+	return %s;
+}
+
+half3 GetMaterialEmissive(FMaterialParameters Parameters)
+{
+	return %s;
+}
+
+half3 GetMaterialDiffuseColor(FMaterialParameters Parameters)
+{
+	return %s;
+}
+
+half GetMaterialDiffusePower(FMaterialParameters Parameters)
+{
+	return %s;
+}
+
+half3 GetMaterialDiffuseColorNormalized(FMaterialParameters Parameters)
+{
+	// Normalizes the diffuse color to reflect the same amount of light regardless of diffuse power.
+	return GetMaterialDiffuseColor(Parameters) *
+		((1 + GetMaterialDiffusePower(Parameters)) / 2);
+}
+
+half3 GetMaterialSpecularColor(FMaterialParameters Parameters)
+{
+	return %s;
+}
+
+half GetMaterialSpecularPower(FMaterialParameters Parameters)
+{
+	return %s;
+}
+
+half GetMaterialOpacity(FMaterialParameters Parameters)
+{
+	return %s;
+}
+
+#if MATERIALBLENDING_MASKED
+float GetMaterialMask(FMaterialParameters Parameters)
+{
+	return %s - %s;
+}
+#endif
+
+float2 GetMaterialDistortion(FMaterialParameters Parameters)
+{
+	return %s;
+}
+
+float3 GetMaterialTwoSidedLightingMask(FMaterialParameters Parameters)
+{
+	return %s;
+}
+
+#if MATERIAL_LIGHTINGMODEL_CUSTOM
+float3 GetMaterialCustomLighting(FMaterialParameters Parameters)
+{
+	return %s;
+}
+#endif
+
+float3 GetMaterialPointLightTransfer(FMaterialParameters Parameters,float3 WorldLightVector,half FalloffExponent)
+{
+	float3	TwoSidedLighting = 0;
+	float3	TwoSidedLightingMask = 0;
+	TwoSidedLightingMask = GetMaterialTwoSidedLightingMask(Parameters);
+	TwoSidedLighting = TwoSidedLightingMask *
+		GetMaterialDiffuseColorNormalized(Parameters) *
+		RadialAttenuation(WorldLightVector,FalloffExponent);
+
+	float3	Lighting = 0;
+#if MATERIAL_LIGHTINGMODEL_NONDIRECTIONAL
+	Lighting = GetMaterialDiffuseColor(Parameters) * RadialAttenuation(WorldLightVector,FalloffExponent);
+#elif MATERIAL_LIGHTINGMODEL_PHONG
+	Lighting = PointLightPhong(
+		GetMaterialDiffuseColorNormalized(Parameters),
+		GetMaterialDiffusePower(Parameters),
+		GetMaterialSpecularColor(Parameters),
+		GetMaterialSpecularPower(Parameters),
+		Parameters.TangentLightVector,
+		Parameters.TangentCameraVector,
+		Parameters.TangentNormal,
+		Parameters.TangentReflectionVector
+		) *
+		RadialAttenuation(WorldLightVector,FalloffExponent);
+#elif MATERIAL_LIGHTINGMODEL_CUSTOM
+	Lighting = GetMaterialCustomLighting(Parameters) * RadialAttenuation(WorldLightVector,FalloffExponent);
+#endif
+
+	return lerp(Lighting,TwoSidedLighting,TwoSidedLightingMask);
+}
+
+float3 GetMaterialHemisphereLightTransferFull(FMaterialParameters Parameters,float3 SkyVector, float3 UpperColor, float3 LowerColor)
+{
+	float3	TwoSidedLighting = 0;
+	float3	TwoSidedLightingMask = 0;
+	TwoSidedLightingMask = GetMaterialTwoSidedLightingMask(Parameters);
+	TwoSidedLighting = TwoSidedLightingMask * GetMaterialDiffuseColor(Parameters);
+
+	float3	UpperLighting = 0;
+	float3  LowerLighting = 0;
+
+#if MATERIAL_LIGHTINGMODEL_NONDIRECTIONAL
+	UpperLighting = GetMaterialDiffuseColor(Parameters);
+	LowerLighting = GetMaterialDiffuseColor(Parameters);	
+#elif MATERIAL_LIGHTINGMODEL_PHONG
+	//UpperLighting = HemisphereLightPhong(GetMaterialDiffuseColor(Parameters),SkyVector,Parameters.TangentNormal);
+	//LowerLighting = HemisphereLightPhong(GetMaterialDiffuseColor(Parameters),-SkyVector,Parameters.TangentNormal);
+
+	float  NormalContribution  = dot(SkyVector,Parameters.TangentNormal);
+	float2 ContributionWeightsSqrt = float2(0.5, 0.5f) + float2(0.5f, -0.5f) * NormalContribution;
+	float2 ContributionWeights = ContributionWeightsSqrt * ContributionWeightsSqrt;
+
+	UpperLighting = GetMaterialDiffuseColor(Parameters) * ContributionWeights[0];
+	LowerLighting = GetMaterialDiffuseColor(Parameters) * ContributionWeights[1];
+#elif MATERIAL_LIGHTINGMODEL_CUSTOM
+	UpperLighting = 0;//GetMaterialCustomLighting(Parameters);
+	LowerLighting = 0;//GetMaterialCustomLighting(Parameters);
+#endif
+
+	return lerp(UpperLighting,TwoSidedLighting,TwoSidedLightingMask) * UpperColor +
+	       lerp(LowerLighting,TwoSidedLighting,TwoSidedLightingMask) * LowerColor;
+}
+
+#if MATERIAL_DECAL
+	float3 GetMaterialClippingDecal(FMaterialParameters Parameters)
+	{
+		float3 DecalClip = 1;
+		#if NUM_MATERIAL_TEXCOORDS > 0
+			// clip if projected tex coords < 0 or > 1			
+			DecalClip.xy = Parameters.TexCoords[0].xy * (1 - Parameters.TexCoords[0].xy);
+			// clip if outside of the decal frustum far plane
+			DecalClip.z = DecalFarPlaneDistance - Parameters.DecalPlaneDistance;
+		#if PS3
+			clip(DecalClip.x);
+			clip(DecalClip.y);
+			clip(DecalClip.z);
+		#else		
+			clip(DecalClip);			
+		#endif
+		#endif
+		return DecalClip;
+	}
+	float GetMaterialAttenuationDecal(FMaterialParameters Parameters)
+	{
+		return Parameters.DecalAttenuation;
+	}
+#else
+	#define GetMaterialClippingDecal(Parameters)
+	#define GetMaterialAttenuationDecal(Parameters) 1.0
+#endif
+
+#if MATERIALBLENDING_MASKED
+	void GetMaterialClipping(FMaterialParameters Parameters) 
+	{
+		GetMaterialClippingDecal(Parameters);
+		clip(GetMaterialMask(Parameters)); 
+	}
+#else
+	void GetMaterialClipping(FMaterialParameters Parameters) 
+	{
+		GetMaterialClippingDecal(Parameters);
+	}
+#endif
+
+#if SM2_PROFILE
+	#define OPTIONAL_FacingSign
+	static const float FacingSign = 1.0f;
+#else
+	#define OPTIONAL_FacingSign in float FacingSign : VFACE,
+#endif
+
+/** vectors needed for user material shaders */
+void CalcMaterialParameters(
+	in out FMaterialParameters Parameters,
+	float FacingSign,
+	float3 CameraVector,
+	float4 PixelPosition,
+	half3 LightVector = half3(0,0,1),
+	uniform bool bAllowTwoSidedFlip = true)
+{
+#if WORLD_POS
+	Parameters.WorldPosition = PixelPosition.xyz + CameraWorldPos;
+	Parameters.ScreenPosition = MulMatrix(ViewProjectionMatrix,PixelPosition);
+#else
+	Parameters.ScreenPosition = PixelPosition;
+#endif
+
+	Parameters.TangentCameraVector = normalize(CameraVector);
+	Parameters.TangentLightVector = normalize((half3)LightVector);
+	Parameters.TangentNormal = normalize(GetMaterialNormal(Parameters));
+
+#if MATERIAL_TWOSIDED
+	// allow individual shaders to override the flip
+	if (bAllowTwoSidedFlip)
+	{
+		// flip the normal for backfaces being rendered with a two-sided material
+		Parameters.TangentNormal *= TwoSidedSign;
+		// D3D requires that VFACE be used by a conditional instruction rather than used as a signed float directly.
+		float FacingSignFloat = FacingSign >= 0 ? +1 : -1;
+		#if PS3 || XBOX || SM4_PROFILE || SM2_PROFILE
+			Parameters.TangentNormal *= FacingSignFloat;
+		#else
+			// in SM3 VFACE is actually negative for frontfaces since frontfacing polys in UE3 are CM_CW instead of CM_CCW
+			Parameters.TangentNormal *= -FacingSignFloat;
+		#endif
+	}
+#endif
+
+	Parameters.TangentReflectionVector = -Parameters.TangentCameraVector + Parameters.TangentNormal * dot(Parameters.TangentNormal,Parameters.TangentCameraVector) * 2.0;
+}
+
+/** Assemble the transform from tangent space into world space */
+float3x3 CalcTangentToWorld( float3 TangentToWorld0, float4 TangentToWorld2 )
+{
+#if SM2_PROFILE
+	// In SM2 TangentToWorld0 and TangentToWorld2 are actually vectors of the TangentBasis transform.
+	// The TangentToLocal and LocalToWorld transforms can't be combined in the vertex shader,
+	// Because it uses too many temporary registers for the shader model with some vertex factories (GPUSkin).
+	// In SM2 the COLOR0 and COLOR1 interpolators are fixed point and clamped from [0,1] so rescaling is necessary in the pixel shader.
+	// Determinant of original tangent basis passed down in w component
+	float Det = (TangentToWorld2.w - 0.5) * 2;
+	// Scale bias from [0,1] to [-1,1] and normalize normal vector
+	float3 NormalV = normalize((float3(TangentToWorld2.xyz) - 0.5) * 2);
+	// Scale bias from [0,1] to [-1,1] and normalize tangent vector
+	float3 TangentV = normalize((TangentToWorld0 - 0.5) * 2);
+	// Flip binormal based on determinant of tangent basis
+	float3 BinormalV = normalize(cross(NormalV,TangentV) * Det);
+	// Transform from tangent to local space
+	return transpose(float3x3(TangentV, BinormalV, NormalV));
+#else
+	// Renormalize basis vectors as they are no longer unit length due to linear interpolation
+	float3 TangentToWorld2N = normalize(TangentToWorld2.xyz);
+	float3 TangentToWorld0N = normalize(TangentToWorld0);
+	// Derive the third basis vector off of the other two, guaranteed to be unit length as the other two are an orthonormal set.
+	// Flip based on the determinant sign
+	float3 TangentToWorld1N = cross(TangentToWorld2N,TangentToWorld0N) * TangentToWorld2.w;
+	// Transform from tangent space to world space
+	return float3x3(TangentToWorld0N, TangentToWorld1N, TangentToWorld2N);
+#endif
+}
+
+#if MATERIAL_USE_GAMMA_CORRECTION
+/** optional gamma correction to be applied to materials. Inverse gamma */
+half		MatInverseGamma;
+/** 
+* Apply linear to gamma correction. This is needed when rendering materials to a render target with gamma != 1.0
+* @param Color - color in linear space
+* @return color in gamma space
+*/
+half4 MaterialGammaCorrect( half4 Color )
+{
+	return float4( pow( Color.xyz, MatInverseGamma ), Color.w );
+}
+#else
+/** stub when not compiling with gamma correction */
+#define MaterialGammaCorrect( Color ) ( Color )
+#endif

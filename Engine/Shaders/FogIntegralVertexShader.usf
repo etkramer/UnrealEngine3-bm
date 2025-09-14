@@ -1,0 +1,20 @@
+/*=============================================================================
+	FogIntegralVertexShader.usf
+	Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
+=============================================================================*/
+
+#include "Common.usf"
+#include "Material.usf"
+#include "VertexFactory.usf"
+
+void Main(
+	FVertexFactoryInput Input,
+	out FVertexFactoryInterpolants FactoryInterpolants,
+	out float4	ScreenPosition	: TEXCOORD5,
+	out float4	Position		: POSITION
+	)
+{
+	float4 WorldPosition = VertexFactoryGetWorldPosition(Input);
+	ScreenPosition = Position = MulMatrix(ViewProjectionMatrix,WorldPosition);
+	FactoryInterpolants = VertexFactoryGetInterpolants(Input);
+}

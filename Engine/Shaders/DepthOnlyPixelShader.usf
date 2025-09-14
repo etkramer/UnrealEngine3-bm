@@ -1,0 +1,26 @@
+/*=============================================================================
+	DepthOnlyPixelShader.hlsl: Depth-only pixel shader.
+	Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
+=============================================================================*/
+
+#include "Common.usf"
+#include "Material.usf"
+#include "VertexFactory.usf"
+
+void Main(
+#if !MATERIALBLENDING_SOLID
+	FVertexFactoryInterpolants FactoryInterpolants,
+	float3 CameraVector : TEXCOORD4,
+	float4 PixelPosition : TEXCOORD5,
+	OPTIONAL_FacingSign
+#endif
+	out float4 OutColor : COLOR0
+	)
+{
+#if !MATERIALBLENDING_SOLID
+	FMaterialParameters MaterialParameters = GetMaterialParameters(FactoryInterpolants);
+	CalcMaterialParameters(MaterialParameters, FacingSign, CameraVector, PixelPosition);
+	GetMaterialClipping(MaterialParameters);
+#endif
+	OutColor = 0;
+}

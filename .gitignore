@@ -1,6 +1,5 @@
 # Content files
 /Binaries/*
-/Engine/*
 /Development/External/GFx/*
 !**/MISSING_FILES.txt
 

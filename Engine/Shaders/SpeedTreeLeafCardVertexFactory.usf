@@ -1,0 +1,154 @@
+/*=============================================================================
+	Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
+=============================================================================*/
+
+///////////////////////////////////////////////////////////////////////  
+//  Leaf card specific global variables
+
+float3		LeafRockAngles;
+float3		LeafRustleAngles;
+float4x4    CameraAlignMatrix;
+float2		LeafAngleScalars;
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// struct FVertexFactoryInput
+
+#define NUM_INPUT_TEXCOORDS_SPEEDTREE NUM_MATERIAL_TEXCOORDS
+
+struct FVertexFactoryInput
+{
+	float4	Position	: POSITION;
+	half3	TangentX	: TANGENT;
+	half3	TangentY	: BINORMAL;
+	half3	TangentZ	: NORMAL;
+	float4	WindInfo	: BLENDINDICES;
+	
+	// width, height, pivot x, pivot y
+	// angle x, angle y, angle index, corner
+	float4	LeafData1	: TEXCOORD0;
+	float4	LeafData2	: TEXCOORD1;
+	
+#if NUM_INPUT_TEXCOORDS_SPEEDTREE
+	float2	TexCoords[NUM_INPUT_TEXCOORDS_SPEEDTREE] : TEXCOORD2;
+#endif
+
+#if NEEDS_VERTEX_LIGHTMAP
+	float4 LightMapA : TEXCOORD5;
+	float4 LightMapB : TEXCOORD6;
+	float4 LightMapC : TEXCOORD7;
+#elif NEEDS_SIMPLE_VERTEX_LIGHTMAP
+	float4 LightMapA : TEXCOORD5;
+#endif
+};
+
+
+#include "SpeedTreeVertexFactoryBase.usf"
+
+ 
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// LeafToLocal
+
+float4 LeafToLocal(FVertexFactoryInput Input,float4 Vector)
+{
+	// compute the leaf origin like normal wind
+	float4 LeafOrigin = WindEffect(Input.Position, Input.WindInfo);
+
+	// rock & rustling (offset a bit using the angles so they aren't all in the same plane)
+	int AngleIndex = Input.LeafData2.z;
+	float3 AngleMask = 
+		AngleIndex == 0 ? float3(1,0,0) :
+		(AngleIndex == 1 ? float3(0,1,0) :
+		float3(0,0,1));
+	float3x3 matRotation = RotationMatrix_zAxis(LeafAngleScalars.x * dot(LeafRockAngles,AngleMask));
+	matRotation = mul(RotationMatrix_yAxis(LeafAngleScalars.y * dot(LeafRustleAngles,AngleMask)), matRotation);
+	Vector.xyz = mul(matRotation, Vector.xyz);
+
+	// rotate just this leaf a bit (this isn't completely necessary, but is for z-buffer problems)
+	matRotation = RotationMatrix_xAxis(Input.LeafData2.x);
+	matRotation = MulMatrix(RotationMatrix_yAxis(Input.LeafData2.y), matRotation);
+	Vector.xyz = mul(matRotation, Vector.xyz).xyz;
+	
+	// align the quad to the camera
+	Vector.xyz = MulMatrix((float3x3)CameraAlignMatrix, Vector.xyz);
+	
+	return float4(
+		LeafOrigin.xyz * Vector.w + Vector.xyz,
+		Vector.w
+		);
+}
+
+float4 CalcLocalPosition(FVertexFactoryInput Input)
+{
+	const float3 LeafUnitSquare[4] =
+	{
+		float3(0.5f, 0.5f, 0.0f),
+		float3(-0.5f, 0.5f, 0.0f),
+		float3(-0.5f, -0.5f, 0.0f),
+		float3(0.5f, -0.5f, 0.0f)
+	};
+
+#if PS3
+	// PS3 wants it this way...
+	const float3 LeafUnitVertex =
+		(int)Input.LeafData2.w == 0 ? LeafUnitSquare[0] :
+		((int)Input.LeafData2.w == 1 ? LeafUnitSquare[1] :
+		((int)Input.LeafData2.w == 2 ? LeafUnitSquare[2] :
+		LeafUnitSquare[3]));
+#else
+	// D3D10 wants it this way... :(
+	const float3 LeafUnitVertex = LeafUnitSquare[(int)Input.LeafData2.w];
+#endif
+
+	float3 LeafVertexPosition = (LeafUnitVertex - float3(Input.LeafData1.zw, 0)) * Input.LeafData1.xyy ;
+
+	return LeafToLocal(
+		Input,
+		float4(
+			LeafVertexPosition,
+			1
+			)
+		);
+}
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// VertexFactoryGetWorldPosition
+
+float4 VertexFactoryGetWorldPosition(FVertexFactoryInput Input)
+{
+	return MulMatrix(LocalToWorld, CalcLocalPosition(Input) );
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// VertexFactoryGetInterpolants
+
+FVertexFactoryInterpolants VertexFactoryGetInterpolants(FVertexFactoryInput Input)
+{
+	FVertexFactoryInterpolants Interpolants;
+	VertexFactoryGetWorldPositionBase(Input, Interpolants);
+	return Interpolants;
+}
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// VertexFactoryGetPreviousWorldPosition
+
+float4 VertexFactoryGetPreviousWorldPosition(FVertexFactoryInput Input)
+{
+	return MulMatrix(PreviousLocalToWorld, CalcLocalPosition(Input) );
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// GetWorldTangentBasis
+
+half3x3 GetWorldTangentBasis(FVertexFactoryInput Input)
+{
+	return MulMatrix(
+		half3x3(
+			TangentBias(Input.TangentX.xyz),
+			TangentBias(Input.TangentY.xyz),
+			TangentBias(Input.TangentZ.xyz)
+			),
+		(half3x3)RotationOnlyMatrix	
+		);
+}

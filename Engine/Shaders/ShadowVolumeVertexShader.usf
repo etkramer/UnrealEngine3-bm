@@ -1,0 +1,28 @@
+/*=============================================================================
+	ShadowVolumeVertexShader.usf: Shader for rendering a shadow volume.
+	Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
+=============================================================================*/
+
+#include "Common.usf"
+
+float4		LightPosition;
+float		BaseExtrusion;
+
+float4x4 LocalToWorld;
+void Main(
+	in  float4 InPosition  : POSITION,
+	in  float  InExtrusion : TEXCOORD0,
+	out float4 OutPosition : POSITION
+	)
+{
+	float3 WorldPosition = MulMatrix(LocalToWorld,InPosition).xyz;
+
+	float4 ExtrudedVertex = float4(WorldPosition * LightPosition.w - LightPosition.xyz,0);
+	float4 Vertex = float4(WorldPosition,1);
+
+	// Offset the unextruded vertex slightly to allow for some mismatch between the shadow volume and the base object.
+	// This can happen with GPU skinning vs the CPU skinning used for the skeletal mesh's shadow volume.	
+	Vertex.xyz += normalize(ExtrudedVertex.xyz) * BaseExtrusion;
+
+	OutPosition = MulMatrix(ViewProjectionMatrix,InExtrusion > 0.5 ? ExtrudedVertex : Vertex);
+}

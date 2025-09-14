@@ -1,0 +1,42 @@
+/*=============================================================================
+	PointLightVertexShader.hlsl: Point light vertex shader.
+	Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
+=============================================================================*/
+
+#define NEEDS_LIGHTMAP_COORDINATE STATICLIGHTING_TEXTUREMASK
+
+#include "Common.usf"
+#include "Material.usf"
+#include "VertexFactory.usf"
+
+float4 LightPositionAndInvRadius; // w = 1.0 / Radius
+
+void Main(
+	FVertexFactoryInput Input,
+#if STATICLIGHTING_VERTEXMASK
+	float LightMask : BLENDWEIGHT0,
+#endif
+	out FVertexFactoryInterpolants OutFactoryInterpolants,
+	out float3 OutTangentLightVector : TEXCOORD4,
+	out float4 OutWorldLightVector : TEXCOORD5,
+	out float3 OutCameraVector : TEXCOORD6,
+	out float4 OutPixelPosition : TEXCOORD7,
+	out float4 OutPosition : POSITION
+	)
+{
+	float4 WorldPosition = VertexFactoryGetWorldPosition(Input);
+	OutPosition = MulMatrix(ViewProjectionMatrix,WorldPosition);
+	OutFactoryInterpolants = VertexFactoryGetInterpolants(Input);
+#if WORLD_POS
+	OutPixelPosition = WorldPosition;
+#else
+	OutPixelPosition = OutPosition;
+#endif
+	float3x3 TangentBasis = VertexFactoryGetTangentBasis(Input);
+	OutCameraVector = VertexFactoryWorldToTangentSpace(Input,TangentBasis,CameraPosition.xyz - WorldPosition.xyz * CameraPosition.w);
+	OutTangentLightVector = VertexFactoryWorldToTangentSpace(Input,TangentBasis,LightPositionAndInvRadius.xyz - WorldPosition.xyz);
+	OutWorldLightVector = float4((LightPositionAndInvRadius.xyz - WorldPosition.xyz) * LightPositionAndInvRadius.w,0);
+#if STATICLIGHTING_VERTEXMASK
+	OutWorldLightVector.w = LightMask;
+#endif
+}

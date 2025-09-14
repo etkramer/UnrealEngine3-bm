@@ -1,0 +1,132 @@
+/*=============================================================================
+	ShadowProjectionCommon.usf: Contains functions that uniformly filter a depth buffer.
+	Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
+=============================================================================*/
+
+sampler2D ShadowDepthTexture;
+float4 SampleOffsets[NUM_SAMPLE_CHUNKS * 2];
+float2 ShadowBufferSize;
+
+/**
+* Takes samples and compares and averages manually.
+*
+* @return a PCF value between 0 and 1
+*/
+half ManualPCF(float4 ShadowPosition)
+{
+	half Shadow = 0;
+
+	half SampleWeight = .25 / NUM_SAMPLE_CHUNKS;
+
+	UNROLL
+	for(int ChunkIndex = 0;ChunkIndex < NUM_SAMPLE_CHUNKS;ChunkIndex++)
+	{
+		float4	ShadowDepths;
+
+		ShadowDepths.r = texDepth2D(ShadowDepthTexture,ShadowPosition.xy + SampleOffsets[ChunkIndex * 2 + 0].xy).r;
+		ShadowDepths.g = texDepth2D(ShadowDepthTexture,ShadowPosition.xy + SampleOffsets[ChunkIndex * 2 + 0].zw).r;
+		ShadowDepths.b = texDepth2D(ShadowDepthTexture,ShadowPosition.xy + SampleOffsets[ChunkIndex * 2 + 1].xy).r;
+		ShadowDepths.a = texDepth2D(ShadowDepthTexture,ShadowPosition.xy + SampleOffsets[ChunkIndex * 2 + 1].zw).r;
+
+		Shadow += dot(ShadowPosition.z < ShadowDepths ? half4(1,1,1,1) : half4(0,0,0,0), SampleWeight.xxxx);
+	}
+	return Shadow;
+}
+
+/**
+* Takes samples, compares and billinear filtering are done by hardware.
+*
+* @return a PCF value between 0 and 1
+*/
+half HardwarePCF(float4 ShadowPosition)
+{
+	half Shadow = 0;
+
+	UNROLL
+	for(int ChunkIndex = 0;ChunkIndex < NUM_SAMPLE_CHUNKS;ChunkIndex++)
+	{
+		half4 FinalOffset = ShadowPosition.xyxy + SampleOffsets[ChunkIndex * 2].xyzw;
+		
+		Shadow += texDepth2Dproj(ShadowDepthTexture,half4(FinalOffset.xy, ShadowPosition.z, 1)).r;
+		Shadow += texDepth2Dproj(ShadowDepthTexture,half4(FinalOffset.zw, ShadowPosition.z, 1)).r;
+		
+		FinalOffset = ShadowPosition.xyxy + SampleOffsets[ChunkIndex * 2 + 1].xyzw;
+		
+		Shadow += texDepth2Dproj(ShadowDepthTexture,half4(FinalOffset.xy, ShadowPosition.z, 1)).r;
+		Shadow += texDepth2Dproj(ShadowDepthTexture,half4(FinalOffset.zw, ShadowPosition.z, 1)).r;
+	}
+	return Shadow * .25 / NUM_SAMPLE_CHUNKS;
+}
+
+/**
+* Takes refining samples, retrieving 4 neighboring values in every texture lookup using Fetch4.  
+* The neighboring values are then bilinearly filtered in the shader.
+*
+* @return a PCF value between 0 and 1
+*/
+half Fetch4PCF(float4 ShadowPosition)
+{
+	half Shadow = 0;
+	
+	//used to normalize accumulated coverage, since there are 4 bilinearly filtered samples per chunk
+	half SampleWeight = .25 / NUM_SAMPLE_CHUNKS;
+
+	//Go through each chunk and take samples
+	UNROLL
+	for(int ChunkIndex = 0;ChunkIndex < NUM_SAMPLE_CHUNKS;ChunkIndex++)
+	{
+		/* first two bilinearly filtered lookups in this chunk */
+
+		//offset this pixel's position in lightspace
+		half4 FinalOffset = ShadowPosition.xyxy + SampleOffsets[ChunkIndex * 2].xyzw;
+		
+		//lookup 4 neighboring depth values using Fetch4 in each texDepth2Dlod
+		float4 ShadowDepthsOne = texDepth2D(ShadowDepthTexture,FinalOffset.xy);
+		float4 ShadowDepthsTwo = texDepth2D(ShadowDepthTexture,FinalOffset.zw);
+
+		half4 TopCoverageValues;
+		half4 BottomCoverageValues;
+		//Compare this pixel's depth, projected into lightspace, with the depths from the light's POV.
+		TopCoverageValues.xy = ShadowPosition.z < ShadowDepthsOne.wx;
+		TopCoverageValues.zw = ShadowPosition.z < ShadowDepthsTwo.wx;
+		BottomCoverageValues.xy = ShadowPosition.z < ShadowDepthsOne.yz;
+		BottomCoverageValues.zw = ShadowPosition.z < ShadowDepthsTwo.yz;
+
+		//calculate the fraction this pixel is between neighboring texels in the shadowmap
+		half4 fracCoordOne = frac(FinalOffset.xyzw * ShadowBufferSize.xyxy);
+
+		//linearly interpolate between the top four samples and the bottom four using the appropriate vertical fraction as a weight
+		half4 VerticalShadowPercentOne = lerp(TopCoverageValues, BottomCoverageValues, fracCoordOne.yyww);
+		
+		/* second two bilinearly filtered lookups in this chunk */
+
+		FinalOffset = ShadowPosition.xyxy + SampleOffsets[ChunkIndex * 2 + 1].xyzw;
+
+		//lookup 4 neighboring depth values using Fetch4 in each texDepth2Dlod
+		ShadowDepthsOne = texDepth2D(ShadowDepthTexture,FinalOffset.xy);
+		ShadowDepthsTwo = texDepth2D(ShadowDepthTexture,FinalOffset.zw);
+
+		//Compare this pixel's depth, projected into lightspace, with the depths from the light's POV.
+		TopCoverageValues.xy = ShadowPosition.z < ShadowDepthsOne.wx;
+		TopCoverageValues.zw = ShadowPosition.z < ShadowDepthsTwo.wx;
+		BottomCoverageValues.xy = ShadowPosition.z < ShadowDepthsOne.yz;
+		BottomCoverageValues.zw = ShadowPosition.z < ShadowDepthsTwo.yz;
+
+		//calculate the fraction this pixel is between neighboring texels in the shadowmap
+		half4 fracCoordTwo = frac(FinalOffset.xyzw * ShadowBufferSize.xyxy);
+
+		//linearly interpolate between the top four samples and the bottom four using the appropriate vertical fraction as a weight
+		half4 VerticalShadowPercentTwo = lerp(TopCoverageValues, BottomCoverageValues, fracCoordTwo.yyww);
+
+		half4 BillinearShadowPercent;
+		//linearly interpolate between the first two vertical results weighted with the appropriate horizontal fraction
+		BillinearShadowPercent.xy = lerp(VerticalShadowPercentOne.xz, VerticalShadowPercentOne.yw, fracCoordOne.xz);
+		//linearly interpolate between the second two vertical results weighted with the appropriate horizontal fraction
+		BillinearShadowPercent.zw = lerp(VerticalShadowPercentTwo.xz, VerticalShadowPercentTwo.yw, fracCoordTwo.xz);
+
+		//weight the 4 bilinearly filtered samples and accumulate
+		Shadow = Shadow + dot(BillinearShadowPercent, SampleWeight.xxxx);
+
+	}
+	return Shadow;
+}

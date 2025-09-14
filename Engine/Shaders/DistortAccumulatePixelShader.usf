@@ -1,0 +1,46 @@
+/*=============================================================================
+	DistortionAccumulatePixelShader.usf: Pixel shader for accumulating distortion offsets
+	Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
+=============================================================================*/
+
+#include "Common.usf"
+#include "Material.usf"
+#include "VertexFactory.usf"
+
+static const half DistortionScaleBias = 4.0f;
+
+/** output distortion offsets as color so they can be accumulated (via blending) */
+void Main(
+	FVertexFactoryInterpolants Interpolants,
+	float4	PixelPosition	: TEXCOORD5,
+	float3	CameraVector	: TEXCOORD6,
+	OPTIONAL_FacingSign
+	out float4 OutColor		: COLOR0
+	)
+{
+	// material parameter inputs
+	FMaterialParameters MaterialParameters = GetMaterialParameters(Interpolants);
+	CalcMaterialParameters(MaterialParameters,FacingSign,CameraVector,PixelPosition);
+	
+	// material distortion offset
+	float2 Distortion = GetMaterialDistortion(MaterialParameters) * DistortionScaleBias;	
+
+#if !XBOX
+	//clip if the distortion distance (squared) is too small to be noticed
+	//this will result in a less expensive apply pass since the clipped pixels won't set stencil to pass
+	//don't clip on Xbox, since it will disable writing to Hi-Stencil
+	clip(dot(Distortion, Distortion) - .1);
+#endif
+	
+	// scale up offsets for better precision
+	// clamp [-255,255] and normalize to [-1,1]
+	Distortion = clamp(Distortion,-255,255)/255.f;
+	// store positive and negative offsets separately
+	float2 PosOffset = max(Distortion,0);
+	float2 NegOffset = abs(min(Distortion,0));
+	
+	// output positives in R|G channels and negatives in B|A channels
+	OutColor = float4(PosOffset.x,PosOffset.y,NegOffset.x,NegOffset.y);
+}
+
+

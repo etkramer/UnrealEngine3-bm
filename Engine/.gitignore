@@ -1,0 +1,9 @@
+# Temporary files
+Autosaves
+Shaders/PDBDump/*
+!Shaders/PDBDump/DO_NOT_DELETE.txt
+Shaders/WorkingDirectory/*
+!Shaders/WorkingDirectory/DO_NOT_DELETE.txt
+
+# Engine files
+Content/*

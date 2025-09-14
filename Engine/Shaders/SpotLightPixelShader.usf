@@ -1,0 +1,73 @@
+/*=============================================================================
+	SpotLightPixelShader.hlsl: Spot light pixel shader.
+	Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
+=============================================================================*/
+
+#define NEEDS_LIGHTMAP_COORDINATE STATICLIGHTING_TEXTUREMASK
+
+#include "Common.usf"
+#include "Material.usf"
+#include "VertexFactory.usf"
+
+half4 LightColorAndFalloffExponent;
+float3	SpotDirection;
+float2	SpotAngles;
+sampler2D ShadowTexture;
+
+// Unpack the light color and falloff exponent.
+static half3 LightColor = LightColorAndFalloffExponent.xyz;
+static half FalloffExponent = LightColorAndFalloffExponent.w;
+
+void Main(
+	in FVertexFactoryInterpolants FactoryInterpolants,
+	in float3 TangentLightVector : TEXCOORD4,
+	in float4 WorldLightVector : TEXCOORD5,
+	in float3 CameraVector : TEXCOORD6,
+	in float4 PixelPosition : TEXCOORD7,
+	OPTIONAL_FacingSign
+	out float4 OutColor : COLOR0
+	)
+{
+	FMaterialParameters MaterialParameters = GetMaterialParameters(FactoryInterpolants);
+	CalcMaterialParameters(MaterialParameters,FacingSign,CameraVector,PixelPosition,TangentLightVector);
+
+#if STATICLIGHTING_TEXTUREMASK
+	half	LightMask = Square(tex2D(ShadowTexture,GetLightMapCoordinate(FactoryInterpolants)).r);
+#elif STATICLIGHTING_VERTEXMASK
+	half	LightMask = WorldLightVector.w;
+#else
+	half	LightMask = 1;
+#endif
+
+	float ConeAngleFalloff = Square(clamp((dot(normalize((half3)WorldLightVector.xyz),-SpotDirection) - SpotAngles.x) * SpotAngles.y,0,1));
+
+	// clip and early out if outside of the light radius, masked, or outside of the cone angle
+#if !SM2_PROFILE
+	OutColor = float4(0,0,0,0);
+	float LightDist = dot(WorldLightVector.xyz,WorldLightVector.xyz);	
+	float LightAmount = (1 - LightDist) * LightMask * ConeAngleFalloff;	
+	clip(LightAmount);
+#endif
+
+#if !SM2_PROFILE && !PS3 && !SM4_PROFILE
+	// only emit the branch attribute on xbox, D3D platforms have too many restrictions. (tex2D can't be used inside the if)
+	#if XBOX
+		BRANCH
+	#endif
+	if( LightAmount > 0 )
+#endif
+	{
+		GetMaterialClipping(MaterialParameters);
+
+		OutColor.rgb = GetLightAttenuation(MaterialParameters.ScreenPosition) *
+			LightMask *
+			GetMaterialPointLightTransfer(MaterialParameters,WorldLightVector.xyz,FalloffExponent) *
+			LightColor *
+			ConeAngleFalloff;
+
+		OutColor.a = 0.0f;
+	}		
+
+	//Don't use AccumulateSceneColor() even though we are additively blending to avoid adding instructions which break borderline SM2 materials
+	OutColor = RETURN_COLOR(OutColor);
+}

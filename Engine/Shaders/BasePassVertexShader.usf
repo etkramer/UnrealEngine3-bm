@@ -1,0 +1,224 @@
+/*=============================================================================
+	BasePassVertexShader.usf: Base pass vertex shader
+	Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
+=============================================================================*/
+
+#define NEEDS_LIGHTMAP_COORDINATE		(TEXTURE_LIGHTMAP || SIMPLE_TEXTURE_LIGHTMAP)
+#define NEEDS_VERTEX_LIGHTMAP			VERTEX_LIGHTMAP
+#define NEEDS_SIMPLE_VERTEX_LIGHTMAP	SIMPLE_VERTEX_LIGHTMAP
+#define NEEDS_BASEPASS_FOGGING			(MATERIALBLENDING_TRANSLUCENT || MATERIALBLENDING_ADDITIVE)
+
+// SH lighting requires a TangentToWorld matrix.
+#if ENABLE_SH_LIGHT
+	#undef WORLD_COORDS
+	#define WORLD_COORDS 1
+#endif
+
+#include "Common.usf"
+#include "Material.usf"
+#include "VertexFactory.usf"
+
+#if NEEDS_BASEPASS_FOGGING
+#include "HeightFogCommon.usf"
+#include "FogVolumeCommon.usf"
+#endif
+
+/** World space light direction for the directional light */
+float3 LightDirection;
+
+/**
+ * Scale factors for the light-map coefficients.
+ * The light-map scale array is a set of float4s so it can be set as a contiguous chunk regardless of platform shader constant alignment.
+ */
+float4 LightMapScale[NUM_LIGHTMAP_COEFFICIENTS];
+
+/** Intersecting fog volume color */
+half3 ApproxFogColor;
+
+/** Minimum extrema of the AABB of the intersecting fog volume */
+float3 FogVolumeBoxMin;
+
+/** Maximum extrema of the AABB of the intersecting fog volume */
+float3 FogVolumeBoxMax;
+
+/*
+* Combines height fog and fog volume contribution.  Height fog is always applied after the fog volume 
+* since height fog is infinite in extent and fog volumes are bounded.
+*/
+half4 GetCombinedFog(half4 HeightFogContribution,half4 FogVolumeContribution)
+{
+	//filter fog volume color as if it were coming through the height fog, and add in the emitted color from height fog
+	//alpha stores the amount of original scene color to be transmitted, which is attenuated by both fog factors
+	return half4(
+		FogVolumeContribution.rgb * HeightFogContribution.a + HeightFogContribution.rgb,
+		FogVolumeContribution.a * HeightFogContribution.a
+		);
+}
+
+/** Computes fogging contribution for a given line integral. */
+half4 ComputeFogContribution(float LineIntegral)
+{
+	//find the fog volume factor by evaluating the transmittance function
+	half FogVolumeFactor = exp2(-LineIntegral);
+	//weight fog volume color by 1 - fog volume factor
+	half3 FogVolumeColor = (1.0f - FogVolumeFactor) * ApproxFogColor;
+
+	return half4(FogVolumeColor,FogVolumeFactor);
+}
+
+#if FOGVOLUMEDENSITY_NONE
+	/** Computes fog contribution from no fog volume. */
+	half4 GetFogDensity(float4 WorldPosition)
+	{
+		return half4(0,0,0,1);
+	}
+#endif
+
+#if FOGVOLUMEDENSITY_CONSTANT
+	/**
+	 * Computes fog contribution for a constant density fog volume.
+	 * The fog volume contribution is clipped by the AABB of the fog volume.
+	 */
+	half4 GetFogDensity(float4 WorldPosition)
+	{
+		//clip the ray from the vertex to the camera by the AABB of the fog volume 
+		float2 BoxIntersections = RayBoxIntersect(WorldPosition.xyz, CameraPosition.xyz, FogVolumeBoxMin, FogVolumeBoxMax); 
+		//get the fog volume line integral
+		half LineIntegral = ConstantDensityLineIntegral(WorldPosition.xyz, CameraPosition.xyz, BoxIntersections);
+		// Compute the fog volume contribution from the integral.
+		return ComputeFogContribution(LineIntegral);
+	}
+#endif
+
+#if FOGVOLUMEDENSITY_LINEARHALFSPACE
+	/**
+	 * Computes fog contribution for a linear halfspace density fog volume.
+	 * The fog volume contribution is clipped by the AABB of the fog volume.
+	 */
+	half4 GetFogDensity(float4 WorldPosition)
+	{
+		//clip the ray from the vertex to the camera by the AABB of the fog volume 
+		float2 BoxIntersections = RayBoxIntersect(WorldPosition.xyz, CameraPosition.xyz, FogVolumeBoxMin, FogVolumeBoxMax); 
+		//get the fog volume line integral
+		half LineIntegral = LinearHalfspaceLineIntegral(WorldPosition.xyz, CameraPosition.xyz, BoxIntersections);
+		// Compute the fog volume contribution from the integral.
+		return ComputeFogContribution(LineIntegral);
+	}
+#endif
+
+#if FOGVOLUMEDENSITY_SPHEREDENSITY
+	/**
+	 * Computes fog contribution for a spherical density fog volume.
+	 */
+	half4 GetFogDensity(float4 WorldPosition)
+	{
+		//get the fog volume line integral
+		half LineIntegral = SphericalLineIntegral(WorldPosition.xyz, CameraPosition.xyz);
+		// Compute the fog volume contribution from the integral.
+		return ComputeFogContribution(LineIntegral);
+	}
+#endif
+
+#if FOGVOLUMEDENSITY_CONEDENSITY
+	/**
+	 * Computes fog contribution for a spherical density fog volume.
+	 */
+	half4 GetFogDensity(float4 WorldPosition)
+	{
+		// Cone fog integral isn't implemented for translucency!
+		half LineIntegral = 0;
+		// Compute the fog volume contribution from the integral.
+		return ComputeFogContribution(LineIntegral);
+	}
+#endif
+
+/** Entry point for the base pass vertex shader. */
+void Main(
+	FVertexFactoryInput Input,
+	out FVertexFactoryInterpolants FactoryInterpolants,
+
+	#if NEEDS_VERTEX_LIGHTMAP
+		out float4 LightMapA_FogR	: TEXCOORD2,
+		out float4 LightMapB_FogG	: TEXCOORD3,
+		out float4 LightMapC_FogB	: TEXCOORD4,
+	#else
+		#if SIMPLE_VERTEX_LIGHTMAP
+			out float3 LightMapA		: TEXCOORD2,
+		#endif
+		#if NEEDS_BASEPASS_FOGGING
+			out float4 VertexFog		: TEXCOORD4,
+		#elif ENABLE_DIRECTIONAL_LIGHT
+			out float3 TangentLightVector	: TEXCOORD4,
+		#endif
+	#endif
+
+	out float4 PixelPosition	: TEXCOORD5,
+	out float4 CameraVector_FogA: TEXCOORD6,
+#if !MATERIAL_LIGHTINGMODEL_UNLIT
+	out float3 SkyVector		: TEXCOORD7,
+#endif
+	out float4 Position : POSITION
+	)
+{
+	float4 WorldPosition = VertexFactoryGetWorldPosition(Input);
+	Position = MulMatrix(ViewProjectionMatrix,WorldPosition);
+	FactoryInterpolants = VertexFactoryGetInterpolants(Input);
+#if WORLD_POS
+	PixelPosition = WorldPosition;
+#else
+	PixelPosition = Position;
+#endif
+
+	float3x3 TangentBasis = VertexFactoryGetTangentBasis(Input);
+	CameraVector_FogA.xyz = VertexFactoryWorldToTangentSpace(Input,TangentBasis,CameraPosition.xyz - WorldPosition.xyz * CameraPosition.w);
+
+	#if ENABLE_DIRECTIONAL_LIGHT
+		TangentLightVector = VertexFactoryWorldToTangentSpace(Input,TangentBasis,LightDirection);
+	#endif
+
+	#if !MATERIAL_LIGHTINGMODEL_UNLIT
+		// Calculate sky vector
+		SkyVector = VertexFactoryWorldToTangentSpace(Input,TangentBasis,float3(0,0,1));
+	#endif
+
+	CameraVector_FogA.w = 0;
+
+	// Calculate the fog needed for translucency
+	#if NEEDS_VERTEX_LIGHTMAP
+		LightMapA_FogR.w = 0;
+		LightMapB_FogG.w = 0;
+		LightMapC_FogB.w = 0;
+	#endif
+
+	#if NEEDS_BASEPASS_FOGGING
+		float4 Fog = GetCombinedFog(
+			CalculateVertexHeightFog(WorldPosition.xyz, CameraPosition),
+			GetFogDensity(WorldPosition)
+			);
+
+		#if NEEDS_VERTEX_LIGHTMAP
+			LightMapA_FogR.w = Fog.r;
+			LightMapB_FogG.w = Fog.g;
+			LightMapC_FogB.w = Fog.b;
+			CameraVector_FogA.w = Fog.a;
+		#else
+			VertexFog = Fog;
+		#endif
+	#endif
+
+	#if NEEDS_VERTEX_LIGHTMAP
+		float4 InLightMapA;
+		float4 InLightMapB;
+		float4 InLightMapC;
+		VertexFactoryGetVertexLightMap(Input,InLightMapA,InLightMapB,InLightMapC);
+
+		LightMapA_FogR.xyz = pow( InLightMapA FCOLOR_COMPONENT_SWIZZLE .rgb, 2.2 ) * LightMapScale[0].rgb;
+		LightMapB_FogG.xyz = pow( InLightMapB FCOLOR_COMPONENT_SWIZZLE .rgb, 2.2 ) * LightMapScale[1].rgb;
+		LightMapC_FogB.xyz = pow( InLightMapC FCOLOR_COMPONENT_SWIZZLE .rgb, 2.2 ) * LightMapScale[2].rgb;
+	#elif SIMPLE_VERTEX_LIGHTMAP
+		float4 InLightMapA;
+		VertexFactoryGetSimpleVertexLightMap(Input,InLightMapA);
+
+		LightMapA = pow( InLightMapA FCOLOR_COMPONENT_SWIZZLE .rgb, 2.2 ) * LightMapScale[0].rgb;
+	#endif
+}

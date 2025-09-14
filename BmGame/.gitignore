@@ -5,15 +5,7 @@ Script
 
 # Game files
 CookedPC/*
-Localization/*
-!Localization/Int
 
 # User files
 Config/Bm*
-Content/*
-
-# User-specific
-# Config/Bm*.ini
-# Config/Bm*.txt
-
 Content/*

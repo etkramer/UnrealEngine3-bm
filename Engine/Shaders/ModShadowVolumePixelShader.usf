@@ -1,0 +1,28 @@
+/*=============================================================================
+	ModShadowVolumePixelShader.usf: Pixel shader for modulated shadow volumes
+	Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
+=============================================================================*/
+
+#include "Common.usf"
+#include "ModShadowCommon.usf"
+
+void Main(
+	in float4 ScreenPosition : TEXCOORD0,
+	out float4 OutColor : COLOR0
+	)
+{
+	half SceneW = PreviousDepth(ScreenPosition);
+
+#if MODSHADOW_LIGHTTYPE_DIRECTIONAL
+	// no attenuation necessary for directional lights
+	half ShadowAtt = 1;
+#else
+	// attenuate between shadow color and white based on distance
+	half ShadowAtt = ShadowAttenuation(ScreenPosition,SceneW);
+#endif
+
+	// add modulated/attenuated shadow color to shadow
+	float4 ShadowedColor = lerp(float4(1,1,1,1),ShadowModulateColor,ShadowAtt);
+	// RETURN_COLOR not needed with modulative blending
+	OutColor = ShadowedColor;
+}

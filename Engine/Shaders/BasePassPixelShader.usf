@@ -1,0 +1,300 @@
+/*=============================================================================
+	BasePassPixelShader.usf: Base pass pixel shader
+	Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
+=============================================================================*/
+
+#define NEEDS_LIGHTMAP_COORDINATE	(TEXTURE_LIGHTMAP || SIMPLE_TEXTURE_LIGHTMAP)
+
+/* If simple lighting is enabled then the base pass shader will just be Diffuse * LightMap + Emissive */
+#define SIMPLE_LIGHTING				((SIMPLE_VERTEX_LIGHTMAP || SIMPLE_TEXTURE_LIGHTMAP) && !MATERIAL_LIGHTINGMODEL_CUSTOM)
+
+#define NEEDS_BASEPASS_FOGGING		(MATERIALBLENDING_TRANSLUCENT || MATERIALBLENDING_ADDITIVE)
+
+// SH lighting requires a TangentToWorld matrix.
+#if ENABLE_SH_LIGHT
+	#undef WORLD_COORDS
+	#define WORLD_COORDS 1
+#endif
+
+#include "Common.usf"
+#include "Material.usf"
+#include "VertexFactory.usf"
+
+#if ENABLE_SH_LIGHT
+	#include "SphericalHarmonicCommon.usf"
+#endif
+
+/** 1 if this object has MotionBlurScale set to enable motionblur, and 0 if disabled */
+float MotionBlurMask = 0.0f;
+
+/** Color of the combined directional light */
+float3 LightColor;
+half3 UpperSkyColor;
+half3 LowerSkyColor;
+
+
+// SkyFactor and AmbientColor are constants if we assume SHOW_Lighting to be always set. We make the assumption that on console 
+// performance is more important than being able to toggle this flag and therefore use special shortcut.
+#if XBOX || PS3
+static const half3 AmbientColor = 0;
+static const half SkyFactor = 1;
+#else
+half4 AmbientColorAndSkyFactor;
+static const half3 AmbientColor = AmbientColorAndSkyFactor.rgb;
+static const half SkyFactor = AmbientColorAndSkyFactor.a;
+#endif
+
+#if TEXTURE_LIGHTMAP || SIMPLE_TEXTURE_LIGHTMAP
+//Directional lightmaps use 3 samplers here so the most a material can use is 13 
+//This is enforced by the material compiler through MAX_ME_PIXELSHADER_SAMPLERS
+sampler2D LightMapTextures[NUM_LIGHTMAP_COEFFICIENTS];
+
+// The light-map scale array is a set of float4s so it can be set as a contiguous chunk regardless of platform shader constant alignment.
+float4 LightMapScale[NUM_LIGHTMAP_COEFFICIENTS];
+#endif
+
+void Main(
+	FVertexFactoryInterpolants Interpolants,
+
+	#if VERTEX_LIGHTMAP
+	//for vertex-lightmapped translucency we are out of interpolators to pass in the vertex fog
+	//so it must be packed in the w of other interpolators
+		float4 LightMapA_FogR	: TEXCOORD2,
+		float4 LightMapB_FogG	: TEXCOORD3,
+		float4 LightMapC_FogB	: TEXCOORD4,
+	#else
+		#if SIMPLE_VERTEX_LIGHTMAP
+			float3 LightMapA		: TEXCOORD2,
+		#endif
+		//for texture-lightmapped translucency we can pass the vertex fog in its own interpolator
+		#if NEEDS_BASEPASS_FOGGING
+			float4 VertexFog		: TEXCOORD4,
+		#elif ENABLE_DIRECTIONAL_LIGHT
+			float3 TangentLightVector	: TEXCOORD4,
+		#endif
+	#endif
+
+	float4 PixelPosition	: TEXCOORD5,
+	float4 CameraVector_FogA: TEXCOORD6,
+#if !MATERIAL_LIGHTINGMODEL_UNLIT
+	float3 SkyVector		: TEXCOORD7,
+#endif
+	OPTIONAL_FacingSign
+	out float4 OutColor		: COLOR0
+	)
+{
+	FMaterialParameters MaterialParameters = GetMaterialParameters(Interpolants);
+
+#if MATERIAL_DECAL && XBOX
+	float3 ClipDecal = GetMaterialClippingDecal(MaterialParameters);
+	float AttenDecal = GetMaterialAttenuationDecal(MaterialParameters);
+	IFALL
+	if( ClipDecal.x <= 0 ||
+		ClipDecal.y <= 0 || 
+		ClipDecal.z <= 0 ||
+		AttenDecal <= 0 )
+	{
+		#if MATERIALBLENDING_MODULATE
+			OutColor = float4(1,1,1,1);
+		#else
+			OutColor = float4(0,0,0,0);
+		#endif
+	}
+	else
+	{
+#endif
+
+	#if !ENABLE_DIRECTIONAL_LIGHT
+		float3 TangentLightVector = float3(0,0,1);
+	#endif
+
+	//Don't flip the normal for backfaces of two-sided materials used with this shader.
+	//As a result, the backfaces will have the same lighting as the frontfaces, instead of being mostly black.
+	CalcMaterialParameters(MaterialParameters,FacingSign,CameraVector_FogA.xyz,PixelPosition,TangentLightVector,false);
+
+	//Clip if the blend mode requires it.
+	GetMaterialClipping(MaterialParameters);
+
+	half3 Emissive = GetMaterialEmissive(MaterialParameters);
+	half3 Color = Emissive;
+
+	#if !MATERIAL_LIGHTINGMODEL_UNLIT
+		#if !SIMPLE_LIGHTING
+
+			static const half3x3 LightMapBasis = half3x3(
+				half3(	0.0f,					-1.0f / sqrt(2.0f),			+1.0f / sqrt(2.0f)),
+				half3(	sqrt(6.0f) / 3.0f,		-1.0f / sqrt(6.0f),			-1.0f / sqrt(6.0f)),
+				half3(	1.0f / sqrt(3.0f),		1.0f / sqrt(3.0f),			1.0f / sqrt(3.0f))
+				);
+
+#if DECAL_FACTORY
+			// for decals the normal and reflection vector are transformed ouf of the projected decal frame 
+			// and back into the original vertex basis.  Interpolants.TangentToWorld2 contains the 2x2 rotation
+
+			half MatNormalX = dot( MaterialParameters.TangentNormal.xy, (Interpolants.TangentToWorld2.xy - 0.5) * 2 );
+			half MatNormalY = dot( MaterialParameters.TangentNormal.xy, (Interpolants.TangentToWorld2.zw - 0.5) * 2 );
+			half3 MatNormal = half3(MatNormalX,MatNormalY,MaterialParameters.TangentNormal.z);
+
+			half MatReflectX = dot( MaterialParameters.TangentReflectionVector.xy, (Interpolants.TangentToWorld2.xy - 0.5) * 2 );
+			half MatReflectY = dot( MaterialParameters.TangentReflectionVector.xy, (Interpolants.TangentToWorld2.zw - 0.5) * 2 );
+			half3 MatReflect = half3(MatReflectX,MatReflectY,MaterialParameters.TangentReflectionVector.z);
+
+			half3 LightMapNormal = mul(MatNormal,LightMapBasis);
+			half3 LightMapReflectionVector = mul(MatReflect,LightMapBasis);
+
+#else
+			half3 LightMapNormal = mul(MaterialParameters.TangentNormal,LightMapBasis);
+			half3 LightMapReflectionVector = mul(MaterialParameters.TangentReflectionVector,LightMapBasis);
+#endif
+
+			half3 TwoSidedLightingMask = GetMaterialTwoSidedLightingMask(MaterialParameters);
+			#if MATERIAL_LIGHTINGMODEL_NONDIRECTIONAL
+				TwoSidedLightingMask = 1;
+			#endif
+
+			#if !MATERIAL_LIGHTINGMODEL_CUSTOM
+				half3 DiffuseTransferCoefficients = 
+					pow(
+						saturate(LightMapNormal) * saturate(LightMapNormal),
+						GetMaterialDiffusePower(MaterialParameters)
+						) * (1 - TwoSidedLightingMask) + TwoSidedLightingMask;
+				half3 SpecularTransferCoefficients =
+					pow(
+						saturate(LightMapReflectionVector),
+						GetMaterialSpecularPower(MaterialParameters) + 1
+						) * (1 - TwoSidedLightingMask);
+			#endif
+
+		#endif //#if SIMPLE_LIGHTING
+
+		#if VERTEX_LIGHTMAP
+			half3 VertexLightMap[3] = { LightMapA_FogR.xyz, LightMapB_FogG.xyz, LightMapC_FogB.xyz };
+		#elif SIMPLE_VERTEX_LIGHTMAP
+			half3 VertexLightMap[1] = { LightMapA };
+		#endif
+
+		half3 LightTransfer = 0;
+		UNROLL
+		for(int CoefficientIndex = 0;CoefficientIndex < NUM_LIGHTMAP_COEFFICIENTS;CoefficientIndex++)
+		{
+			#if TEXTURE_LIGHTMAP || SIMPLE_TEXTURE_LIGHTMAP
+				half3 LightMap = tex2D(LightMapTextures[CoefficientIndex],GetLightMapCoordinate(Interpolants)).rgb * LightMapScale[CoefficientIndex].rgb;
+			#elif VERTEX_LIGHTMAP || SIMPLE_VERTEX_LIGHTMAP
+				half3 LightMap = VertexLightMap[CoefficientIndex];
+			#else
+				half3 LightMap = 0;
+			#endif
+
+			#if MATERIAL_LIGHTINGMODEL_CUSTOM
+				MaterialParameters.TangentLightVector = transpose(LightMapBasis)[CoefficientIndex];
+				LightTransfer += LightMap * GetMaterialCustomLighting(MaterialParameters);
+			#elif SIMPLE_LIGHTING
+				LightTransfer += pow(LightMap,GetMaterialDiffusePower(MaterialParameters)) *
+					GetMaterialDiffuseColorNormalized(MaterialParameters);
+			#else
+				LightTransfer += LightMap * DiffuseTransferCoefficients[CoefficientIndex] * GetMaterialDiffuseColorNormalized(MaterialParameters);
+				#ifndef DISABLE_LIGHTMAP_SPECULAR
+					LightTransfer += LightMap * SpecularTransferCoefficients[CoefficientIndex] * GetMaterialSpecularColor(MaterialParameters);
+				#endif
+			#endif
+		}
+
+		Color += LightTransfer;
+
+		#if ENABLE_SKY_LIGHT
+			Color += GetMaterialHemisphereLightTransferFull(MaterialParameters,normalize(SkyVector),UpperSkyColor,LowerSkyColor) * SkyFactor;
+		#endif
+
+		// Calculate lighting for a SH light
+		#if ENABLE_SH_LIGHT
+			float3 WorldNormal = TransformTangentVectorToWorld(MaterialParameters, MaterialParameters.TangentNormal);
+			Color += ComputeSHLighting(WorldNormal, MaterialParameters);
+		#endif
+
+		// Calculate lighting for a directional light
+		#if ENABLE_DIRECTIONAL_LIGHT
+			Color += GetMaterialPointLightTransfer(MaterialParameters,0,0) * LightColor.rgb;
+		#endif
+
+		#if !SIMPLE_LIGHTING
+			Color += GetMaterialDiffuseColor(MaterialParameters) * AmbientColor;
+		#endif
+
+	#endif
+
+	#if NEEDS_BASEPASS_FOGGING
+		half4 Fog;
+		#if VERTEX_LIGHTMAP
+			//fog was stored in the .w of each interpolator
+			Fog = half4(LightMapA_FogR.w, LightMapB_FogG.w, LightMapC_FogB.w, CameraVector_FogA.w);
+		#else
+			Fog = VertexFog;
+		#endif
+	#endif
+
+	half Opacity = GetMaterialOpacity(MaterialParameters);
+
+	// attenuate blended decals 
+	#if MATERIAL_DECAL
+		#if MATERIALBLENDING_TRANSLUCENT
+			Opacity *= GetMaterialAttenuationDecal(MaterialParameters);
+		#elif MATERIALBLENDING_ADDITIVE
+			Color *= GetMaterialAttenuationDecal(MaterialParameters);
+		#elif MATERIALBLENDING_MODULATE
+			Color = lerp(1,Color,GetMaterialAttenuationDecal(MaterialParameters));
+		#endif
+	#endif
+
+	#if MATERIAL_ONELAYERDISTORTION
+		// Clamping and scaling to match the normal distortion method
+		float2 DistortionOffset = clamp(GetMaterialDistortion(MaterialParameters), -64.0f, 64.0f) * float2( 1.0f / 255.0f, -1.0f / 255.0f);
+		// Calculate position to lookup in scene color with the distortion offset
+		float2 OffsetSceneTextureCoordinates = MaterialParameters.ScreenPosition.xy / MaterialParameters.ScreenPosition.w * ScreenPositionScaleBias.xy + ScreenPositionScaleBias.wz + DistortionOffset;
+		// Lookup distorted scene color
+		half3 DistortedSceneColor = CalcSceneColor(OffsetSceneTextureCoordinates);
+		#if MATERIALBLENDING_TRANSLUCENT
+			half3 SourceColor = Color * Fog.a + Fog.rgb;
+			// Manual translucent blending
+			OutColor = MaterialGammaCorrect(half4(lerp(DistortedSceneColor, SourceColor, Opacity), 0.0f));
+			OutColor = RETURN_COLOR(OutColor);
+		#elif MATERIALBLENDING_ADDITIVE
+			half3 SourceColor = Color * Fog.a * Opacity;
+			// Manual additive blending
+			OutColor = MaterialGammaCorrect(half4(SourceColor + DistortedSceneColor, 0.0f));
+			OutColor = RETURN_COLOR(AccumulateSceneColor(OutColor));
+		#elif MATERIALBLENDING_MODULATE
+			// Manual modulative blending
+			// RETURN_COLOR not needed with modulative blending
+			OutColor = MaterialGammaCorrect(half4(Color * DistortedSceneColor, Opacity));
+		#endif
+	#else
+		#if MATERIALBLENDING_TRANSLUCENT
+			OutColor = MaterialGammaCorrect(half4(Color * Fog.a + Fog.rgb, Opacity));
+			OutColor = RETURN_COLOR(OutColor);
+		#elif MATERIALBLENDING_ADDITIVE
+			OutColor = MaterialGammaCorrect(half4(Color * Fog.a * Opacity, 0.0f));
+			OutColor = RETURN_COLOR(AccumulateSceneColor(OutColor));
+		#elif MATERIALBLENDING_MODULATE
+			// RETURN_COLOR not needed with modulative blending
+			OutColor = MaterialGammaCorrect(half4(Color, Opacity));
+		#else
+			#if XBOX
+				// Round each channel down to the nearest integer
+				half3 QuantizedEmissive = floor(Emissive);
+				// Setup the mask to be 1 if any emissive channel was greater than 1, and 0 otherwise
+				half EmissiveMask = saturate(dot(QuantizedEmissive, 1));
+				half PackedAlpha = (MotionBlurMask + EmissiveMask * 2.0f) / 3.0f;
+				// Output the mask bits as scene color alpha (2 bits for scene color alpha on xenon)
+				OutColor = RETURN_COLOR(MaterialGammaCorrect(float4(Color,PackedAlpha)));
+			#else
+				// Output clip space w in scene color alpha
+				OutColor = RETURN_COLOR(MaterialGammaCorrect(float4(Color,EncodeFloatW(MaterialParameters.ScreenPosition.w))));
+			#endif
+		#endif
+	#endif
+
+#if MATERIAL_DECAL && XBOX
+} //else
+#endif
+
+}

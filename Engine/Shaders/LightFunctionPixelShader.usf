@@ -1,0 +1,38 @@
+/*=============================================================================
+	LightFunction.usf: Pixel shader for computing a light function.
+	Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
+=============================================================================*/
+
+#include "Common.usf"
+#include "Material.usf"
+
+extern float4x4 ScreenToLight;
+
+void Main(
+	in float4 ScreenPosition : TEXCOORD0,
+	out float4 OutColor : COLOR0
+	)
+{
+	half SceneW = PreviousDepth(ScreenPosition);
+	float3 LightVector = MulMatrix(ScreenToLight, float4(ScreenPosition.xy * SceneW, SceneW, 1)).xyz;
+
+	FMaterialParameters MaterialParameters;
+#if NUM_MATERIAL_TEXCOORDS
+	for(int CoordinateIndex = 0;CoordinateIndex < NUM_MATERIAL_TEXCOORDS;CoordinateIndex++)
+	{
+		MaterialParameters.TexCoords[CoordinateIndex] = LightVector.xy;
+	}
+#endif
+	MaterialParameters.VertexColor = 1;
+	MaterialParameters.TangentNormal = 0;
+	MaterialParameters.TangentCameraVector = LightVector;
+	MaterialParameters.TangentReflectionVector = 0;
+	MaterialParameters.ScreenPosition = ScreenPosition;
+	MaterialParameters.TangentLightVector = LightVector;
+#if WORLD_COORDS
+	MaterialParameters.TangentToWorld = 0;
+#endif
+
+	half4 Color = float4( GetMaterialEmissive(MaterialParameters), 1 );
+	OutColor = RETURN_COLOR(Color);
+}

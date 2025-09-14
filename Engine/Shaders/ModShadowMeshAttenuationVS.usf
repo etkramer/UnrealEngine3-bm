@@ -1,0 +1,32 @@
+/*=============================================================================
+	ModShadowMeshAttenuationVS.usf: Mesh attenutation VS for modulated shadows
+	Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
+=============================================================================*/
+
+#include "Common.usf"
+#include "Material.usf"
+#include "VertexFactory.usf"
+
+float4 LightPosition;
+
+void Main(
+	FVertexFactoryInput Input,
+	out FVertexFactoryInterpolants OutFactoryInterpolants,
+	out float3 OutTangentLightVector : TEXCOORD4,
+	out float3 OutCameraVector : TEXCOORD5,
+	out float4 OutPixelPosition : TEXCOORD6,
+	out float4 OutPosition : POSITION
+	)
+{
+	float4 WorldPosition = VertexFactoryGetWorldPosition(Input);
+	OutPosition = MulMatrix(ViewProjectionMatrix,WorldPosition);
+	OutFactoryInterpolants = VertexFactoryGetInterpolants(Input);
+#if WORLD_POS
+	OutPixelPosition = WorldPosition;
+#else
+	OutPixelPosition = OutPosition;
+#endif
+	float3x3 TangentBasis = VertexFactoryGetTangentBasis(Input);
+	OutCameraVector = VertexFactoryWorldToTangentSpace(Input,TangentBasis,CameraPosition.xyz - WorldPosition.xyz * CameraPosition.w);
+	OutTangentLightVector = VertexFactoryWorldToTangentSpace(Input,TangentBasis,LightPosition.xyz - WorldPosition.xyz);
+}

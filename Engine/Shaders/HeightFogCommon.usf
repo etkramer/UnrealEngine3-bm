@@ -1,0 +1,52 @@
+/*=============================================================================
+	HeightFogCommon.usf: 
+	Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
+=============================================================================*/
+
+static const float FLT_EPSILON = 0.001f;
+
+/** calculate ratio of distance between world z height and relative fog height */
+float4 LinePlaneIntersection(float3 RelativeB,float4 RelativeZ)
+{
+	return RelativeZ / (abs(RelativeB.z) <= FLT_EPSILON ? FLT_EPSILON : RelativeB.z);
+}
+/** used to scale fog layer distance */
+half4	FogDistanceScale;
+/** any layer distance beyond this is clamped to full fog */
+half4	FogExtinctionDistance;
+/** lighting contribution from fog.  This uses 4 components to avoid platform-specific alignment of each element of the array. */
+half4	FogInScattering[4];
+/** distance at which fog will start */
+half4	FogStartDistance;
+/** world space min z height */
+float4 FogMinHeight;
+/** world space max z height */
+float4 FogMaxHeight;
+
+half4 CalculateVertexHeightFog(float3 WorldPosition, float4 InCameraPosition)
+{
+	float3	WorldVector = WorldPosition.xyz - InCameraPosition.xyz;
+	float	Distance = length(WorldVector);
+
+			// maxfog - camera / z height
+	float4	MinHeightPercent = LinePlaneIntersection(WorldVector,FogMinHeight - InCameraPosition.z);
+			// minfog - camera / z height
+	float4	MaxHeightPercent = LinePlaneIntersection(WorldVector,FogMaxHeight - InCameraPosition.z);
+			// fog layer distance based on % over max/min fog heights
+	half4	LayerDistance = max(half4(0,0,0,0),half4(Distance,Distance,Distance,Distance)-FogStartDistance) * abs(saturate(MaxHeightPercent) - saturate(MinHeightPercent));
+
+			// clamp anything beyond the extinction distance to 0 scattering
+			// scattering falloff is exponential based on normalized layer distance
+	half4	Scattering = LayerDistance < FogExtinctionDistance ? exp2(FogDistanceScale * LayerDistance) : half4(0,0,0,0);			
+			// ratio of the inscattering color to be used
+	half4	InScattering = Scattering - 1;
+
+	half4	Fog = half4(0,0,0,1);
+	for(int LayerIndex = 0;LayerIndex < 4;LayerIndex++)
+	{
+		Fog *= Scattering[LayerIndex];
+		Fog.rgb += InScattering[LayerIndex] * FogInScattering[LayerIndex];
+	}
+	return Fog;
+}
+

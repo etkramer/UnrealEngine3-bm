@@ -1,0 +1,35 @@
+/*=============================================================================
+	DepthOnlyVertexShader.hlsl: Depth-only vertex shader.
+	Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
+=============================================================================*/
+
+#include "Common.usf"
+#include "Material.usf"
+#include "VertexFactory.usf"
+
+void Main(
+	FVertexFactoryInput Input,
+#if !MATERIALBLENDING_SOLID
+	out FVertexFactoryInterpolants OutFactoryInterpolants,
+	out float3 CameraVector : TEXCOORD4,
+	out float4 PixelPosition : TEXCOORD5,
+#endif
+	out float4 OutPosition : POSITION
+	)
+{
+	float4 WorldPos = VertexFactoryGetWorldPosition(Input);
+	OutPosition = MulMatrix(ViewProjectionMatrix,WorldPos);
+
+#if !MATERIALBLENDING_SOLID
+	// Masked and transparent materials need texture coords to clip
+	OutFactoryInterpolants = VertexFactoryGetInterpolants(Input);
+	#if WORLD_POS
+		PixelPosition = WorldPos;
+	#else
+		PixelPosition = OutPosition;
+	#endif
+	float3x3 TangentBasis = VertexFactoryGetTangentBasis(Input);
+	// The mask may be dependent on the camera vector
+	CameraVector = VertexFactoryWorldToTangentSpace(Input,TangentBasis,CameraPosition.xyz - WorldPos.xyz * CameraPosition.w);
+#endif
+}

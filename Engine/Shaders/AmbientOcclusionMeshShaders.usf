@@ -1,0 +1,46 @@
+/*=============================================================================
+	AmbientOcclusionMeshShaders.usf - Contains mesh shaders for screen space ambient occlusion.
+	Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
+=============================================================================*/
+
+#include "Common.usf"
+#include "Material.usf"
+#include "VertexFactory.usf"
+
+/*
+ * Barebones transform shader, used when rendering meshes to mask either occlusion or the occlusion history.
+ */
+void MeshAOMaskVertexMain(
+	FVertexFactoryInput Input,
+	out float4 OutScreenPosition : TEXCOORD0,
+	out float4 OutPosition : POSITION
+	)
+{
+	// Only need to calculate position since masked materials are not handled separately
+	float4 WorldPos = VertexFactoryGetWorldPosition(Input);
+	OutPosition = OutScreenPosition = MulMatrix(ViewProjectionMatrix,WorldPos);
+}
+
+/** Last frame's view projection matrix */
+float4x4 PrevViewProjectionMatrix;
+
+/*
+ * Calculates this frame and last frame's positions, used when updating the history for moving meshes.
+ */
+void MeshHistoryUpdateVertexMain(
+	FVertexFactoryInput Input,
+	out float4 OutScreenPosition : TEXCOORD0,
+	out float4 OutPrevScreenPosition : TEXCOORD1,
+	out float4 OutPosition : POSITION
+	)
+{
+	// Only need to calculate position since masked materials are not handled separately
+	float4 WorldPos = VertexFactoryGetWorldPosition(Input);
+	OutPosition = OutScreenPosition = MulMatrix(ViewProjectionMatrix, WorldPos);
+
+	// Get last frame's world position.
+	// Note: this has to be the actual previous position and not an approximation.  
+	// Currently only the LocalVertexFactory supports the actual previous frame's position.
+	float4 PrevWorldPosition = VertexFactoryGetPreviousWorldPosition(Input);
+	OutPrevScreenPosition = MulMatrix(PrevViewProjectionMatrix, PrevWorldPosition);
+}

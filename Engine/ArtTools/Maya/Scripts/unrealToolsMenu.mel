@@ -1,0 +1,91 @@
+
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+// Unreal Tools Maya Menu
+// Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+//
+// Version 1.0:  Initially written by Nina Fricker on 04/16/2008.
+//
+// This script does the following:
+//  * Creates and "Unreal Tools" Maya menu. 
+//
+// Notes:
+//  * Game specific menu items should be added to the game menu mel scripts
+// 	  i.e. ExampleGame specific menu items are added in
+//         //UnrealEngine3/ExampleGame/ArtTools/Maya/Scripts/examplegameToolsMenu.mel
+// 
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+
+// Global variables:
+global string $gMainWindow;     // defined elsewhere by Maya
+
+    
+//  Get rid of existing menu in case it exists already...
+//
+int $index = -1 ;
+	if( `menu -exists unrealToolsMenu` ) 
+	{
+		//  Find out the current index of menu
+		string $allMenus[] = ` window -query -menuArray $gMainWindow ` ;
+		string $menu ;
+		for( $menu in $allMenus ) 
+		{
+			$index++ ;
+			if( $menu == "unrealToolsMenu" ) 
+			{
+				break ;
+			}
+		}		
+		deleteUI -menu unrealToolsMenu ;
+	}
+
+setParent $gMainWindow ;
+
+//  Create Unreal Tools main menu
+menu -label "Unreal Tools" 
+	 -parent $gMainWindow 
+     -tearOff true unrealToolsMenu ;
+
+setParent -menu unrealToolsMenu ;
+
+
+//
+//  Main submenu
+	menuItem  -label ( "ActorX Main Exporter..." ) 
+        	  -command ( "axmain;" ) 
+              -annotation ( "Opens the Animation/Skeleton Export Window" ) ;       
+
+    menuItem  -label ( "ActorX Mesh Exporter..." ) 
+              -command ( "axmesh;" ) 
+              -annotation ( "Opens the Mesh Export Window" ) ;   
+              
+    menuItem  -label ( "ActorX Animation Manager..." ) 
+              -command ( "axanim;" ) 
+              -annotation ( "Opens ActorX Animation Manager" ) ;   
+
+    menuItem  -label ( "ActorX Options..." ) 
+              -command ( "axoptions;" ) 
+              -annotation ( "Opens ActorX Options Window" ) ;   
+    menuItem  -label ( "FaceFX Main Window..." ) 
+              -command ( "source FaceFx.mel;" ) 
+              -annotation ( "Opens the main FaceFX Window" ) ;                 
+
+menuItem -divider true ;
+
+//
+//  Matinee submenu
+menuItem -label "Matinee" -subMenu true -tearOff true ;
+
+    menuItem  -label ( "Matinee Scene Setup" ) 
+              -command ( "source \"SetupMatinee.mel\"; SetupMatinee() ;" ) 
+              -annotation ( "UnrealEd Matinee sequence import fixup." ) ;
+    menuItem  -label ( "Cinematic Camera Helper" ) 
+              -command ( "source \"CineCamHelper.mel\"; CineCamHelper() ;" ) 
+              -annotation ( "UnrealEd Matinee sequence import fixup." ) ;
+    setParent -menu ".." ;
+
+
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+

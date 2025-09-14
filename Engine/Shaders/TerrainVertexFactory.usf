@@ -1,0 +1,371 @@
+/*=============================================================================
+	TerrainVertexFactory.hlsl: Local vertex factory shader code.
+	Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
+=============================================================================*/
+
+#include "DecalFactoryCommon.usf"
+
+float4x4	LocalToWorld;
+#if	TERRAIN_MORPHING_ENABLED
+float4x4	LocalToView;
+#endif	//TERRAIN_MORPHING_ENABLED
+float4x4	PreviousLocalToWorld;
+float4		ShadowCoordinateScaleBias;
+
+// Only SM4 needs the gradients to come in as ints.
+#if !SM4_PROFILE
+	#define int2 float2
+#endif
+
+struct FVertexFactoryInput
+{
+	uint4	Position				: POSITION;
+	float	Displacement			: BLENDWEIGHT;
+	int2	Gradients				: TANGENT;
+#if	TERRAIN_MORPHING_ENABLED
+	uint4	HeightTransitionValues	: NORMAL;		// TessDataIndices (xy) & Height (zw)
+#if TERRAIN_MORPHING_GRADIENTS
+	int2	GradientTransitionValues: BINORMAL;		// Gradients (xy)
+#endif	//TERRAIN_MORPHING_GRADIENTS
+#endif	//TERRAIN_MORPHING_ENABLED
+};
+
+float4	InvMaxTesselationLevel_ZScale;
+float4	InvTerrainSize_SectionBase;
+float4	LightMapCoordinateScaleBias;
+#if TERRAIN_MORPHING_ENABLED
+#if PS3
+float4 TessInterpDistanceValues[5];	// Set at run-time.
+#else	//#if PS3
+static const float2 TessInterpDistanceValues[] = 
+{
+	{     0.0f,    -1.0f},		// Highest tessellation level - NEVER goes away
+	{ 16384.0f, 16384.0f},		// 1 level  up (16384 .. 32768)
+	{  8192.0f,  8192.0f},		// 2 levels up ( 8192 .. 16384)
+	{  4096.0f,  4096.0f},		// 3 levels up ( 4096 ..  8192)
+	{     0.0f,  4096.0f}		// 4 levels up (    0 ..  4096)
+};
+#endif	//#if PS3
+float4	TessellationDistanceScale;
+#endif	//TERRAIN_MORPHING_ENABLED
+
+
+#define TERRAIN_WEIGHTMAP_RESOLUTION	1.0
+
+struct FVertexFactoryInterpolants
+{
+#if WORLD_COORDS
+	// First row of the tangent to world matrix
+	float3	TangentToWorld0	: TANGENTTOWORLD0;
+	// Last row of the tangent to world matrix in xyz, determinant of tangent basis in w
+	float4	TangentToWorld2	: TANGENTTOWORLD2;
+#endif
+	float3	LocalPosition		: TEXCOORD0;
+	float2	WeightMapTexCoord	: TEXCOORD1;
+#if NEEDS_LIGHTMAP_COORDINATE
+	float2	LightMapCoordinate	: TEXCOORD2;
+#endif // NEEDS_LIGHTMAP_COORDINATE
+};
+
+FMaterialParameters GetMaterialParameters(FVertexFactoryInterpolants Interpolants)
+{
+	FMaterialParameters	Result;
+
+#if NUM_MATERIAL_TEXCOORDS
+	#if NUM_MATERIAL_TEXCOORDS >= 1
+		Result.TexCoords[0] = Interpolants.WeightMapTexCoord;
+	#if NUM_MATERIAL_TEXCOORDS >= 2
+		#if NEEDS_LIGHTMAP_COORDINATE
+			Result.TexCoords[1] = Interpolants.LightMapCoordinate;
+		#else	//#if NEEDS_LIGHTMAP_COORDINATE
+			Result.TexCoords[1] = Interpolants.WeightMapTexCoord;
+		#endif	//#if NEEDS_LIGHTMAP_COORDINATE
+	#if NUM_MATERIAL_TEXCOORDS >= 3
+		Result.TexCoords[2] = Interpolants.LocalPosition.xy;
+	#if NUM_MATERIAL_TEXCOORDS >= 4
+		Result.TexCoords[3] = Interpolants.LocalPosition.xz;
+	#if NUM_MATERIAL_TEXCOORDS >= 5
+		Result.TexCoords[4] = Interpolants.LocalPosition.yz;
+	#endif
+	#endif
+	#endif
+	#endif
+	#endif
+#endif // NUM_MATERIAL_TEXCOORDS
+ 
+	Result.VertexColor = 1;
+	Result.TangentNormal = 0;
+	Result.TangentReflectionVector = 0;
+	Result.TangentCameraVector = 0;
+	Result.TangentLightVector = 0;
+	Result.ScreenPosition = 0;
+#if WORLD_COORDS	
+	#if DECAL_FACTORY
+		Result.TangentToWorld = CalcInvTangentBasisDecal(TangentBias(Interpolants.TangentToWorld0));
+	#else
+		Result.TangentToWorld = CalcTangentToWorld(Interpolants.TangentToWorld0,Interpolants.TangentToWorld2);
+	#endif
+#endif
+#if MATERIAL_DECAL
+	Result.DecalAttenuation = 1;
+	Result.DecalPlaneDistance = 0;
+#endif
+	return Result;
+}
+
+float2 GetLightMapCoordinate(FVertexFactoryInterpolants Interpolants)
+{
+#if NEEDS_LIGHTMAP_COORDINATE
+	return Interpolants.LightMapCoordinate;
+#else	//#if NEEDS_LIGHTMAP_COORDINATE
+	return Interpolants.WeightMapTexCoord;
+#endif	//#if NEEDS_LIGHTMAP_COORDINATE
+}
+
+#if NEEDS_VERTEX_LIGHTMAP
+void VertexFactoryGetVertexLightMap(FVertexFactoryInput Input,out float4 LightMapA,out float4 LightMapB,out float4 LightMapC)
+{
+	LightMapA = 1;
+	LightMapB = 1;
+	LightMapC = 1;
+}
+#elif NEEDS_SIMPLE_VERTEX_LIGHTMAP
+void VertexFactoryGetSimpleVertexLightMap(FVertexFactoryInput Input,out float4 LightMapA)
+{
+	LightMapA = 1;
+}
+#endif
+
+#if	TERRAIN_MORPHING_ENABLED
+/** 
+ *	Helper function
+ *	Calculate the LocalPositionZ as well as the tessellation interpolation value
+ */
+float CalcTessInterp(FVertexFactoryInput Input, out float LocalPositionZ)
+{
+	LocalPositionZ = (-32768 + (Input.Position.z + 256.0 * Input.Position.w)) * InvMaxTesselationLevel_ZScale.y;
+	float4 LocalPosition = float4(Input.Position.xy * InvMaxTesselationLevel_ZScale.x, LocalPositionZ, 1.0f);
+	float4 ViewVector = MulMatrix(LocalToView, LocalPosition);
+	float ZDistance = ViewVector.z * TessellationDistanceScale.x;
+	float TessInterp = (ZDistance - TessInterpDistanceValues[Input.HeightTransitionValues.x].x) /
+						TessInterpDistanceValues[Input.HeightTransitionValues.x].y;
+	return clamp(TessInterp, 0.0f, 1.0f);
+}
+#endif	//TERRAIN_MORPHING_ENABLED
+
+/** derive basis vectors */
+float3x3 CalcTangentBasis(FVertexFactoryInput Input)
+{
+#if	TERRAIN_MORPHING_ENABLED
+	float LocalPositionZ;
+	float TessInterp = CalcTessInterp(Input, LocalPositionZ);
+
+#if	TERRAIN_MORPHING_GRADIENTS
+	float GradientX = (Input.Gradients.x * (1.0f - TessInterp)) + (Input.GradientTransitionValues.x * TessInterp);
+	float GradientY = (Input.Gradients.y * (1.0f - TessInterp)) + (Input.GradientTransitionValues.y * TessInterp);
+	float3	LocalTangentX = float3(1,0,GradientX * InvMaxTesselationLevel_ZScale.y),
+			LocalTangentY = float3(0,1,GradientY * InvMaxTesselationLevel_ZScale.y);
+#else	//TERRAIN_MORPHING_GRADIENTS
+	float3	LocalTangentX = float3(1,0,Input.Gradients.x * InvMaxTesselationLevel_ZScale.y),
+			LocalTangentY = float3(0,1,Input.Gradients.y * InvMaxTesselationLevel_ZScale.y);
+#endif	//TERRAIN_MORPHING_GRADIENTS
+#else	//TERRAIN_MORPHING_ENABLED
+	float3	LocalTangentX = float3(1,0,Input.Gradients.x * InvMaxTesselationLevel_ZScale.y),
+			LocalTangentY = float3(0,1,Input.Gradients.y * InvMaxTesselationLevel_ZScale.y);
+#endif	//TERRAIN_MORPHING_ENABLED
+	LocalTangentX = normalize(LocalTangentX);
+	LocalTangentY = normalize(LocalTangentY);
+	float3	LocalTangentZ = cross(LocalTangentX,LocalTangentY);
+	return float3x3(LocalTangentX,LocalTangentY,LocalTangentZ);
+}
+
+float4 VertexFactoryGetWorldPosition(FVertexFactoryInput Input)
+{
+	ISOLATE
+	{
+#if	TERRAIN_MORPHING_ENABLED
+		float LocalPositionZ;
+		float TessInterp = CalcTessInterp(Input, LocalPositionZ);
+
+		float InterpHeight = (-32768 + (Input.HeightTransitionValues.z + 256.0 * Input.HeightTransitionValues.w)) * InvMaxTesselationLevel_ZScale.y;
+		LocalPositionZ = (LocalPositionZ * (1.0f - TessInterp)) + (InterpHeight * TessInterp);
+
+		float3	LocalPosition = float3(Input.Position.xy * InvMaxTesselationLevel_ZScale.x,LocalPositionZ);
+		
+#if	TERRAIN_MORPHING_GRADIENTS
+		float GradientX = (Input.Gradients.x * (1.0f - TessInterp)) + (Input.GradientTransitionValues.x * TessInterp);
+		float GradientY = (Input.Gradients.y * (1.0f - TessInterp)) + (Input.GradientTransitionValues.y * TessInterp);
+		
+		float3	LocalTangentX = float3(1,0,GradientX * InvMaxTesselationLevel_ZScale.y),
+				LocalTangentY = float3(0,1,GradientY * InvMaxTesselationLevel_ZScale.y);
+#else	//TERRAIN_MORPHING_GRADIENTS
+		float3	LocalTangentX = float3(1,0,Input.Gradients.x * InvMaxTesselationLevel_ZScale.y),
+				LocalTangentY = float3(0,1,Input.Gradients.y * InvMaxTesselationLevel_ZScale.y);
+#endif	//TERRAIN_MORPHING_GRADIENTS
+#else	//TERRAIN_MORPHING_ENABLED
+		float3	LocalPosition = float3(Input.Position.xy * InvMaxTesselationLevel_ZScale.x,(-32768 + (Input.Position.z + 256.0 * Input.Position.w)) * InvMaxTesselationLevel_ZScale.y),
+				LocalTangentX = float3(1,0,Input.Gradients.x * InvMaxTesselationLevel_ZScale.y),
+				LocalTangentY = float3(0,1,Input.Gradients.y * InvMaxTesselationLevel_ZScale.y);
+#endif	//TERRAIN_MORPHING_ENABLED
+		LocalTangentX = normalize(LocalTangentX);
+		LocalTangentY = normalize(LocalTangentY);
+		float3	LocalTangentZ = cross(LocalTangentX,LocalTangentY);
+
+		return MulMatrix(LocalToWorld,float4(LocalPosition + LocalTangentZ * Input.Displacement,1));
+	}
+}
+
+FVertexFactoryInterpolants VertexFactoryGetInterpolants(FVertexFactoryInput Input)
+{
+	FVertexFactoryInterpolants Interpolants;
+#if	TERRAIN_MORPHING_ENABLED
+	float LocalPositionZ;
+	float TessInterp = CalcTessInterp(Input, LocalPositionZ);
+
+	float InterpHeight = (-32768 + (Input.HeightTransitionValues.z + 256.0 * Input.HeightTransitionValues.w)) * InvMaxTesselationLevel_ZScale.y;
+	LocalPositionZ = (LocalPositionZ * (1.0f - TessInterp)) + (InterpHeight * TessInterp);
+
+	float3	LocalPosition = float3(Input.Position.xy * InvMaxTesselationLevel_ZScale.x,LocalPositionZ);
+	
+#if TERRAIN_MORPHING_GRADIENTS
+	float GradientX = (Input.Gradients.x * (1.0f - TessInterp)) + (Input.GradientTransitionValues.x * TessInterp);
+	float GradientY = (Input.Gradients.y * (1.0f - TessInterp)) + (Input.GradientTransitionValues.y * TessInterp);
+	
+	float3	LocalTangentX = float3(1,0,GradientX * InvMaxTesselationLevel_ZScale.y),
+			LocalTangentY = float3(0,1,GradientY * InvMaxTesselationLevel_ZScale.y);
+#else	//TERRAIN_MORPHING_GRADIENTS
+	float3	LocalTangentX = float3(1,0,Input.Gradients.x * InvMaxTesselationLevel_ZScale.y),
+			LocalTangentY = float3(0,1,Input.Gradients.y * InvMaxTesselationLevel_ZScale.y);
+#endif	//TERRAIN_MORPHING_GRADIENTS
+#else	//TERRAIN_MORPHING_ENABLED
+	float3	LocalPosition = float3(Input.Position.xy * InvMaxTesselationLevel_ZScale.x,(-32768 + (Input.Position.z + 256.0 * Input.Position.w)) * InvMaxTesselationLevel_ZScale.y),
+			LocalTangentX = float3(1,0,Input.Gradients.x * InvMaxTesselationLevel_ZScale.y),
+			LocalTangentY = float3(0,1,Input.Gradients.y * InvMaxTesselationLevel_ZScale.y);
+#endif	//TERRAIN_MORPHING_ENABLED
+	LocalTangentX = normalize(LocalTangentX);
+	LocalTangentY = normalize(LocalTangentY);
+	float3 LocalTangentZ = cross(LocalTangentX,LocalTangentY);
+	
+	Interpolants.LocalPosition = float3(InvTerrainSize_SectionBase.zw,0) + LocalPosition;
+
+#if	DECAL_FACTORY
+	float4 WorldSpacePos = MulMatrix(LocalToWorld,float4(LocalPosition + LocalTangentZ * Input.Displacement,1));
+	Interpolants.WeightMapTexCoord = ComputeDecalTexCoord( WorldSpacePos );
+#else	//DECAL_FACTORY
+	Interpolants.WeightMapTexCoord = (Interpolants.LocalPosition.xy + 0.5 / TERRAIN_WEIGHTMAP_RESOLUTION) * InvTerrainSize_SectionBase.xy;
+#endif	//DECAL_FACTORY
+
+#if WORLD_COORDS
+	#if DECAL_FACTORY
+		float3x3 TangentBasis = float3x3(LocalTangentX,LocalTangentY,LocalTangentZ);
+		// pass 2x2 matrix for transforming normals as interpolant
+		Interpolants.TangentToWorld2 = CalcDecal2x2NormalTransform(TangentBasis[0], TangentBasis[2], determinant(TangentBasis)) * 0.5 + 0.5;
+		// pass through the vertex normal (note the misnomer)
+		Interpolants.TangentToWorld0 = float3(TangentBasis[2]) * 0.5 + 0.5;
+	#else
+		#if SM2_PROFILE
+			// In SM2 these vectors will store the tangent basis, scaled to be between 0 and 1 to fit in the COLOR0 and COLOR1 interpolators
+			// We cannot combine the tangent to local and local to world due to insufficient temporary registers in this vertex factory
+			float3x3 TangentBasis = float3x3(LocalTangentX,LocalTangentY,LocalTangentZ);
+			Interpolants.TangentToWorld2 = float4(TangentBasis[2],sign(determinant(TangentBasis))) * 0.5 + 0.5;
+			Interpolants.TangentToWorld0 = TangentBasis[0] * 0.5 + 0.5;
+		#else
+			float3x3 LocalToTangent = float3x3(LocalTangentX,LocalTangentY,LocalTangentZ);
+			float3x3 TangentToLocal = transpose(LocalToTangent);
+
+			// Calculate the transform from tangent to world space
+			#if PS3
+				float3x3 TangentToWorld = mul(transpose((float3x3)LocalToWorld), TangentToLocal); 
+			#else
+				float3x3 TangentToWorld = mul((float3x3)LocalToWorld, TangentToLocal); 
+			#endif
+
+			Interpolants.TangentToWorld0 = TangentToWorld[0];
+			Interpolants.TangentToWorld2 = float4(TangentToWorld[2], sign(determinant(LocalToTangent)));
+		#endif
+	#endif
+#endif
+
+#if NEEDS_LIGHTMAP_COORDINATE
+	Interpolants.LightMapCoordinate = (LocalPosition.xy * LightMapCoordinateScaleBias.xy + LightMapCoordinateScaleBias.wz) * ShadowCoordinateScaleBias.xy + ShadowCoordinateScaleBias.wz;
+#endif	//#if NEEDS_LIGHTMAP_COORDINATE
+
+	return Interpolants;
+}
+
+half3 VertexFactoryGetWorldNormal(FVertexFactoryInput Input)
+{
+	half3	LocalTangentX = float3(1,0,Input.Gradients.x * InvMaxTesselationLevel_ZScale.y * InvMaxTesselationLevel_ZScale.z);
+	half3	LocalTangentY = float3(0,1,Input.Gradients.y * InvMaxTesselationLevel_ZScale.y * InvMaxTesselationLevel_ZScale.w);
+	LocalTangentX = normalize(LocalTangentX);
+	LocalTangentY = normalize(LocalTangentY);
+	half3	LocalTangentZ = cross(LocalTangentX,LocalTangentY);
+
+	return MulMatrix( LocalToWorld, half4(LocalTangentZ, 0) );
+}
+
+float4 VertexFactoryGetPreviousWorldPosition(FVertexFactoryInput Input)
+{
+#if	TERRAIN_MORPHING_ENABLED
+	float LocalPositionZ;
+	float TessInterp = CalcTessInterp(Input, LocalPositionZ);
+
+	float InterpHeight = (-32768 + (Input.HeightTransitionValues.z + 256.0 * Input.HeightTransitionValues.w)) * InvMaxTesselationLevel_ZScale.y;
+	LocalPositionZ = (LocalPositionZ * (1.0f - TessInterp)) + (InterpHeight * TessInterp);
+
+	float3	LocalPosition = float3(Input.Position.xy * InvMaxTesselationLevel_ZScale.x,LocalPositionZ);
+	
+#if	TERRAIN_MORPHING_GRADIENTS
+	float GradientX = (Input.Gradients.x * (1.0f - TessInterp)) + (Input.GradientTransitionValues.x * TessInterp);
+	float GradientY = (Input.Gradients.y * (1.0f - TessInterp)) + (Input.GradientTransitionValues.y * TessInterp);
+	
+	float3	LocalTangentX = float3(1,0,GradientX * InvMaxTesselationLevel_ZScale.y),
+			LocalTangentY = float3(0,1,GradientY * InvMaxTesselationLevel_ZScale.y);
+#else	//TERRAIN_MORPHING_GRADIENTS
+	float3	LocalTangentX = float3(1,0,Input.Gradients.x * InvMaxTesselationLevel_ZScale.y),
+			LocalTangentY = float3(0,1,Input.Gradients.y * InvMaxTesselationLevel_ZScale.y);
+#endif	//TERRAIN_MORPHING_GRADIENTS
+#else	//TERRAIN_MORPHING_ENABLED
+	float3	LocalPosition = float3(Input.Position.xy * InvMaxTesselationLevel_ZScale.x,(-32768 + (Input.Position.z + 256.0 * Input.Position.w)) * InvMaxTesselationLevel_ZScale.y),
+			LocalTangentX = float3(1,0,Input.Gradients.x * InvMaxTesselationLevel_ZScale.y),
+			LocalTangentY = float3(0,1,Input.Gradients.y * InvMaxTesselationLevel_ZScale.y);
+#endif	//TERRAIN_MORPHING_ENABLED
+	LocalTangentX = normalize(LocalTangentX);
+	LocalTangentY = normalize(LocalTangentY);
+	float3	LocalTangentZ = cross(LocalTangentX,LocalTangentY);
+
+	return MulMatrix(PreviousLocalToWorld,float4(LocalPosition + LocalTangentZ * Input.Displacement,1));
+}
+
+/**
+* Get the 3x3 tangent basis vectors for this vertex factory
+*
+* @param Input - vertex input stream structure
+* @return 3x3 matrix
+*/
+float3x3 VertexFactoryGetTangentBasis( FVertexFactoryInput Input )
+{
+	float3x3 Result = CalcTangentBasis(Input);
+
+#if DECAL_FACTORY
+	Result = ProjectDecalTangents(Result[2]);
+#endif
+
+	return Result;
+}
+
+/**
+* Transform a vector from world space to tangent space
+*
+* @param Input - vertex input stream structure
+* @param TangentBasis - 3x3 matrix to transform to tangent space
+* @param WorldVector - vector in world space to transform 
+* @return vector in tangent space
+*/
+float3 VertexFactoryWorldToTangentSpace( FVertexFactoryInput Input, float3x3 TangentBasis, float3 WorldVector )
+{
+	// we use a straight mul here because we are generating the matrix, so we don't worry about column major vs row major (which is what MulMatrix manages per-platform)
+	WorldVector.x *= InvMaxTesselationLevel_ZScale.z;
+	WorldVector.y *= InvMaxTesselationLevel_ZScale.w;
+	return mul(TangentBasis,MulMatrix(float4(WorldVector,0),LocalToWorld).xyz);
+}

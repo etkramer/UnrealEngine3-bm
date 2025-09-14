@@ -1,0 +1,263 @@
+/*=============================================================================
+	DOFAndBloomGatherPixelShader.usf: Pixel shader for gathering the combined depth of field and bloom samples for blurring.
+	Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
+=============================================================================*/
+
+#include "Common.usf"
+
+#if !XBOX
+
+#include "DepthOfFieldCommon.usf"
+
+/** The number of float4s the 2D sample offsets are packed into. */
+#define NUM_CHUNKS ((NUM_SAMPLES + 1) / 2)
+
+/** The amount bloomed colors are scaled by. */
+half BloomScale;
+
+/**
+ * Combines bloom color and weighted unfocused DOF color, with unfocused percent in alpha.
+ */
+half4 ComputeWeightedSample(half3 BloomColor, half3 SceneColor, half SceneDepth)
+{
+	half UnfocusedPercent = CalcUnfocusedPercent(SceneDepth);
+
+	// The unfocused color is the scene color scaled by the unfocused percent.
+	half3 UnfocusedColor = UnfocusedPercent * SceneColor;
+
+	return half4(
+		UnfocusedColor + BloomColor,
+		UnfocusedPercent
+		);
+}
+
+/**
+ * Entry point for the gather pass on SM2 platforms, which downsamples from scene color to the filter buffer. 
+ * Unfocused DOF color is combined with bloom color in OutColor.rgb, and the Unfocused DOF weight is stored in OutColor.a.
+ */
+void SM2Main(
+	in float4 OffsetUVs[NUM_CHUNKS] : TEXCOORD0,
+	out float4 OutColor : COLOR0
+	)
+{
+	half3 AvgBloomColor = 0; 
+	half4 AvgSceneColorAndDepth = 0; 
+
+	//Go through each chunk and take samples.  NUM_SAMPLES must be a factor of 2.
+	for(int ChunkIndex = 0;ChunkIndex < NUM_SAMPLES / 2;ChunkIndex++)
+	{
+		//accumulate bloom color and depth
+		//LDR scene color in rgb, luminance scale factor in a
+		half4 SceneColorSample = CalcFullSceneColor(OffsetUVs[ChunkIndex].xy);
+		AvgSceneColorAndDepth += half4(SceneColorSample.rgb, CalcSceneDepth(OffsetUVs[ChunkIndex].xy));
+		//use the luminance scale factor to decide whether this sample should attribute to bloom color
+		AvgBloomColor += SceneColorSample.a > 0.0f ? SceneColorSample.rgb * (1 + SceneColorSample.a) : 0;
+
+		SceneColorSample = CalcFullSceneColor(OffsetUVs[ChunkIndex].wz);
+		AvgSceneColorAndDepth += half4(SceneColorSample.rgb, CalcSceneDepth(OffsetUVs[ChunkIndex].wz));
+		AvgBloomColor += SceneColorSample.a > 0.0f ? SceneColorSample.rgb * (1 + SceneColorSample.a) : 0;
+	}
+
+	AvgSceneColorAndDepth = AvgSceneColorAndDepth / NUM_SAMPLES;
+	AvgBloomColor = AvgBloomColor * BloomScale / NUM_SAMPLES;
+	
+	//combine weighted DOF color with bloom color
+	//scale output down to fit in the [0-1] range of the fixed point filter buffer
+	OutColor = ComputeWeightedSample(AvgBloomColor, AvgSceneColorAndDepth.rgb, AvgSceneColorAndDepth.a) / MAX_SCENE_COLOR; 
+} 
+
+/**
+ * Entry point for the gather pass, which downsamples from scene color to the filter buffer. 
+ * Unfocused DOF color is combined with bloom color in OutColor.rgb, and the Unfocused DOF weight is stored in OutColor.a.
+ */
+void Main(
+	in float4 OffsetUVs[NUM_CHUNKS] : TEXCOORD0,
+	out float4 OutColor : COLOR0
+	)
+{
+	half3 AvgBloomColor = 0; 
+	half4 AvgSceneColorAndDepth = 0;
+
+	//Go through each chunk and take samples.  NUM_SAMPLES must be a factor of 2.
+	for(int ChunkIndex = 0;ChunkIndex < NUM_SAMPLES / 2;ChunkIndex++)
+	{
+		half4 SceneColorAndDepth1 = CalcSceneColorAndDepth(OffsetUVs[ChunkIndex].xy);
+		
+		//accumulate bloom color and depth
+		AvgSceneColorAndDepth += SceneColorAndDepth1;
+
+		// The bloom color is the scaled scene color if it has a component outside the displayable range [0,1].
+		// Only bloom if (SceneColor > 1), instead of (0 > SceneColor > 1), in order to mimic XBOX behavior due to having unsigned SceneColor values
+		// this comparison is done per scene color sample to reduce aliasing on high frequency bright patterns
+		AvgBloomColor += any(SceneColorAndDepth1.rgb > 1) ? SceneColorAndDepth1.rgb : 0;
+
+		half4 SceneColorAndDepth2 = CalcSceneColorAndDepth(OffsetUVs[ChunkIndex].wz);
+		AvgSceneColorAndDepth += SceneColorAndDepth2;
+		AvgBloomColor += any(SceneColorAndDepth2.rgb > 1) ? SceneColorAndDepth2.rgb : 0;
+	}
+
+	//normalize and scale
+	AvgBloomColor = AvgBloomColor * BloomScale / NUM_SAMPLES;
+	AvgSceneColorAndDepth = AvgSceneColorAndDepth / NUM_SAMPLES;
+
+	//combine weighted DOF color with bloom color
+	//scale output down to fit in the [0-1] range of the fixed point filter buffer
+	OutColor = ComputeWeightedSample(AvgBloomColor, AvgSceneColorAndDepth.rgb, AvgSceneColorAndDepth.a) / (MAX_SCENE_COLOR);
+#if PS3
+	OutColor = isnan(OutColor) ? half4(0,0,0,0) : OutColor;
+#endif
+}
+
+#elif XBOX
+
+half4 PackedParameters;
+
+static half FocusDistance      = PackedParameters.r;
+static half InverseFocusRadius = PackedParameters.g;
+static half FocusExponent      = PackedParameters.b;
+
+float2 MinMaxBlurClamp;
+
+half BloomScale;
+half SceneMultiplier;
+
+half4 ComputeWeightedSamples4( half4 DeviceZ, half3 SceneColor[4] )
+{
+	half4 SceneDepth = 1.f / (DeviceZ * MinZ_MaxZRatio.z - MinZ_MaxZRatio.w);
+
+	half4 RelativeDistance = SceneDepth - PackedParameters.r;
+
+	half4 MaxUnfocusedPercent = (RelativeDistance < 0) ? MinMaxBlurClamp.x: MinMaxBlurClamp.y;
+	half4 UnfocusedPercent = min(MaxUnfocusedPercent, pow(RelativeDistance * PackedParameters.g, PackedParameters.b));
+
+	half4 ActiveBloomScale;
+	ActiveBloomScale[0] = any(SceneColor[0].rgb >= 1) * BloomScale;
+	ActiveBloomScale[1] = any(SceneColor[1].rgb >= 1) * BloomScale;
+	ActiveBloomScale[2] = any(SceneColor[2].rgb >= 1) * BloomScale;
+	ActiveBloomScale[3] = any(SceneColor[3].rgb >= 1) * BloomScale;
+
+	half3 UnfocusedColor[4];
+	UnfocusedColor[0].rgb = (UnfocusedPercent.x + ActiveBloomScale.x) * SceneColor[0].rgb;
+	UnfocusedColor[1].rgb = (UnfocusedPercent.y + ActiveBloomScale.y) * SceneColor[1].rgb;
+	UnfocusedColor[2].rgb = (UnfocusedPercent.z + ActiveBloomScale.z) * SceneColor[2].rgb;
+	UnfocusedColor[3].rgb = (UnfocusedPercent.w + ActiveBloomScale.w) * SceneColor[3].rgb;
+
+	half4 Result;
+	Result.rgb  = UnfocusedColor[0].rgb
+	            + UnfocusedColor[1].rgb
+	            + UnfocusedColor[2].rgb
+	            + UnfocusedColor[3].rgb;
+	Result.a    = dot( UnfocusedPercent, float4(1.f, 1.f, 1.f, 1.f) );
+	return Result;
+}
+
+static const float x0 = /**/ 0.0; /*/ -2.0 /**/;
+static const float x1 = /**/ 1.0; /*/ -1.0 /**/;
+static const float x2 = /**/ 2.0; /*/  0.0 /**/;
+static const float x3 = /**/ 3.0; /*/  1.0 /**/;
+
+static const float y0 = /**/ 0.0; /*/ -2.0 /**/;
+static const float y1 = /**/ 1.0; /*/ -1.0 /**/;
+static const float y2 = /**/ 2.0; /*/  0.0 /**/;
+static const float y3 = /**/ 3.0; /*/  1.0 /**/;
+
+#if (NUM_SAMPLES == 16)		//XBOX
+
+void Fetch( float2 UV, float fOffsetX, float fOffsetY, out half DeviceZ, out half3 SceneColor )
+{
+	float4 FetchDepth;
+	float4 FetchColor;
+	asm
+	{
+		tfetch2D FetchDepth, UV, SceneDepthTexture, OffsetX=fOffsetX, OffsetY=fOffsetY
+		tfetch2D FetchColor, UV, SceneColorTexture, OffsetX=fOffsetX, OffsetY=fOffsetY
+	};
+    DeviceZ    = FetchDepth.r;
+    SceneColor = FetchColor.rgb * SceneMultiplier;
+}
+
+void Main ( in float2 OffsetUVs : TEXCOORD0, out float4 OutColor : COLOR0 ) 
+{
+	half4 Result = 0;
+
+	// Unrolled loop for the 16 samples.
+
+//	[isolate]
+	{																		   							 
+		half4 DeviceZ;
+		half3 SceneColor[4];
+		
+		Fetch(OffsetUVs.xy,x0,y0, DeviceZ[0], SceneColor[0] );
+		Fetch(OffsetUVs.xy,x1,y0, DeviceZ[1], SceneColor[1] );
+		Fetch(OffsetUVs.xy,x2,y0, DeviceZ[2], SceneColor[2] );
+		Fetch(OffsetUVs.xy,x3,y0, DeviceZ[3], SceneColor[3] );
+
+		Result += ComputeWeightedSamples4( DeviceZ, SceneColor );
+		
+		Fetch(OffsetUVs.xy,x0,y1, DeviceZ[0], SceneColor[0] );
+		Fetch(OffsetUVs.xy,x1,y1, DeviceZ[1], SceneColor[1] );
+		Fetch(OffsetUVs.xy,x2,y1, DeviceZ[2], SceneColor[2] );
+		Fetch(OffsetUVs.xy,x3,y1, DeviceZ[3], SceneColor[3] );
+
+		Result += ComputeWeightedSamples4( DeviceZ, SceneColor );
+  	}								   
+
+    [isolate]
+    {																		   							 
+    	half4 DeviceZ;
+    	half3 SceneColor[4];
+
+		Fetch(OffsetUVs.xy,x0,y2, DeviceZ[0], SceneColor[0] );
+		Fetch(OffsetUVs.xy,x1,y2, DeviceZ[1], SceneColor[1] );
+		Fetch(OffsetUVs.xy,x2,y2, DeviceZ[2], SceneColor[2] );
+		Fetch(OffsetUVs.xy,x3,y2, DeviceZ[3], SceneColor[3] );
+
+		Result += ComputeWeightedSamples4( DeviceZ, SceneColor );
+
+		Fetch(OffsetUVs.xy,x0,y3, DeviceZ[0], SceneColor[0] );
+		Fetch(OffsetUVs.xy,x1,y3, DeviceZ[1], SceneColor[1] );
+		Fetch(OffsetUVs.xy,x2,y3, DeviceZ[2], SceneColor[2] );
+		Fetch(OffsetUVs.xy,x3,y3, DeviceZ[3], SceneColor[3] );
+		
+		Result += ComputeWeightedSamples4( DeviceZ, SceneColor );
+	}
+	
+	// RETURN_COLOR not needed unless writing to SceneColor
+	//@todo - remove scaling by MAX_SCENE_COLOR for Xenon, since it uses an FP filter buffer
+	OutColor = Result / (MAX_SCENE_COLOR * 16);
+}
+
+#elif (NUM_SAMPLES == 4)	//XBOX
+
+sampler2D SmallSceneColorTexture;
+
+void Fetch( float2 UV, float fOffsetX, float fOffsetY, out half DeviceZ, out half3 SceneColor )
+{
+	float4 FetchDepth;
+	float4 FetchColor;
+	asm
+	{
+		tfetch2D FetchDepth, UV, SceneDepthTexture, OffsetX=fOffsetX, OffsetY=fOffsetY
+		tfetch2D FetchColor, UV, SmallSceneColorTexture, OffsetX=fOffsetX, OffsetY=fOffsetY
+	};
+    DeviceZ    = FetchDepth.r;
+    SceneColor = FetchColor.rgb * SceneMultiplier;
+}
+
+void Main ( in float2 OffsetUVs : TEXCOORD0, out float4 OutColor : COLOR0 ) 
+{
+	half4 DeviceZ;
+	half3 SceneColor[4];
+		
+	Fetch(OffsetUVs.xy,-1.0,-1.0, DeviceZ[0], SceneColor[0] );
+	Fetch(OffsetUVs.xy,1.0,-1.0, DeviceZ[1], SceneColor[1] );
+	Fetch(OffsetUVs.xy,-1.0,1.0, DeviceZ[2], SceneColor[2] );
+	Fetch(OffsetUVs.xy,1.0,1.0, DeviceZ[3], SceneColor[3] );
+
+	OutColor = ComputeWeightedSamples4( DeviceZ, SceneColor ) / (MAX_SCENE_COLOR * 4);
+}
+
+#endif	//XBOX
+
+#endif
+

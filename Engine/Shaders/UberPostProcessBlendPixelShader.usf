@@ -1,0 +1,84 @@
+/*=============================================================================
+	DOFAndBloomBlendPixelShader.usf: Pixel shader for blending the blurred depth of field and bloom colors with the scene color.
+	Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
+=============================================================================*/
+
+#include "Common.usf"
+#include "DepthOfFieldCommon.usf"
+
+sampler2D BlurredImage;
+
+// scene material parameters
+
+float4 SceneShadowsAndDesaturation;  // RGB = SceneShadows, A = (1-SceneDesaturation)
+float4 SceneInverseHighLights;       // RGB = 1 / SceneHighLights
+float4 SceneMidTones;                // RGB = SceneMidTones
+float4 SceneScaledLuminanceWeights;  // RGB = LuminanceWeights * SceneDesaturation
+
+static float3 SceneShadows      = SceneShadowsAndDesaturation.rgb;
+static float  SceneDesaturation = SceneShadowsAndDesaturation.a;
+
+// gamma correction parameters
+
+float4 GammaColorScaleAndInverse;
+float4 GammaOverlayColor;
+
+static float3 GammaColorScale = GammaColorScaleAndInverse.rgb; 
+static float  GammaInverse    = GammaColorScaleAndInverse.a;
+
+#if !defined(MOTION_BLUR) || !XBOX
+#define MOTION_BLUR 0
+#endif
+
+#if MOTION_BLUR
+#include "MotionBlurCommon.usf"
+#endif
+
+/*=============================================================================
+ * Pixel Shader
+ *============================================================================*/
+
+void Main(
+	in float4 ScreenPosition : TEXCOORD0,
+	in float2 FilterBufferUV : TEXCOORD1,
+	out float4 OutColor : COLOR0
+	)
+{
+	float2 UV = ScreenPosition.zw;
+	half4 FocusedSceneColorAndDepth = CalcSceneColorAndDepth(UV);
+
+#if MOTION_BLUR
+    half4 SceneColorRaw = CalcFullSceneColor( UV );
+	FocusedSceneColorAndDepth.rgb = MotionBlur( SceneColorRaw, ScreenPosition );
+#endif
+
+    // DOF and bloom effect
+
+	//focused scene color in rgb, depth in a
+	half  FocusedWeight = saturate(1 - CalcUnfocusedPercent(FocusedSceneColorAndDepth.a));
+
+	//UnfocusedSceneColor in .rgb, UnfocusedWeight in .a
+	//Scale color back up as it was compressed to the [0-1] range to fit in the fixed point filter buffer
+	half4 UnfocusedSceneColorAndWeight = MAX_SCENE_COLOR * tex2D(BlurredImage,FilterBufferUV);
+
+//	half  WeightSum = max(FocusedWeight + UnfocusedSceneColorAndWeight.a, 0.001);
+    half  WeightSum = FocusedWeight + UnfocusedSceneColorAndWeight.a;
+
+    half3 DOFResult = (FocusedSceneColorAndDepth.rgb * FocusedWeight + UnfocusedSceneColorAndWeight.rgb) / WeightSum;
+
+    // Material effect
+
+    half3 Color = pow(saturate(DOFResult - SceneShadows) * SceneInverseHighLights.rgb, SceneMidTones.rgb);
+    half3 ScaledLuminance = dot(Color.rgb, SceneScaledLuminanceWeights.rgb);
+
+    half3 MaterialResult = GammaOverlayColor.rgb + Color * SceneDesaturation + ScaledLuminance;
+
+	// Gamma correction (note that for some reason HLSL generates better code when we add a color to the
+    // MaterialResult, so I changed the code so that we add GammaOverlayColor / GammaColorScale to the
+    // MaterialResult as opposed to adding GammaOverlayColor to the LinearColor.
+
+	half3 LinearColor = MaterialResult.rgb * GammaColorScale.rgb;
+
+	OutColor = RETURN_COLOR( float4(pow(saturate(LinearColor), GammaInverse), 0.f) );
+
+}

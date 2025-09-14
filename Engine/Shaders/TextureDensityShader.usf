@@ -1,0 +1,124 @@
+/*=============================================================================
+	TextureDensityShader.hlsl: Shader for rendering texture density as a color
+	Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
+=============================================================================*/
+
+#include "Common.usf"
+#include "Material.usf"
+#include "VertexFactory.usf"
+
+
+/*=============================================================================
+	Vertex Shader
+=============================================================================*/
+
+void MainVertexShader(
+	FVertexFactoryInput Input,
+	out FVertexFactoryInterpolants FactoryInterpolants,
+	out float4 WorldPosition	: TEXCOORD6,
+	out float4 Position			: POSITION
+	)
+{
+	WorldPosition = VertexFactoryGetWorldPosition(Input);
+	Position = MulMatrix(ViewProjectionMatrix, WorldPosition);
+	FactoryInterpolants = VertexFactoryGetInterpolants(Input);
+}
+
+
+/*=============================================================================
+	Pixel Shader
+=============================================================================*/
+
+#define MAX_LOOKUPS 16
+
+float4 TextureDensityParameters;
+float4 TextureLookupInfo[ MAX_LOOKUPS ];
+
+#if PS3
+float CalcDensity( float MinDensity, float MaxDensity, FMaterialParameters MaterialParameters, float WorldSpaceArea )
+{
+	float Density = MinDensity;
+	int NumLookups = TextureDensityParameters.x;
+	for ( int LookupIndex = 0; LookupIndex < MAX_LOOKUPS; ++LookupIndex )
+	{
+		if ( LookupIndex < NumLookups )
+		{
+			int TexCoordIndex = TextureLookupInfo[LookupIndex].z;
+			float2 TextureSize = TextureLookupInfo[LookupIndex].xy;
+			float2 TexCoord = TextureSize;
+			for ( int Index = 0; Index < NUM_MATERIAL_TEXCOORDS; ++Index )
+			{
+				if ( Index == TexCoordIndex )
+				{
+					TexCoord *= MaterialParameters.TexCoords[Index].xy;	// In texels
+				}
+			}
+			float2 A = ddx(TexCoord);
+			float2 B = ddy(TexCoord);
+			float2 C = A.xy * B.yx;
+
+			// Area of parallelogram, in texels.
+			float TexelArea = abs( C.x - C.y );
+
+			Density = max( Density, TexelArea / WorldSpaceArea );
+		}
+	}
+	return min( Density, MaxDensity );
+}
+#else
+float CalcDensity( float MinDensity, float MaxDensity, FMaterialParameters MaterialParameters, float WorldSpaceArea )
+{
+	float Density = MinDensity;
+	int NumLookups = TextureDensityParameters.x;
+	for ( int LookupIndex = 0; LookupIndex < NumLookups && LookupIndex < MAX_LOOKUPS; ++LookupIndex )
+	{
+		int TexCoordIndex = TextureLookupInfo[LookupIndex].z;
+		float2 TextureSize = TextureLookupInfo[LookupIndex].xy;
+		float2 TexCoord = MaterialParameters.TexCoords[TexCoordIndex].xy * TextureSize;	// In texels
+		float2 A = ddx(TexCoord);
+		float2 B = ddy(TexCoord);
+		float2 C = A.xy * B.yx;
+
+		// Area of parallelogram, in texels.
+		float TexelArea = abs( C.x - C.y );
+
+		Density = max( Density, TexelArea / WorldSpaceArea );
+	}
+	return min( Density, MaxDensity );
+}
+#endif
+
+
+void MainPixelShader(
+	FVertexFactoryInterpolants FactoryInterpolants,
+	float4 WorldPosition	: TEXCOORD6,
+	OPTIONAL_FacingSign
+	out float4 OutColor		: COLOR0
+	)
+{
+	FMaterialParameters MaterialParameters = GetMaterialParameters( FactoryInterpolants );
+	CalcMaterialParameters(MaterialParameters, FacingSign, float3(0,0,1), float4(0,0,0,1));
+	GetMaterialClipping(MaterialParameters);
+
+	// Area of parallelogram, in world space units.
+	float WorldSpaceArea = length( cross( ddx(WorldPosition.xyz), ddy(WorldPosition.xyz) ) );
+	WorldSpaceArea = max( WorldSpaceArea, 0.00000001f );
+
+	float MinDensity = TextureDensityParameters.y;
+	float IdealDensity = TextureDensityParameters.z;
+	float MaxDensity = TextureDensityParameters.w;
+	float Density = CalcDensity( MinDensity, MaxDensity, MaterialParameters, WorldSpaceArea );
+
+	if ( Density > IdealDensity )
+	{
+		float Range = MaxDensity - IdealDensity;
+		Density -= IdealDensity;
+		OutColor = RETURN_COLOR( float4( Density/Range, (Range-Density)/Range, 0.0f, 1.0f ) );
+	}
+	else
+	{
+		float Range = IdealDensity - MinDensity;
+		Density -= MinDensity;
+		OutColor = RETURN_COLOR( float4( 0.0f, Density/Range, (Range-Density)/Range, 1.0f ) )	;
+	}
+}

@@ -1,0 +1,120 @@
+/*=============================================================================
+	MotionBlurCommon.usf: Common helper functionality for motion blur.
+	Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
+=============================================================================*/
+
+#ifndef NUM_SAMPLES
+#define NUM_SAMPLES 5
+#endif
+
+float4 RenderTargetClampParameter;
+
+float2 ClampUV(float2 UV)
+{
+// SM2 currently doesn't support correctly clamped motion blur (not enough instructions)
+#if !SM2_PROFILE
+	// Clamp the sampling UVs to avoid sampling from outside viewport region
+	// (hence render target size can be bigger than viewport region)
+	UV.x = clamp(UV.x, RenderTargetClampParameter.x, RenderTargetClampParameter.z);
+	UV.y = clamp(UV.y, RenderTargetClampParameter.y, RenderTargetClampParameter.w);
+#endif
+	return UV;
+}
+
+
+#if XBOX
+// XY used for ScaleAndBias: { 3*SCENE_COLOR_BIAS_FACTOR, -2, 0, 0 }
+//
+float4 MotionBlurMaskScaleAndBias;
+
+// AlphaValue can have four different values (0/3, 1/3, 2/3, 3/3).
+// The MotionBlurMask bit is set when AlphaValue is 1/3 or 3/3, and this function
+// returns 1.0 if the bit is set, otherwise 0.0.
+half GetMotionBlurMask( half AlphaValue )
+{
+//	half MotionBlurMask = abs( AlphaValue*3.0f - 2.0f );
+	half MotionBlurMask = abs( AlphaValue*MotionBlurMaskScaleAndBias.x + MotionBlurMaskScaleAndBias.y );
+	return (AlphaValue < 0.001f) ? 0.0f : MotionBlurMask;
+}
+half4 GetMotionBlurMask4( half Alpha1, half Alpha2, half Alpha3, half Alpha4 )
+{
+//  half MotionBlurMask = abs( AlphaValue*3.0f - 2.0f );
+    half4 AlphaValues = half4( Alpha1, Alpha2, Alpha3, Alpha4 );
+    half4 MotionBlurMask = abs( AlphaValues*MotionBlurMaskScaleAndBias.x + MotionBlurMaskScaleAndBias.y );
+    MotionBlurMask = (AlphaValues < 0.001f) ? 0.0f : MotionBlurMask;
+    return MotionBlurMask;
+}
+#endif
+
+sampler2D	VelocityBuffer;
+float4x4	ScreenToWorld;
+float4x4	PrevViewProjMatrix;
+
+float4 StaticVelocityParameters = { 0.5f, -0.5f, 16.0f/1280.0f, 16.0f/720.0f };
+float4 DynamicVelocityParameters = { 2.0f*16.0f/1280.0f, -2.0f*16.0f/720.0f, -16.0f/1280.0f, 16.0f/720.0f };
+
+
+half3 MotionBlur( half4 SceneColor, float4 ScreenPosition )
+{
+	half2	PixelVelocity;
+	half2	NominalVelocity;
+
+	float2 UV = ScreenPosition.zw;
+
+	// NOTE: Maximum value for an fp16 depth-value is 65504.
+	half2	DynamicVelocity2D	= tex2D( VelocityBuffer, UV ).xy;
+
+	// 0.0f (-1.0f after scale-and-bias) in the velocity buffer has special meaning. It means "use static background velocity".
+	// Velocity rendering clamps to 1/255, so every pixel it touches will fail this check.
+	half	Selector			= DynamicVelocity2D.r;
+	if ( Selector > 0.0f )
+	{
+		// Scale dynamic velocity from [-1,+1] to [-MAX_VELOCITY,+MAX_VELOCITY] pixels
+		NominalVelocity			= DynamicVelocity2D * 2.0f - 1.0f;
+		PixelVelocity			= NominalVelocity*DynamicVelocityParameters.xy;
+	}
+	else
+	{
+		half	CurrDepth			= min( CalcSceneDepth( UV ), 65504);
+		if ( CurrDepth < 14.0f )
+			CurrDepth = 65504.0f;
+		float4	ProjectedPosition	= float4( ScreenPosition.xy * CurrDepth, CurrDepth, 1 );
+		float4	PrevScreenPosition	= MulMatrix( PrevViewProjMatrix, ProjectedPosition );
+		PrevScreenPosition.xy		/= PrevScreenPosition.w;
+
+		// Scale static velocity from projection space to texel space and clamp to +/- MAX_VELOCITY pixels.
+		half2	StaticVelocity	= ScreenPosition.xy - PrevScreenPosition.xy;
+		PixelVelocity			= clamp( StaticVelocity*StaticVelocityParameters.xy, -StaticVelocityParameters.zw, StaticVelocityParameters.zw );
+
+		NominalVelocity			= PixelVelocity/StaticVelocityParameters.zw;
+	}
+
+	// Make it nicely curved.
+	half Scale		= dot(NominalVelocity, NominalVelocity);
+	PixelVelocity	*= Scale;
+
+	// Average NUM_SAMPLES screen colors along the velocity vector.
+	half2 Step = PixelVelocity / NUM_SAMPLES;
+	half4 ForwardColor1 = tex2D( SceneColorTexture, ClampUV(UV + Step) );
+	half4 ForwardColor2 = tex2D( SceneColorTexture, ClampUV(UV + 2*Step) );
+	half4 BackwardColor1 = tex2D( SceneColorTexture, ClampUV(UV - Step) );
+	half4 BackwardColor2 = tex2D( SceneColorTexture, ClampUV(UV - 2*Step) );
+
+	half3 Color = SceneColor.rgb;
+
+#if XBOX
+    half4 MotionBlurMask = GetMotionBlurMask( SceneColor.a );
+    half4 NeighborMask = GetMotionBlurMask4( ForwardColor1.a, ForwardColor2.a, BackwardColor1.a, BackwardColor2.a );
+    half4 SelectionMask = (MotionBlurMask == NeighborMask);
+    Color += SelectionMask.x * ForwardColor1.rgb;
+    Color += SelectionMask.y * ForwardColor2.rgb;
+    Color += SelectionMask.z * BackwardColor1.rgb;
+    Color += SelectionMask.w * BackwardColor2.rgb;
+    float NumSamples = 1.0f + dot(SelectionMask,SelectionMask);
+    Color /= NumSamples;
+#else
+	Color += ForwardColor1.rgb + ForwardColor2.rgb + BackwardColor1.rgb + BackwardColor2.rgb;
+	Color /= NUM_SAMPLES;
+#endif
+	return Color;
+}

@@ -1,0 +1,103 @@
+/*=============================================================================
+	MotionVelocityShader.usf: Calculates velocity vectors.
+	Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
+=============================================================================*/
+
+#include "Common.usf"
+#include "Material.usf"
+#include "VertexFactory.usf"
+
+
+/*=============================================================================
+ * Vertex Shader
+ *============================================================================*/
+
+float4x4 PrevViewProjectionMatrix;
+float4 StretchTimeScale = { 1.0f, 0.0f, 0.0f, 0.0f };
+
+struct FVertexOutput
+{
+    float4 Positions : TEXCOORD6;	// XY = 2D velocity in screen space
+
+	FVertexFactoryInterpolants OutFactoryInterpolants;
+	float4 Position : POSITION;		// Position current frame
+};
+
+void MainVertexShader( FVertexFactoryInput Input, out FVertexOutput Output )
+{
+	float4 WorldPosition		= VertexFactoryGetWorldPosition( Input );
+	Output.OutFactoryInterpolants = VertexFactoryGetInterpolants( Input );
+	float4 PrevWorldPosition	= VertexFactoryGetPreviousWorldPosition( Input );
+	float3 WorldNormal			= VertexFactoryGetWorldNormal( Input );
+
+	// Calculate world-space velocity vector in units/sec.
+	float3 WorldVelocity = (WorldPosition.xyz - PrevWorldPosition.xyz);
+
+	// Is the normal pointing backwards?
+	if ( dot(WorldNormal, WorldVelocity) < 0 )
+	{
+		// Stretch the polygon back and let the velocity interpolate between actual velocity and 0.
+		Output.Position			= MulMatrix( ViewProjectionMatrix, WorldPosition - WorldVelocity.xyzz*StretchTimeScale.xxxw );
+		Output.Positions		= 0;
+	}
+	else
+	{
+		float4 ScreenPosition		= MulMatrix( ViewProjectionMatrix, WorldPosition );
+		float4 PrevScreenPosition	= MulMatrix( PrevViewProjectionMatrix, PrevWorldPosition );
+		Output.Position				= ScreenPosition;
+		Output.Positions.xy			= ScreenPosition.xy / ScreenPosition.w - PrevScreenPosition.xy / PrevScreenPosition.w;
+		Output.Positions.zw			= 0;
+	}
+
+	// Move all geometry a little bit towards the camera.
+	Output.Position.z += StretchTimeScale.y * Output.Position.w;
+}
+
+
+/*=============================================================================
+ * Pixel Shader
+ *============================================================================*/
+
+// This parameter brings a [-2,+2] velocity vector into [0,1] range,
+// where 0 is mapped to -MaxVelocity, and 1 is mapped to +MaxVelocity.
+// These values depend on screen resolution and blur distance, so they
+// should be adjusted from CPU.
+// Initialized here for a 16-pixel blur distance on a 640,480 resolution.
+// XY = Multiplier, ZW = Offset
+
+float4 VelocityScaleOffset = { 0.25f*640.0f/16.0f, 0.25f*480.0f/16.0f, 0.5f, 0.5f };
+float4 IndividualVelocityScale = { 1.0f, 1.0f, 1.0f/255.0f, 1.0f };
+
+void MainPixelShader(
+	in float4 Positions : TEXCOORD6,
+	in FVertexFactoryInterpolants Interpolants,
+	OPTIONAL_FacingSign
+	out float4 OutColor : COLOR0
+	)
+{
+	// Manual clipping here (alpha-test, etc)
+	FMaterialParameters MaterialParameters = GetMaterialParameters( Interpolants );
+	CalcMaterialParameters( MaterialParameters, FacingSign, float3(0,0,1), float4(0,0,0,1));
+	GetMaterialClipping( MaterialParameters );
+
+	// Calculate velocity from previous position to current position (projection space)
+	half2 Velocity = Positions.xy;
+
+	// Scale by opacity
+	Velocity	*= GetMaterialOpacity( MaterialParameters );
+
+	// Scale by UPrimitiveComponent::MotionBlurScale and resolution
+	Velocity	*= IndividualVelocityScale.xy;
+
+	// Clamp vector to unit length.
+	half L		= dot( Velocity, Velocity );
+	L			= max( L, 1.0f );
+	Velocity	= Velocity*rsqrt(L);
+
+	// Map [-1,1] to [0,1].
+	Velocity	= Velocity*0.5f + 0.5f;
+
+	// Clamp so that components are never 0 (special meaning to the motion blur pass).
+	Velocity = clamp( Velocity, IndividualVelocityScale.z, IndividualVelocityScale.w );
+	OutColor = float4(Velocity, 0, 0);
+}

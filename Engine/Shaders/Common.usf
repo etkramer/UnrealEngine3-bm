@@ -1,0 +1,345 @@
+/*=============================================================================
+	Common.hlsl: Common shader code.
+	Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
+=============================================================================*/
+
+#include "Definitions.usf"
+
+#if PS3
+
+	// Tangent space bias
+	#define TangentBias(x)			( (x / 127.5) - 1 )
+	#define TangentNorm(x)			(x / 255.0)
+	
+	// Register keyword in CG. Note no pixel constant registers on PS3!
+	#define VERTEXREGISTER(cx)		: cx
+	#define PIXELREGISTER(cx)
+
+	// On PS3, remap Tangent and Binormal to slot 5 and 6, so they don't overlap texcoord 6 and 7
+	#define TANGENT					ATTR5
+	#define BINORMAL				ATTR6
+
+	// In Cg the COLOR0 and COLOR1 semantics are clamped to [0,1] even though they are floating point
+	// So we use the extended tex coord interpolators for the tangent to world vectors instead
+	#define TANGENTTOWORLD0			TEXCOORD8
+	#define TANGENTTOWORLD2			TEXCOORD9
+
+	// Input semantic for pixel shaders to get the screenspace pixel position (window position)
+	#define VPOS					WPOS
+	#define VFACE					FACE
+
+	// The PS3 reads our FColor values as ARGB; GBAR swizzles the components into the right order.
+	#define FCOLOR_COMPONENT_SWIZZLE .gbar
+
+#elif SM4_PROFILE
+
+	// Tangent space bias
+	#define TangentBias(x)			( (x * 2) - 1 )
+	#define TangentNorm(x)			(x)
+
+	#define TANGENTTOWORLD0			COLOR0
+	#define TANGENTTOWORLD2			COLOR1
+	
+	// Register keyword in HLSL 4.0
+	#define VERTEXREGISTER(cx)
+	#define PIXELREGISTER(cx)
+
+	// D3D10 vertex declarations read our FColor values as BGRA, so they need to be reversed.
+	#define FCOLOR_COMPONENT_SWIZZLE .bgra
+
+#else
+
+	// Tangent space bias
+	#define TangentBias(x)			( (x / 127.5) - 1 )
+	#define TangentNorm(x)			(x / 255.0)
+
+	// Note that in SM2 COLOR0 and COLOR1 are fixed point and clamped to [0,1]
+	#define TANGENTTOWORLD0			COLOR0
+	#define TANGENTTOWORLD2			COLOR1
+
+	// Register keyword in HLSL
+	#define VERTEXREGISTER(cx)		: register(cx)
+	#define PIXELREGISTER(cx)		: register(cx)
+
+	#define FCOLOR_COMPONENT_SWIZZLE .rgba
+#endif
+
+
+#if PS3
+	// When multiplying with a matrix that is passed in externally through a matrix parameter, you MUST use MulMatrix.
+	// When multiplying by a generated matrix (float3x3(VecA, VecB, VecC)), you MUST use mul
+	// Note that MulMatrix also works for multiplying vector by matrix (transforming by transposed matrix), e.g. MulMatrix( Vect, Mtx ).
+	#define MulMatrix(Mtx, Vect)	mul(Vect, Mtx)
+	#define MulBone(Mtx, Vect)		mul(Mtx, Vect)
+	
+	// Clamp the base, so it's never <= 0.0f on PS3 (INF/NaN).
+	#define pow(x,y)				pow( max(abs(x), 0.0001f), (y) )
+
+#else
+	#define MulMatrix(Mtx, Vect)	mul(Mtx, Vect)
+	#define MulBone(Mtx, Vect)		mul(Vect, Mtx)
+
+	// Clamp the base, so it's never <= 0.0f (INF/NaN).
+	float ClampedPow(float X,float Y)
+	{
+		return pow(max(abs(X),0.0001f),Y);
+	}
+	float2 ClampedPow(float2 X,float2 Y)
+	{
+		return pow(max(abs(X),float2(0.0001f,0.0001f)),Y);
+	}
+	float3 ClampedPow(float3 X,float3 Y)
+	{
+		return pow(max(abs(X),float3(0.0001f,0.0001f,0.0001f)),Y);
+	}
+	float4 ClampedPow(float4 X,float4 Y)
+	{
+		return pow(max(abs(X),float4(0.0001f,0.0001f,0.0001f,0.0001f)),Y);
+	}
+	#define pow(x,y)				ClampedPow(x,y)
+
+	// It's necessary to use these whenever you're reading a depth value from a depth texture
+    #define texDepth2D				tex2D
+	#define texDepth2Dlod			tex2Dlod
+	#define texDepth2Dproj			tex2Dproj
+#endif
+
+#if !SM4_PROFILE
+	// SM4 is the only platform that natively supports uints in shaders; we just use floats on other platforms.
+	#define uint4	float4
+#endif
+
+#if !VERTEXSHADER
+	#undef VERTEXREGISTER
+	#define VERTEXREGISTER(cx)
+#endif
+
+#if !PIXELSHADER
+	#undef PIXELREGISTER
+	#define PIXELREGISTER(cx)
+#endif
+
+// Pixel and vertex shader constant registers that are reserved by the Engine.
+// ----------------------------------------------------------------------------------------
+// These #defines must match the enums EPixelShaderRegisters and EVertexShaderRegister
+// as they are defined in RHI.h.
+#define PSR_ColorBiasFactor			c0	// Factor applied to the color output from the pixelshader
+#define PSR_ScreenPositionScaleBias	c1	// Converts projection-space XY coordinates to texture-space UV coordinates
+#define PSR_MinZ_MaxZ_Ratio			c2	// Converts device Z values to clip-space W values
+#define VSR_ViewProjMatrix			c0	// View-projection matrix, transforming from World space to Projection space
+#define VSR_ViewOrigin				c4	// World space position of the camera
+
+#if SM4_PROFILE
+	cbuffer VSOffsetConstants : register(b1)
+	{
+		float4x4	ViewProjectionMatrix	VERTEXREGISTER(VSR_ViewProjMatrix);
+		float4		CameraPosition			VERTEXREGISTER(VSR_ViewOrigin);
+	};
+	cbuffer PSOffsetConstants : register(b2)
+	{
+		// Converts projection-space XY coordinates to texture-space UV coordinates
+		float4		ScreenPositionScaleBias	PIXELREGISTER(PSR_ScreenPositionScaleBias);
+		float4	    MinZ_MaxZRatio			PIXELREGISTER(PSR_MinZ_MaxZ_Ratio);
+	};
+#else
+	float4x4	ViewProjectionMatrix	VERTEXREGISTER(VSR_ViewProjMatrix);
+	float4		CameraPosition			VERTEXREGISTER(VSR_ViewOrigin);
+
+	// Converts projection-space XY coordinates to texture-space UV coordinates
+	float4		ScreenPositionScaleBias	PIXELREGISTER(PSR_ScreenPositionScaleBias);
+	float4	    MinZ_MaxZRatio			PIXELREGISTER(PSR_MinZ_MaxZ_Ratio);
+#endif
+
+#if XBOX
+	// The x component is set to 1 when rendering to an LDR buffer, otherwise 2^SCENE_COLOR_BIAS_FACTOR_EXP (See XeD3DRenderTarget.cpp)
+	float4	SCENE_COLOR_BIAS_FACTOR	PIXELREGISTER(PSR_ColorBiasFactor);
+#else
+	#define SCENE_COLOR_BIAS_FACTOR 1.0f
+#endif
+
+#if MATERIAL_TWOSIDED
+	// For two sided surfaces, this is the sign that should be applied to the normal.
+	// In SM2, the surfaces are drawn twice with opposite signs.
+	// In all other profiles, the surfaces are only drawn once without backface culling, and VFACE
+	// is used to determine which side is being drawn.  TwoSidedSign still contains useful information
+	// about whether the model is flipped in that case.
+	half TwoSidedSign;
+#endif
+
+sampler2D 	SceneDepthTexture;
+sampler2D	SceneColorTexture;
+sampler2D	LightAttenuationTexture;
+
+
+
+// ----------------------------------------------------------------------------------------
+
+#if XBOX
+	float4 BiasColor( float4 Color )
+	{
+		return float4( Color.rgb * SCENE_COLOR_BIAS_FACTOR.x, Color.a );
+	}
+	// RETURN_COLOR should only be used when rendering to the SceneColor surface
+	#define RETURN_COLOR( Color ) BiasColor( Color );
+#else
+	// We don't use an inline function so we can avoid type promotion/ coercion.
+	#define RETURN_COLOR( Color ) ( Color )
+#endif
+
+//the largest value any color component is allowed to have, scene color is clamped to this in DOFAndBloomGatherPixelShader.usf
+//also used to pack color into the fixed point filter buffer, which requires a range of [0-1]
+#define MAX_SCENE_COLOR 4.0f
+
+float Square(float A)
+{
+	return A * A;
+}
+
+float4 ExpandRGBE( float4 RGBE )
+{
+	return float4( ldexp( RGBE.xyz, 255.0 * RGBE.w - 128.0 ), 1.0 );
+}
+
+float4 ExpandCompressedRGBE( float4 RGBE )
+{
+	return float4( ldexp( RGBE.xyz, 255.0 / 16.0 * RGBE.w - 8.0 ), 1.0 );
+}
+
+half3 PointLightPhong(half3 DiffuseColor,half DiffusePower,half3 SpecularColor,half SpecularPower, half3 L, float3 E, half3 N, float3 R)
+{
+	half3	DiffuseLighting = pow(saturate(dot(N,L)),DiffusePower),
+			SpecularLighting = pow(saturate(dot(R,L)),max(SpecularPower,0.0001));
+
+	return DiffuseColor * DiffuseLighting + SpecularLighting * SpecularColor;
+}
+
+float4 PreviousLighting(float4 ScreenPosition)
+{
+	return tex2D(SceneColorTexture,ScreenPosition.xy / ScreenPosition.w * ScreenPositionScaleBias.xy + ScreenPositionScaleBias.wz);
+}
+
+float RadialAttenuation(float3 WorldLightVector,half FalloffExponent)
+{
+	return pow(
+		saturate(1.0f - dot(WorldLightVector,WorldLightVector)),
+		FalloffExponent
+		);
+}
+
+half3 GetLightAttenuation(float4 ScreenPosition)
+{
+	return tex2D(LightAttenuationTexture, ScreenPosition.xy / ScreenPosition.w * ScreenPositionScaleBias.xy + ScreenPositionScaleBias.wz).rgb;
+}
+
+/** return the scene lighting texture */
+half3 CalcSceneColor(float2 ScreenUV)
+{
+	return tex2D(SceneColorTexture,ScreenUV).rgb;
+}
+
+/** return all channels of the scene lighting texture */
+half4 CalcFullSceneColor(float2 ScreenUV)
+{
+      return tex2D(SceneColorTexture,ScreenUV);
+}
+
+half ConvertFromDeviceZ(half DeviceZ)
+{
+	//return MinZ_MaxZRatio[0] / (1.0 - (DeviceZ / MinZ_MaxZRatio[1]));
+	return 1.f / (DeviceZ * MinZ_MaxZRatio[2] - MinZ_MaxZRatio[3]);	
+}
+
+/** Encodes the W coordinate of a pixel for storage in floating point. */
+half EncodeFloatW(float W)
+{
+	#if SUPPORTS_DEPTH_TEXTURES
+		return 0;
+	#else
+		float DepthAdd = MinZ_MaxZRatio[0];
+		float DepthMul = MinZ_MaxZRatio[1];
+		return DepthMul + DepthAdd / W;
+	#endif
+}
+
+#if SUPPORTS_DEPTH_TEXTURES
+
+	/** return the depth value stored in the depth buffer - but convert it to w first */
+	half CalcSceneDepth( float2 ScreenUV )
+	{
+		// get depth buffer z value
+		half DeviceZ = texDepth2D(SceneDepthTexture,ScreenUV).r;
+
+		// convert it to clip space w
+		return ConvertFromDeviceZ(DeviceZ);
+	}
+
+#elif SM2_PROFILE
+
+	/** return the depth value stored in lighting target's alpha */
+	half CalcSceneDepth( float2 ScreenUV )
+	{
+		// depth stored in alpha
+		return ConvertFromDeviceZ(tex2D(SceneDepthTexture,ScreenUV).a);
+	}
+
+#else
+
+	/** return the depth value stored in lighting target's alpha */
+	half CalcSceneDepth( float2 ScreenUV )
+	{
+		// depth stored in alpha
+		return ConvertFromDeviceZ(tex2D(SceneColorTexture,ScreenUV).a);
+	}
+
+#endif
+
+/**
+* Returns scene color in rgb, depth in a
+*/
+half4 CalcSceneColorAndDepth( float2 ScreenUV )
+{
+	return half4(CalcSceneColor(ScreenUV), CalcSceneDepth(ScreenUV));
+}
+
+
+#if SM2_PROFILE
+	/**
+	* Used to output a scale value based on scene color luminance when additively blending.
+	*/
+	half4 AccumulateSceneColor(half4 InSceneColor)
+	{
+		// Tweakable luminance scale
+		const half SceneColorAccumulationFactor = 0.1f;
+		const half MaxLuminanceScale = 0.1f;
+		const half3 LuminanceWeights = half3(.3f, .59f, .11f) * SceneColorAccumulationFactor;
+		half ScaledLuminance = clamp(dot(InSceneColor.rgb, LuminanceWeights), 0.0f, MaxLuminanceScale);
+		return half4(InSceneColor.rgb, ScaledLuminance * ScaledLuminance);
+	}
+#else
+	half4 AccumulateSceneColor(half4 InSceneColor)
+	{
+		return InSceneColor;
+	}
+#endif
+
+half PreviousDepth(float4 ScreenPosition)
+{
+	return CalcSceneDepth(ScreenPosition.xy / ScreenPosition.w * ScreenPositionScaleBias.xy + ScreenPositionScaleBias.wz);
+}
+
+/** 
+ * aligns the clip space position so that it can be used as a texture coordinate
+ * to properly align in screen space
+ */
+float4 ScreenAlignedPosition( float4 ScreenPosition )
+{
+	return float4(ScreenPosition.xy / ScreenPosition.w * ScreenPositionScaleBias.xy + ScreenPositionScaleBias.wz, ScreenPosition.z/ScreenPosition.w,1);
+}
+
+/** 
+ * Aligns the [0,1] UV to match the view within the backbuffer
+ */
+half2 ScreenAlignedUV( half2 UV )
+{
+	return (UV*half2(2,-2) + half2(-1,1))*ScreenPositionScaleBias.xy + ScreenPositionScaleBias.wz;
+}

@@ -1,0 +1,209 @@
+/*=============================================================================
+	HeightFogPixelShader.usf: Scene fogging pixel shader.
+	Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
+=============================================================================*/
+
+#include "Common.usf"
+
+static const float FLT_EPSILON = 0.001f;
+
+/** calculate ratio of distance between world z height and relative fog height */
+float2 LinePlaneIntersection(float RelativeB,float2 RelativeZ)
+{
+	return RelativeZ / (abs(RelativeB) <= FLT_EPSILON ? FLT_EPSILON : RelativeB);
+}
+
+/** calculate ratio of distance between world z height and relative fog height */
+float4 LinePlaneIntersection(float RelativeB,float4 RelativeZ)
+{
+	return RelativeZ / (abs(RelativeB) <= FLT_EPSILON ? FLT_EPSILON : RelativeB);
+}
+
+/** used to scale fog layer distance */
+float4	FogDistanceScale;
+/** any layer distance beyond this is clamped to full fog */
+float4	FogExtinctionDistance;
+/** lighting contribution from fog.  This uses 4 components to avoid platform-specific alignment of each element of the array. */
+half4	FogInScattering[4];
+/** distance at which fog will start */
+float4	FogStartDistance;
+/** minimum fog start distance for all fog layers */
+float	FogMinStartDistance;
+
+// Alpha-blended Method --- 1 Layer
+
+void OneLayerMain(
+	float4 OutTexCoordAndHeightRelativeZ : TEXCOORD0,
+	float4 ScreenVector : TEXCOORD1,
+	out float4 OutColor : COLOR0
+	)
+{
+	half SceneDepth = CalcSceneDepth(OutTexCoordAndHeightRelativeZ.xy);
+	float DistInFront = SceneDepth - FogStartDistance.x;	
+
+	// use dynamic branching to early out if the current pixel is in front of the fog layer's start distances
+#if !SM2_PROFILE && !PS3
+	IFALL
+	if( DistInFront < 0 )
+	{
+		OutColor = RETURN_COLOR(half4(0,0,0,1));		
+	}
+	else
+#endif
+	{
+		// calculate the world position using the deprojected screen vector by multiplying with scene w
+		float3	WorldPosition = ScreenVector.xyz * SceneDepth; 
+
+		float2	HeightPercent = saturate(LinePlaneIntersection(WorldPosition.z,OutTexCoordAndHeightRelativeZ.zw));
+
+		// fog layer distance based on % over max/min fog heights
+		float	LayerDistance = DistInFront * abs(HeightPercent.y - HeightPercent.x);
+
+		float	NegFogLineIntegral = FogDistanceScale.x * LayerDistance;
+
+		// clamp anything beyond the extinction distance to 0 scattering
+		// scattering falloff is exponential based on normalized layer distance
+		half	Scattering = LayerDistance < FogExtinctionDistance.x ? exp2(NegFogLineIntegral) : 0.0f;
+		// ratio of the inscattering color to be used
+		half	InScattering = Scattering - 1;	
+
+		half3 FogColor = InScattering * FogInScattering[0];	
+
+		//discard pixels with negligible fog contribution to save frame buffer bandwidth
+		clip(-NegFogLineIntegral - FLT_EPSILON);
+
+		// return fog color as well as blending factor
+		OutColor = RETURN_COLOR(half4(FogColor,Scattering));
+	}	
+}
+
+// Alpha-blended Method --- 4 Layers
+
+void FourLayerMain(
+	float2 TexCoord : TEXCOORD0,
+	float4 ScreenVector : TEXCOORD1,
+	float4 MinHeightRelativeZ : TEXCOORD2,
+	float4 MaxHeightRelativeZ : TEXCOORD3,
+	out float4 OutColor : COLOR0
+	)
+{
+	half SceneDepth = CalcSceneDepth(TexCoord);
+
+	// clip fog pixels in front of ALL of the fog layer's start distances to save frame buffer bandwidth
+	float MinDistInFront = SceneDepth - FogMinStartDistance;
+	clip(MinDistInFront);
+
+	// use dynamic branching to early out if the current pixel is in front of ALL the fog layer's start distances
+#if !SM2_PROFILE && !PS3
+	IFALL
+	if( MinDistInFront < 0 )
+	{		
+		OutColor = RETURN_COLOR(half4(0,0,0,1));		
+	}
+	else
+#endif
+	{
+		// calculate the world position using the deprojected screen vector by multiplying with scene w
+		float3	WorldPosition = ScreenVector.xyz * SceneDepth;
+
+		// maxfog - camera / z height
+		float4	MinHeightPercent = LinePlaneIntersection(WorldPosition.z,MinHeightRelativeZ);
+		// minfog - camera / z height
+		float4	MaxHeightPercent = LinePlaneIntersection(WorldPosition.z,MaxHeightRelativeZ);
+		// fog layer distance based on % over max/min fog heights
+		float4	LayerDistance = max(float4(0,0,0,0),SceneDepth.xxxx - FogStartDistance) * abs(saturate(MaxHeightPercent) - saturate(MinHeightPercent));
+
+		// clamp anything beyond the extinction distance to 0 scattering
+		// scattering falloff is exponential based on normalized layer distance
+		float4	Scattering = LayerDistance < FogExtinctionDistance ? exp2(FogDistanceScale * LayerDistance) : float4(0,0,0,0);
+		// ratio of the inscattering color to be used
+		float4	InScattering = Scattering - 1;	
+
+		// We are trying to represent the following in an alpha-blend:
+		// 
+		// SceneColor = SceneColor * Scattering.x + InScattering.x * FogInScattering[0];
+		// SceneColor = SceneColor * Scattering.y + InScattering.y * FogInScattering[1];
+		// SceneColor = SceneColor * Scattering.z + InScattering.z * FogInScattering[2];	
+		// SceneColor = SceneColor * Scattering.w + InScattering.w * FogInScattering[3];
+		//
+		// With S = SceneColor, A = Scattering, B = InScattering * FogInScattering:
+		//
+		// S = [ [ [ S * A1 + B1 ] * A2 + B2 ] * A3 + B3 ] * A4 + B4
+		// S = [ [ S * A1 * A2 + B1 * A2 + B2 ] * A3 + B3 ] * A4 + B4
+		// S = [ S * A1 * A2 * A3 + B1 * A2 * A3 + B2 * A3 + B3 ] * A4 + B4
+		// S = S * A1 * A2 * A3 * A4 + B1 * A2 * A3 * A4 + B2 * A3 * A4 + B3 * A4 + B4
+		//
+		// S = S * (A1A2A3A4) + B1 * (A2A3A4) + B2 * (A3A4) + B3 * (A4) + B4;
+
+
+		// F = B1 * A2A3A4 + B2 * A3A4 + B3 * A4 + B4
+		// F = (A1 - 1) * A2A3A4 * F1 + (A2 - 1) * A3A4 * F2 + (A3 - 1) * A4 * F3 + (A4 - 1) * F4
+		// F = (A1A2A3A4 - A2A3A4) * F1 + (A2A3A4 - A3A4) * F2 + (A3A4 - A4) * F3 + (A4 - 1) * F4
+
+		float A4       = Scattering.w;
+		float A3A4     = A4 * Scattering.z;
+		float A2A3A4   = A3A4 * Scattering.y;
+		float A1A2A3A4 = A2A3A4 * Scattering.x;
+
+		float3 FogColor;
+
+		FogColor =                     InScattering[3] * FogInScattering[3];
+		FogColor = FogColor +     A4 * InScattering[2] * FogInScattering[2];
+		FogColor = FogColor +   A3A4 * InScattering[1] * FogInScattering[1];
+		FogColor = FogColor + A2A3A4 * InScattering[0] * FogInScattering[0];	
+
+		// return fog color as well as blending factor
+		OutColor = RETURN_COLOR(half4(FogColor,A1A2A3A4));
+	}	
+}
+
+#if XBOX
+static const half2 ScreenOffsets[4] = {{0,0},{1,0},{0,1},{1,1}};
+
+/** Power to apply to the fog factor to increase nearby precision, while hurting distant precision. */
+half EncodePower;
+
+void DownsampleDepthAndFogMain(
+	float4 OutTexCoordAndHeightRelativeZ : TEXCOORD0,
+	float4 ScreenVector : TEXCOORD1,
+	out float4 OutColor0 : COLOR0,
+	out float4 OutColor1 : COLOR1
+	)
+{
+	half4 SceneDepths;
+	for(int i = 0; i < 4; i++)
+	{
+		half4 SceneDepthTex;
+		half ScreenOffsetX = ScreenOffsets[i].x;
+		half ScreenOffsetY = ScreenOffsets[i].y;
+		asm
+		{
+			tfetch2D SceneDepthTex, OutTexCoordAndHeightRelativeZ.xy, SceneDepthTexture, OffsetX=ScreenOffsetX, OffsetY=ScreenOffsetY
+		};
+		SceneDepths[i] = ConvertFromDeviceZ(SceneDepthTex.r);
+		float DistInFront = SceneDepths[i] - FogStartDistance.x;	
+
+		// calculate the world position using the deprojected screen vector by multiplying with scene w
+		float3	WorldPosition = ScreenVector.xyz * SceneDepths[i]; 
+
+		float2	HeightPercent = saturate(LinePlaneIntersection(WorldPosition.z,OutTexCoordAndHeightRelativeZ.zw));
+
+		// fog layer distance based on % over max/min fog heights
+		float	LayerDistance = DistInFront * abs(HeightPercent.y - HeightPercent.x);
+
+		float	NegFogLineIntegral = FogDistanceScale.x * LayerDistance;
+
+		// clamp anything beyond the extinction distance to 0 scattering
+		// scattering falloff is exponential based on normalized layer distance
+		// scaling by 8 remaps the output values to better suit the 8-bit encoding space
+		OutColor1[i] = LayerDistance < FogExtinctionDistance.x ? exp2(NegFogLineIntegral * EncodePower) : 0.0f;
+	}
+	float4 MaxDepth;
+	asm
+	{
+		max4 MaxDepth, SceneDepths
+	};	
+	OutColor0 = float4(0.0f, MaxDepth.x, 0.0f, 0.0f);
+}
+
+#endif

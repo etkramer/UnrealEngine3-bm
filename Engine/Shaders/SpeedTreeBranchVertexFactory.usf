@@ -1,0 +1,83 @@
+/*=============================================================================
+	Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
+=============================================================================*/
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// struct FVertexFactoryInput
+
+#define NUM_INPUT_TEXCOORDS_SPEEDTREE 1
+
+struct FVertexFactoryInput
+{
+	float4	Position	: POSITION;
+	half3	TangentX	: TANGENT;
+	half3	TangentY	: BINORMAL;
+	half3	TangentZ	: NORMAL;
+	float4	WindInfo	: BLENDINDICES;
+	
+#if NUM_INPUT_TEXCOORDS_SPEEDTREE
+	float2	TexCoords[NUM_INPUT_TEXCOORDS_SPEEDTREE] : TEXCOORD0;
+#endif
+
+	float LODHint	: TEXCOORD1;
+
+#if NEEDS_VERTEX_LIGHTMAP
+	float4 LightMapA : TEXCOORD5;
+	float4 LightMapB : TEXCOORD6;
+	float4 LightMapC : TEXCOORD7;
+#elif NEEDS_SIMPLE_VERTEX_LIGHTMAP
+	float4 LightMapA : TEXCOORD5;
+#endif
+};
+
+#include "SpeedTreeVertexFactoryBase.usf"
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// CalcWorldPosition
+
+float4 CalcWorldPosition(float4x4 Transform, FVertexFactoryInput Input)
+{
+	return MulMatrix(Transform, WindEffect(Input.Position, Input.WindInfo));
+}
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// VertexFactoryGetWorldPosition
+
+float4 VertexFactoryGetWorldPosition(FVertexFactoryInput Input)
+{
+	return CalcWorldPosition(LocalToWorld, Input);
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// VertexFactoryGetInterpolants
+
+FVertexFactoryInterpolants VertexFactoryGetInterpolants(FVertexFactoryInput Input)
+{
+	FVertexFactoryInterpolants Interpolants;
+	VertexFactoryGetWorldPositionBase(Input, Interpolants);
+	return Interpolants;
+}
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// VertexFactoryGetPreviousWorldPosition
+
+float4 VertexFactoryGetPreviousWorldPosition(FVertexFactoryInput Input)
+{
+	return CalcWorldPosition(PreviousLocalToWorld, Input);
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// GetWorldTangentBasis
+
+half3x3 GetWorldTangentBasis(FVertexFactoryInput Input)
+{
+	// WindEffect also rotates the tangent vectors into world-space.
+	return half3x3(
+		WindEffect(half4(TangentBias(Input.TangentX.xyz),0),Input.WindInfo).xyz,
+		WindEffect(half4(TangentBias(Input.TangentY.xyz),0),Input.WindInfo).xyz,
+		WindEffect(half4(TangentBias(Input.TangentZ.xyz),0),Input.WindInfo).xyz
+		);
+}

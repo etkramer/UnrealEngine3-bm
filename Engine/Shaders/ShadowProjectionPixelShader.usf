@@ -1,0 +1,71 @@
+/*=============================================================================
+	ShadowProjectionPixelShader.usf: Pixel shader for projecting a shadow depth buffer onto the scene.
+	Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
+=============================================================================*/
+
+#include "Common.usf"
+#include "ShadowProjectionCommon.usf"
+
+float4x4 ScreenToShadowMatrix;
+
+/**
+* Entry point for uniform manual PCF that supports lights using normal shadows.
+*/
+void Main(
+	in float4 ScreenPosition : TEXCOORD0,
+	out float4 OutColor : COLOR0
+	)
+{
+	half SceneW = PreviousDepth(ScreenPosition);
+
+	float4 ShadowPosition = MulMatrix(ScreenToShadowMatrix,float4(ScreenPosition.xy / ScreenPosition.w * SceneW,SceneW,1));
+	ShadowPosition.xy /= ShadowPosition.w;
+	ShadowPosition.z = min(ShadowPosition.z,0.999);
+
+	half Shadow = ManualPCF(ShadowPosition);
+
+	// RETURN_COLOR not needed unless writing to SceneColor;
+	OutColor = Square(Shadow);
+}
+
+
+/**
+* Entry point for uniform hardware PCF that supports lights using normal shadows.
+*/
+void HardwarePCFMain(
+	in float4 ScreenPosition : TEXCOORD0,
+	out float4 OutColor : COLOR0
+	)
+{
+	half SceneW = PreviousDepth(ScreenPosition);
+
+	float4 ShadowPosition = MulMatrix(ScreenToShadowMatrix,float4(ScreenPosition.xy / ScreenPosition.w * SceneW,SceneW,1));
+	ShadowPosition.xy /= ShadowPosition.w;
+	ShadowPosition.z = min(ShadowPosition.z,0.999);
+
+	half Shadow = HardwarePCF(ShadowPosition);
+	
+	// RETURN_COLOR not needed unless writing to SceneColor;
+	OutColor = Square(Shadow);
+}
+
+
+/**
+* Entry point for uniform Fetch4 PCF that supports lights using normal shadows.
+*/
+void Fetch4Main(
+	in float4 ScreenPosition : TEXCOORD0,
+	out float4 OutColor : COLOR0
+	)
+{
+	half SceneW = PreviousDepth(ScreenPosition);
+
+	float4 ShadowPosition = MulMatrix(ScreenToShadowMatrix,float4(ScreenPosition.xy / ScreenPosition.w * SceneW,SceneW,1));
+	ShadowPosition.xy /= ShadowPosition.w;
+	ShadowPosition.z = min(ShadowPosition.z,0.999);
+
+	half Shadow = Fetch4PCF(ShadowPosition);
+	
+	// RETURN_COLOR not needed unless writing to SceneColor;
+	OutColor = Square(Shadow);
+}

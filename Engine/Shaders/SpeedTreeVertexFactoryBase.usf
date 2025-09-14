@@ -1,0 +1,322 @@
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Defines
+
+// hardcoded for now
+#define NUM_WIND_MATRICES 3
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Forward declarations.
+half3x3 GetWorldTangentBasis(FVertexFactoryInput Input);
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Shader constants
+
+float4x4	LocalToWorld;
+float4x4	PreviousLocalToWorld;
+float3x3	WorldToLocal;
+float		LODAlphaAdjustment;
+float       WindMatrixOffset;					// keeps two instances of the same tree model from using the same wind matrix (range: [0,NUM_WIND_MATRICES])
+float4x4    WindMatrices[NUM_WIND_MATRICES];	// houses all of the wind matrices shared by all geometry types
+float4x4	RotationOnlyMatrix;
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// struct FVertexFactoryInterpolants
+
+struct FVertexFactoryInterpolants
+{
+#if WORLD_COORDS
+	// First row of the tangent to world matrix
+	float3	TangentToWorld0	: TANGENTTOWORLD0;
+	// Last row of the tangent to world matrix in xyz
+	float4	TangentToWorld2	: TANGENTTOWORLD2;
+#endif
+
+	float4	VertexColor : TEXCOORD0;
+
+#if NUM_MATERIAL_TEXCOORDS
+	float4	TexCoords[(NUM_MATERIAL_TEXCOORDS + 1) / 2]	: TEXCOORD1;
+#endif
+};
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// GetMaterialParameters
+
+FMaterialParameters GetMaterialParameters(FVertexFactoryInterpolants Interpolants)
+{
+	FMaterialParameters	Result;
+	
+#if NUM_MATERIAL_TEXCOORDS
+	UNROLL
+	for(int CoordinateIndex = 0; CoordinateIndex < NUM_MATERIAL_TEXCOORDS; CoordinateIndex += 2)
+	{
+		Result.TexCoords[CoordinateIndex] = Interpolants.TexCoords[CoordinateIndex / 2].xy;
+		if (CoordinateIndex + 1 < NUM_MATERIAL_TEXCOORDS)
+		{
+			Result.TexCoords[CoordinateIndex + 1] = Interpolants.TexCoords[CoordinateIndex / 2].wz;
+		}
+	}
+#endif
+
+	Result.VertexColor = Interpolants.VertexColor;
+	Result.TangentNormal = 0;
+	Result.TangentCameraVector = 0;
+	Result.TangentReflectionVector = 0;
+	Result.ScreenPosition = 0;
+	Result.TangentLightVector = 0;
+	
+#if WORLD_COORDS
+	Result.TangentToWorld = CalcTangentToWorld(Interpolants.TangentToWorld0,Interpolants.TangentToWorld2);
+#endif
+#if MATERIAL_DECAL
+	Result.DecalAttenuation = 1;
+	Result.DecalPlaneDistance = 0;
+#endif
+	
+	return Result;
+}
+
+#if NEEDS_LIGHTMAP_COORDINATE
+float2 GetLightMapCoordinate(FVertexFactoryInterpolants Interpolants)
+{
+	return 0;
+}
+#endif
+
+#if NEEDS_VERTEX_LIGHTMAP
+void VertexFactoryGetVertexLightMap(FVertexFactoryInput Input,out float4 LightMapA,out float4 LightMapB,out float4 LightMapC)
+{
+	LightMapA = Input.LightMapA;
+	LightMapB = Input.LightMapB;
+	LightMapC = Input.LightMapC;
+}
+#elif NEEDS_SIMPLE_VERTEX_LIGHTMAP
+void VertexFactoryGetSimpleVertexLightMap(FVertexFactoryInput Input,out float4 LightMapA)
+{
+	LightMapA = Input.LightMapA;
+}
+#endif
+
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// VertexFactoryGetWorldPositionBase
+
+void VertexFactoryGetWorldPositionBase(FVertexFactoryInput Input, out FVertexFactoryInterpolants Interpolants)
+{
+#if NUM_MATERIAL_TEXCOORDS
+	// Ensure the unused components of the last packed texture coordinate are initialized.
+	Interpolants.TexCoords[(NUM_MATERIAL_TEXCOORDS + 1) / 2 - 1] = 0;
+
+	UNROLL
+	for(int CoordinateIndex = 0; CoordinateIndex < NUM_MATERIAL_TEXCOORDS; CoordinateIndex += 2)
+	{
+		if( CoordinateIndex < NUM_INPUT_TEXCOORDS_SPEEDTREE )
+		{
+			Interpolants.TexCoords[CoordinateIndex / 2].xy = Input.TexCoords[CoordinateIndex];
+		}
+		else
+		{
+			Interpolants.TexCoords[CoordinateIndex / 2].xy = 0;
+		}
+		if(CoordinateIndex + 1 < NUM_INPUT_TEXCOORDS_SPEEDTREE)
+		{
+			Interpolants.TexCoords[CoordinateIndex / 2].wz = Input.TexCoords[CoordinateIndex + 1];
+		}
+		else
+		{
+			Interpolants.TexCoords[CoordinateIndex / 2].wz = 0;
+		}
+	}
+#endif
+
+#if WORLD_COORDS
+	#if SM2_PROFILE
+		// In SM2 these vectors will store the tangent basis, scaled to be between 0 and 1 to fit in the COLOR0 and COLOR1 interpolators
+		// We cannot combine the tangent to local and local to world due to insufficient temporary registers in this vertex factory
+		half3x3 WorldTangentBasis = GetWorldTangentBasis(Input);
+		Interpolants.TangentToWorld2.xyz = normalize(WorldTangentBasis[2]) * 0.5 + 0.5;
+		Interpolants.TangentToWorld2.w = sign(determinant(WorldTangentBasis)) * 0.5 + 0.5;
+		Interpolants.TangentToWorld0 = normalize(WorldTangentBasis[0]) * 0.5 + 0.5;
+	#else
+		float3x3 LocalToTangent = GetWorldTangentBasis(Input);
+		float3x3 TangentToLocal = transpose(LocalToTangent);
+
+		// Calculate the transform from tangent to world space
+		#if PS3
+			float3x3 TangentToWorld = mul(transpose((float3x3)LocalToWorld), TangentToLocal); 
+		#else
+			float3x3 TangentToWorld = mul((float3x3)LocalToWorld, TangentToLocal); 
+		#endif
+
+		Interpolants.TangentToWorld0 = TangentToWorld[0];
+		Interpolants.TangentToWorld2 = float4(TangentToWorld[2], sign(determinant(LocalToTangent)));
+	#endif
+#endif
+	
+	Interpolants.VertexColor = float4(0.0f, 0.0f, 0.0f, LODAlphaAdjustment);
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// VertexFactoryGetWorldNormal
+
+half3 VertexFactoryGetWorldNormal(FVertexFactoryInput Input)
+{
+	return GetWorldTangentBasis(Input)[2];
+}
+
+/**
+* Get the 3x3 tangent basis vectors for this vertex factory
+*
+* @param Input - vertex input stream structure
+* @return 3x3 matrix
+*/
+float3x3 VertexFactoryGetTangentBasis( FVertexFactoryInput Input )
+{
+	return GetWorldTangentBasis(Input);
+}
+
+/**
+* Transform a vector from world space to tangent space
+*
+* @param Input - vertex input stream structure
+* @param TangentBasis - 3x3 matrix to transform to tangent space
+* @param WorldVector - vector in world space to transform 
+* @return vector in tangent space
+*/
+float3 VertexFactoryWorldToTangentSpace( FVertexFactoryInput Input, float3x3 TangentBasis, float3 WorldVector )
+{
+	// we use a straight mul here because we are generating the matrix, so we don't worry about column major vs row major (which is what MulMatrix manages per-platform)	
+	return mul(
+		TangentBasis,
+		WorldVector
+		);
+}
+
+///////////////////////////////////////////////////////////////////////  
+//  Modulate_Float
+//
+//  Returns x % y (some compilers generate way too many instructions when
+//  using the native '%' operator)
+
+float Modulate_Float(float x, float y)
+{
+    return x - (int(x / y) * y);
+}
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// WindEffect
+
+float4 WindEffect(float4 vPosition, float4 vWindInfo)
+{
+	// use the random offset to make instances have slightly different wind
+    vWindInfo.x = Modulate_Float(vWindInfo.x + WindMatrixOffset, NUM_WIND_MATRICES);
+    vWindInfo.z = Modulate_Float(vWindInfo.z + WindMatrixOffset, NUM_WIND_MATRICES);
+   
+	// support for arbitrary rotations
+	float4 vRotatedVert = MulMatrix(vPosition, RotationOnlyMatrix);
+ 
+    // first-level wind effect - interpolate between static position and fully-blown
+    // wind position by the wind weight value
+    float4 vWindEffect = lerp(vRotatedVert, MulMatrix(vRotatedVert, WindMatrices[vWindInfo.x]), vWindInfo.y);
+
+    // second-level wind effect - interpolate between first-level wind position and 
+    // the fully-blown wind position by the second wind weight value
+    return lerp(vWindEffect, MulMatrix(vWindEffect, WindMatrices[vWindInfo.z]), vWindInfo.w);
+}
+
+
+///////////////////////////////////////////////////////////////////////  
+//  RotationMatrix_zAxis
+//
+//  Constructs a Z-axis rotation matrix
+
+float3x3 RotationMatrix_zAxis(float fAngle)
+{
+    // compute sin/cos of fAngle
+    float2 vSinCos;
+    sincos(fAngle, vSinCos.x, vSinCos.y);
+    
+    return float3x3(vSinCos.y, -vSinCos.x, 0.0f, 
+                    vSinCos.x, vSinCos.y, 0.0f, 
+                    0.0f, 0.0f, 1.0f);
+}
+
+
+///////////////////////////////////////////////////////////////////////  
+//  Rotate_zAxis
+//
+//  Returns an updated .xy value
+
+float2 Rotate_zAxis(float fAngle, float3 vPoint)
+{
+    float2 vSinCos;
+    sincos(fAngle, vSinCos.x, vSinCos.y);
+    
+    return float2(dot(vSinCos.yx, vPoint.xy), dot(float2(-vSinCos.x, vSinCos.y), vPoint.xy));
+}
+
+
+///////////////////////////////////////////////////////////////////////  
+//  RotationMatrix_yAxis
+//
+//  Constructs a Y-axis rotation matrix
+
+float3x3 RotationMatrix_yAxis(float fAngle)
+{
+    // compute sin/cos of fAngle
+    float2 vSinCos;
+    sincos(fAngle, vSinCos.x, vSinCos.y);
+    
+    return float3x3(vSinCos.y, 0.0f, vSinCos.x,
+                    0.0f, 1.0f, 0.0f,
+                    -vSinCos.x, 0.0f, vSinCos.y);
+}
+
+
+///////////////////////////////////////////////////////////////////////  
+//  Rotate_yAxis
+//
+//  Returns an updated .xz value
+
+float2 Rotate_yAxis(float fAngle, float3 vPoint)
+{
+    float2 vSinCos;
+    sincos(fAngle, vSinCos.x, vSinCos.y);
+    
+    return float2(dot(float2(vSinCos.y, -vSinCos.x), vPoint.xz), dot(vSinCos.xy, vPoint.xz));
+}
+
+
+///////////////////////////////////////////////////////////////////////  
+//  RotationMatrix_xAxis
+//
+//  Constructs a X-axis rotation matrix
+
+float3x3 RotationMatrix_xAxis(float fAngle)
+{
+    // compute sin/cos of fAngle
+    float2 vSinCos;
+    sincos(fAngle, vSinCos.x, vSinCos.y);
+    
+    return float3x3(1.0f, 0.0f, 0.0f,
+                    0.0f, vSinCos.y, -vSinCos.x,
+                    0.0f, vSinCos.x, vSinCos.y);
+}
+
+
+///////////////////////////////////////////////////////////////////////  
+//  Rotate_xAxis
+//
+//  Returns an updated .yz value
+
+float2 Rotate_xAxis(float fAngle, float3 vPoint)
+{
+    float2 vSinCos;
+    sincos(fAngle, vSinCos.x, vSinCos.y);
+    
+    return float2(dot(vSinCos.yx, vPoint.yz), dot(float2(-vSinCos.x, vSinCos.y), vPoint.yz));
+}

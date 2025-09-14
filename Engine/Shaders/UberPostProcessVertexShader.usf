@@ -1,0 +1,19 @@
+/*=============================================================================
+	UberPostprocessVertexShader.usf:
+	Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
+=============================================================================*/
+
+half4 SceneCoordinateScaleBias;
+void Main(
+	float4 InPosition : POSITION,
+	float2 InScreenUV : TEXCOORD0,
+	out float4 OutScreenPosition : TEXCOORD0,
+	out float2 OutFilterBufferUV : TEXCOORD1,
+	out float4 OutPosition : POSITION
+	)
+{
+	OutPosition = InPosition;								// Target position
+	float2 SceneUV = InPosition.xy / InPosition.w * SceneCoordinateScaleBias.xy + SceneCoordinateScaleBias.wz;
+	OutScreenPosition = float4(InPosition.xy,SceneUV);		// Background position and UV
+	OutFilterBufferUV = InScreenUV;
+}

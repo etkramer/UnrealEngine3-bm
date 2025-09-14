@@ -1,0 +1,164 @@
+/*=============================================================================
+	Definitions.usf: Defines undefined defines to 0 as Cg can't handle them.
+	Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
+=============================================================================*/
+
+#define GEMINI_TODO										0
+
+#ifndef MATERIAL_TWOSIDED
+#define	MATERIAL_TWOSIDED								0
+#endif
+
+#ifndef MATERIALBLENDING_MASKED
+#define MATERIALBLENDING_MASKED							0
+#endif
+
+#ifndef MATERIALBLENDING_TRANSLUCENT
+#define MATERIALBLENDING_TRANSLUCENT					0
+#endif
+
+#ifndef MATERIALBLENDING_ADDITIVE
+#define MATERIALBLENDING_ADDITIVE						0
+#endif
+
+#ifndef MATERIALBLENDING_MODULATE
+#define MATERIALBLENDING_MODULATE						0
+#endif
+
+#ifndef MATERIAL_LIGHTINGMODEL_CUSTOM
+#define	MATERIAL_LIGHTINGMODEL_CUSTOM					0
+#endif
+
+#ifndef MATERIAL_LIGHTINGMODEL_NONDIRECTIONAL
+#define MATERIAL_LIGHTINGMODEL_NONDIRECTIONAL			0
+#endif
+
+#ifndef MATERIAL_LIGHTINGMODEL_PHONG
+#define MATERIAL_LIGHTINGMODEL_PHONG					0
+#endif
+
+#ifndef MATERIAL_LIGHTINGMODEL_CUSTOM
+#define	MATERIAL_LIGHTINGMODEL_CUSTOM					0
+#endif
+
+#ifndef MATERIAL_LIGHTINGMODEL_UNLIT
+#define	MATERIAL_LIGHTINGMODEL_UNLIT					0
+#endif
+
+#ifndef MATERIAL_DECAL
+#define MATERIAL_DECAL									0
+#endif
+
+#ifndef MATERIAL_ONELAYERDISTORTION
+#define MATERIAL_ONELAYERDISTORTION						0
+#endif
+
+#ifndef WORLD_COORDS
+#define WORLD_COORDS									0
+#endif
+
+#ifndef WORLD_POS
+#define WORLD_POS										0
+#endif
+
+#ifndef STATICLIGHTING_TEXTUREMASK
+#define STATICLIGHTING_TEXTUREMASK						0
+#endif
+
+#ifndef STATICLIGHTING_VERTEXMASK
+#define STATICLIGHTING_VERTEXMASK						0
+#endif
+
+#ifndef VERTEX_LIGHTMAP
+#define VERTEX_LIGHTMAP									0
+#endif
+
+#ifndef TEXTURE_LIGHTMAP
+#define TEXTURE_LIGHTMAP								0
+#endif
+
+#ifndef COMPILER_CG
+#define COMPILER_CG										0
+#endif
+
+#ifndef COMPILER_HLSL
+#define COMPILER_HLSL									0
+#endif
+
+#ifndef COMPILER_SUPPORTS_ATTRIBUTES
+#define COMPILER_SUPPORTS_ATTRIBUTES					0
+#endif
+
+#ifndef SM2_PROFILE
+#define SM2_PROFILE										0
+#endif
+
+#ifndef SM3_PROFILE
+#define SM3_PROFILE										0
+#endif
+
+#ifndef SM4_PROFILE
+#define SM4_PROFILE										0
+#endif
+
+#define PC_D3D											(SM2_PROFILE || SM3_PROFILE || SM4_PROFILE)
+
+#ifndef PS3
+#define PS3												0
+#endif
+
+#ifndef XBOX
+#define XBOX											0
+#endif
+
+#ifndef NEEDS_LIGHTMAP_COORDINATE
+#define NEEDS_LIGHTMAP_COORDINATE						0
+#endif
+
+#ifndef SUPPORTS_DEPTH_TEXTURES
+#define SUPPORTS_DEPTH_TEXTURES							0
+#endif
+
+#ifndef USE_LENSFLARE
+#define USE_LENSFLARE									0
+#endif	
+
+#ifndef MATERIAL_USE_GAMMA_CORRECTION
+#define MATERIAL_USE_GAMMA_CORRECTION					0
+#endif
+
+/** 
+ * Right now (6/2008) only the Xbox compiler supports empty structs, but only as out parameters. 
+ * We need to be able to use them as return values as well.
+ */
+#define COMPILER_SUPPORTS_EMPTY_STRUCTS					0
+
+#if XBOX || SM4_PROFILE || COMPILER_SUPPORTS_ATTRIBUTES
+/** Avoids flow control constructs. */
+#define UNROLL											[unroll]
+/** Gives preference to flow control constructs. */
+#define LOOP											[loop]
+/** Performs branching by using control flow instructions like jmp and label. */
+#define BRANCH											[branch]
+/** Performs branching by using the cnd instructions. */
+#define FLATTEN											[flatten]
+/** Executes the conditional part of an if statement when the condition is true for all threads on which the current shader is running. */
+#define IFALL											[ifAll]
+/** Executes the conditional part of an if statement when the condition is true for any thread on which the current shader is running. */
+#define IFANY											[ifAny]
+#else
+#define UNROLL
+#define LOOP
+#define BRANCH
+#define FLATTEN
+#define IFALL
+#define IFANY
+#endif
+
+#if XBOX
+/** Optimizes the specified HLSL code independently of the surrounding code. */
+#define ISOLATE											[isolate]
+#else
+/** Not supported on other platforms */
+#define ISOLATE
+#endif

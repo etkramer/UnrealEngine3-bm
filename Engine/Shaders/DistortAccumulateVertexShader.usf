@@ -1,0 +1,29 @@
+/*=============================================================================
+	DistortionAccumulatePixelShader.usf: Vertex shader for accumulating distortion offsets
+	Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
+=============================================================================*/
+
+#include "Common.usf"
+#include "Material.usf"
+#include "VertexFactory.usf"
+
+/** transform mesh as normal */
+void Main(
+	FVertexFactoryInput Input,
+	out FVertexFactoryInterpolants FactoryInterpolants,
+	out float4	PixelPosition	: TEXCOORD5,
+	out float3	CameraVector	: TEXCOORD6,
+	out float4	Position		: POSITION
+	)
+{
+	float4	WorldPosition = VertexFactoryGetWorldPosition(Input);
+	Position = MulMatrix(ViewProjectionMatrix,WorldPosition);
+	FactoryInterpolants = VertexFactoryGetInterpolants(Input);
+#if WORLD_POS
+	PixelPosition = WorldPosition;
+#else
+	PixelPosition = Position;
+#endif
+	float3x3 TangentBasis = VertexFactoryGetTangentBasis(Input);
+	CameraVector = VertexFactoryWorldToTangentSpace(Input,TangentBasis,CameraPosition.xyz - WorldPosition.xyz * CameraPosition.w);
+}

@@ -1,0 +1,138 @@
+/*=============================================================================
+	Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
+=============================================================================*/
+
+///////////////////////////////////////////////////////////////////////  
+//  Leaf mesh specific global variables
+
+float3		LeafRockAngles;
+float3		LeafRustleAngles;
+float2		LeafAngleScalars;
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// struct FVertexFactoryInput
+
+#define NUM_INPUT_TEXCOORDS_SPEEDTREE NUM_MATERIAL_TEXCOORDS
+
+struct FVertexFactoryInput
+{
+	float4	Position	: POSITION;
+	half3	TangentX	: TANGENT;
+	half3	TangentY	: BINORMAL;
+	half3	TangentZ	: NORMAL;
+	float4	WindInfo	: BLENDINDICES;
+	
+	// offset x, y, z, angle index
+	// orient up x, y, z, 0.0
+	// orient right x, y, z, 0.0
+	float4	LeafData1	: TEXCOORD0;
+	float4	LeafData2	: TEXCOORD1;
+	float4	LeafData3	: TEXCOORD2;
+	
+#if NUM_INPUT_TEXCOORDS_SPEEDTREE
+	float2	TexCoords[NUM_INPUT_TEXCOORDS_SPEEDTREE] : TEXCOORD3;
+#endif
+
+#if NEEDS_VERTEX_LIGHTMAP
+	float4 LightMapA : TEXCOORD5;
+	float4 LightMapB : TEXCOORD6;
+	float4 LightMapC : TEXCOORD7;
+#elif NEEDS_SIMPLE_VERTEX_LIGHTMAP
+	float4 LightMapA : TEXCOORD5;
+#endif
+};
+
+
+#include "SpeedTreeVertexFactoryBase.usf"
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// CalcWorldPosition
+
+float4 LeafToLocal(FVertexFactoryInput Input,float4 Vector)
+{
+	// compute the leaf origin like normal wind
+	float4 LeafOrigin = WindEffect(Input.Position, Input.WindInfo);
+
+    // rock & rustling
+    int AngleIndex = Input.LeafData1.w;
+    float3 AngleMask = 
+		AngleIndex == 0 ? float3(1,0,0) :
+		(AngleIndex == 1 ? float3(0,1,0) :
+		float3(0,0,1));
+    float3x3 matRotation = RotationMatrix_zAxis(LeafAngleScalars.x * dot(LeafRockAngles,AngleMask));
+    matRotation = mul(RotationMatrix_yAxis(LeafAngleScalars.y * dot(LeafRustleAngles,AngleMask)), matRotation);
+    Vector.xyz = mul(matRotation, Vector.xyz);
+    
+    // orient to place leaf mesh
+    float3 vOrientY = cross(Input.LeafData2.xyz, Input.LeafData3.xyz);
+    float3x3 OrientMesh =
+    {
+        Input.LeafData2.xyz, vOrientY, Input.LeafData3.xyz
+    };
+    Vector.xyz = mul(OrientMesh, Vector.xyz);
+    
+    // compensate for tree rotation
+    Vector.xyz = MulMatrix(Vector, RotationOnlyMatrix).xyz;
+	
+	return float4(
+		LeafOrigin.xyz * Vector.w + Vector.xyz,
+		Vector.w
+		);
+}
+
+float4 CalcLocalPosition(FVertexFactoryInput Input)
+{
+	return LeafToLocal(
+		Input,
+		float4(
+			Input.LeafData1.xyz,
+			1
+			)
+		);
+}
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// VertexFactoryGetWorldPosition
+
+float4 VertexFactoryGetWorldPosition(FVertexFactoryInput Input)
+{
+	return MulMatrix(LocalToWorld, CalcLocalPosition(Input));
+}
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// VertexFactoryGetInterpolants
+
+FVertexFactoryInterpolants VertexFactoryGetInterpolants(FVertexFactoryInput Input)
+{
+	FVertexFactoryInterpolants Interpolants;
+	VertexFactoryGetWorldPositionBase(Input, Interpolants);
+	return Interpolants;
+}
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// VertexFactoryGetPreviousWorldPosition
+
+float4 VertexFactoryGetPreviousWorldPosition(FVertexFactoryInput Input)
+{
+	return MulMatrix(PreviousLocalToWorld, CalcLocalPosition(Input));
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// GetWorldTangentBasis
+
+half3x3 GetWorldTangentBasis(FVertexFactoryInput Input)
+{
+	return MulMatrix(
+		half3x3(
+			TangentBias(Input.TangentX.xyz),
+			TangentBias(Input.TangentY.xyz),
+			TangentBias(Input.TangentZ.xyz)
+			),
+		(half3x3)RotationOnlyMatrix	
+		);
+}

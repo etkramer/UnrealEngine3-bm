@@ -1,0 +1,29 @@
+/*=============================================================================
+	FilterPixelShader.usf: Filter pixel shader source.
+	Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
+=============================================================================*/
+
+#include "Common.usf"
+
+sampler2D FilterTexture;
+half4 SampleWeights[NUM_SAMPLES];
+
+void Main(
+	float4 InOffsetUVs[(NUM_SAMPLES + 1) / 2] : TEXCOORD0,
+	out float4 OutColor : COLOR0
+	)
+{
+	int SampleIndex;
+	half4 Sum = 0;
+	for(SampleIndex = 0;SampleIndex < NUM_SAMPLES - 1;SampleIndex += 2)
+	{
+		Sum += tex2D(FilterTexture,InOffsetUVs[SampleIndex / 2].xy) * SampleWeights[SampleIndex + 0];
+		Sum += tex2D(FilterTexture,InOffsetUVs[SampleIndex / 2].wz) * SampleWeights[SampleIndex + 1];
+	}
+	if(SampleIndex < NUM_SAMPLES)
+	{
+		Sum += tex2D(FilterTexture,InOffsetUVs[SampleIndex / 2].xy) * SampleWeights[SampleIndex + 0];
+	}
+	// RETURN_COLOR not needed unless writing to SceneColor;
+	OutColor = Sum;
+}

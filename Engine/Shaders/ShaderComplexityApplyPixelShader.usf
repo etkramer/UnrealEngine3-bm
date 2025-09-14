@@ -1,0 +1,59 @@
+/*=============================================================================
+	ShaderComplexityApplyPixelShader.usf: Maps accumulated shader complexity into color.
+	Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
+=============================================================================*/
+
+#include "Common.usf"
+
+float3 ShaderComplexityColors[NUM_COMPLEXITY_COLORS];
+
+void Main(
+	in float2 ScreenPosition : TEXCOORD0,
+	out float4 OutColor : COLOR0
+	)
+{
+	float3 SceneColor = CalcSceneColor(ScreenPosition);
+	//expand the stored complexity into the [0, NUM_COMPLEXITY_COLORS] range
+	float FinalShaderComplexity = SceneColor.r * NUM_COMPLEXITY_COLORS;
+	
+	half3 LowerColor = half3(0,0,0);
+	half3 HigherColor = half3(0,0,0);
+	
+	//map the complexity to the passed in colors
+	if (FinalShaderComplexity <= 1)
+	{
+		LowerColor = ShaderComplexityColors[0];
+		HigherColor = ShaderComplexityColors[1];
+	}
+	else if (FinalShaderComplexity > 1 && FinalShaderComplexity <= 2)
+	{
+		LowerColor = ShaderComplexityColors[1];
+		HigherColor = ShaderComplexityColors[2];
+	}
+	else if (FinalShaderComplexity > 2 && FinalShaderComplexity <= 3)
+	{
+		LowerColor = ShaderComplexityColors[2];
+		HigherColor = ShaderComplexityColors[3];
+	}
+	else if (FinalShaderComplexity > 3 && FinalShaderComplexity <= 4)
+	{
+		LowerColor = ShaderComplexityColors[3];
+		HigherColor = ShaderComplexityColors[4];
+	}
+	else if (FinalShaderComplexity > 4 && FinalShaderComplexity <= 5)
+	{
+		LowerColor = ShaderComplexityColors[4];
+		HigherColor = ShaderComplexityColors[5];
+	}
+	else
+	{
+		LowerColor = ShaderComplexityColors[5];
+		HigherColor = ShaderComplexityColors[5];
+	}
+
+	float ComplexityFraction = frac(FinalShaderComplexity);
+	//weight between the nearest colors based on the fraction
+	half4 ComplexityColor = half4(lerp(LowerColor, HigherColor, ComplexityFraction), 1);
+
+	OutColor = RETURN_COLOR(ComplexityColor);
+}
