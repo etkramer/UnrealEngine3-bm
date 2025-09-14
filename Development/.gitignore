@@ -1,0 +1,10 @@
+# Temporary files
+Intermediate/*
+
+# User files
+Src/**/*.user
+Src/**/*.suo
+Src/**/*.idb
+Src/**/*.ncb
+Src/**/Debug/**
+Src/**/Release/**
