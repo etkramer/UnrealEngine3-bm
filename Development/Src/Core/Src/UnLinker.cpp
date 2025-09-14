@@ -3825,6 +3825,9 @@ void ULinkerLoad::DetachExport( INT i )
 		return;
 	}
 #endif
+#if BATMAN
+	// BM1: Resaving engine packages seems to cause this
+#else
 	if( E._Object->GetLinker()!=this )
 	{
 		UObject* Object = E._Object;
@@ -3839,6 +3842,7 @@ void ULinkerLoad::DetachExport( INT i )
 	{
 		appErrorf( TEXT("Linker object %s %s.%s misindexed!"), *GetExportClassName(i).ToString(), *LinkerRoot->GetName(), *E.ObjectName.ToString() );
 	}
+#endif
 	ExportMap(i)._Object->SetLinker( NULL, INDEX_NONE );
 }
 
