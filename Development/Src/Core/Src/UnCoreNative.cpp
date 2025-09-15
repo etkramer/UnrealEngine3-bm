@@ -916,10 +916,17 @@ ULinkerLoad* UPackage::GetBaseLinker() const
 
 	if (BasePackageName != NAME_None)
 	{
-		ULinkerLoad* Linker = UObject::GetPackageLinker(NULL, *BasePackageName.ToString(), LOAD_Quiet | LOAD_NoWarn | LOAD_NoVerify, NULL, NULL);
-		if (Linker)
+		UPackage* BasePackage = FindObject<UPackage>(NULL, *BasePackageName.ToString());
+
+		// BM1: If the package hasn't been loaded, it certainly won't have a linker.
+		// GetPackageLinker() will create new linkers when one doesn't already exist, which has unintended side effects.
+		if (BasePackage != NULL)
 		{
-			return Linker;
+			ULinkerLoad* Linker = UObject::GetPackageLinker(NULL, *BasePackageName.ToString(), LOAD_Quiet | LOAD_NoWarn | LOAD_NoVerify, NULL, NULL);
+			if (Linker)
+			{
+				return Linker;
+			}
 		}
 	}
 
