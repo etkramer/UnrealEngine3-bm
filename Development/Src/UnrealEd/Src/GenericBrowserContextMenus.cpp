@@ -20,7 +20,16 @@ void WxMBGenericBrowserContextBase::SetObjects(const USelection* Selection)
 		const UObject* Object = *It;
 		if ( Object )
 		{
+#if BATMAN
+			// TODO: See if we can make forceexported sub-packages actually have PKG_Cooked set.
 			const UPackage* ObjectPackage = Object->GetOutermost();
+			if (ObjectPackage->IsBmCooked())
+			{
+				ObjectPackage = ObjectPackage->GetBasePackage();
+			}
+#else
+			const UPackage* ObjectPackage = Object->GetOutermost();
+#endif
 			if ( ObjectPackage->PackageFlags & PKG_Cooked )
 			{
 				bFoundCookedObject = TRUE;
@@ -53,7 +62,11 @@ void WxMBGenericBrowserContext::AppendObjectMenu()
 	DuplicateItem = Append(IDMN_ObjectContext_DuplicateWithRefs,*LocalizeUnrealEd("Duplicate"),TEXT(""));
 	RenameItem = Append(IDMN_ObjectContext_RenameWithRefs,*LocalizeUnrealEd("Rename"),TEXT(""));
 	DeleteItem = Append(IDMN_ObjectContext_Delete,*LocalizeUnrealEd("Delete"),TEXT(""));
+#if BATMAN
+	// BM1: UE3 doesn't implement this.
+#else
 	DeleteWithReferencesItem = Append(IDMN_ObjectContext_DeleteWithRefs,*LocalizeUnrealEd("DeleteWithReferences"),TEXT(""));
+#endif
 	AppendSeparator();
 	Append(IDMN_ObjectContext_ShowRefs,*LocalizeUnrealEd("ShowReferencers"),TEXT(""));
 	Append(IDMN_ObjectContext_ShowRefObjs, *LocalizeUnrealEd("ShowReferences"),TEXT(""));
@@ -69,7 +82,11 @@ void WxMBGenericBrowserContext::AppendLocObjectMenu()
 	RenameItem = Append(IDMN_ObjectContext_RenameWithRefs,*LocalizeUnrealEd("Rename"),TEXT(""));
 	RenameLocItem = Append(IDMN_ObjectContext_RenameLocWithRefs,*LocalizeUnrealEd("RenameLoc"),TEXT(""));
 	DeleteItem = Append(IDMN_ObjectContext_Delete,*LocalizeUnrealEd("Delete"),TEXT(""));
+#if BATMAN
+	// BM1: UE3 doesn't implement this.
+#else
 	DeleteWithReferencesItem = Append(IDMN_ObjectContext_DeleteWithRefs,*LocalizeUnrealEd("DeleteWithReferences"),TEXT(""));
+#endif
 	AppendSeparator();
 	Append(IDMN_ObjectContext_ShowRefs,*LocalizeUnrealEd("ShowReferencers"),TEXT(""));
 	Append(IDMN_ObjectContext_ShowRefObjs, *LocalizeUnrealEd("ShowReferences"),TEXT(""));
