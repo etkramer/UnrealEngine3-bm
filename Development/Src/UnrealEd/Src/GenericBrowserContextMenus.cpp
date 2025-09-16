@@ -20,16 +20,7 @@ void WxMBGenericBrowserContextBase::SetObjects(const USelection* Selection)
 		const UObject* Object = *It;
 		if ( Object )
 		{
-#if BATMAN
-			// TODO: See if we can make forceexported sub-packages actually have PKG_Cooked set.
 			const UPackage* ObjectPackage = Object->GetOutermost();
-			if (ObjectPackage->IsBmCooked())
-			{
-				ObjectPackage = ObjectPackage->GetBasePackage();
-			}
-#else
-			const UPackage* ObjectPackage = Object->GetOutermost();
-#endif
 			if ( ObjectPackage->PackageFlags & PKG_Cooked )
 			{
 				bFoundCookedObject = TRUE;
