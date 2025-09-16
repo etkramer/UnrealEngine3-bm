@@ -126,6 +126,12 @@ INT UFixupRedirectsCommandlet::Main( const FString& Params )
 	if( !PackageList.Num() )
 		return 0;
 
+#if BATMAN
+	// BM1: Only consider startup packages by default (and any specified on the command line)
+	const UEditorEngine* EditorEngine = CastChecked<UEditorEngine>(GEngine);
+	PackageList = EditorEngine->EditPackages;
+#endif
+
 	// process the commandline
 	FString Token;
 	const TCHAR* CommandLine	= appCmdLine();
@@ -153,6 +159,9 @@ INT UFixupRedirectsCommandlet::Main( const FString& Params )
 			if (GPackageFileCache->FindPackageFile(*Token, NULL, PackageName))
 			{
 				GRedirectCollector.FileToFixup = FFilename(Token).GetBaseFilename();
+#if BATMAN
+				PackageList.AddItem(PackageName);
+#endif
 			}
 		}
 	}
