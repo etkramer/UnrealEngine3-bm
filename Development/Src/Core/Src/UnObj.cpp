@@ -259,6 +259,10 @@ UBOOL UObject::Rename( const TCHAR* InName, UObject* NewOuter, ERenameFlags Flag
 		const UBOOL bRootPackage		= GetClass() == UPackage::StaticClass() && GetOuter() == NULL;
 		const UBOOL bRedirectionAllowed = !GIsGame;
 
+#if BATMAN
+		// BM1: Never create redirectors
+#else
+
 		// We need to create a redirector if we changed the Outer or Name of an object that can be referenced from other packages
 		// [i.e. has the RF_Public flag] so that references to this object are not broken.
 		if ( bRootPackage == FALSE && bUniquePathChanged == TRUE && bRedirectionAllowed == TRUE )
@@ -267,8 +271,8 @@ UBOOL UObject::Rename( const TCHAR* InName, UObject* NewOuter, ERenameFlags Flag
 		UObjectRedirector* Redir = (UObjectRedirector*)StaticConstructObject(UObjectRedirector::StaticClass(), Outer, Name, RF_Standalone | RF_Public);
 		// point the redirector object to this object
 		Redir->DestinationObject = this;
-
 	}
+#endif
 	}
 
 	if( NewOuter )
