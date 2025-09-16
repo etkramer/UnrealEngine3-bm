@@ -3022,7 +3022,7 @@ void ULinkerLoad::Preload( UObject* Object )
 				{
 #if BATMAN
 					// Keep an eye on this, so far seems non-critical.
-					warnf(NAME_Error, LocalizeSecure(LocalizeError(TEXT("SerialSize"), TEXT("Core")), *Object->GetFullName(), Tell() - Export.SerialOffset, Export.SerialSize));
+					warnf(NAME_Warning, LocalizeSecure(LocalizeError(TEXT("SerialSize"), TEXT("Core")), *Object->GetFullName(), Tell() - Export.SerialOffset, Export.SerialSize));
 #else
 					appErrorf( LocalizeSecure(LocalizeError(TEXT("SerialSize"),TEXT("Core")), *Object->GetFullName(), Tell()-Export.SerialOffset, Export.SerialSize) );
 #endif

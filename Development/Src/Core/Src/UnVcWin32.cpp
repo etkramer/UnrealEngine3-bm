@@ -403,11 +403,6 @@ VARARG_BODY( UBOOL, appMsgf, const TCHAR*, VARARG_EXTRA(EAppMsgType Type) )
 				// return 0 for No, 1 for Yes, 2 for YesToAll, 3 for NoToAll, 4 for Cancel
 				break;
 			default:
-#if BATMAN
-				// Emulate current UE3 behavior of not showing popups for warnings/messages in the editor.
-				break;
-#endif
-
 				MessageBox( ParentWindow, TempStr, TEXT("Message"), MB_OK|MB_SYSTEMMODAL );
 				break;
 		}
