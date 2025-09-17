@@ -229,18 +229,45 @@ public:
 	}
 
 	/** Set the material shader parameter values. */
-	void Set(FShader* PixelShader, FLOAT DisplayGamma, FLinearColor const& ColorScale, FLinearColor const& ColorOverlay)
+	void Set(FShader* PixelShader, const FPostProcessSettings& PostProcessSettings)
 	{
-#if BATMAN
-		// BM1 TODO: Get this working in-editor
-		// FVector4 AtmosphericBackgroundColour = FVector4(1, 0, 1, 1);
-		// FVector4 AtmosphericForegroundColour = FVector4(0, 1, 0, 1);
-		// FVector4 AtmosphericTransitionSettings = FVector4(0, 0, 1, 1);
+		FLinearColor ForegroundColourLinear = PostProcessSettings.Atmospheric_ForegroundColour.ReinterpretAsLinear();
+		FLinearColor BackgroundColourLinear = PostProcessSettings.Atmospheric_BackgroundColour.ReinterpretAsLinear();
 
-		// SetPixelShaderValue(PixelShader->GetPixelShader(), AtmosphericBackgroundColourParameter, AtmosphericBackgroundColour);
-		// SetPixelShaderValue(PixelShader->GetPixelShader(), AtmosphericForegroundColourParameter, AtmosphericForegroundColour);
-		// SetPixelShaderValue(PixelShader->GetPixelShader(), AtmosphericTransitionSettingsParameter, AtmosphericTransitionSettings);
-#endif
+		// BM1: Compute uniform values for atmospheric fog effect
+		if (PostProcessSettings.bAllowAtmospheric)
+		{
+			FVector4 AtmosphericForegroundColour = FVector4(
+				ForegroundColourLinear.R,
+				ForegroundColourLinear.G,
+				ForegroundColourLinear.B,
+				BackgroundColourLinear.A * PostProcessSettings.Atmospheric_ForegroundStrength
+			);
+
+			FVector4 AtmosphericBackgroundColour = FVector4(
+				BackgroundColourLinear.R,
+				BackgroundColourLinear.G,
+				BackgroundColourLinear.B,
+				BackgroundColourLinear.A * PostProcessSettings.Atmospheric_BackgroundStrength
+			);
+
+			FVector4 AtmosphericTransitionSettings = FVector4(
+				PostProcessSettings.Atmospheric_BackgroundMaxDistance,
+				PostProcessSettings.Atmospheric_BackgroundWidth,
+				PostProcessSettings.Atmospheric_ForegroundMaxDistance,
+				PostProcessSettings.Atmospheric_ForegroundWidth
+			);
+
+			SetPixelShaderValue(PixelShader->GetPixelShader(), AtmosphericForegroundColourParameter, AtmosphericForegroundColour);
+			SetPixelShaderValue(PixelShader->GetPixelShader(), AtmosphericBackgroundColourParameter, AtmosphericBackgroundColour);
+			SetPixelShaderValue(PixelShader->GetPixelShader(), AtmosphericTransitionSettingsParameter, AtmosphericTransitionSettings);
+		}
+		else
+		{
+			SetPixelShaderValue(PixelShader->GetPixelShader(), AtmosphericForegroundColourParameter, FVector4(0, 0, 0, 0));
+			SetPixelShaderValue(PixelShader->GetPixelShader(), AtmosphericBackgroundColourParameter, FVector4(0, 0, 0, 0));
+			SetPixelShaderValue(PixelShader->GetPixelShader(), AtmosphericTransitionSettingsParameter, FVector4(0, 0, 0, 0));
+		}
 	}
 
 	/** Serializer. */
@@ -600,6 +627,10 @@ public:
 			// ensure that desat values out of range get clamped (this can happen in the editor currently)
 			Clamp(SceneDesaturation, 0.f, 1.f)
 			);
+
+#if BATMAN
+		BlendPixelShader->AtmosphericParameters.Set(*BlendPixelShader, *View.PostProcessSettings);
+#endif
 
 		// Set the gamma correction parameters
 		BlendPixelShader->GammaParameters.Set(

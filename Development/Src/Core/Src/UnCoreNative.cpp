@@ -914,6 +914,12 @@ ULinkerLoad* UPackage::GetBaseLinker() const
 		BasePackageName = GetFName();
 	}
 
+	// BM1: Special handling for localized Startup file.
+	if (BasePackageName.ToString() == TEXT("Startup_INT"))
+	{
+		BasePackageName = FName(TEXT("Startup"), EFindName::FNAME_Add);
+	}
+
 	if (BasePackageName != NAME_None)
 	{
 		UPackage* BasePackage = FindObject<UPackage>(NULL, *BasePackageName.ToString());

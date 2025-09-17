@@ -4256,6 +4256,16 @@ struct FPostProcessSettings
 		bEnableSceneEffect=TRUE;
 		bAllowAmbientOcclusion=TRUE;
 
+        bAllowAtmospheric=FALSE;
+        Atmospheric_ForegroundColour=FColor(63,118,97,255);
+        Atmospheric_ForegroundStrength=0.01;
+        Atmospheric_BackgroundColour=FColor(5,14,11,255);
+        Atmospheric_BackgroundStrength=0.1f;
+        Atmospheric_ForegroundMaxDistance=0.0f;
+        Atmospheric_ForegroundWidth=0.1f;
+        Atmospheric_BackgroundMaxDistance=0.2f;
+        Atmospheric_BackgroundWidth=0.2f;
+
 		Bloom_Scale=1;
 		Bloom_InterpolationDuration=1;
 
