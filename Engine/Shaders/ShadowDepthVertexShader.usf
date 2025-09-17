@@ -7,6 +7,10 @@
 #include "Material.usf"
 #include "VertexFactory.usf"
 
+#ifndef OUTPUT_DEPTH_TO_COLOR
+#define OUTPUT_DEPTH_TO_COLOR 0
+#endif
+
 float4x4 ProjectionMatrix;
 
 /** Used to normalize the outputted depth */
@@ -33,8 +37,14 @@ void Main(
 #if SUPPORTS_DEPTH_TEXTURES
 	OutPosition.z = saturate(OutPosition.z * InvMaxSubjectDepth + DepthBias) * OutPosition.w;
 #else
-	OutPosition.z = saturate(OutPosition.z * InvMaxSubjectDepth + DepthBias) * OutPosition.w;
-	ShadowDepth = saturate(OutPosition.z * InvMaxSubjectDepth + DepthBias);
+	#if !OUTPUT_DEPTH_TO_COLOR
+		OutPosition.z = saturate(OutPosition.z * InvMaxSubjectDepth + DepthBias) * OutPosition.w;
+	#endif
+	#if MATERIALBLENDING_TRANSLUCENT
+		ShadowDepth = saturate(OutPosition.z * InvMaxSubjectDepth);
+	#else
+		ShadowDepth = saturate(OutPosition.z * InvMaxSubjectDepth + DepthBias);
+	#endif
 #endif
 
 #if !MATERIALBLENDING_SOLID

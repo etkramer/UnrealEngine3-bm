@@ -12,12 +12,23 @@
 */
 void Main(
 	in float4 ScreenPosition : TEXCOORD0,
+// NVCHANGE_BEGIN: Stereo fixes
+#if NV_STEREO_FIXES
+	in float2 vPos : VPOS,
+#endif // NV_STEREO_FIXES
+// NVCHANGE_END: Stereo fixes
 	out float4 OutColor : COLOR0
 	)
 {
 	half SceneW;
 	float4 ShadowPosition;
+// NVCHANGE_BEGIN: Stereo fixes
+#if NV_STEREO_FIXES
+	CalculateShadowPosition(ScreenPosition, vPos, ShadowPosition, SceneW);
+#else // NV_STEREO_FIXES
 	CalculateShadowPosition(ScreenPosition, ShadowPosition, SceneW);
+#endif // NV_STEREO_FIXES
+// NVCHANGE_END: Stereo fixes
 
 	half ShadowCoverage = EdgeSamplesManualPCF(ScreenPosition, ShadowPosition);
 	
@@ -56,12 +67,23 @@ void Main(
 */
 void HardwarePCFMain(
 	in float4 ScreenPosition : TEXCOORD0,
+// NVCHANGE_BEGIN: Stereo fixes
+#if NV_STEREO_FIXES
+	in float2 vPos : VPOS,
+#endif // NV_STEREO_FIXES
+// NVCHANGE_END: Stereo fixes
 	out float4 OutColor : COLOR0
 	)
 {
 	half SceneW;
 	float4 ShadowPosition;
+// NVCHANGE_BEGIN: Stereo fixes
+#if NV_STEREO_FIXES
+	CalculateShadowPosition(ScreenPosition, vPos, ShadowPosition, SceneW);
+#else // NV_STEREO_FIXES
 	CalculateShadowPosition(ScreenPosition, ShadowPosition, SceneW);
+#endif // NV_STEREO_FIXES
+// NVCHANGE_END: Stereo fixes
 
 	half ShadowCoverage = EdgeSamplesHardwarePCF(ScreenPosition, ShadowPosition);
 
@@ -101,12 +123,23 @@ void HardwarePCFMain(
 */
 void Fetch4Main(
 	in float4 ScreenPosition : TEXCOORD0,
+// NVCHANGE_BEGIN: Stereo fixes
+#if NV_STEREO_FIXES
+	in float2 vPos : VPOS,
+#endif // NV_STEREO_FIXES
+// NVCHANGE_END: Stereo fixes
 	out float4 OutColor : COLOR0
 	)
 {
 	half SceneW;
 	float4 ShadowPosition;
+// NVCHANGE_BEGIN: Stereo fixes
+#if NV_STEREO_FIXES
+	CalculateShadowPosition(ScreenPosition, vPos, ShadowPosition, SceneW);
+#else // NV_STEREO_FIXES
 	CalculateShadowPosition(ScreenPosition, ShadowPosition, SceneW);
+#endif // NV_STEREO_FIXES
+// NVCHANGE_END: Stereo fixes
 
 	half ShadowCoverage = EdgeSamplesFetch4(ScreenPosition, ShadowPosition);
 

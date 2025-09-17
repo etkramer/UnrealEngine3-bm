@@ -1,0 +1,312 @@
+/******************************************************************************/
+/*                                                                            */
+/*      © DARKWORKS, 2008-2009. Patent-pending technology by TRIOVIZ.         */
+/*                                                                            */
+/******************************************************************************/
+
+#include "DwTriovizCommon.usf"
+
+#ifndef DWTRIOVIZ_DMAP_COMPOSE
+#define DWTRIOVIZ_DMAP_COMPOSE 0
+#endif
+
+#ifndef DWTRIOVIZ_DEBUG_SHOWZMAP
+#define DWTRIOVIZ_DEBUG_SHOWZMAP 0
+#endif
+
+#ifndef DWTRIOVIZ_DEBUG_SHOWDISPLACEMENT
+#define DWTRIOVIZ_DEBUG_SHOWDISPLACEMENT 0
+#endif
+
+#ifndef DWTRIOVIZ_DEBUG_SHOWANTIGHOST
+#define DWTRIOVIZ_DEBUG_SHOWANTIGHOST 0
+#endif
+
+#ifndef DWTRIOVIZ_DEBUG_SHOWRGBMAP
+#define DWTRIOVIZ_DEBUG_SHOWRGBMAP 0
+#endif
+
+#ifndef DWTRIOVIZ_USE_DOF
+#define DWTRIOVIZ_USE_DOF 1
+#endif
+
+#ifndef DWTRIOVIZ_USE_BEZIER
+#define DWTRIOVIZ_USE_BEZIER 1
+#endif
+
+//-----------------------------------------------------------------------------
+// Z -> Zmap -> DMap
+//-----------------------------------------------------------------------------
+
+float4		ZMapParameters;
+float4		DMapParameters;
+float4		DMapComposeWeight;
+
+#if DWTRIOVIZ_USE_BEZIER
+float4		DMapCurveY;
+
+#if DWTRIOVIZ_TEST_WITH_CONSTANT_PARAMETERS
+#define DMapCurveForeground_P1Y		1.0h	
+#define DMapCurveForeground_P2Y		1.0h
+#define DMapCurveBackground_P1Y		1.0h
+#define DMapCurveBackground_P2Y		1.0h
+#define GDMapComposeWeight			half4(1.0h, 1.0h, 1.0h, 1.0h)
+#else // DWTRIOVIZ_TEST_WITH_CONSTANT_PARAMETERS
+static float DMapCurveForeground_P1Y	= DMapCurveY.x;	
+static float DMapCurveForeground_P2Y	= DMapCurveY.y;	
+static float DMapCurveBackground_P1Y	= DMapCurveY.z;	
+static float DMapCurveBackground_P2Y	= DMapCurveY.w;	
+static float GDMapComposeWeight			= DMapComposeWeight;
+#endif // DWTRIOVIZ_TEST_WITH_CONSTANT_PARAMETERS
+
+#endif // DWTRIOVIZ_USE_BEZIER
+
+sampler2D	MinMaxTexture;
+sampler2D	SmallSceneDepthTexture;
+
+#if DWTRIOVIZ_TEST_WITH_CONSTANT_PARAMETERS
+#define ZMapGamma				1.0h
+#define DMapGammaForeground		2.0h	
+#define DMapGammaBackground		0.5h	
+#define DMapScaleBackground		1.0h
+#else // DWTRIOVIZ_TEST_WITH_CONSTANT_PARAMETERS
+static float ZMapGamma				= ZMapParameters.x;
+static float DMapGammaForeground	= DMapParameters.x;	
+static float DMapGammaBackground	= DMapParameters.y;	
+static float DMapScaleBackground	= DMapParameters.z;
+#endif // DWTRIOVIZ_TEST_WITH_CONSTANT_PARAMETERS
+
+#if DWTRIOVIZ_DMAP_COMPOSE
+sampler2D	DMapCompose;
+#endif // DWTRIOVIZ_DMAP_COMPOSE
+
+// Z range remapping (i.e Z -> ZMap)
+// Process two value at the same time
+half2 ZValueToZMapValue(half2 ZValue, half Gamma, half MinInput, half MaxInput)
+{
+	ZValue = (MaxInput > MinInput) ? min(max(ZValue - MinInput, 0.0h) / (MaxInput - MinInput), 1.0h) : 1.0h;
+#if !DWTRIOVIZ_USE_BEZIER
+	// Without bezier curve we apply a sin. This is the first method with tested. Prefer bezier now.
+	ZValue = pow(sin(ZValue * 1.5h), 0.4545h);
+#endif // !DWTRIOVIZ_USE_BEZIER
+	return ZValue;	
+}
+
+// Relief calibration (i.e ZMap -> DMap)
+half ZMapValueToDMapValue(half ZMapValue, half DisparityLevelInput)
+{
+	// CAUTION : DisparityLevelInput are not calculate in the same way for  DWTRIOVIZ_USE_BEZIER and standard, so think about it when doing settings
+	// We do a specific remapping here. When we look at a wall, if there is a small bump in the focal region, this result in a large disparity
+	// between the bump which become the focal plane and the wall which are mapped to max disparity.
+	//
+	// See from above
+	// --------------       <= the wall
+	//       -              <= the bump
+	//
+	//
+	//
+	//      ^				<= viewver
+	//
+	// To avoid this case we take in count the relative difference between the disparity level and the background
+	half DMapBackgroundMin = saturate(0.5h - DMapScaleBackground * (1.0h - DisparityLevelInput));
+	// We can do this for the other case too (foreground and disparity level, but in pratice this is not required and we prefer without)
+
+	return	(ZMapValue < DisparityLevelInput) ? // Is Value in Foreground ?
+#if DWTRIOVIZ_USE_BEZIER
+			LevelsControl_BezierWithOuput(DisparityLevelInput - ZMapValue, 0.0h, DisparityLevelInput, 0.5h, 1.0h, half2(1.0h/3.0h, DMapCurveForeground_P1Y), half2(2.0/3.0h, DMapCurveForeground_P2Y)) :	// Swap interval from [0..NewDisparityLevel] to [1.0..0.5]
+			LevelsControl_BezierWithOuput(ZMapValue,DisparityLevelInput, 1.0h, 0.5h, DMapBackgroundMin, half2(1.0h/3.0h, DMapCurveBackground_P1Y), half2(2.0/3.0h, DMapCurveBackground_P2Y));			// Swap interval from [NewDisparityLevel..1] to [0.5..DMapBackgroundMin]
+#else // DWTRIOVIZ_USE_BEZIER
+			LevelsControlWithOuput(ZMapValue, 0.0h, DisparityLevelInput, DMapGammaForeground, 1.0h, 0.5h) :																								// Swap interval from [0..NewDisparityLevel] to [1.0..0.5]
+			LevelsControlWithOuput(ZMapValue, DisparityLevelInput, 1.0h, DMapGammaBackground, 0.5h, DMapBackgroundMin);																					// Swap interval from [NewDisparityLevel..1] to [0.5..DMapBackgroundMin]			
+#endif // DWTRIOVIZ_USE_BEZIER
+}
+
+void ZToDMapPixelMain(
+	in float2 TexCoord0 : TEXCOORD0,
+	in float2 InPos : TEXCOORD1,
+	out float4 OutColor : COLOR0
+	)
+{
+	half3 Val							= DWTRIOVIZ_H3TEX2D(MinMaxTexture, half2(0.5h,0.5h)).xyz; // ZMapMin, ZMapMax, DisparityLevel
+	half2 ZMapValueAndDisparityLevel	= half2(DwTriovizSampleDepth(SmallSceneDepthTexture, TexCoord0), Val.z);
+
+	// Convert to ZMap
+	ZMapValueAndDisparityLevel			= ZValueToZMapValue(ZMapValueAndDisparityLevel, ZMapGamma, Val.x, Val.y);
+
+	// Then convert this value with relief calibration to DMap
+	half DMapValue						= ZMapValueToDMapValue(ZMapValueAndDisparityLevel.x, ZMapValueAndDisparityLevel.y);
+
+#if DWTRIOVIZ_DMAP_COMPOSE
+	// Compose up to 4 channel of a weighted mask to attenuate or overbright the DMap
+	// Caution : All not used channel must be white.
+	DMapValue							= saturate(DMapValue * dot(GDMapComposeWeight, DWTRIOVIZ_H4TEX2D(DMapCompose, (half2(InPos.x, -InPos.y) * 0.5h + 0.5h)).xyzw));
+#endif // DWTRIOVIZ_DMAP_COMPOSE
+
+#if DWTRIOVIZ_DEBUG_SHOWZMAP
+	// Convert to 8 bit.
+	OutColor = ZMapValueAndDisparityLevel.x;
+#else // DWTRIOVIZ_DEBUG_SHOWZMAP
+	OutColor = DMapValue;
+#endif // DWTRIOVIZ_DEBUG_SHOWZMAP
+}
+
+//-----------------------------------------------------------------------------
+// Displacement mapping
+//-----------------------------------------------------------------------------
+
+float4			UberParameters;
+
+#if DWTRIOVIZ_TEST_WITH_CONSTANT_PARAMETERS
+#define	AntiGhostContrast	3.0h
+#define	AntiGhostScale		1.0h
+#else // DWTRIOVIZ_TEST_WITH_CONSTANT_PARAMETERS
+static float	PercentFactorForeground		= UberParameters.x;
+static float	PercentFactorBackground		= UberParameters.y;
+static float	AntiGhostContrast			= UberParameters.z;
+static float	AntiGhostScale				= UberParameters.w;
+#endif // DWTRIOVIZ_TEST_WITH_CONSTANT_PARAMETERS
+
+sampler2D		DMap;
+sampler2D		RGBMap;
+sampler2D		BlurredImage;
+
+// Nice contrast function for [0..1] value
+half ApplyConstrast(half Color, half Contrast)
+{
+	return Color - Contrast * (Color - 1.0h) * Color *(Color - 0.5h);
+}
+
+void UberPixelMain(
+	in float2 SceneUV: TEXCOORD0,
+#if DWTRIOVIZ_USE_SEPARATE_DMAPUV
+	in float2 DMapUV : TEXCOORD1,
+#endif // DWTRIOVIZ_USE_SEPARATE_DMAPUV
+	out float4 OutColor : COLOR0
+	)
+{
+#if !DWTRIOVIZ_USE_SEPARATE_DMAPUV
+#define DMapUV SceneUV
+#endif // !DWTRIOVIZ_USE_SEPARATE_DMAPUV
+
+	// 1. Precalc displacement offset to use to displace RGBMap and DMap
+	// Calc displacement for left camera:
+	// How this work ?
+	//
+	//				O				// background
+	//
+	//			|					// Focus point
+	//
+	//		O						// Foreground
+	//
+	//			^					// Viewver look up on this page
+	//
+	// Here | is a pen which is our focus (i.e collimation point)
+	// O are two object, one in back of the pen, one in front, if viewver close right eye we get
+	//
+	//			  O<-				// background
+	//
+	//			|					// Focus point
+	//
+	//		->O						// Foreground
+	//
+	//			^					// Viewver look up on this page
+	//
+	// The two O object have been translated by the left eye and seem to be more close to pen.
+	// To micmic this behavior we must apply an offset for left and right image based on the disparity map.
+	// Here for left camera we will use a positive offset if object is in background or a negative offset
+	// if object is in the foreground. (Note O<-S mean that to get O at the new position for the pixel which actually represent
+	// O destination, we must sample a texel which is S. So we apply a positive offset).
+	// So:
+	// With left camera:
+	// if D > 0, offset is < 0
+	// if D < 0, offset is > 0
+	// With right camera:
+	// if D > 0, offset is > 0
+	// if D < 0, offset is < 0
+	// Just remember that in the following function DMap is in [0..1]
+
+	half2 DMapValue			= DWTRIOVIZ_H2TEX2D(DMap, DMapUV).xy; // Remember x == DMap, y == DilatedDMap
+	
+	half2 Displacement		= 2.0h * DMapValue - 1.0h; // DMap [0..1]
+
+	half2 LeftOffset		= LEFT_RIGHT_FACTOR * -Displacement.xy * ((DMapValue.xy > 0.5h) ? PercentFactorForeground.xx : PercentFactorBackground.xx);
+
+	// 2. Texture sampling
+
+	// Fetch displaced RGBMap
+	
+	half3 RGBMapLeftValue	= ApplyColorCorrection(DWTRIOVIZ_H3TEX2D(RGBMap, SceneUV + half2(LeftOffset.y, 0.0h)).rgb);
+	half3 RGBMapRightValue	= ApplyColorCorrection(DWTRIOVIZ_H3TEX2D(RGBMap, SceneUV + half2(RIGHT_OFFSET(y), 0.0h)).rgb); 	
+	
+	// Fetch displaced blurred image
+	half3 BlurredRGBMapValue;
+#if DWTRIOVIZ_SEPARATE_DOF
+	// As we already apply the decal on image, no need to apply it again
+	BlurredRGBMapValue.rgb	= DWTRIOVIZ_H3TEX2D(BlurredImage, DMapUV).rgb;
+#else // DWTRIOVIZ_SEPARATE_DOF
+	BlurredRGBMapValue.rb	= DWTRIOVIZ_H3TEX2D(BlurredImage, DMapUV + half2(LeftOffset.y, 0.0h)).rb;
+	BlurredRGBMapValue.g	= DWTRIOVIZ_H2TEX2D(BlurredImage, DMapUV + half2(RIGHT_OFFSET(y), 0.0h)).g;
+#endif // DWTRIOVIZ_SEPARATE_DOF
+
+	// Fetch no-dilated DMap for DOF
+	half2 DisplacedDMapValue; 
+	DisplacedDMapValue.x	= DWTRIOVIZ_H1TEX2D(DMap, DMapUV + half2(LeftOffset.x, 0.0h)).x;
+	DisplacedDMapValue.y	= DWTRIOVIZ_H1TEX2D(DMap, DMapUV + half2(RIGHT_OFFSET(x), 0.0h)).x; 
+
+	// 3. AnitGhost Mask
+
+	half3	AntiGhostMaskColor	= abs(RGBMapLeftValue - RGBMapRightValue);
+	half	AntiGhostMask		= dot(AntiGhostMaskColor, LUMINANCE_VECTOR);
+
+	// Apply a contrast on mask
+	AntiGhostMask			= saturate(ApplyConstrast(AntiGhostMask, AntiGhostContrast) * AntiGhostScale);
+
+	// 4. AntiGhost Apply on displaced RGBMap
+
+	half3 RGBMapValue;
+	RGBMapValue.rb			= RGBMapLeftValue.rb;
+	RGBMapValue.g			= RGBMapRightValue.g;
+
+	// AntiGhosting is a process to blend between original image and displaced image
+	// Following fetch should already be in texture cache as we fetch on left and right (depend on right eye settings)
+	// Note that this work only for generated left and right image only (not for only left image generated)
+	// To avoid banding artifact on antighost when we set large displacement we use the blurred image instead of the original image.
+	// This help in performance too (minus thrash of texture cache).
+	// Oldline : half3 RGBMapCenterValue = ApplyColorCorrection(tex2D(RGBMap, SceneUV).rgb);
+	
+	half3 RGBMapCenterValue	= DWTRIOVIZ_H3TEX2D(BlurredImage, DMapUV).rgb;  // Already color corrected
+	
+#if !DWTRIOVIZ_DEBUG_SHOWRGBMAP
+	RGBMapValue				= lerp(RGBMapValue, RGBMapCenterValue, AntiGhostMask);
+#endif // !DWTRIOVIZ_DEBUG_SHOWRGBMAP
+
+	// 5. DOF Weight	
+#if DWTRIOVIZ_USE_DOF
+	// Cacl Depth of field for left camera and right camera
+	half2 Dof = saturate(CalcUnfocusedPercent(DisplacedDMapValue));
+
+	half3  Weight;
+	Weight.rg				= Dof.xx;
+	Weight.b				= Dof.y;
+
+	half3 FinalColor		= lerp(RGBMapValue, BlurredRGBMapValue, Weight);
+#else // DWTRIOVIZ_USE_DOF
+	half3 FinalColor		= RGBMapValue;
+#endif // DWTRIOVIZ_USE_DOF
+
+	// Final color
+#if DWTRIOVIZ_DEBUG_SHOWDISPLACEMENT
+	float TestValue = abs(LeftOffset.x) * (1280.0f); 
+	OutColor.r = (TestValue > 2.0f) ?  (TestValue - 2.0) : 0.0;							//1.0f : 0.0f; //  
+	OutColor.g = ((TestValue <= 2.0f) && (TestValue > 1.0f)) ? (TestValue - 1.0) : 0.0; // 1.0 : 0.0; // 
+	OutColor.b = ((TestValue <= 1.0f) && (TestValue > 0.5f)) ? TestValue : 0.0;
+	OutColor.a = 0.0f;
+#elif DWTRIOVIZ_DEBUG_SHOWANTIGHOST
+	OutColor = half4(AntiGhostMask.xxx, 0.0f);
+#elif DWTRIOVIZ_DEBUG_SHOWRGBMAP		
+	OutColor = half4(RGBMapValue, 0.0f);
+#else
+	OutColor = half4(FinalColor, 0.0f);
+#endif
+	OutColor = RETURN_COLOR(OutColor);
+}

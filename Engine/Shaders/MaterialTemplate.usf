@@ -74,6 +74,12 @@ struct FMaterialParameters
 #if USE_DYNAMIC_PARAMETERS
 	float4 DynamicParameter0;
 #endif	//USE_DYNAMIC_PARAMETERS
+
+// NVCHANGE_BEGIN: Stereo fixes
+#if NV_STEREO_FIXES
+	float4 TrueScreenPosition;
+#endif
+// NVCHANGE_END: Stereo fixes
 };
 
 // Uniform material expressions.
@@ -126,15 +132,94 @@ float3 TransformTangentVectorToView(FMaterialParameters Parameters, float3 InTan
 	return MulMatrix(WorldToViewMatrix, mul(Parameters.TangentToWorld, InTangentVector));
 #endif
 }
+
+/** Transforms a vector from local space to tangent space */
+float3 TransformLocalVectorToTangent(FMaterialParameters Parameters, float3 InLocalVector)
+{
+#if SM2_PROFILE
+	// In SM2, Parameters.TangentToWorld is actually TangentToLocal
+	// Transform from local to tangent space
+	return mul(InLocalVector, Parameters.TangentToWorld);
+#else
+	// Transform from local to world space, and then to tangent space.
+	return mul(MulMatrix(LocalToWorldMatrix, InLocalVector), Parameters.TangentToWorld);
+#endif
+}
+
+/** Transforms a vector from local space to world space */
+float3 TransformLocalVectorToWorld(float3 InLocalVector)
+{
+	return MulMatrix(LocalToWorldMatrix, InLocalVector);
+}
+
+/** Transforms a vector from local space to view space */
+float3 TransformLocalVectorToView(float3 InLocalVector)
+{
+	return MulMatrix(WorldToViewMatrix, MulMatrix(LocalToWorldMatrix, InLocalVector));
+}
+
+/** Transforms a vector from world space to tangent space */
+float3 TransformWorldVectorToTangent(FMaterialParameters Parameters, float3 InWorldVector)
+{
+#if SM2_PROFILE
+	// In SM2, Parameters.TangentToWorld is actually TangentToLocal
+	// Transform from world to local, and then to tangent space.
+	return mul(MulMatrix(WorldToLocalMatrix, InWorldVector), Parameters.TangentToWorld);
+#else
+	// Transform from world to tangent space
+	return mul(InWorldVector, Parameters.TangentToWorld);
+#endif
+}
+
+/** Transforms a vector from world space to local space */
+float3 TransformWorldVectorToLocal(float3 InWorldVector)
+{
+	return MulMatrix(WorldToLocalMatrix, InWorldVector);
+}
+
+/** Transforms a vector from world space to view space */
+float3 TransformWorldVectorToView(float3 InWorldVector)
+{
+	return MulMatrix(WorldToViewMatrix, InWorldVector);
+}
+
 #endif //#if WORLD_COORDS
 
+// NVCHANGE_BEGIN: Adding shadow-map generation for blended particles
+#if SKIP_SCREENSPACE_TEXTURE_LOOKUPS
+float DepthBiasedAlpha( FMaterialParameters Parameters, float InAlpha, float InBias, float InBiasScale )
+{
+	return InAlpha;
+}
 
+float3 DepthBiasedBlend( FMaterialParameters Parameters, float3 InColor, float InBias, float InBiasScale )
+{
+	return InColor;
+}
+#else // SKIP_SCREENSPACE_TEXTURE_LOOKUPS
+// NVCHANGE_END: Adding shadow-map generation for blended particles
 float DepthBiasedAlpha( FMaterialParameters Parameters, float InAlpha, float InBias, float InBiasScale )
 {
 	float Result;
+	
+	// NVCHANGE_BEGIN: Stereo fixes
+#if NV_STEREO_FIXES
+	half SceneDepth = PreviousDepth(Parameters.TrueScreenPosition);
+#else // NV_STEREO_FIXES
 	half SceneDepth = PreviousDepth(Parameters.ScreenPosition);
+#endif // NV_STEREO_FIXES
+	// NVCHANGE_END: Stereo fixes
+
 	float DepthBias = (1.0 - InBias) * InBiasScale;
+	
+	// NVCHANGE_BEGIN: Stereo fixes
+#if NV_STEREO_FIXES
+	float BlendAmt = saturate((SceneDepth - Parameters.TrueScreenPosition.w) / max(DepthBias,0.001));
+#else // NV_STEREO_FIXES
 	float BlendAmt = saturate((SceneDepth - Parameters.ScreenPosition.w) / max(DepthBias,0.001));
+#endif // NV_STEREO_FIXES
+	// NVCHANGE_END: Stereo fixes
+	
 	Result = InAlpha * BlendAmt;
 	return Result;
 }
@@ -142,15 +227,32 @@ float DepthBiasedAlpha( FMaterialParameters Parameters, float InAlpha, float InB
 float3 DepthBiasedBlend( FMaterialParameters Parameters, float3 InColor, float InBias, float InBiasScale )
 {
 	float3 Result;	
+	
+	// NVCHANGE_BEGIN: Stereo fixes
+#if NV_STEREO_FIXES
+	float3 SceneColor = PreviousLighting(Parameters.TrueScreenPosition).rgb;
+	half SceneDepth = PreviousDepth(Parameters.TrueScreenPosition);
+#else // NV_STEREO_FIXES
 	float3 SceneColor = PreviousLighting(Parameters.ScreenPosition).rgb;
 	half SceneDepth = PreviousDepth(Parameters.ScreenPosition);
+#endif // NV_STEREO_FIXES
+	// NVCHANGE_END: Stereo fixes
+	
 	float DepthBias = (1.0 - InBias) * InBiasScale;
 	
+	// NVCHANGE_BEGIN: Stereo fixes
+#if NV_STEREO_FIXES
+	float BlendAmt = saturate((SceneDepth - Parameters.TrueScreenPosition.w) / max(DepthBias,0.001));
+#else // NV_STEREO_FIXES
 	float BlendAmt = saturate((SceneDepth - Parameters.ScreenPosition.w) / max(DepthBias,0.001));
+#endif // NV_STEREO_FIXES
+	// NVCHANGE_END: Stereo fixes
+
 	Result = lerp( SceneColor, InColor * 1.000001, BlendAmt );
 	
 	return Result;
 }
+#endif // SKIP_SCREENSPACE_TEXTURE_LOOKUPS
 
 /** Get the lens flare intensity */
 float GetLensFlareIntensity(FMaterialParameters Parameters)
@@ -335,7 +437,9 @@ float3 GetMaterialHemisphereLightTransferFull(FMaterialParameters Parameters,flo
 #if MATERIAL_LIGHTINGMODEL_NONDIRECTIONAL
 	UpperLighting = GetMaterialDiffuseColor(Parameters);
 	LowerLighting = GetMaterialDiffuseColor(Parameters);	
-#elif MATERIAL_LIGHTINGMODEL_PHONG
+	
+// @ROCK TimR: Added || MATERIAL_LIGHTINGMODEL_CUSTOM, because we want that to behave the same as phong.
+#elif MATERIAL_LIGHTINGMODEL_PHONG || MATERIAL_LIGHTINGMODEL_CUSTOM
 	//UpperLighting = HemisphereLightPhong(GetMaterialDiffuseColor(Parameters),SkyVector,Parameters.TangentNormal);
 	//LowerLighting = HemisphereLightPhong(GetMaterialDiffuseColor(Parameters),-SkyVector,Parameters.TangentNormal);
 
@@ -345,9 +449,6 @@ float3 GetMaterialHemisphereLightTransferFull(FMaterialParameters Parameters,flo
 
 	UpperLighting = GetMaterialDiffuseColor(Parameters) * ContributionWeights[0];
 	LowerLighting = GetMaterialDiffuseColor(Parameters) * ContributionWeights[1];
-#elif MATERIAL_LIGHTINGMODEL_CUSTOM
-	UpperLighting = 0;//GetMaterialCustomLighting(Parameters);
-	LowerLighting = 0;//GetMaterialCustomLighting(Parameters);
 #endif
 
 	return lerp(UpperLighting,TwoSidedLighting,TwoSidedLightingMask) * UpperColor +
@@ -440,6 +541,12 @@ void CalcMaterialParameters(
 #endif
 
 	Parameters.TangentReflectionVector = -Parameters.TangentCameraVector + Parameters.TangentNormal * dot(Parameters.TangentNormal,Parameters.TangentCameraVector) * 2.0;
+	
+	// NVCHANGE_BEGIN: Stereo fixes
+	#if NV_STEREO_FIXES
+	Parameters.TrueScreenPosition = Parameters.ScreenPosition;
+	#endif
+	// NVCHANGE_END: Stereo fixes
 }
 
 /** Assemble the transform from tangent space into world space */

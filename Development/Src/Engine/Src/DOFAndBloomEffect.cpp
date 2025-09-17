@@ -80,6 +80,11 @@ FDOFAndBloomBlendPixelShader::FDOFAndBloomBlendPixelShader(const ShaderMetaType:
 {
 	SceneTextureParameters.Bind(Initializer.ParameterMap);
 	BlurredImageParameter.Bind(Initializer.ParameterMap,TEXT("BlurredImage"),TRUE);
+// #if BATMAN
+// 	AtmosphericBackgroundColourParameter.Bind(Initializer.ParameterMap,TEXT("AtmosphericBackgroundColour"),TRUE);
+// 	AtmosphericForegroundColourParameter.Bind(Initializer.ParameterMap,TEXT("AtmosphericForegroundColour"),TRUE);
+// 	AtmosphericTransitionSettingsParameter.Bind(Initializer.ParameterMap,TEXT("AtmosphericTransitionSettings"),TRUE);
+// #endif
 }
 
 UBOOL FDOFAndBloomBlendPixelShader::Serialize(FArchive& Ar)

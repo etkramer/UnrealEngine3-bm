@@ -1,0 +1,31 @@
+/*=============================================================================
+	StereoCalibPixelShader.usf: Pixel shader for calculating stereo coefficients
+	Copyright 2009 NVIDIA Corporation, All Rights Reserved.
+=============================================================================*/
+
+#include "Common.usf"
+
+float3 uvz0;
+float3 uvz1;
+
+sampler2D ExemplarTexture;
+
+void Main(
+	out float4 OutColor : COLOR0
+	)
+{
+	// The stereo delta takes the form of d = c + m/z. We require to find m & c, and we're
+	// given: d0 and d1 in the scene color texture; z0 and z1 in the shader params
+	float d0 = tex2D(ExemplarTexture,uvz0.xy).r;
+	float d1 = tex2D(ExemplarTexture,uvz1.xy).r;
+	
+	float z0 = uvz0.z;
+	float z1 = uvz1.z;
+	
+	float m = (d1 - d0) * z0 * z1 / (z0-z1);
+	float c = (d1*z1 - d0*z0) / (z1-z0);
+
+	OutColor.r = m; // JJ * 0.0002f;
+	OutColor.g = c; // JJ * 0.0002f;
+	OutColor.ba = 1;
+}

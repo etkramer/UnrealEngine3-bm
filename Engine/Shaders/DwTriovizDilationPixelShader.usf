@@ -1,0 +1,44 @@
+/******************************************************************************/
+/*                                                                            */
+/*      © DARKWORKS, 2008-2009. Patent-pending technology by TRIOVIZ.         */
+/*                                                                            */
+/******************************************************************************/
+
+#include "DwTriovizCommon.usf"
+
+#ifndef NUM_SAMPLES
+#define NUM_SAMPLES 4
+#endif
+
+sampler2D		FilterTexture;
+
+void DilationPixelMain (in float4 InSampleOffsetsX[(NUM_SAMPLES + 3) / 4] : TEXCOORD0,
+						in float2 OffsetUVs : TEXCOORD8,
+						out float4 OutColor : COLOR0 ) 
+{
+	half4	DMapValue	= 0.0h;
+	half4	CurrentMax	= 0.0h;
+
+	for (int SampleIndex = 0; SampleIndex < (NUM_SAMPLES / 4); ++SampleIndex)
+	{
+		DMapValue.x		= DWTRIOVIZ_H1TEX2D(FilterTexture, half2(InSampleOffsetsX[SampleIndex].x, OffsetUVs.y)).r;
+		DMapValue.y		= DWTRIOVIZ_H1TEX2D(FilterTexture, half2(InSampleOffsetsX[SampleIndex].y, OffsetUVs.y)).r;
+		DMapValue.z		= DWTRIOVIZ_H1TEX2D(FilterTexture, half2(InSampleOffsetsX[SampleIndex].z, OffsetUVs.y)).r;
+		DMapValue.w		= DWTRIOVIZ_H1TEX2D(FilterTexture, half2(InSampleOffsetsX[SampleIndex].w, OffsetUVs.y)).r;
+		CurrentMax		= max(CurrentMax, DMapValue);
+	}
+
+	CurrentMax.xy	= max(CurrentMax.xy, CurrentMax.zw);
+	CurrentMax.x	= max(CurrentMax.x, CurrentMax.y);
+
+	if (NUM_SAMPLES % 4)
+	{
+		for (int SampleIndex = 0; SampleIndex < (NUM_SAMPLES % 4); ++SampleIndex)
+		{
+			CurrentMax.x = max(DWTRIOVIZ_H1TEX2D(FilterTexture, float2(InSampleOffsetsX[NUM_SAMPLES / 4][SampleIndex], OffsetUVs.y)).r, CurrentMax.x);
+		}
+	}
+
+	// Store DMap in R and DMapDilated in G
+	OutColor = half4(DWTRIOVIZ_H1TEX2D(FilterTexture, float2(OffsetUVs.x, OffsetUVs.  y)).r, CurrentMax.x, 0.0h, 0.0h); // Sample should be in texture cache and not impact performance...
+}

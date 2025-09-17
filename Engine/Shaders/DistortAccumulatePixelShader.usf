@@ -23,7 +23,7 @@ void Main(
 	CalcMaterialParameters(MaterialParameters,FacingSign,CameraVector,PixelPosition);
 	
 	// material distortion offset
-	float2 Distortion = GetMaterialDistortion(MaterialParameters) * DistortionScaleBias;	
+	float2 Distortion = GetMaterialDistortion(MaterialParameters);	
 
 #if !XBOX
 	//clip if the distortion distance (squared) is too small to be noticed
@@ -31,14 +31,24 @@ void Main(
 	//don't clip on Xbox, since it will disable writing to Hi-Stencil
 	clip(dot(Distortion, Distortion) - .1);
 #endif
-	
+
+
+	// make sure that the distortion offset position has a scene depth that is <= the current pixel depth of the distortion primitive
+	// this prevents silhouettes from geometry that is in front of distortion from being seen in the distortion 
+	float2 ScreenPos = (PixelPosition.xy / PixelPosition.w) * ScreenPositionScaleBias.xy + ScreenPositionScaleBias.wz;
+	half OffsetSceneDepth = CalcSceneDepth(ScreenPos + Distortion / float2(255,-255));
+	if( OffsetSceneDepth <= PixelPosition.w )
+	{
+		Distortion = 0;
+	}
+
 	// scale up offsets for better precision
 	// clamp [-255,255] and normalize to [-1,1]
-	Distortion = clamp(Distortion,-255,255)/255.f;
+	Distortion = clamp(Distortion * DistortionScaleBias,-255,255)/255.f;
 	// store positive and negative offsets separately
 	float2 PosOffset = max(Distortion,0);
 	float2 NegOffset = abs(min(Distortion,0));
-	
+
 	// output positives in R|G channels and negatives in B|A channels
 	OutColor = float4(PosOffset.x,PosOffset.y,NegOffset.x,NegOffset.y);
 }

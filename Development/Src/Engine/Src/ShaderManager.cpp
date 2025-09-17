@@ -79,6 +79,9 @@ static UBOOL IsParameterBoundByView(const FString& ParameterName, EShaderFrequen
 	{
 		bParameterBoundByView = ParameterName == TEXT("ScreenPositionScaleBias") 
 			|| ParameterName == TEXT("MinZ_MaxZRatio") 
+#if BATMAN
+			|| ParameterName == TEXT("VPosScaleBias") 
+#endif
 			|| ParameterName == TEXT("SCENE_COLOR_BIAS_FACTOR");
 	}
 	return bParameterBoundByView;

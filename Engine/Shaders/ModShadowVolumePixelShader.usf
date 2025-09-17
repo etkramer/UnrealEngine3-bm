@@ -8,10 +8,22 @@
 
 void Main(
 	in float4 ScreenPosition : TEXCOORD0,
+// NVCHANGE_BEGIN: Stereo fixes
+#if NV_STEREO_FIXES
+	in float2 vPos : VPOS,
+#endif // NV_STEREO_FIXES
+// NVCHANGE_END: Stereo fixes
 	out float4 OutColor : COLOR0
 	)
 {
-	half SceneW = PreviousDepth(ScreenPosition);
+// NVCHANGE_BEGIN: Stereo fixes
+#if NV_STEREO_FIXES
+	float4 TrueScreenPosition = VPosToClip(vPos);
+#else // NV_STEREO_FIXES
+	float4 TrueScreenPosition = ScreenPosition;
+#endif // NV_STEREO_FIXES
+	half SceneW = PreviousDepth(TrueScreenPosition);
+// NVCHANGE_END: Stereo fixes
 
 #if MODSHADOW_LIGHTTYPE_DIRECTIONAL
 	// no attenuation necessary for directional lights

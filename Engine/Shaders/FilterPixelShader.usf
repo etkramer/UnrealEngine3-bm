@@ -20,10 +20,11 @@ void Main(
 		Sum += tex2D(FilterTexture,InOffsetUVs[SampleIndex / 2].xy) * SampleWeights[SampleIndex + 0];
 		Sum += tex2D(FilterTexture,InOffsetUVs[SampleIndex / 2].wz) * SampleWeights[SampleIndex + 1];
 	}
-	if(SampleIndex < NUM_SAMPLES)
-	{
-		Sum += tex2D(FilterTexture,InOffsetUVs[SampleIndex / 2].xy) * SampleWeights[SampleIndex + 0];
-	}
+//@Rock - JoelS: resolves true on odd numbers of samples - but removes a dynamic conditional.
+//	if(SampleIndex < NUM_SAMPLES)
+//	{
+//		Sum += tex2D(FilterTexture,InOffsetUVs[SampleIndex / 2].xy) * SampleWeights[SampleIndex + 0];
+//	}
 	// RETURN_COLOR not needed unless writing to SceneColor;
 	OutColor = Sum;
 }

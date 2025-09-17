@@ -959,6 +959,9 @@ void FSceneTextureShaderParameters::Bind(const FShaderParameterMap& ParameterMap
 	SceneDepthCalcParameter.Bind(ParameterMap,TEXT("MinZ_MaxZRatio"),TRUE);
 	// only used if Material has an expression that requires ScreenPosition biasing
 	ScreenPositionScaleBiasParameter.Bind(ParameterMap,TEXT("ScreenPositionScaleBias"),TRUE);
+#if BATMAN
+	StereoCalibTextureParameter.Bind(ParameterMap,TEXT("StereoCalibTexture"),TRUE);
+#endif
 }
 
 //
@@ -1033,6 +1036,9 @@ FArchive& operator<<(FArchive& Ar,FSceneTextureShaderParameters& Parameters)
 	Ar << Parameters.SceneDepthTextureParameter;
 	Ar << Parameters.SceneDepthCalcParameter;
 	Ar << Parameters.ScreenPositionScaleBiasParameter;
+	#if BATMAN
+	Ar << Parameters.StereoCalibTextureParameter;
+	#endif
 	return Ar;
 }
 

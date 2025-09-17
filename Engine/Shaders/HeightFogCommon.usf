@@ -42,11 +42,25 @@ half4 CalculateVertexHeightFog(float3 WorldPosition, float4 InCameraPosition)
 	half4	InScattering = Scattering - 1;
 
 	half4	Fog = half4(0,0,0,1);
-	for(int LayerIndex = 0;LayerIndex < 4;LayerIndex++)
-	{
-		Fog *= Scattering[LayerIndex];
-		Fog.rgb += InScattering[LayerIndex] * FogInScattering[LayerIndex];
-	}
+
+	//@ROCK - ERG/PD: Unrolling this loop fixes the problem of translucent materials not rendering correctly when DX10
+	// is enabled, this was most noticable with the post process materials. Could be driver related or maybe a DX10 shader
+	// compiler bug
+//	for(int LayerIndex = 0;LayerIndex < 4;LayerIndex++)
+//	{
+//		Fog *= Scattering[LayerIndex];
+//		Fog.rgb += InScattering[LayerIndex] * FogInScattering[LayerIndex];
+//	}
+	Fog *= Scattering.x;
+	Fog.rgb += InScattering.x * FogInScattering[0];
+	Fog *= Scattering.y;
+	Fog.rgb += InScattering.y * FogInScattering[1];
+	Fog *= Scattering.z;
+	Fog.rgb += InScattering.z * FogInScattering[2];
+	Fog *= Scattering.w;
+	Fog.rgb += InScattering.w * FogInScattering[3];
+	//@ROCK - ERG/PD: End of change.
+	
 	return Fog;
 }
 

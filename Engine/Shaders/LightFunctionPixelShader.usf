@@ -14,7 +14,10 @@ void Main(
 	)
 {
 	half SceneW = PreviousDepth(ScreenPosition);
-	float3 LightVector = MulMatrix(ScreenToLight, float4(ScreenPosition.xy * SceneW, SceneW, 1)).xyz;
+
+	// NVCHANGE_BEGIN: Stereo fixes
+	float3 LightVector = MulMatrix(ScreenToLight, float4(Unstereo(ScreenPosition.xy,SceneW) * SceneW, SceneW, 1)).xyz;
+	// NVCHANGE_END: Stereo fixes
 
 	FMaterialParameters MaterialParameters;
 #if NUM_MATERIAL_TEXCOORDS

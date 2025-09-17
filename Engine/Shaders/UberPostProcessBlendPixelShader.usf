@@ -23,6 +23,11 @@ static float  SceneDesaturation = SceneShadowsAndDesaturation.a;
 float4 GammaColorScaleAndInverse;
 float4 GammaOverlayColor;
 
+//@ROCK - ERG - TC: Provides 2 layers of atmospheric fog .. see UberPostProcessBlendPixelShader.usf
+float4 AtmosphericForegroundColour;
+float4 AtmosphericBackgroundColour;
+float4  AtmosphericTransitionSettings;	
+
 static float3 GammaColorScale = GammaColorScaleAndInverse.rgb; 
 static float  GammaInverse    = GammaColorScaleAndInverse.a;
 
@@ -33,6 +38,12 @@ static float  GammaInverse    = GammaColorScaleAndInverse.a;
 #if MOTION_BLUR
 #include "MotionBlurCommon.usf"
 #endif
+
+// STARTUPDATE_DWTRIOVIZ
+#if DWTRIOVIZ_COLOR_CORRECTION	
+sampler3D DwTriovizColorCorrectionTexture;
+#endif	
+// ENDUPDATE_DWTRIOVIZ
 
 /*=============================================================================
  * Pixel Shader
@@ -73,12 +84,35 @@ void Main(
 
     half3 MaterialResult = GammaOverlayColor.rgb + Color * SceneDesaturation + ScaledLuminance;
 
+
+	//@ROCK - ERG - TC: New code for atmospheric fogging
+	half depthmult = (FocusedSceneColorAndDepth.a * 0.000100f);	// shrink it down to something manageable
+
+	//@Rock - JoelS: vector optimisation:
+	half2 backAndForeVal	= sin(clamp(((depthmult.xx - AtmosphericTransitionSettings.rb) / AtmosphericTransitionSettings.ga) , 0.0 , 3.14159265 ));
+	backAndForeVal			*=AtmosphericForegroundColour.aa;		// multiply by the power value
+
+	half3 atmoscol			=(AtmosphericForegroundColour.rgb * backAndForeVal.g) + (AtmosphericBackgroundColour.rgb * backAndForeVal.r);
+	MaterialResult			= MaterialResult + atmoscol;
+
 	// Gamma correction (note that for some reason HLSL generates better code when we add a color to the
     // MaterialResult, so I changed the code so that we add GammaOverlayColor / GammaColorScale to the
     // MaterialResult as opposed to adding GammaOverlayColor to the LinearColor.
 
 	half3 LinearColor = MaterialResult.rgb * GammaColorScale.rgb;
-
+	
+// STARTUPDATE_DWTRIOVIZ	
+	//Apply color correction by fetching in the volume texture
+#if DWTRIOVIZ_COLOR_CORRECTION	
+#if SM4_PROFILE
+	OutColor =	tex3D(DwTriovizColorCorrectionTexture, float4(pow(saturate(LinearColor), GammaInverse), 0.f)).bgra;
+#else	
+	OutColor =	tex3D(DwTriovizColorCorrectionTexture, float4(pow(saturate(LinearColor), GammaInverse), 0.f));
+#endif	
+	OutColor = RETURN_COLOR(OutColor);
+#else	
 	OutColor = RETURN_COLOR( float4(pow(saturate(LinearColor), GammaInverse), 0.f) );
+#endif	
+// ENDUPDATE_DWTRIOVIZ
 
 }

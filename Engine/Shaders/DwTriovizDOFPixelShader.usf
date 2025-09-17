@@ -1,0 +1,112 @@
+/******************************************************************************/
+/*                                                                            */
+/*      © DARKWORKS, 2008-2009. Patent-pending technology by TRIOVIZ.         */
+/*                                                                            */
+/******************************************************************************/
+
+#include "DwTriovizCommon.usf"
+
+#ifndef NUM_SAMPLES
+#define NUM_SAMPLES 4
+#endif
+
+/*-----------------------------------------------------------------------------
+	Downsample Color
+-----------------------------------------------------------------------------*/
+
+#if DWTRIOVIZ_SEPARATE_DOF
+
+sampler2D		DMap;
+float4			UberParameters;
+
+#if DWTRIOVIZ_TEST_WITH_CONSTANT_PARAMETERS
+#else // DWTRIOVIZ_TEST_WITH_CONSTANT_PARAMETERS
+static float	PercentFactorForeground		= UberParameters.x;
+static float	PercentFactorBackground		= UberParameters.y;
+#endif // DWTRIOVIZ_TEST_WITH_CONSTANT_PARAMETERS
+
+#endif	// DWTRIOVIZ_SEPARATE_DOF
+
+/** The number of float4s the 2D sample offsets are packed into. */
+#define NUM_CHUNKS ((NUM_SAMPLES + 1) / 2)
+
+/**
+ * Entry point for the gather pass, which downsamples from scene color to the filter buffer. 
+ * Unfocused DOF color is in OutColor.rgb, and the Unfocused DOF weight is stored in OutColor.a.
+ */
+void Main(
+	in float4 OffsetUVs[NUM_CHUNKS] : TEXCOORD0,
+	out float4 OutColor : COLOR0
+	)
+{
+	// TODO : We must apply this step in linear space and not in gamma space, or de-gamma before processing the average.
+	// For now this hurt too much and don't fit the unreal pipeline.
+	half3 AvgSceneColor = 0;
+
+#if DWTRIOVIZ_SEPARATE_DOF
+	half2 DMapValue;
+	half2 Displacement;
+	half2 LeftOffset;
+	half3 RGBMapLeftValue;
+	half  RGBMapRightValue;
+#endif // DWTRIOVIZ_SEPARATE_DOF
+
+	//Go through each chunk and take samples.  NUM_SAMPLES must be a factor of 2.
+	for(int ChunkIndex = 0;ChunkIndex < NUM_SAMPLES / 2;ChunkIndex++)
+	{
+#if DWTRIOVIZ_SEPARATE_DOF
+		// Aplly same decal on image than in Uber, but process two value at a time
+		DMapValue.x			= DWTRIOVIZ_H2TEX2D(DMap, OffsetUVs[ChunkIndex].xy).y;
+		DMapValue.y			= DWTRIOVIZ_H2TEX2D(DMap, OffsetUVs[ChunkIndex].wz).y;
+		Displacement		= 2.0h * DMapValue - 1.0h;
+
+		LeftOffset			= LEFT_RIGHT_FACTOR * -Displacement.xy * ((DMapValue.xy > 0.5h) ? PercentFactorForeground.xx : PercentFactorBackground.xx);
+
+		AvgSceneColor.rb	+= ApplyColorCorrection(CalcSceneColor(OffsetUVs[ChunkIndex].xy + half2(LeftOffset.x, 0.0h))).rb;
+		AvgSceneColor.g		+= ApplyColorCorrection(CalcSceneColor(OffsetUVs[ChunkIndex].xy + half2(RIGHT_OFFSET(x), 0.0h))).g; 
+
+		AvgSceneColor.rb	+= ApplyColorCorrection(CalcSceneColor(OffsetUVs[ChunkIndex].xy + half2(LeftOffset.y, 0.0h))).rb;
+		AvgSceneColor.g		+= ApplyColorCorrection(CalcSceneColor(OffsetUVs[ChunkIndex].xy + half2(RIGHT_OFFSET(y), 0.0h))).g; 
+#else // DWTRIOVIZ_SEPARATE_DOF
+		AvgSceneColor		+= ApplyColorCorrection(CalcSceneColor(OffsetUVs[ChunkIndex].xy));
+		AvgSceneColor		+= ApplyColorCorrection(CalcSceneColor(OffsetUVs[ChunkIndex].wz));
+#endif // DWTRIOVIZ_SEPARATE_DOF
+	}
+
+	//normalize
+	AvgSceneColor = AvgSceneColor / NUM_SAMPLES;
+
+	OutColor = half4(AvgSceneColor.rgb, 0.0h);
+#if PS3
+	OutColor = isnan(OutColor) ? half4(0,0,0,0) : OutColor;
+#endif // PS3
+}
+
+sampler2D FilterColor;
+
+/*-----------------------------------------------------------------------------
+	Blur
+-----------------------------------------------------------------------------*/
+
+/**
+ * Entry point for the gaussian 3x3 blur pass
+ * Setup the blur so that linear filtering will let us get the average of a 2x2 block with a single sample
+ * wich will result in 1/16 at corner, 2/16 at border and 4/16 at center. Resulting in a 3x3 gaussian blur
+ */
+void BlurMain(
+	in float4 OffsetUVs[NUM_CHUNKS] : TEXCOORD0,
+	out float4 OutColor : COLOR0
+	)
+{
+	half4 AvgSceneColor = 0;
+
+	//Go through each chunk and take samples.  NUM_SAMPLES must be a factor of 2.
+	for(int ChunkIndex = 0;ChunkIndex < NUM_SAMPLES / 2;ChunkIndex++)
+	{
+		AvgSceneColor += DWTRIOVIZ_H4TEX2D(FilterColor, OffsetUVs[ChunkIndex].xy);
+		AvgSceneColor += DWTRIOVIZ_H4TEX2D(FilterColor, OffsetUVs[ChunkIndex].wz);
+	}
+
+	//normalize
+	OutColor = AvgSceneColor / NUM_SAMPLES;
+}

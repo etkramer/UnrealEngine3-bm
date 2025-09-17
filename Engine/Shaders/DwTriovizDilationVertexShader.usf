@@ -1,0 +1,32 @@
+/******************************************************************************/
+/*                                                                            */
+/*      © DARKWORKS, 2008-2009. Patent-pending technology by TRIOVIZ.         */
+/*                                                                            */
+/******************************************************************************/
+
+#include "DwTriovizCommon.usf"
+
+#ifndef NUM_SAMPLES
+#define NUM_SAMPLES 4
+#endif
+
+// Because of limit on PS3, were we get an error like : Only arrays of texcoords may be indexed in this profile, and only with a loop index variable
+// We must pass tab through TEXCOORD interpolator
+float4 SampleOffsetsX[(NUM_SAMPLES + 3) / 4];
+
+void DilationVertexMain(
+	in float4 InPosition : POSITION,
+	in float2 InUV : TEXCOORD0,
+	out float4 OutSampleOffsetsX[(NUM_SAMPLES + 3) / 4] : TEXCOORD0,
+	out float2 OutUV : TEXCOORD8,
+	out float4 OutPosition : POSITION
+	)
+{
+	OutPosition = InPosition;
+	OutUV		= InUV.xy;
+
+	for(int OffsetIndex = 0;OffsetIndex < ((NUM_SAMPLES + 3) / 4);OffsetIndex++)
+	{
+		OutSampleOffsetsX[OffsetIndex] = InUV.xxxx + SampleOffsetsX[OffsetIndex];
+	}
+}

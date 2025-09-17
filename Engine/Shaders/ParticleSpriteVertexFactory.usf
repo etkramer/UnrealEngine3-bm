@@ -126,6 +126,36 @@ float3 SafeNormalize(float3 V)
 	return V / sqrt(max(dot(V,V),0.01));
 }
 
+/*
+To fix the sky, you will need to merge the diff of the following two implementations into the current implementation below:
+
+void GetTangents(FVertexFactoryInput Input,out float4 Right,out float4 Up)
+{
+	float4	Position			= MulMatrix( LocalToWorld, Input.Position ),
+			OldPosition			= MulMatrix( LocalToWorld, Input.OldPosition );
+
+	float3	CameraDirection		= SafeNormalize(CameraWorldPosition.xyz - Position.xyz),
+			ParticleDirection	= SafeNormalize(Position.xyz - OldPosition.xyz);
+
+	float4	Right_Square		= CameraRight,
+			Up_Square			= CameraUp;			
+			
+	float4	Right_Rotated		= (-1.0 * cos(Input.Rotation) * Up_Square) + (sin(Input.Rotation) * Right_Square),
+			Up_Rotated			= (       sin(Input.Rotation) * Up_Square) + (cos(Input.Rotation) * Right_Square);
+
+	float4	Right_Velocity		= float4( SafeNormalize( cross( CameraDirection, ParticleDirection	) ), 0.0 ),
+			Up_Velocity			= float4(-ParticleDirection, 0.0 );
+
+	//	enum EParticleScreenAlignment
+	//	{
+	//		PSA_Square,
+	//		PSA_Rectangle,
+	//		PSA_Velocity
+	//	};
+	Right				= ScreenAlignment.x > 1.5f ? Right_Velocity : Right_Rotated;
+	Up					= ScreenAlignment.x > 1.5f ? Up_Velocity	: Up_Rotated;
+}
+
 void GetTangents(FVertexFactoryInput Input,out float4 Right,out float4 Up)
 {
 	float4	Position			= MulMatrix(LocalToWorld, Input.Position),
@@ -139,6 +169,56 @@ void GetTangents(FVertexFactoryInput Input,out float4 Right,out float4 Up)
 			
 	float4	Right_Rotated		= (-1.0 * cos(Input.Rotation) * Up_Square) + (sin(Input.Rotation) * Right_Square),
 		Up_Rotated			= (      sin(Input.Rotation) * Up_Square) + (cos(Input.Rotation) * Right_Square);
+
+	float4	Right_Velocity		= float4(SafeNormalize(cross(CameraDirection, ParticleDirection	)), 0.0),
+			Up_Velocity			= float4(-ParticleDirection, 0.0);
+
+	//	enum EParticleScreenAlignment
+	//	{
+	//		PSA_Square,
+	//		PSA_Rectangle,
+	//		PSA_Velocity,
+	//		PSA_TypeSpecific,
+	//		PSA_VelocityFacingWorldUp,
+	//	};
+
+	if(ScreenAlignment.x <2.5f)
+	{
+		if(ScreenAlignment.x < 1.5f)
+		{
+			Right	= Right_Rotated; 
+			Up		= Up_Rotated;
+		}
+		else
+		{
+			Right	= Right_Velocity; 
+			Up		= Up_Velocity;
+		}
+	}
+	else
+	{
+		float4 WorldUp={0.0, 0.0, 1.0, 0.0};
+		
+		Right = float4(SafeNormalize(cross(ParticleDirection, WorldUp	)), 0.0);
+		Up = float4(SafeNormalize(cross(ParticleDirection, Right)), 0.0);
+	}
+
+}
+*/
+
+void GetTangents(FVertexFactoryInput Input,out float4 Right,out float4 Up)
+{
+	float4	Position			= MulMatrix(LocalToWorld, Input.Position),
+			OldPosition			= MulMatrix(LocalToWorld, Input.OldPosition);
+
+	float3	CameraDirection		= SafeNormalize(CameraWorldPosition.xyz - Position.xyz),
+			ParticleDirection	= SafeNormalize(Position.xyz - OldPosition.xyz);
+
+	float4	Right_Square		= CameraRight,
+			Up_Square			= CameraUp;
+			
+	float4	Right_Rotated		= (-1.0 * cos(Input.Rotation) * Up_Square) + (sin(Input.Rotation) * Right_Square),
+			Up_Rotated			= (      sin(Input.Rotation) * Up_Square) + (cos(Input.Rotation) * Right_Square);
 
 	float4	Right_Velocity		= float4(SafeNormalize(cross(CameraDirection, ParticleDirection	)), 0.0),
 			Up_Velocity			= float4(-ParticleDirection, 0.0);
@@ -159,12 +239,23 @@ void GetTangents(FVertexFactoryInput Input,out float4 Right,out float4 Up)
 	AxisRotationResultVectors[0].w = 0.0f;
 	AxisRotationResultVectors[1].w = 0.0f;
 
-	Right	= (Right_Rotated * ParticleUpRightResultScalars.x) +
-			  (Right_Velocity * ParticleUpRightResultScalars.y) +
-			  (AxisRotationResultVectors[0] * ParticleUpRightResultScalars.z);
-	Up		= (Up_Rotated * ParticleUpRightResultScalars.x) +
-			  (Up_Velocity * ParticleUpRightResultScalars.y) +
-			  (AxisRotationResultVectors[1] * ParticleUpRightResultScalars.z);
+	if(ScreenAlignment.x <2.5f) //@Rock - JG: Custom particle orientation for skydome. 
+	{
+
+		Right	= (Right_Rotated * ParticleUpRightResultScalars.x) +
+				  (Right_Velocity * ParticleUpRightResultScalars.y) +
+				  (AxisRotationResultVectors[0] * ParticleUpRightResultScalars.z);
+		Up		= (Up_Rotated * ParticleUpRightResultScalars.x) +
+				  (Up_Velocity * ParticleUpRightResultScalars.y) +
+				  (AxisRotationResultVectors[1] * ParticleUpRightResultScalars.z);
+	}
+	else
+	{
+		float4 WorldUp={0.0, 0.0, 1.0, 0.0};
+		
+		Right = float4(SafeNormalize(cross(ParticleDirection, WorldUp	)), 0.0);
+		Up = float4(SafeNormalize(cross(ParticleDirection, Right)), 0.0);
+	}
 /***
 	//	enum EParticleScreenAlignment
 	//	{

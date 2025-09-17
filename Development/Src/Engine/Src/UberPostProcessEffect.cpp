@@ -206,6 +206,60 @@ private:
 	FShaderParameter GammaOverlayColor;
 };
 
+#if BATMAN
+
+/*-----------------------------------------------------------------------------
+FAtmosphericShaderParameters
+-----------------------------------------------------------------------------*/
+
+/** Encapsulates the gamma correction parameters. */
+class FAtmosphericShaderParameters
+{
+public:
+
+	/** Default constructor. */
+	FAtmosphericShaderParameters() {}
+
+	/** Initialization constructor. */
+	FAtmosphericShaderParameters(const FShaderParameterMap& ParameterMap)
+	{
+		AtmosphericForegroundColourParameter.Bind(ParameterMap,TEXT("AtmosphericForegroundColour"),TRUE);
+		AtmosphericBackgroundColourParameter.Bind(ParameterMap,TEXT("AtmosphericBackgroundColour"),TRUE);
+		AtmosphericTransitionSettingsParameter.Bind(ParameterMap,TEXT("AtmosphericTransitionSettings"),TRUE);
+	}
+
+	/** Set the material shader parameter values. */
+	void Set(FShader* PixelShader, FLOAT DisplayGamma, FLinearColor const& ColorScale, FLinearColor const& ColorOverlay)
+	{
+#if BATMAN
+		// BM1 TODO: Get this working in-editor
+		// FVector4 AtmosphericBackgroundColour = FVector4(1, 0, 1, 1);
+		// FVector4 AtmosphericForegroundColour = FVector4(0, 1, 0, 1);
+		// FVector4 AtmosphericTransitionSettings = FVector4(0, 0, 1, 1);
+
+		// SetPixelShaderValue(PixelShader->GetPixelShader(), AtmosphericBackgroundColourParameter, AtmosphericBackgroundColour);
+		// SetPixelShaderValue(PixelShader->GetPixelShader(), AtmosphericForegroundColourParameter, AtmosphericForegroundColour);
+		// SetPixelShaderValue(PixelShader->GetPixelShader(), AtmosphericTransitionSettingsParameter, AtmosphericTransitionSettings);
+#endif
+	}
+
+	/** Serializer. */
+	friend FArchive& operator<<(FArchive& Ar,FAtmosphericShaderParameters& P)
+	{
+		Ar << P.AtmosphericForegroundColourParameter;
+		Ar << P.AtmosphericBackgroundColourParameter;
+		Ar << P.AtmosphericTransitionSettingsParameter;
+		return Ar;
+	}
+
+private:
+	FShaderParameter AtmosphericForegroundColourParameter;
+	FShaderParameter AtmosphericBackgroundColourParameter;
+	FShaderParameter AtmosphericTransitionSettingsParameter;
+};
+
+#endif
+
 /*-----------------------------------------------------------------------------
 FMGammaShaderParameters
 -----------------------------------------------------------------------------*/
@@ -332,6 +386,9 @@ class FUberPostProcessBlendPixelShader : public FDOFAndBloomBlendPixelShader
 public:
 	FMaterialShaderParameters     MaterialParameters;
 	FGammaShaderParameters        GammaParameters;
+#if BATMAN
+	FAtmosphericShaderParameters  AtmosphericParameters;
+#endif
 	FMotionBlurShaderParameters	  MotionBlurParameters;
 
 	/** Initialization constructor. */
@@ -339,6 +396,9 @@ public:
 		:	FDOFAndBloomBlendPixelShader(Initializer)
 		,	MaterialParameters(Initializer.ParameterMap)
 		,	GammaParameters(Initializer.ParameterMap)
+#if BATMAN
+		,	AtmosphericParameters(Initializer.ParameterMap)
+#endif
 		,	MotionBlurParameters(Initializer.ParameterMap)
 	{
 	}
@@ -347,7 +407,11 @@ public:
 	virtual UBOOL Serialize(FArchive& Ar)
 	{
 		UBOOL bShaderHasOutdatedParameters = FDOFAndBloomBlendPixelShader::Serialize(Ar);
+#if BATMAN
+		Ar << MaterialParameters << GammaParameters << AtmosphericParameters << MotionBlurParameters;
+#else
 		Ar << MaterialParameters << GammaParameters << MotionBlurParameters;
+#endif
 		return bShaderHasOutdatedParameters;
 	}
 };

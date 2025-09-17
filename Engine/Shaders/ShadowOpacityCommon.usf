@@ -1,0 +1,98 @@
+/*=============================================================================
+	ShadowOpacityCommon.usf: utils for shadow opacity.
+	Copyright 2009 NVIDIA Corporation, All Rights Reserved.
+=============================================================================*/
+
+sampler2D ShadowOSMTexture0;
+sampler2D ShadowOSMTexture1;
+sampler2D ShadowOSMTexture2;
+sampler2D ShadowOSMTexture3;
+
+#define M_PI 3.1415926535897932384626433832795
+#define M_TWO_PI (2.f * M_PI)
+
+// Effect parameters
+float3 lnTintColor;
+float3 ambientUplift;
+float opacityMultiplier;
+float maxLnTransmittance;
+float recipMaxLnTransmittance;
+
+float3 lnTint(float lnPreTint, float tintFactor)
+{	
+	return lnPreTint * (1.f - lnTintColor * tintFactor);
+}
+
+float3 AmbientUplift(float3 preUplift)
+{
+	return lerp(preUplift,1.f,ambientUplift);
+}
+
+float3 VolumetricShadowFSMImpl(float4 fsmTex0, float2 uv, float d)
+{
+	float4 fsmTex1 = tex2Dlod(ShadowOSMTexture1, float4(uv,0,0));
+	float4 fsmTex2 = tex2Dlod(ShadowOSMTexture2, float4(uv,0,0));
+	float4 fsmTex3 = tex2Dlod(ShadowOSMTexture3, float4(uv,0,0));
+	
+	// DC component
+	float lnTransmittance = fsmTex0.g * d;
+
+	// Remaining outputs require sin/cos
+	float2 cs1;
+	sincos(M_TWO_PI * d, cs1.y, cs1.x);
+	
+	lnTransmittance += (1-cs1.x) * fsmTex0.a;
+	lnTransmittance += cs1.y * fsmTex0.b;
+
+	float2 csn = float2(cs1.x*cs1.x-cs1.y*cs1.y, 2.f*cs1.y*cs1.x);
+	lnTransmittance += (1-csn.x) * fsmTex1.g;
+	lnTransmittance += csn.y * fsmTex1.r;
+	
+	/*
+	5 coeffs only...
+	csn = float2(csn.x*cs1.x-csn.y*cs1.y, csn.y*cs1.x+csn.x*cs1.y);
+	lnTransmittance += (1-csn.x) * fsmTex1.a;
+	lnTransmittance += csn.y * fsmTex1.b;
+	
+	csn = float2(csn.x*cs1.x-csn.y*cs1.y, csn.y*cs1.x+csn.x*cs1.y);
+	lnTransmittance += (1-csn.x) * fsmTex2.g;
+	lnTransmittance += csn.y * fsmTex2.r;
+	
+	csn = float2(csn.x*cs1.x-csn.y*cs1.y, csn.y*cs1.x+csn.x*cs1.y);
+	lnTransmittance += (1-csn.x) * fsmTex2.a;
+	lnTransmittance += csn.y * fsmTex2.b;
+	
+	csn = float2(csn.x*cs1.x-csn.y*cs1.y, csn.y*cs1.x+csn.x*cs1.y);
+	lnTransmittance += (1-csn.x) * fsmTex3.g;
+	lnTransmittance += csn.y * fsmTex3.r;
+	
+	csn = float2(csn.x*cs1.x-csn.y*cs1.y, csn.y*cs1.x+csn.x*cs1.y);
+	lnTransmittance += (1-csn.x) * fsmTex3.a;
+	lnTransmittance += csn.y * fsmTex3.b;
+	*/
+
+	return saturate(exp(lnTint(-lnTransmittance,fsmTex0.r)));
+}
+
+// For when d could fall oustides [0,1] i.e. external projection
+float3 VolumetricShadowFSMOuter(float2 uv, float d)
+{
+	BRANCH
+	if(d <= 0.f)
+		return 1.f;
+		
+	float4 fsmTex0 = tex2Dlod(ShadowOSMTexture0, float4(uv,0,0));
+	
+	BRANCH
+	if(d >= 1.f)
+		return AmbientUplift(saturate(exp(lnTint(-fsmTex0.g,fsmTex0.r))));
+	
+	return AmbientUplift(VolumetricShadowFSMImpl(fsmTex0, uv, d));
+}
+
+// For when the range of d is known to be [0,1] i.e. self-shadowing
+float3 VolumetricShadowFSMInner(float2 uv, float d)
+{
+	float4 fsmTex0 = tex2Dlod(ShadowOSMTexture0, float4(uv,0,0));
+	return AmbientUplift(VolumetricShadowFSMImpl(fsmTex0, uv, d));
+}

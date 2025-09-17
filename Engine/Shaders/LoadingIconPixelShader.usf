@@ -1,20 +1,16 @@
 /*=============================================================================
-	VSMDepthGatherPixelShader.usf: Copies shadow map depth values for VSM
+	LoadingIconPixelShader.usf: 
 	Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
 =============================================================================*/
 
 #include "Common.usf"
 
-sampler2D ShadowDepthTexture;
+sampler2D Texture;
 
-/** The entry point. */
 void Main(
-	in float2 UV : TEXCOORD0,
+	float2 InUV : TEXCOORD0,
 	out float4 OutColor : COLOR0
 	)
 {
-	float M = texDepth2D(ShadowDepthTexture,UV).r;
-	float MSq = M*M;
-	OutColor = float4(M,MSq,1,1);
+    OutColor = tex2D(Texture, InUV);
 }
-

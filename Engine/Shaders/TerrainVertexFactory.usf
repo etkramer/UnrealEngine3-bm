@@ -223,7 +223,7 @@ FVertexFactoryInterpolants VertexFactoryGetInterpolants(FVertexFactoryInput Inpu
 	float TessInterp = CalcTessInterp(Input, LocalPositionZ);
 
 	float InterpHeight = (-32768 + (Input.HeightTransitionValues.z + 256.0 * Input.HeightTransitionValues.w)) * InvMaxTesselationLevel_ZScale.y;
-	LocalPositionZ = (LocalPositionZ * (1.0f - TessInterp)) + (InterpHeight * TessInterp);
+	LocalPositionZ = LocalPositionZ + (InterpHeight - LocalPositionZ) * TessInterp; //@Rockint - Ahead of QA. 
 
 	float3	LocalPosition = float3(Input.Position.xy * InvMaxTesselationLevel_ZScale.x,LocalPositionZ);
 	

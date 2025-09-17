@@ -78,7 +78,9 @@ half3 MotionBlur( half4 SceneColor, float4 ScreenPosition )
 		half	CurrDepth			= min( CalcSceneDepth( UV ), 65504);
 		if ( CurrDepth < 14.0f )
 			CurrDepth = 65504.0f;
-		float4	ProjectedPosition	= float4( ScreenPosition.xy * CurrDepth, CurrDepth, 1 );
+		// NVCHANGE_BEGIN: Stereo fixes
+		float4	ProjectedPosition	= float4( Unstereo(ScreenPosition.xy,CurrDepth) * CurrDepth, CurrDepth, 1 );
+		// NVCHANGE_END: Stereo fixes
 		float4	PrevScreenPosition	= MulMatrix( PrevViewProjMatrix, ProjectedPosition );
 		PrevScreenPosition.xy		/= PrevScreenPosition.w;
 

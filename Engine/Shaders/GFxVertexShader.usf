@@ -1,0 +1,209 @@
+/*=============================================================================
+	Vertex Shader code used by Scaleform GFX
+=============================================================================*/
+
+#include "Common.usf"
+
+float4x4 Transform;
+float4x4 TextureMatrix;
+float4x4 TextureMatrix2;
+
+// NVCHANGE_BEGIN: Stereo fixes
+#if NV_STEREO_FIXES
+float ViewSpaceDepth;
+#endif // NV_STEREO_FIXES
+// NVCHANGE_END: Stereo fixes
+
+void MainStrip( 
+	in int4 InPosition : POSITION,
+	
+	out float2 OutTextureCoordinate : TEXCOORD0,
+	out float4 OutPosition : POSITION
+	)
+{
+	OutPosition.xy = MulMatrix(Transform,InPosition).xy;
+	OutPosition.zw = InPosition.zw;
+
+// NVCHANGE_BEGIN: Stereo fixes
+#if NV_STEREO_FIXES
+	OutPosition *= ViewSpaceDepth;
+#endif // NV_STEREO_FIXES
+// NVCHANGE_END: Stereo fixes
+
+	OutTextureCoordinate = MulMatrix(TextureMatrix,InPosition).xy;
+}
+
+void MainGlyph( 
+	in float4 InPosition : POSITION,
+	in float2 InTextureCoordinate : TEXCOORD0,
+	in float4 InColor : COLOR0,
+	
+	out float2 OutTextureCoordinate : TEXCOORD0,
+	out float4 OutColor : COLOR0,
+	out float4 OutPosition : POSITION
+	)
+{
+	OutPosition.xy = MulMatrix(Transform,InPosition).xy;
+	OutPosition.zw = InPosition.zw;
+	
+// NVCHANGE_BEGIN: Stereo fixes
+#if NV_STEREO_FIXES
+	OutPosition *= ViewSpaceDepth;
+#endif // NV_STEREO_FIXES
+// NVCHANGE_END: Stereo fixes
+	
+	OutTextureCoordinate = InTextureCoordinate;
+#if PS3
+    OutColor = InColor.gbar;
+#else
+	OutColor = InColor.bgra;
+#endif
+}
+
+// The following 3 vertex shaders are used when edge AA is enabled in Scaleform
+// NOTE:  We could probably get away with consolidating the 4 Strip vertex shaders.
+// There will be some performance loss, but if you are bound by UI vertex shader
+// throughput, you probably have other issues :)
+// For reference, MainStrip should compile to 5 instructions, where as MainStripXY16iCF32_T2
+// should compile to 9 instructions (not _directly_ verified in UE3).  We can probably
+// spare the 4 instructions on UI vertices :)
+
+void MainStripXY16iC32( 
+	in int4 InPosition : POSITION,
+	in float4 InColor : COLOR0,
+	
+	out float4 OutColor : COLOR0,
+	out float2 OutTextureCoordinate : TEXCOORD0,
+	out float4 OutPosition : POSITION
+	)
+{
+	OutPosition.xy = MulMatrix(Transform,InPosition).xy;
+	OutPosition.zw = InPosition.zw;
+	
+// NVCHANGE_BEGIN: Stereo fixes
+#if NV_STEREO_FIXES
+	OutPosition *= ViewSpaceDepth;
+#endif // NV_STEREO_FIXES
+// NVCHANGE_END: Stereo fixes
+	
+	OutTextureCoordinate = MulMatrix(TextureMatrix,InPosition).xy;
+#if PS3
+    OutColor = InColor.abgr;
+#else
+	OutColor = InColor;
+#endif
+}
+
+void MainStripXY16iC32_NoTexNoAlpha(
+	in int4 InPosition : POSITION,
+	in float4 InColor : COLOR0,
+	
+	out float4 OutColor : COLOR0,
+	out float4 OutPosition : POSITION
+	)
+{
+	OutPosition.xy = MulMatrix(Transform,InPosition).xy;
+	OutPosition.zw = InPosition.zw;
+	
+// NVCHANGE_BEGIN: Stereo fixes
+#if NV_STEREO_FIXES
+	OutPosition *= ViewSpaceDepth;
+#endif // NV_STEREO_FIXES
+// NVCHANGE_END: Stereo fixes
+	
+#if PS3
+    OutColor = InColor.abgr;
+#else
+	OutColor = InColor;
+#endif
+}
+
+void MainStripXY16iCF32_NoTex(
+	in int4 InPosition : POSITION,
+	in float4 InColor0 : COLOR0,
+	in float4 InColor1 : COLOR1,
+	
+	out float4 OutColor0 : COLOR0,
+	out float4 OutColor1 : COLOR1,
+	out float4 OutPosition : POSITION
+	)
+{
+	OutPosition.xy = MulMatrix(Transform,InPosition).xy;
+	OutPosition.zw = InPosition.zw;
+	
+// NVCHANGE_BEGIN: Stereo fixes
+#if NV_STEREO_FIXES
+	OutPosition *= ViewSpaceDepth;
+#endif // NV_STEREO_FIXES
+// NVCHANGE_END: Stereo fixes
+	
+#if PS3
+    OutColor0 = InColor0.abgr;
+    OutColor1 = InColor1.abgr;
+#else
+	OutColor0 = InColor0;
+	OutColor1 = InColor1;
+#endif
+}
+
+void MainStripXY16iCF32( 
+	in int4 InPosition : POSITION,
+	in float4 InColor0 : COLOR0,
+	in float4 InColor1 : COLOR1,
+	
+	out float4 OutColor0 : COLOR0,
+	out float4 OutColor1 : COLOR1,
+	out float2 OutTextureCoordinate : TEXCOORD0,
+	out float4 OutPosition : POSITION
+	)
+{
+	OutPosition.xy = MulMatrix(Transform,InPosition).xy;
+	OutPosition.zw = InPosition.zw;
+	
+// NVCHANGE_BEGIN: Stereo fixes
+#if NV_STEREO_FIXES
+	OutPosition *= ViewSpaceDepth;
+#endif // NV_STEREO_FIXES
+// NVCHANGE_END: Stereo fixes
+	
+	OutTextureCoordinate = MulMatrix(TextureMatrix,InPosition).xy;
+#if PS3
+    OutColor0 = InColor0.abgr;
+    OutColor1 = InColor1.abgr;
+#else
+	OutColor0 = InColor0;
+	OutColor1 = InColor1;
+#endif
+}
+
+void MainStripXY16iCF32_T2( 
+	in int4 InPosition : POSITION,
+	in float4 InColor0 : COLOR0,
+	in float4 InColor1 : COLOR1,
+	
+	out float4 OutColor0 : COLOR0,
+	out float4 OutColor1 : COLOR1,
+	out float2 OutTextureCoordinate0 : TEXCOORD0,
+	out float2 OutTextureCoordinate1 : TEXCOORD1,	
+	out float4 OutPosition : POSITION
+	)
+{
+	OutPosition.xy = MulMatrix(Transform,InPosition).xy;
+	OutPosition.zw = InPosition.zw;
+	
+// NVCHANGE_BEGIN: Stereo fixes
+#if NV_STEREO_FIXES
+	OutPosition *= ViewSpaceDepth;
+#endif // NV_STEREO_FIXES
+// NVCHANGE_END: Stereo fixes
+	
+	OutTextureCoordinate0 = MulMatrix(TextureMatrix, InPosition).xy;
+	OutTextureCoordinate1 = MulMatrix(TextureMatrix2,InPosition).xy; 
+#if PS3
+    OutColor0 = InColor0.abgr;
+    OutColor1 = InColor1.abgr;
+#else
+	OutColor0 = InColor0;
+	OutColor1 = InColor1;
+#endif
+}

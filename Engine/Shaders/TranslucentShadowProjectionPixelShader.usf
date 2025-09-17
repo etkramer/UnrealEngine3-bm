@@ -1,0 +1,40 @@
+/*=============================================================================
+	TranslucentShadowProjectionPixelShader.usf: Pixel shader for projecting a
+	translucent shadow onto the scene.
+	Copyright 2009 NVIDIA Corporation, All Rights Reserved.
+=============================================================================*/
+
+#include "Common.usf"
+#include "ShadowProjectionCommon.usf"
+#include "ShadowOpacityCommon.usf"
+
+float4x4 ScreenToShadowMatrix;
+float2 ShadowBufferInvSize;
+
+void Main(
+	in float4 ScreenPosition : TEXCOORD0,
+// NVCHANGE_BEGIN: Stereo fixes
+#if NV_STEREO_FIXES
+	in float2 vPos : VPOS,
+#endif // NV_STEREO_FIXES
+// NVCHANGE_END: Stereo fixes
+	out float4 OutColor : COLOR0
+	)
+{
+// NVCHANGE_BEGIN: Stereo fixes
+#if NV_STEREO_FIXES
+	float4 TrueScreenPosition = VPosToClip(vPos);
+#else // NV_STEREO_FIXES
+	float4 TrueScreenPosition = ScreenPosition;
+#endif // NV_STEREO_FIXES
+	half SceneW = PreviousDepth(TrueScreenPosition);
+
+	float4 ShadowPosition = MulMatrix(ScreenToShadowMatrix,float4(Unstereo(TrueScreenPosition.xy/TrueScreenPosition.w,SceneW) * SceneW,SceneW,1));
+// NVCHANGE_END: Stereo fixes
+
+	ShadowPosition.xy /= ShadowPosition.w;
+	ShadowPosition.z = min(ShadowPosition.z,0.999);
+	
+	float3 Shadow = VolumetricShadowFSMOuter(ShadowPosition.xy, ShadowPosition.z);
+	OutColor = float4(Shadow,0.f);
+}

@@ -1,0 +1,181 @@
+/*=============================================================================
+	Pixel Shader code used by MwyUI / Scaleform GFX
+	These shaders are converted to HLSL/cg from the example DX9 assembly
+	renderer in ScaleForm's SDK
+=============================================================================*/
+
+sampler2D TextureImage;
+sampler2D TextureImage2;
+
+float4 ConstantColor;
+float4 ColorScale;
+float4 ColorBias;
+half   InverseGamma;
+// STARTUPDATE_DWTRIOVIZ
+#ifndef DWTRIOVIZ_COLOR_CORRECTION	
+#define DWTRIOVIZ_COLOR_CORRECTION	0
+#endif
+#if DWTRIOVIZ_COLOR_CORRECTION	
+sampler3D DwTriovizColorCorrectionTexture;
+#endif	
+// ENDUPDATE_DWTRIOVIZ
+
+float4 CorrectGamma(float4 color)
+{
+// STARTUPDATE_DWTRIOVIZ	 
+	//Apply color correction by fetching in the volume texture
+#if DWTRIOVIZ_COLOR_CORRECTION	
+	color.rgb = tex3D(DwTriovizColorCorrectionTexture, color).rgb;	
+#endif  	
+// ENDUPDATE_DWTRIOVIZ	  
+    return float4(saturate(pow(color.rgb, InverseGamma)), color.a);
+}
+
+float4 Main_SolidColor(
+	) : COLOR0
+{
+// STARTUPDATE_DWTRIOVIZ	 
+	//Apply color correction by fetching in the volume texture
+	float4 color = ConstantColor;
+#if DWTRIOVIZ_COLOR_CORRECTION	
+	color.rgb = tex3D(DwTriovizColorCorrectionTexture, color).rgb;
+#endif  	
+	return color;
+// ENDUPDATE_DWTRIOVIZ			
+}
+
+float4 Main_CxformTexture(
+	in float2 TextureCoordinate : TEXCOORD0	
+	) : COLOR0
+{
+	float4 Sample = tex2D(TextureImage,TextureCoordinate);	
+	return CorrectGamma(Sample * ColorScale + ColorBias);
+}
+
+float4 Main_CxformTextureMultiply(
+	in float2 TextureCoordinate : TEXCOORD0	
+	) : COLOR0
+{
+	float4 Sample = tex2D(TextureImage,TextureCoordinate);	
+	float4 BiasedSample = Sample * ColorScale + ColorBias;
+	return CorrectGamma(lerp( float4(1,1,1,1), BiasedSample, BiasedSample.a ));
+}
+
+float4 Main_Glyph(
+	in float2 TextureCoordinate : TEXCOORD0,
+	in float4 Color0 : COLOR0
+	) : COLOR0
+{	
+	float4 Sample = tex2D(TextureImage,TextureCoordinate);
+	Color0.a = Color0.a * Sample.r;
+	return CorrectGamma(Color0 * ColorScale + ColorBias);	
+}
+
+float4 Main_GlyphColor(
+	in float2 TextureCoordinate : TEXCOORD0,
+	in float4 Color0 : COLOR0
+	) : COLOR0
+{	
+	float4 Sample = tex2D(TextureImage,TextureCoordinate) * ColorScale + ColorBias;
+	return CorrectGamma(Sample);	
+}
+
+float4 Main_GlyphColorMultiply(
+	in float2 TextureCoordinate : TEXCOORD0,
+	in float4 Color0 : COLOR0
+	) : COLOR0
+{	
+	float4 Sample = tex2D(TextureImage,TextureCoordinate) * ColorScale + ColorBias;
+	return CorrectGamma(lerp( float4(1,1,1,1), Sample, Sample.a) );	
+}
+
+// The below Shaders are used when Gouraud shading / Edge AA is enabled
+
+float4 Main_CxformGouraud(
+	in float4 Color0 : COLOR0,
+	in float4 Color1 : COLOR1
+	) : COLOR0
+{
+	float4 BiasedColor = Color0 * ColorScale + ColorBias;
+	return CorrectGamma(float4( BiasedColor.rgb, BiasedColor.a * Color1.a ));
+}
+
+float4 Main_CxformGouraudMultiply(
+	in float4 Color0 : COLOR0,
+	in float4 Color1 : COLOR1
+	) : COLOR0
+{
+	float4 BiasedColor = Color0 * ColorScale + ColorBias;
+	BiasedColor.a *= Color1.a;
+	return CorrectGamma(lerp( float4(1,1,1,1), BiasedColor, BiasedColor.a ));
+}
+
+float4 Main_CxformGouraud_NoAddAlpha(
+	in float4 Color0 : COLOR0
+	) : COLOR0
+{
+	return CorrectGamma(Color0 * ColorScale + ColorBias);
+}
+
+float4 Main_CxformGouraudMultiply_NoAddAlpha(
+	in float4 Color0 : COLOR0
+	) : COLOR0
+{
+	float4 BiasedColor = Color0 * ColorScale + ColorBias;
+	return CorrectGamma(lerp( float4(1,1,1,1), BiasedColor, BiasedColor.a ));
+}
+
+float4 Main_CxformGouraudTexture(
+	in float4 Color0 : COLOR0,
+	in float4 Color1 : COLOR1,
+	in float2 TextureCoordinate : TEXCOORD0
+	) : COLOR0
+{
+	float4 Sample = tex2D(TextureImage,TextureCoordinate);
+	float4 InterpolatedColor = lerp( Color0, Sample, Color1.b );
+	float4 BiasedColor = InterpolatedColor * ColorScale + ColorBias;
+	return CorrectGamma(float4( BiasedColor.rgb, BiasedColor.a * Color1.a ));
+}
+
+float4 Main_CxformGouraudMultiplyTexture(
+	in float4 Color0 : COLOR0,
+	in float4 Color1 : COLOR1,
+	in float2 TextureCoordinate : TEXCOORD0
+	) : COLOR0
+{
+	float4 Sample = tex2D(TextureImage,TextureCoordinate);
+	float4 InterpolatedColor = lerp( Color0, Sample, Color1.b );
+	float4 BiasedColor = InterpolatedColor * ColorScale + ColorBias;
+	BiasedColor.a *= Color1.a;
+	return CorrectGamma(lerp( float4(1,1,1,1), BiasedColor, BiasedColor.a ));
+}
+
+float4 Main_Cxform2Texture(
+	in float4 Color0 : COLOR0,
+	in float4 Color1 : COLOR1,
+	in float2 TextureCoordinate0 : TEXCOORD0,
+	in float2 TextureCoordinate1 : TEXCOORD1
+	) : COLOR0
+{
+	float4 Sample0 = tex2D(TextureImage,  TextureCoordinate0);
+	float4 Sample1 = tex2D(TextureImage2, TextureCoordinate1);
+	
+	float4 InterpolatedColor = lerp(Sample1, Sample0, Color1.b);
+	return CorrectGamma(InterpolatedColor * ColorScale + ColorBias);
+}
+
+float4 Main_CxformMultiply2Texture(
+	in float4 Color0 : COLOR0,
+	in float4 Color1 : COLOR1,
+	in float2 TextureCoordinate0 : TEXCOORD0,
+	in float2 TextureCoordinate1 : TEXCOORD1
+	) : COLOR0
+{
+	float4 Sample0 = tex2D(TextureImage,  TextureCoordinate0);
+	float4 Sample1 = tex2D(TextureImage2, TextureCoordinate1);
+	
+	float4 InterpolatedColor = lerp(Sample1, Sample0, Color1.b);
+	float4 BiasedColor = InterpolatedColor * ColorScale + ColorBias;
+	
+	return CorrectGamma(lerp( float4(1,1,1,1), BiasedColor, BiasedColor.a ));
+}

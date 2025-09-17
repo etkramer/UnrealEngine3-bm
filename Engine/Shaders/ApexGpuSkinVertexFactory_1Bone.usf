@@ -1,6 +1,6 @@
 /*=============================================================================
 	GpuSkinVertexFactory.hlsl: GPU skinned vertex factory shader code
-	Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
+	Copyright 1998-2009 Epic Games, Inc. All Rights Reserved.
 =============================================================================*/
 
 #define MAX_BONES 75
@@ -13,7 +13,10 @@
 #define GPUSKIN_DECAL 0
 #endif
 
+float ApexDummy; // Just to make sure we don't get the wrong VertexFactory.
+
 float4x4 LocalToWorld;
+float LocalToWorldRotDeterminantFlip;
 #if GPUSKIN_DECAL
 float3x3 WorldToLocal;
 float4 BoneToDecalRow0;
@@ -33,12 +36,11 @@ struct FVertexFactoryInput
 	half4	TangentZ		: NORMAL;	
 #if SM4_PROFILE
 	// TODO: figure out why conversion to int seems to squish everything
-	uint4	BlendIndices	: BLENDINDICES0;
+	uint	BlendIndex		: BLENDINDICES0;
 #else
-	int4	BlendIndices	: BLENDINDICES0;
+	int		BlendIndex		: BLENDINDICES0;
 #endif
-	float4	BlendWeights	: BLENDWEIGHT0;	
-#if NUM_MATERIAL_TEXCOORDS && !(GPUSKIN_DECAL && MATERIAL_DECAL) //@Rockint - Ahead of QA. 
+#if NUM_MATERIAL_TEXCOORDS && !(GPUSKIN_DECAL && MATERIAL_DECAL)
 	float2	TexCoords[NUM_MATERIAL_TEXCOORDS] : TEXCOORD0;
 #endif
 #if GPUSKIN_MORPH_BLEND
@@ -157,10 +159,7 @@ float3x3 MorphTangents( FVertexFactoryInput Input )
 
 FBoneMatrix CalcBoneMatrix( FVertexFactoryInput Input )
 {
-	FBoneMatrix BoneMatrix = Input.BlendWeights.x * BoneMatrices[Input.BlendIndices.x];
-	BoneMatrix += Input.BlendWeights.y * BoneMatrices[Input.BlendIndices.y];
-	BoneMatrix += Input.BlendWeights.z * BoneMatrices[Input.BlendIndices.z];
-	BoneMatrix += Input.BlendWeights.w * BoneMatrices[Input.BlendIndices.w];
+	FBoneMatrix BoneMatrix = BoneMatrices[Input.BlendIndex] * ApexDummy;
 	return BoneMatrix;
 }
 
@@ -266,7 +265,7 @@ FVertexFactoryInterpolants VertexFactoryGetInterpolants(FVertexFactoryInput Inpu
 		#endif
 
 		Interpolants.TangentToWorld0 = TangentToWorld[0];
-		Interpolants.TangentToWorld2 = float4(TangentToWorld[2], TangentBias(Input.TangentZ.w));
+		Interpolants.TangentToWorld2 = float4(TangentToWorld[2], TangentBias(Input.TangentZ.w) * LocalToWorldRotDeterminantFlip);
 	#endif
 #endif
 
