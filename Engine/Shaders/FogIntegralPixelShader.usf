@@ -59,13 +59,12 @@ half PreviousFilteredDepth(float4 ScreenPosition)
 	return AverageDepth;
 }
 
-// NVCHANGE_BEGIN: Stereo fixes
 /*
 * Returns the filtered world space position of ScreenPosition or the closest opaque object.
 */
-float3 GetClosestFilteredWorldPos(float4 ScreenPosition, float4 TrueScreenPosition)
+float3 GetClosestFilteredWorldPos(float4 ScreenPosition)
 {
-	half SceneW = PreviousFilteredDepth(TrueScreenPosition);
+	half SceneW = PreviousFilteredDepth(ScreenPosition);
 
 	//clamp scene depth to a reasonable range
 	SceneW = min(SceneW, 65535.0f);
@@ -80,9 +79,9 @@ float3 GetClosestFilteredWorldPos(float4 ScreenPosition, float4 TrueScreenPositi
 /*
 * Returns the world space position of ScreenPosition or the closest opaque object.
 */
-float3 GetClosestWorldPos(float4 ScreenPosition, float4 TrueScreenPosition)
+float3 GetClosestWorldPos(float4 ScreenPosition)
 {
-	half SceneW = PreviousDepth(TrueScreenPosition);
+	half SceneW = PreviousDepth(ScreenPosition);
 
 	//clamp scene depth to a reasonable range
 	SceneW = min(SceneW, 65535.0f);
@@ -93,7 +92,6 @@ float3 GetClosestWorldPos(float4 ScreenPosition, float4 TrueScreenPosition)
 	//transform into worldspace
 	return MulMatrix(ScreenToWorld, float4(ScreenPosition.xy / ScreenPosition.w * ClosestDistance, ClosestDistance, 1)).xyz;
 }
-// NVCHANGE_END: Stereo fixes
 
 /*
 * Encodes the floating point integral based on what the current platform needs.  
@@ -148,22 +146,10 @@ float4 EncodeIntegral(float Integral)
 void ConstantDensityMain(
 	FVertexFactoryInterpolants Interpolants,
 	float4	ScreenPosition	: TEXCOORD5,
-// NVCHANGE_BEGIN: Stereo fixes
-#if NV_STEREO_FIXES
-	in float2 vPos : VPOS,
-#endif // NV_STEREO_FIXES
-// NVCHANGE_END: Stereo fixes
 	out float4 OutColor		: COLOR0
 	)
 {
-// NVCHANGE_BEGIN: Stereo fixes
-#if NV_STEREO_FIXES
-	float4 TrueScreenPosition = VPosToClip(vPos);
-#else // NV_STEREO_FIXES
-	float4 TrueScreenPosition = ScreenPosition;
-#endif // NV_STEREO_FIXES
-	half SceneW = PreviousFilteredDepth(TrueScreenPosition);
-// NVCHANGE_END: Stereo fixes
+	half SceneW = PreviousFilteredDepth(ScreenPosition);
 
 	SceneW = min(SceneW, 65535.0f);
 
@@ -184,24 +170,11 @@ void ConstantDensityMain(
 void LinearHalfspaceDensityMain(
 	FVertexFactoryInterpolants Interpolants,
 	float4	ScreenPosition	: TEXCOORD5,
-// NVCHANGE_BEGIN: Stereo fixes
-#if NV_STEREO_FIXES
-	in float2 vPos : VPOS,
-#endif // NV_STEREO_FIXES
-// NVCHANGE_END: Stereo fixes
 	out float4 OutColor		: COLOR0
 	)
 {
-// NVCHANGE_BEGIN: Stereo fixes
-#if NV_STEREO_FIXES
-	float4 TrueScreenPosition = VPosToClip(vPos);
-#else // NV_STEREO_FIXES
-	float4 TrueScreenPosition = ScreenPosition;
-#endif // NV_STEREO_FIXES
-
-	float3 WorldReceiverPos = GetClosestFilteredWorldPos(ScreenPosition,TrueScreenPosition);
+	float3 WorldReceiverPos = GetClosestFilteredWorldPos(ScreenPosition);
 	OutColor = EncodeIntegral(LinearHalfspaceLineIntegral(WorldReceiverPos, FogCameraPosition.xyz));  
-// NVCHANGE_END: Stereo fixes
 }
 
 /*
@@ -210,29 +183,15 @@ void LinearHalfspaceDensityMain(
 void SphericalDensityMain(
 	FVertexFactoryInterpolants Interpolants,
 	float4	ScreenPosition	: TEXCOORD5,
-// NVCHANGE_BEGIN: Stereo fixes
-#if NV_STEREO_FIXES
-	in float2 vPos : VPOS,
-#endif // NV_STEREO_FIXES
-// NVCHANGE_END: Stereo fixes
 	out float4 OutColor		: COLOR0
 	)
 {
-// NVCHANGE_BEGIN: Stereo fixes
-#if NV_STEREO_FIXES
-	float4 TrueScreenPosition = VPosToClip(vPos);
-#else // NV_STEREO_FIXES
-	float4 TrueScreenPosition = ScreenPosition;
-#endif // NV_STEREO_FIXES
-
 #if SM2_PROFILE
 	//try to minimize instructions on SM2 so use the unfiltered version
-	float3 WorldReceiverPos = GetClosestWorldPos(ScreenPosition,TrueScreenPosition);
+	float3 WorldReceiverPos = GetClosestWorldPos(ScreenPosition);
 #else
-	float3 WorldReceiverPos = GetClosestFilteredWorldPos(ScreenPosition,TrueScreenPosition);
+	float3 WorldReceiverPos = GetClosestFilteredWorldPos(ScreenPosition);
 #endif
-// NVCHANGE_END: Stereo fixes
-
 	OutColor = EncodeIntegral(SphericalLineIntegral(WorldReceiverPos, FogCameraPosition.xyz));
 }
 
@@ -245,25 +204,12 @@ void SphericalDensityMain(
 void ConeDensityMain(
 	FVertexFactoryInterpolants Interpolants,
 	float4	ScreenPosition	: TEXCOORD5,
-// NVCHANGE_BEGIN: Stereo fixes
-#if NV_STEREO_FIXES
-	in float2 vPos : VPOS,
-#endif // NV_STEREO_FIXES
-// NVCHANGE_END: Stereo fixes
 	out float4 OutColor		: COLOR0
 	)
 {
-// NVCHANGE_BEGIN: Stereo fixes
-#if NV_STEREO_FIXES
-	float4 TrueScreenPosition = VPosToClip(vPos);
-#else // NV_STEREO_FIXES
-	float4 TrueScreenPosition = ScreenPosition;
-#endif // NV_STEREO_FIXES
-
 	float LineIntegral = 0;
 
-	float3 WorldReceiverPos = GetClosestFilteredWorldPos(ScreenPosition,TrueScreenPosition);
-// NVCHANGE_END: Stereo fixes
+	float3 WorldReceiverPos = GetClosestFilteredWorldPos(ScreenPosition);
 
 	float3 ConeVertex = FirstDensityFunctionParameters.xyz;
 	float MaxDensity = FirstDensityFunctionParameters.w;

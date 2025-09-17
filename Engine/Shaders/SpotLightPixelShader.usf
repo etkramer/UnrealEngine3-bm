@@ -24,11 +24,6 @@ void Main(
 	in float4 WorldLightVector : TEXCOORD5,
 	in float3 CameraVector : TEXCOORD6,
 	in float4 PixelPosition : TEXCOORD7,
-// NVCHANGE_BEGIN: Stereo fixes
-#if NV_STEREO_FIXES
-	in float2 vPos : VPOS,
-#endif // NV_STEREO_FIXES
-// NVCHANGE_END: Stereo fixes
 	OPTIONAL_FacingSign
 	out float4 OutColor : COLOR0
 	)
@@ -64,14 +59,7 @@ void Main(
 	{
 		GetMaterialClipping(MaterialParameters);
 
-// NVCHANGE_BEGIN: Stereo fixes
-#if NV_STEREO_FIXES
-		float4 TrueScreenPosition = VPosToClip(vPos);
-#else // NV_STEREO_FIXES
-		float4 TrueScreenPosition = MaterialParameters.ScreenPosition;
-#endif // NV_STEREO_FIXES
-		OutColor.rgb = GetLightAttenuation(TrueScreenPosition) *
-// NVCHANGE_END: Stereo fixes
+		OutColor.rgb = GetLightAttenuation(MaterialParameters.ScreenPosition) *
 			LightMask *
 			GetMaterialPointLightTransfer(MaterialParameters,WorldLightVector.xyz,FalloffExponent) *
 			LightColor *

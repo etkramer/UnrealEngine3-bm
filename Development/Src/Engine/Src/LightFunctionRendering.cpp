@@ -71,7 +71,6 @@ public:
 		ScreenPositionScaleBiasParameter.Bind(Initializer.ParameterMap,TEXT("ScreenPositionScaleBias"),TRUE);
 		ScreenToLightParameter.Bind(Initializer.ParameterMap,TEXT("ScreenToLight"),TRUE);
 		MaterialParameters.Bind(Initializer.Material,Initializer.ParameterMap);
-		StereoCalibTextureParameter.Bind(Initializer.ParameterMap,TEXT("StereoCalibTexture"),TRUE);
 	}
 
 	void SetParameters( const FSceneView* View, const FLightSceneInfo* LightSceneInfo )
@@ -140,9 +139,6 @@ public:
 		Ar << ScreenPositionScaleBiasParameter;
 		Ar << ScreenToLightParameter;
 		Ar << MaterialParameters;
-#if BATMAN
-		Ar << StereoCalibTextureParameter;
-#endif
 		return bShaderHasOutdatedParameters;
 	}
 
@@ -153,9 +149,6 @@ private:
 	FShaderParameter ScreenPositionScaleBiasParameter;
 	FShaderParameter ScreenToLightParameter;
 	FMaterialPixelShaderParameters MaterialParameters;
-#if BATMAN
-	FShaderResourceParameter StereoCalibTextureParameter;
-#endif
 };
 
 IMPLEMENT_MATERIAL_SHADER_TYPE(,FLightFunctionPixelShader,TEXT("LightFunctionPixelShader"),TEXT("Main"),SF_Pixel,VER_CONTENT_RESAVE_AUGUST_2007_QA_BUILD,0);

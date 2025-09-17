@@ -1,0 +1,44 @@
+/*=============================================================================
+	VSMFilterDepthGatherPixelShader.usf: Filters shadow map depth into variance moments
+	Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
+=============================================================================*/
+
+#include "Common.usf"
+
+sampler2D FilterTexture;
+half4 SampleWeights[NUM_SAMPLES];
+/** min clamp xy|wz since we don't rely on empty border texels */
+half4 MinOffset;
+/** max clamp xy|wz since we don't rely on empty border texels */
+half4 MaxOffset;
+
+void Main(
+	float4 InOffsetUVs[(NUM_SAMPLES + 1) / 2] : TEXCOORD0,
+	out float4 OutColor : COLOR0
+	)
+{
+	int SampleIndex;
+	float4 Sum = 0;
+	for(SampleIndex = 0;SampleIndex < NUM_SAMPLES - 1;SampleIndex += 2)
+	{
+		half4 ClampedUV = clamp(InOffsetUVs[SampleIndex / 2],MinOffset,MaxOffset);
+		
+		float M = texDepth2D(FilterTexture,ClampedUV.xy).r;
+		float Msq = M*M;
+		Sum += float4(M,M*M,0,0) * SampleWeights[SampleIndex + 0];		
+		
+		M = texDepth2D(FilterTexture,ClampedUV.wz).r;
+		Msq = M*M;
+		Sum += float4(M,M*M,0,0) * SampleWeights[SampleIndex + 1];
+	}
+	if(SampleIndex < NUM_SAMPLES)
+	{
+		half4 ClampedUV = clamp(InOffsetUVs[SampleIndex / 2],MinOffset,MaxOffset);
+	
+		float M = texDepth2D(FilterTexture,ClampedUV.xy).r;
+		float Msq = M*M;
+		Sum += float4(M,M*M,0,0) * SampleWeights[SampleIndex + 0];
+	}
+	
+	OutColor = Sum;
+}

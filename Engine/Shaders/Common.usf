@@ -126,7 +126,6 @@
 #define PSR_ColorBiasFactor			c0	// Factor applied to the color output from the pixelshader
 #define PSR_ScreenPositionScaleBias	c1	// Converts projection-space XY coordinates to texture-space UV coordinates
 #define PSR_MinZ_MaxZ_Ratio			c2	// Converts device Z values to clip-space W values
-#define PSR_VPosScaleBias			c3	// Converts from vPos to clip-space
 #define VSR_ViewProjMatrix			c0	// View-projection matrix, transforming from World space to Projection space
 #define VSR_ViewOrigin				c4	// World space position of the camera
 
@@ -149,13 +148,6 @@
 	// Converts projection-space XY coordinates to texture-space UV coordinates
 	float4		ScreenPositionScaleBias	PIXELREGISTER(PSR_ScreenPositionScaleBias);
 	float4	    MinZ_MaxZRatio			PIXELREGISTER(PSR_MinZ_MaxZ_Ratio);
-	
-	// NVCHANGE_BEGIN: Stereo fixes
-	#if NV_STEREO_FIXES
-	float4		VPosScaleBias			PIXELREGISTER(PSR_VPosScaleBias);
-	#endif // NV_STEREO_FIXES
-	// NVCHANGE_END: Stereo fixes
-	
 #endif
 
 #if XBOX
@@ -178,11 +170,7 @@ sampler2D 	SceneDepthTexture;
 sampler2D	SceneColorTexture;
 sampler2D	LightAttenuationTexture;
 
-// NVCHANGE_BEGIN: Stereo fixes
-#if NV_STEREO_FIXES
-sampler2D	StereoCalibTexture;
-#endif // NV_STEREO_FIXES
-// NVCHANGE_END: Stereo fixes
+
 
 // ----------------------------------------------------------------------------------------
 
@@ -255,7 +243,7 @@ half4 CalcFullSceneColor(float2 ScreenUV)
       return tex2D(SceneColorTexture,ScreenUV);
 }
 
-float ConvertFromDeviceZ(float DeviceZ) //@Rock - JG: Changed from half to float
+half ConvertFromDeviceZ(half DeviceZ)
 {
 	//return MinZ_MaxZRatio[0] / (1.0 - (DeviceZ / MinZ_MaxZRatio[1]));
 	return 1.f / (DeviceZ * MinZ_MaxZRatio[2] - MinZ_MaxZRatio[3]);	
@@ -297,11 +285,11 @@ half EncodeFloatW(float W)
 #else
 
 	/** return the depth value stored in lighting target's alpha */
-	float CalcSceneDepth( float2 ScreenUV ) //@Rock - JG: Changed from half to float
+	half CalcSceneDepth( float2 ScreenUV )
 	{
-			// depth stored in alpha
-			return ConvertFromDeviceZ(tex2D(SceneColorTexture,ScreenUV).a);
-		}
+		// depth stored in alpha
+		return ConvertFromDeviceZ(tex2D(SceneColorTexture,ScreenUV).a);
+	}
 
 #endif
 
@@ -338,29 +326,6 @@ half PreviousDepth(float4 ScreenPosition)
 {
 	return CalcSceneDepth(ScreenPosition.xy / ScreenPosition.w * ScreenPositionScaleBias.xy + ScreenPositionScaleBias.wz);
 }
-
-// NVCHANGE_BEGIN: Stereo fixes
-	#if NV_STEREO_FIXES
-float4 VPosToClip(float2 vPos)
-	{
-	return float4(VPosScaleBias.xy * vPos + VPosScaleBias.zw,0,1);
-	}
-
-float2 Unstereo(float2 ScreenXY, float ViewDepth)
-	{
-	float2 mc = tex2D(StereoCalibTexture, float2(0.5,0.5));
-	
-	float2 result = ScreenXY;
-	result.x -= (mc.y + mc.x/ViewDepth);
-	return result;
-	}
-#else // NV_STEREO_FIXES
-float2 Unstereo(float2 ScreenXY, float ViewDepth)
-{
-	return ScreenXY;
-}
-#endif // NV_STEREO_FIXES
-// NVCHANGE_END: Stereo fixes
 
 /** 
  * aligns the clip space position so that it can be used as a texture coordinate

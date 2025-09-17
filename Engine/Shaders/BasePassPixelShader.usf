@@ -24,12 +24,6 @@
 	#include "SphericalHarmonicCommon.usf"
 #endif
 
-// NVCHANGE_BEGIN: Adding shadows for blended particles
-#if ENABLE_VOLUMETRIC_TRANSLUCENCY_LIGHT
-	#include "ShadowOpacityCommon.usf"
-#endif
-// NVCHANGE_END: Adding shadows for blended particles
-
 /** 1 if this object has MotionBlurScale set to enable motionblur, and 0 if disabled */
 float MotionBlurMask = 0.0f;
 
@@ -59,12 +53,6 @@ sampler2D LightMapTextures[NUM_LIGHTMAP_COEFFICIENTS];
 float4 LightMapScale[NUM_LIGHTMAP_COEFFICIENTS];
 #endif
 
-// NVCHANGE_BEGIN: Adding shadows for blended particles
-#if ENABLE_VOLUMETRIC_TRANSLUCENCY_LIGHT
-float4x4 ScreenToShadowMatrix;
-#endif
-// NVCHANGE_END: Adding shadows for blended particles
-
 void Main(
 	FVertexFactoryInterpolants Interpolants,
 
@@ -91,13 +79,6 @@ void Main(
 #if !MATERIAL_LIGHTINGMODEL_UNLIT
 	float3 SkyVector		: TEXCOORD7,
 #endif
-
-	// NVCHANGE_BEGIN: Stereo fixes
-	#if NV_STEREO_FIXES
-	float4 vPos : VPOS,
-	#endif
-	// NVCHANGE_END: Stereo fixes
-
 	OPTIONAL_FacingSign
 	out float4 OutColor		: COLOR0
 	)
@@ -130,12 +111,6 @@ void Main(
 	//Don't flip the normal for backfaces of two-sided materials used with this shader.
 	//As a result, the backfaces will have the same lighting as the frontfaces, instead of being mostly black.
 	CalcMaterialParameters(MaterialParameters,FacingSign,CameraVector_FogA.xyz,PixelPosition,TangentLightVector,false);
-
-	// NVCHANGE_BEGIN: Stereo fixes
-#if NV_STEREO_FIXES
-	MaterialParameters.TrueScreenPosition.xy = VPosToClip(vPos).xy * MaterialParameters.TrueScreenPosition.w;
-#endif
-	// NVCHANGE_END: Stereo fixes
 
 	//Clip if the blend mode requires it.
 	GetMaterialClipping(MaterialParameters);
@@ -240,17 +215,6 @@ void Main(
 		#if ENABLE_DIRECTIONAL_LIGHT
 			Color += GetMaterialPointLightTransfer(MaterialParameters,0,0) * LightColor.rgb;
 		#endif
-		
-		// NVCHANGE_BEGIN: Adding shadows for blended particles
-		// Calculate volumetric translucency lighting
-		#if ENABLE_VOLUMETRIC_TRANSLUCENCY_LIGHT
-			float4 ScreenPosition = MaterialParameters.ScreenPosition;
-			float4 ShadowPosition = MulMatrix(ScreenToShadowMatrix, float4(ScreenPosition.xyw,1) );
-			ShadowPosition.xy /= ShadowPosition.w;
-			float3 VolumetricTranslucencyColor = VolumetricShadowFSMInner(ShadowPosition.xy, ShadowPosition.z);
-			Color += LightColor * GetMaterialDiffuseColor(MaterialParameters) * VolumetricTranslucencyColor;
-		#endif
-		// NVCHANGE_END: Adding shadows for blended particles
 
 		#if !SIMPLE_LIGHTING
 			Color += GetMaterialDiffuseColor(MaterialParameters) * AmbientColor;
@@ -285,15 +249,7 @@ void Main(
 		// Clamping and scaling to match the normal distortion method
 		float2 DistortionOffset = clamp(GetMaterialDistortion(MaterialParameters), -64.0f, 64.0f) * float2( 1.0f / 255.0f, -1.0f / 255.0f);
 		// Calculate position to lookup in scene color with the distortion offset
-		
-	// NVCHANGE_BEGIN: Stereo fixes
-#if NV_STEREO_FIXES
-		float2 OffsetSceneTextureCoordinates = MaterialParameters.TrueScreenPosition.xy / MaterialParameters.TrueScreenPosition.w * ScreenPositionScaleBias.xy + ScreenPositionScaleBias.wz + DistortionOffset;
-#else // NV_STEREO_FIXES
 		float2 OffsetSceneTextureCoordinates = MaterialParameters.ScreenPosition.xy / MaterialParameters.ScreenPosition.w * ScreenPositionScaleBias.xy + ScreenPositionScaleBias.wz + DistortionOffset;
-#endif // NV_STEREO_FIXES
-	// NVCHANGE_END: Stereo fixes
-	
 		// Lookup distorted scene color
 		half3 DistortedSceneColor = CalcSceneColor(OffsetSceneTextureCoordinates);
 		#if MATERIALBLENDING_TRANSLUCENT

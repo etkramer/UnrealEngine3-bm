@@ -1,0 +1,67 @@
+/*=============================================================================
+	ModShadowProjectionPixelShader.usf: Pixel shader for projecting a shadow depth buffer onto the scene.
+	Copyright 1998-2008 Epic Games, Inc. All Rights Reserved.
+=============================================================================*/
+
+#include "Common.usf"
+#include "ModShadowCommon.usf"
+
+/** screen space to shadow map transform */
+float4x4 ScreenToShadowMatrix;
+/** stores filtered depth & depth^2 variance moments (biased from [0,1]->[-1,1]) */
+sampler2D ShadowVarianceTexture;
+/** original unfiltered shadow depth */
+sampler2D ShadowDepthTexture;
+
+// VSM tweakables
+float VSMEpsilon;
+float VSMExponent;
+
+void Main(
+	in float4 ScreenPosition : TEXCOORD0,
+	out float4 OutColor : COLOR0
+	)
+{
+	half SceneW = PreviousDepth(ScreenPosition);
+	float4 ShadowPosition = MulMatrix(ScreenToShadowMatrix,float4(ScreenPosition.xy / ScreenPosition.w * SceneW,SceneW,1));
+	ShadowPosition.xy /= ShadowPosition.w;
+	ShadowPosition.z = min(ShadowPosition.z,0.999);
+
+	float4 Moments = tex2D(ShadowVarianceTexture, ShadowPosition.xy);
+	float M = Moments.r;
+    float MSq = Moments.g;
+
+	//standard shadow map compare
+	//the result will be used to mask out some VSM artifacts in completely unshadowed areas
+	float Lit=1;
+    if( ShadowPosition.z > M ) 
+    {
+		// Calculate the variance - see the VSM research paper for a thorough explanation
+		// http://www.punkuser.net/vsm/vsm_paper.pdf
+		float E_x2 = MSq;
+		float Ex_2 = M * M;
+    
+		float Variance = min(1.0, max(0.0, E_x2 - Ex_2) + VSMEpsilon);
+		float M_d = (M - ShadowPosition.z);
+		float MaxPercentCoverage = Variance / (Variance + M_d * M_d);
+		MaxPercentCoverage = pow(MaxPercentCoverage, VSMExponent);
+ 
+		//use result of standard shadow map compare to mask completely unshadowed areas
+		Lit = MaxPercentCoverage;
+	}	
+	
+#if MODSHADOW_LIGHTTYPE_DIRECTIONAL
+	// no attenuation necessary for directional lights
+	half ShadowAtt = 1;
+#else
+	// attenuate between shadow color and white based on distance
+	half ShadowAtt = ShadowAttenuation(ScreenPosition,SceneW);
+#endif
+
+	// add modulated/attenuated shadow color to shadow
+	float4 ShadowedColor = lerp(float4(1,1,1,1),ShadowModulateColor,ShadowAtt);
+	float4 UnshadowedColor = float4(1,1,1,1);
+
+	// RETURN_COLOR not needed unless writing to SceneColor;
+	OutColor = lerp(ShadowedColor,UnshadowedColor,Lit);
+}

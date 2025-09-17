@@ -8,11 +8,6 @@
 sampler2D Texture;
 
 half4 TextureComponentReplicate;
-// STARTUPDATE_DWTRIOVIZ
-#if DWTRIOVIZ_COLOR_CORRECTION	
-sampler3D DwTriovizColorCorrectionTexture;
-#endif	
-// ENDUPDATE_DWTRIOVIZ
 
 void ReplicateRChannel(inout float4 BaseColor)
 {
@@ -53,12 +48,6 @@ void GammaMain(
 		// Gamma correct the output color.
 		OutColor.rgb = pow(saturate(OutColor.rgb),Gamma);	
 	}
-
-// STARTUPDATE_DWTRIOVIZ	
-#if DWTRIOVIZ_COLOR_CORRECTION
-	OutColor.rgb = tex3D(DwTriovizColorCorrectionTexture, OutColor.rgb);
-#endif	
-// ENDUPDATE_DWTRIOVIZ
 	OutColor = RETURN_COLOR(OutColor);
 }
 
@@ -79,10 +68,5 @@ void GammaMaskedMain(
 		// Gamma correct the output color.
 		OutColor.rgb = pow(saturate(OutColor.rgb),Gamma);	
 	}
-// STARTUPDATE_DWTRIOVIZ
-#if DWTRIOVIZ_COLOR_CORRECTION
-	OutColor.rgb = tex3D(DwTriovizColorCorrectionTexture, OutColor.rgb);
-#endif
-// ENDUPDATE_DWTRIOVIZ
 	OutColor = RETURN_COLOR(OutColor);
 }

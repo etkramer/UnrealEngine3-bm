@@ -5,7 +5,7 @@ sampler tex3;
 float4  tor;
 float4  tog;
 float4  tob;
-float4  consts;	//@Rock - MM: z component contains display gamma, w contains alpha
+float4  consts;
 
 struct VS_IN
 {
@@ -29,7 +29,6 @@ float4 YCrCbToRGBNoPixelAlpha( VS_OUT In ) : COLOR
 	p.x = dot( tor, c );
 	p.y = dot( tog, c );
 	p.z = dot( tob, c );
-	p.rgb = pow(p.rgb, consts.z); //@Rock - MM: Apply gamma to rgb components only (gamma does not affect transparency)
 	p.w = consts.w;
 	return p;
 }
@@ -50,7 +49,6 @@ float4 YCrCbAToRGBA( VS_OUT In ) : COLOR
 	p.x = dot( tor, c );
 	p.y = dot( tog, c );
 	p.z = dot( tob, c );
-	p.rgb = pow(p.rgb, consts.z); //@Rock - MM: Apply gamma to rgb components only (gamma does not affect transparency)
 	p.w *= consts.w;
 	return p;
 }

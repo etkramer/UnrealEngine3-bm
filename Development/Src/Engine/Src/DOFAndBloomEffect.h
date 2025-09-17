@@ -162,12 +162,6 @@ public:
 	FSceneTextureShaderParameters SceneTextureParameters;
 	FShaderResourceParameter BlurredImageParameter;
 
-#if BATMAN
-	FShaderParameter AtmosphericBackgroundColourParameter;
-	FShaderParameter AtmosphericForegroundColourParameter;
-	FShaderParameter AtmosphericTransitionSettingsParameter;
-#endif
-
 	/** Initialization constructor. */
 	FDOFAndBloomBlendPixelShader(const ShaderMetaType::CompiledShaderInitializerType& Initializer);
 

@@ -14,25 +14,12 @@ float4x4 ScreenToShadowMatrix;
 */
 void Main(
 	in float4 ScreenPosition : TEXCOORD0,
-// NVCHANGE_BEGIN: Stereo fixes
-#if NV_STEREO_FIXES
-	in float2 vPos : VPOS,
-#endif // NV_STEREO_FIXES
-// NVCHANGE_END: Stereo fixes
 	out float4 OutColor : COLOR0
 	)
 {
-// NVCHANGE_BEGIN: Stereo fixes
-#if NV_STEREO_FIXES
-	float4 TrueScreenPosition = VPosToClip(vPos);
-#else // NV_STEREO_FIXES
-	float4 TrueScreenPosition = ScreenPosition;
-#endif // NV_STEREO_FIXES
-	half SceneW = PreviousDepth(TrueScreenPosition);
+	half SceneW = PreviousDepth(ScreenPosition);
 
-	float4 ShadowPosition = MulMatrix(ScreenToShadowMatrix,float4(Unstereo(TrueScreenPosition.xy/TrueScreenPosition.w,SceneW) * SceneW,SceneW,1));
-// NVCHANGE_END: Stereo fixes
-
+	float4 ShadowPosition = MulMatrix(ScreenToShadowMatrix,float4(ScreenPosition.xy / ScreenPosition.w * SceneW,SceneW,1));
 	ShadowPosition.xy /= ShadowPosition.w;
 	ShadowPosition.z = min(ShadowPosition.z,0.999);
 
@@ -69,25 +56,12 @@ void Main(
 */
 void HardwarePCFMain(
 	in float4 ScreenPosition : TEXCOORD0,
-// NVCHANGE_BEGIN: Stereo fixes
-#if NV_STEREO_FIXES
-	in float2 vPos : VPOS,
-#endif // NV_STEREO_FIXES
-// NVCHANGE_END: Stereo fixes
 	out float4 OutColor : COLOR0
 	)
 {
-// NVCHANGE_BEGIN: Stereo fixes
-#if NV_STEREO_FIXES
-	float4 TrueScreenPosition = VPosToClip(vPos);
-#else // NV_STEREO_FIXES
-	float4 TrueScreenPosition = ScreenPosition;
-#endif // NV_STEREO_FIXES
-	half SceneW = PreviousDepth(TrueScreenPosition);
+	half SceneW = PreviousDepth(ScreenPosition);
 
-	float4 ShadowPosition = MulMatrix(ScreenToShadowMatrix,float4(Unstereo(TrueScreenPosition.xy/TrueScreenPosition.w,SceneW) * SceneW,SceneW,1));
-// NVCHANGE_END: Stereo fixes
-
+	float4 ShadowPosition = MulMatrix(ScreenToShadowMatrix,float4(ScreenPosition.xy / ScreenPosition.w * SceneW,SceneW,1));
 	ShadowPosition.xy /= ShadowPosition.w;
 	ShadowPosition.z = min(ShadowPosition.z,0.999);
 
@@ -117,25 +91,12 @@ void HardwarePCFMain(
 */
 void Fetch4Main(
 	in float4 ScreenPosition : TEXCOORD0,
-// NVCHANGE_BEGIN: Stereo fixes
-#if NV_STEREO_FIXES
-	in float2 vPos : VPOS,
-#endif // NV_STEREO_FIXES
-// NVCHANGE_END: Stereo fixes
 	out float4 OutColor : COLOR0
 	)
 {
-// NVCHANGE_BEGIN: Stereo fixes
-#if NV_STEREO_FIXES
-	float4 TrueScreenPosition = VPosToClip(vPos);
-#else // NV_STEREO_FIXES
-	float4 TrueScreenPosition = ScreenPosition;
-#endif // NV_STEREO_FIXES
-	half SceneW = PreviousDepth(TrueScreenPosition);
+	half SceneW = PreviousDepth(ScreenPosition);
 
-	float4 ShadowPosition = MulMatrix(ScreenToShadowMatrix,float4(Unstereo(TrueScreenPosition.xy/TrueScreenPosition.w,SceneW) * SceneW,SceneW,1));
-// NVCHANGE_END: Stereo fixes
-
+	float4 ShadowPosition = MulMatrix(ScreenToShadowMatrix,float4(ScreenPosition.xy / ScreenPosition.w * SceneW,SceneW,1));
 	ShadowPosition.xy /= ShadowPosition.w;
 	ShadowPosition.z = min(ShadowPosition.z,0.999);
 

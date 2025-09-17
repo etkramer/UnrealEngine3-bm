@@ -127,12 +127,6 @@
 #define MATERIAL_USE_GAMMA_CORRECTION					0
 #endif
 
-// NVCHANGE_BEGIN: Adding shadow-map generation for blended particles
-#ifndef SKIP_SCREENSPACE_TEXTURE_LOOKUPS
-#define SKIP_SCREENSPACE_TEXTURE_LOOKUPS				0
-#endif
-// NVCHANGE_END: Adding shadow-map generation for blended particles
-
 /** 
  * Right now (6/2008) only the Xbox compiler supports empty structs, but only as out parameters. 
  * We need to be able to use them as return values as well.
@@ -167,12 +161,4 @@
 #else
 /** Not supported on other platforms */
 #define ISOLATE
-#endif
-
-#ifndef NV_STEREO_FIXES
-	#if (SM3_PROFILE || SM4_PROFILE)
-		#define NV_STEREO_FIXES 1
-	#else
-		#define NV_STEREO_FIXES 0
-	#endif
 #endif

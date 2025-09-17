@@ -43,11 +43,6 @@ void Main(
 	FVertexFactoryInterpolants Interpolants,
 	float4	PixelPosition	: TEXCOORD5,
 	float3	CameraVector	: TEXCOORD6,
-// NVCHANGE_BEGIN: Stereo fixes
-#if NV_STEREO_FIXES
-	in float2 vPos : VPOS,
-#endif // NV_STEREO_FIXES
-// NVCHANGE_END: Stereo fixes
 	OPTIONAL_FacingSign
 	out float4 OutColor		: COLOR0
 	)
@@ -58,18 +53,9 @@ void Main(
 	//use the material's emissive input as fog color
 	half3 FogColor = GetMaterialEmissive(MaterialParameters);
 
-	
-// NVCHANGE_BEGIN: Stereo fixes
-#if NV_STEREO_FIXES
-	float4 TrueScreenPosition = VPosToClip(vPos);
-#else // NV_STEREO_FIXES
-	float4 TrueScreenPosition = MaterialParameters.ScreenPosition;
-#endif // NV_STEREO_FIXES
-
 	//these coordinates are valid even if the integral buffers are downsampled,
 	//since texture coordinates do not factor in texture size.
-	float2 PerspectiveCorrectScreenPosition = TrueScreenPosition.xy / TrueScreenPosition.w * ScreenPositionScaleBias.xy + ScreenPositionScaleBias.wz;
-// NVCHANGE_END: Stereo fixes
+	float2 PerspectiveCorrectScreenPosition = MaterialParameters.ScreenPosition.xy / MaterialParameters.ScreenPosition.w * ScreenPositionScaleBias.xy + ScreenPositionScaleBias.wz;
 
 #if SM2_PROFILE || XBOX
 	float FrontfacesIntegral = DecodeIntegral(tex2D(AccumulatedFrontfacesLineIntegralTexture,PerspectiveCorrectScreenPosition));

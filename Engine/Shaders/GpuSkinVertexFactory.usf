@@ -38,7 +38,7 @@ struct FVertexFactoryInput
 	int4	BlendIndices	: BLENDINDICES0;
 #endif
 	float4	BlendWeights	: BLENDWEIGHT0;	
-#if NUM_MATERIAL_TEXCOORDS && !(GPUSKIN_DECAL && MATERIAL_DECAL) //@Rockint - Ahead of QA. 
+#if NUM_MATERIAL_TEXCOORDS
 	float2	TexCoords[NUM_MATERIAL_TEXCOORDS] : TEXCOORD0;
 #endif
 #if GPUSKIN_MORPH_BLEND

@@ -18,7 +18,7 @@ struct FVertexFactoryInput
 	half4	TangentZ	: NORMAL;
 	half4	Color		: COLOR1;
 
-#if NUM_MATERIAL_TEXCOORDS && !(DECAL_FACTORY && MATERIAL_DECAL) //@Rockint - Ahead of QA. 
+#if NUM_MATERIAL_TEXCOORDS
 	float2	TexCoords[NUM_MATERIAL_TEXCOORDS] : TEXCOORD0;
 #endif
 

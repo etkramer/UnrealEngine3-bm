@@ -39,12 +39,6 @@ static float  GammaInverse    = GammaColorScaleAndInverse.a;
 #include "MotionBlurCommon.usf"
 #endif
 
-// STARTUPDATE_DWTRIOVIZ
-#if DWTRIOVIZ_COLOR_CORRECTION	
-sampler3D DwTriovizColorCorrectionTexture;
-#endif	
-// ENDUPDATE_DWTRIOVIZ
-
 /*=============================================================================
  * Pixel Shader
  *============================================================================*/
@@ -100,19 +94,7 @@ void Main(
     // MaterialResult as opposed to adding GammaOverlayColor to the LinearColor.
 
 	half3 LinearColor = MaterialResult.rgb * GammaColorScale.rgb;
-	
-// STARTUPDATE_DWTRIOVIZ	
-	//Apply color correction by fetching in the volume texture
-#if DWTRIOVIZ_COLOR_CORRECTION	
-#if SM4_PROFILE
-	OutColor =	tex3D(DwTriovizColorCorrectionTexture, float4(pow(saturate(LinearColor), GammaInverse), 0.f)).bgra;
-#else	
-	OutColor =	tex3D(DwTriovizColorCorrectionTexture, float4(pow(saturate(LinearColor), GammaInverse), 0.f));
-#endif	
-	OutColor = RETURN_COLOR(OutColor);
-#else	
+
 	OutColor = RETURN_COLOR( float4(pow(saturate(LinearColor), GammaInverse), 0.f) );
-#endif	
-// ENDUPDATE_DWTRIOVIZ
 
 }

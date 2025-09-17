@@ -29,19 +29,6 @@ float2 ShadowBufferSize;
 /**
 * Transforms screen position (depth is looked up from scene depth) into lightspace
 */
-// NVCHANGE_BEGIN: Stereo fixes
-#if NV_STEREO_FIXES
-void CalculateShadowPosition(float4 ScreenPosition, float2 vPos, out float4 ShadowPosition, out half SceneW)
-{
-	float4 TrueScreenPosition = VPosToClip(vPos);
-	SceneW = PreviousDepth(TrueScreenPosition);
-	
-	ShadowPosition = MulMatrix(ScreenToShadowMatrix,float4(Unstereo(TrueScreenPosition.xy/TrueScreenPosition.w,SceneW) * SceneW,SceneW,1));
-	ShadowPosition.xy /= ShadowPosition.w;
-	ShadowPosition.z = min(ShadowPosition.z,0.999);
-}
-#else // NV_STEREO_FIXES
-// NVCHANGE_END: Stereo fixes
 void CalculateShadowPosition(float4 ScreenPosition, out float4 ShadowPosition, out half SceneW)
 {
 	SceneW = PreviousDepth(ScreenPosition);
@@ -50,7 +37,7 @@ void CalculateShadowPosition(float4 ScreenPosition, out float4 ShadowPosition, o
 	ShadowPosition.xy /= ShadowPosition.w;
 	ShadowPosition.z = min(ShadowPosition.z,0.999);
 }
-#endif // NV_STEREO_FIXES
+
 
 /**
 * Rotates offsets and takes edge samples.  Comparison and averaging are done manually.

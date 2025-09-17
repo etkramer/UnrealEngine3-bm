@@ -857,9 +857,6 @@ private:
 	FShaderParameter SceneDepthCalcParameter;
 	/** Required parameter for using SceneColorTexture. */
 	FShaderParameter ScreenPositionScaleBiasParameter;
-#if BATMAN
-	FShaderResourceParameter StereoCalibTextureParameter;
-#endif
 };
 
 #endif
