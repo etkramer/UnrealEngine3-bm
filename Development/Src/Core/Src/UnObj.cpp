@@ -5859,8 +5859,12 @@ ULinkerLoad* UObject::GetPackageLinker
 		// Create new linker.
 		if( !Result )
 		{
+#if BATMAN
+			// BM1: This happens sometimes when called from UPackage::GetBaseLinker(). For now, it seems ignorable.
+#else
 			//@script patcher: moved from top of function
 			check(GObjBeginLoadCount);
+#endif
 
 			// we will already have found the filename above
 			check(NewFilename.Len() > 0);
