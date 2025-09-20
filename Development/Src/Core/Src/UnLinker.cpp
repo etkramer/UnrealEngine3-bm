@@ -3149,15 +3149,6 @@ UObject* ULinkerLoad::CreateExport( INT Index )
 		}
 #endif
 
-#if BATMAN
-		// Don't load classes from BM packages
-		if (IsGameCooked() && Export.ClassIndex == UCLASS_INDEX)
-		{
-			//warnf(TEXT("Skipped class export %d"), Index);
-			return NULL;
-		}
-#endif
-
 		// Get the object's class.
 		UClass* LoadClass = (UClass*)IndexToObject( Export.ClassIndex );
 		if( !LoadClass && Export.ClassIndex!=UCLASS_INDEX ) // Hack to load packages with classes which do not exist.
@@ -3170,10 +3161,18 @@ UObject* ULinkerLoad::CreateExport( INT Index )
 		}
 
 #if BATMAN
+		// Don't load functions from BM packages
+		if (IsGameCooked() && (LoadClass->GetName() == TEXT("Function")))
+		{
+			return NULL;
+		}
+#endif
+
+#if BATMAN
 		UBOOL Is2007Cooked = IsGameCooked() && !IsBmCooked();
 
-		// Don't load textures from 2007 packages
-		if (Is2007Cooked && (LoadClass->GetName() == TEXT("Texture2D") || LoadClass->GetName() == TEXT("ParticleSystem")))
+		// Don't load these types from 2007 packages
+		if (Is2007Cooked && (LoadClass->GetName() == TEXT("Class") || LoadClass->GetName() == TEXT("Texture2D") || LoadClass->GetName() == TEXT("ParticleSystem")))
 		{
 			return NULL;
 		}

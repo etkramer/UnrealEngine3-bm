@@ -5479,7 +5479,7 @@ void WxGBLeftContainer::UpdateTree()
 
 				// Remove leading underscore if used.
 				FString FileName = FFilename(Linker->Filename).GetCleanFilename();
-				Package->FolderName = FName(FileName.StartsWith("_") ? (*FileName + 1) : *FileName, EFindName::FNAME_Add);
+				Package->FolderName = FName(*FileName, EFindName::FNAME_Add);
 			}
 #endif
 

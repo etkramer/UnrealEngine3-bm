@@ -908,8 +908,8 @@ ULinkerLoad* UPackage::GetBaseLinker() const
 {
 	FName BasePackageName = ForcedExportBasePackageName;
 
-	// Map packages don't set ForcedExportBasePackageName.
-	if (ContainsMap() && BasePackageName == NAME_None)
+	// Map/script packages don't set ForcedExportBasePackageName.
+	if ((ContainsMap() || (PackageFlags & PKG_ContainsScript)) && BasePackageName == NAME_None)
 	{
 		BasePackageName = GetFName();
 	}

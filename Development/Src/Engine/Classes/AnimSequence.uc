@@ -185,6 +185,52 @@ var	const	int				EncodingPkgVersion;
  */
 var() const bool			bDoNotOverrideCompression;
 
+// BM1
+enum EAnimPhysics
+{
+    APHYS_Walking,
+    APHYS_Flying,
+    APHYS_Floating,
+    APHYS_Falling
+};
+
+// BM1
+enum ERootMotionRotationOption
+{
+    RMRO_On,
+    RMRO_NoExtraction,
+    RMRO_Off
+};
+
+// BM1
+enum ERootMotionTranslationOption
+{
+    RMTO_On,
+    RMTO_NoExtraction,
+    RMTO_Off
+};
+
+// BM1
+struct AnimCollisionOptions
+{
+    var() EAnimPhysics Physics;
+    var() bool BlockActors;
+    var() bool CollideWorld;
+    var() bool DisableLegIK;
+    var() ERootMotionRotationOption RootMotionRotationOption;
+    var() ERootMotionTranslationOption RootMotionTranslationOption;
+
+    structdefaultproperties
+    {
+        Physics=APHYS_Walking
+        BlockActors=true
+        CollideWorld=true
+        DisableLegIK=false
+        RootMotionRotationOption=RMRO_On
+        RootMotionTranslationOption=RMTO_On
+    }
+};
+
 cpptext
 {
 	// UObject interface

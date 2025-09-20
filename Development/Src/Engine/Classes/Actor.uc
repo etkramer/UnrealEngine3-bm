@@ -341,6 +341,25 @@ var byte FramesTillInvestigateSightCheck;
 var const Actor	Owner;			// Owner actor.
 var(Attachment) const Actor	Base;           // Actor we're standing on.
 
+// BM1
+struct Thought
+{
+    var string Text;
+    var byte Red;
+    var byte Green;
+    var byte Blue;
+    var byte Alpha;
+
+    structdefaultproperties
+    {
+        Text="Empty Thought"
+        Red=255
+        Green=255
+        Blue=255
+        Alpha=255
+    }
+};
+
 struct native TimerData
 {
 	var bool			bLoop;

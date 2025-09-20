@@ -117,6 +117,28 @@ enum ESplineControlRotMode
     SCR_Interpolate         =2,
     SCR_MAX                 =3,
 };
+enum ERootMotionTranslationOption
+{
+    RMTO_On                 =0,
+    RMTO_NoExtraction       =1,
+    RMTO_Off                =2,
+    RMTO_MAX                =3,
+};
+enum ERootMotionRotationOption
+{
+    RMRO_On                 =0,
+    RMRO_NoExtraction       =1,
+    RMRO_Off                =2,
+    RMRO_MAX                =3,
+};
+enum EAnimPhysics
+{
+    APHYS_Walking           =0,
+    APHYS_Flying            =1,
+    APHYS_Floating          =2,
+    APHYS_Falling           =3,
+    APHYS_MAX               =4,
+};
 enum AnimationKeyFormat
 {
     AKF_ConstantKeyLerp     =0,
