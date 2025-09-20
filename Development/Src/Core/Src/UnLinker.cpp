@@ -3538,7 +3538,7 @@ UObject* ULinkerLoad::CreateImport( INT Index )
 		||	GIsScriptPatcherActive
 #endif
 #if BATMAN
-		|| IsGameCooked()
+		|| GIsEditor
 #endif
 			)
 		{

@@ -5751,6 +5751,18 @@ ULinkerLoad* UObject::GetPackageLinker
 		}
 	}
 
+#if BATMAN
+	// BM1: Return base linker where possible
+	if (InOuter && InOuter->IsBmCooked())
+	{
+		ULinkerLoad* BaseLinker = InOuter->GetBaseLinker();
+		if (BaseLinker)
+		{
+			return BaseLinker;
+		}
+	}
+#endif
+
 	// Try to load the linker.
 #if !EXCEPTIONS_DISABLED
 	try
