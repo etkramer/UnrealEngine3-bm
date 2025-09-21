@@ -139,6 +139,20 @@ void UModel::Serialize( FArchive& Ar )
 	Ar << NumVertices; 
 	// load/save vertex buffer
 	Ar << VertexBuffer;
+
+#if BATMAN
+	if (Ar.IsBmCooked(TRUE))
+	{
+		DWORD Unk1 = 0;
+		Ar << Unk1;
+		
+		DWORD Unk2 = 0;
+		Ar << Unk2;
+
+		DWORD ForceShadowVolumes = FALSE;
+		Ar << ForceShadowVolumes;
+	}
+#endif
 }
 
 void UModel::PreSave()
