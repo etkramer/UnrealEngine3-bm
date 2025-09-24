@@ -651,6 +651,15 @@ void UPhysicsAsset::PostLoad()
 {
 	Super::PostLoad();
 
+#if BATMAN
+	// BM1: Cooked packages don't have a DefaultSkelMesh value, so set our own here.
+	if (GetLinker() && GetLinker()->IsBmCooked() && DefaultSkelMesh == NULL)
+	{
+		USkeletalMesh* SkelMesh = LoadObject<USkeletalMesh>(NULL, TEXT("Batman_V2.Mesh.Batman_skin"), NULL, LOAD_None, NULL);
+		DefaultSkelMesh = SkelMesh;
+	}
+#endif
+
 	// Ensure array of bounds bodies is up to date.
 	if(BoundsBodies.Num() == 0)
 	{
