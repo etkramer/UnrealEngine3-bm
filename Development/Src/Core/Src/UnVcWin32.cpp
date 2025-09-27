@@ -331,15 +331,7 @@ void appDebugMessagef( const TCHAR* Fmt, ... )
 	}
 	else
 	{
-#if BATMAN
-		// Emulate current UE3 behavior of not showing popups for warnings/messages in the editor.
-		if (!GIsEditor)
-		{
-			MessageBox(NULL, TempStr, TEXT("appDebugMessagef"),MB_OK|MB_SYSTEMMODAL);
-		}
-#else
 		MessageBox(NULL, TempStr, TEXT("appDebugMessagef"),MB_OK|MB_SYSTEMMODAL);
-#endif
 	}
 }
 

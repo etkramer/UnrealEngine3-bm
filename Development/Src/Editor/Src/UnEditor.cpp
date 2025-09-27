@@ -759,12 +759,7 @@ void UEditorEngine::Cleanse( UBOOL ClearSelection, UBOOL Redraw, const TCHAR* Tr
 		}
 
 		// Collect garbage.
-#if BATMAN
-		// BM1: Keep cooked objects loaded so we can reference startup packages
-		CollectGarbage( GARBAGE_COLLECTION_KEEPFLAGS | RF_Cooked );
-#else
 		CollectGarbage( GARBAGE_COLLECTION_KEEPFLAGS );
-#endif
 	}
 }
 

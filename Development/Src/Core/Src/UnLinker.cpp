@@ -1139,15 +1139,12 @@ UBOOL ULinkerLoad::SerializePackageFileSummary()
 		}
 		
 		// Don't load packages that were saved with an engine version newer than the current one.
-#if BATMAN
-#else
 		if( (Summary.GetFileVersion() > GPackageFileVersion) || (Summary.GetFileVersionLicensee() > GPackageFileLicenseeVersion) )
 		{
 			warnf(LocalizeSecure(LocalizeError(TEXT("FileVersionDump"),TEXT("Core")), *Filename, Summary.GetFileVersion(), GPackageFileVersion, Summary.GetFileVersionLicensee(), GPackageFileLicenseeVersion));
 			appThrowf(LocalizeSecure(LocalizeError(TEXT("FileVersionDump"),TEXT("Core")), *Filename, Summary.GetFileVersion(), GPackageFileVersion, Summary.GetFileVersionLicensee(), GPackageFileLicenseeVersion));
 
 		}
-#endif
 
 #if CONSOLE
 		// check that the package being loaded has the correct CookedContentVersion
