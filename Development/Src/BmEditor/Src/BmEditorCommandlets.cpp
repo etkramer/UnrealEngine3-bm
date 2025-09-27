@@ -39,12 +39,18 @@ INT UExtractPackagesCommandlet::Main(const FString& Params)
 			continue;
 		}
 
+		// Skip map packages
+		if (Package->ContainsMap())
+		{
+			continue;
+		}
+
 		warnf(TEXT("  BM1: Found package '%s'"), *Package->GetPathName());
 
 		// NOTE: Script packages are *supposed* to include their dependency packages (meshes, textures, etc) even when non-seekfree (see UTGame.u)
 		// This is likely causing our issues - generated script packages contain *only* classes and their defaults.
 
-		if (Package->GetName() != "BmGame" && Package->GetName() != "BmScript")
+		if (Package->GetName() != "BmScript")
 		{
 			// Determine output path
 			FString FilePath = TEXT("..\\BmGame\\Packages\\");
