@@ -217,6 +217,50 @@ void UTexture2D::Serialize(FArchive& Ar)
 	Super::Serialize(Ar);
 	LegacySerialize(Ar);
 
+#if BATMAN
+	// BM1: Fully load mips from .TFC
+	if (GIsEditor && TextureFileCacheName != NAME_None)
+	{
+		// Figure out TFC path
+		FString TextureCacheString = TextureFileCacheName.ToString() + TEXT(".") + GSys->TextureFileCacheExtension;
+		FString	PlatformName = TEXT("PC");
+		FString Filename = appGameDir() + TEXT("Cooked") + PlatformName * TextureCacheString;
+
+		// Open TFC for reading
+		FArchive* FileReader = GFileManager->CreateFileReader(*Filename);
+		check(FileReader);
+
+		// Unset TextureFileCacheName
+		TextureFileCacheName = NAME_None;
+
+		for (INT i = 0; i < Mips.Num(); i++)
+		{
+			FTexture2DMipMap& MipMap = Mips(i);
+
+			// Skip resident/non-streamed mips
+			if (!MipMap.Data.IsStoredInSeparateFile() || MipMap.Data.GetBulkDataOffsetInFile() == INDEX_NONE)
+			{
+				continue;
+			}
+
+			// Read raw bytes from disk
+			TArray<BYTE> RawData(MipMap.Data.GetBulkDataSize());
+			FileReader->Seek(MipMap.Data.GetBulkDataOffsetInFile());
+			FileReader->SerializeCompressed(RawData.GetData(), MipMap.Data.GetBulkDataSizeOnDisk(), MipMap.Data.GetDecompressionFlags());
+
+			// Copy raw bytes to new bulk data
+			FTextureMipBulkData NewBulkData;
+			NewBulkData.Lock(LOCK_READ_WRITE);
+			appMemcpy(NewBulkData.Realloc(MipMap.Data.GetBulkDataSize()), RawData.GetData(), MipMap.Data.GetBulkDataSize());
+			NewBulkData.Unlock();
+
+			// Use this new bulk data
+			MipMap.Data.ClearBulkDataFlags(BULKDATA_StoreInSeparateFile);
+			MipMap.Data = NewBulkData;
+		}
+	}
+#endif
+
 	// Keep track of the fact that we have been loaded from a persistent archive as it's a prerequisite of
 	// being streamable.
 	if( Ar.IsLoading() && Ar.IsPersistent() )
