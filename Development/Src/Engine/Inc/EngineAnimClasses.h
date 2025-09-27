@@ -145,6 +145,12 @@ enum AnimationKeyFormat
     AKF_VariableKeyLerp     =1,
     AKF_MAX                 =2,
 };
+enum EForwardYawDirection
+{
+    FYD_Clockwise           =0,
+    FYD_AntiClockwise       =1,
+    FYD_MAX                 =2,
+};
 enum AnimationCompressionFormat
 {
     ACF_None                =0,
@@ -2936,6 +2942,37 @@ struct FCompressedTrack
     }
 };
 
+struct FAnimReferenceOptions
+{
+    BITFIELD AutomaticFloorHeight:1;
+    BITFIELD EaseInProportionalMotion:1;
+    FLOAT FloorHeight;
+    BYTE ForwardYawDirection;
+    FLOAT ForwardYaw;
+
+    /** Constructors */
+    FAnimReferenceOptions() {}
+    FAnimReferenceOptions(EEventParm)
+    {
+        appMemzero(this, sizeof(FAnimReferenceOptions));
+    }
+};
+
+struct FAnimReferencePeriods
+{
+    struct FAnimReferenceOptions Start;
+    struct FAnimReferenceOptions End;
+    BITFIELD EnforceMinimumFloorHeight:1;
+    FLOAT MinimumFloorHeight;
+
+    /** Constructors */
+    FAnimReferencePeriods() {}
+    FAnimReferencePeriods(EEventParm)
+    {
+        appMemzero(this, sizeof(FAnimReferencePeriods));
+    }
+};
+
 class UAnimSequence : public UObject
 {
 public:
@@ -2944,8 +2981,20 @@ public:
     TArrayNoInit<struct FAnimNotifyEvent> Notifies;
     FLOAT SequenceLength;
     INT NumFrames;
+    FLOAT FramesPerSecond;
     FLOAT RateScale;
     BITFIELD bNoLoopingInterpolation:1;
+    BITFIELD bUseSimpleForwardYaw:1;
+    BITFIELD bUseSimpleFloorHeight:1;
+    BITFIELD bUseSimpleRootMotionXY:1;
+    BITFIELD DisableProportionalMotionDuringBlendOut:1;
+    BITFIELD AllowCheekyBlendIn:1;
+    BITFIELD AllowCheekyBlendOut:1;
+    BITFIELD MeetingPointBeginRotationEnabled:1;
+    BITFIELD MeetingPointEndRotationEnabled:1;
+    BITFIELD MeetingPointBeginTranslationEnabled:1;
+    BITFIELD MeetingPointEndTranslationEnabled:1;
+    BITFIELD WeaponSwitchPointEnabled:1;
     BITFIELD bIsAdditive:1;
     BITFIELD bDoNotOverrideCompression:1;
     TArrayNoInit<struct FRawAnimSequenceTrack> RawAnimData;
@@ -2957,6 +3006,38 @@ public:
     BYTE KeyEncodingFormat;
     TArrayNoInit<INT> CompressedTrackOffsets;
     TArrayNoInit<BYTE> CompressedByteStream;
+    FStringNoInit MaxFilePath;
+    FVector ReferencePoint;
+    FLOAT ReferencePointYaw;
+    struct FAnimReferencePeriods ReferenceOptions;
+    FLOAT ProportionalMotionDistanceCap;
+    FLOAT BlendInDuration;
+    FLOAT BlendOutDuration;
+    FLOAT BlendInPoint;
+    FLOAT BlendOutPoint;
+    FLOAT ClippedStartPoint;
+    FLOAT ClippedEndPoint;
+    FLOAT CanCancelBeforeHerePoint;
+    FLOAT CanCancelAfterHerePoint;
+    FLOAT CanCorrectAfterHerePoint;
+    FLOAT ForwardYawInPoint;
+    FLOAT ForwardYawOutPoint;
+    FLOAT ForwardYawStartOffset;
+    FLOAT ForwardYawEndOffset;
+    FLOAT FloorHeightInPoint;
+    FLOAT FloorHeightOutPoint;
+    FLOAT FloorHeightStartOffset;
+    FLOAT FloorHeightEndOffset;
+    FLOAT CollisionOptionsOutPoint;
+    FLOAT ClipRootMotionInPoint;
+    FLOAT ClipRootMotionOutPoint;
+    FVector LinearCentre;
+    FVector LinearSpan;
+    FLOAT MeetingPointBeginRotation;
+    FLOAT MeetingPointEndRotation;
+    FLOAT MeetingPointBeginTranslation;
+    FLOAT MeetingPointEndTranslation;
+    FLOAT WeaponSwitchPoint;
     FPointer TranslationCodec;
     FPointer RotationCodec;
     TArrayNoInit<FBoneAtom> AdditiveRefPose;

@@ -3538,7 +3538,7 @@ UObject* ULinkerLoad::CreateImport( INT Index )
 		||	GIsScriptPatcherActive
 #endif
 #if BATMAN
-		|| (GIsEditor && !GIsUCC)
+		|| (GIsEditor && (!GIsUCC || GIsUCCMake))
 #endif
 			)
 		{

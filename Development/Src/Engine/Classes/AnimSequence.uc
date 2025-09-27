@@ -49,6 +49,9 @@ var		float									SequenceLength;
 /** Number of raw frames in this sequence (not used by engine - just for informational purposes). */
 var		int										NumFrames;
 
+// BM1
+var(Info) float FramesPerSecond;
+
 /** Number for tweaking playback rate of this animation globally. */
 var()	float									RateScale;
 
@@ -56,6 +59,19 @@ var()	float									RateScale;
  * if TRUE, disable interpolation between last and first frame when looping.
  */
 var()	bool									bNoLoopingInterpolation;
+
+// BM1
+var() bool bUseSimpleForwardYaw;
+var() bool bUseSimpleFloorHeight;
+var() bool bUseSimpleRootMotionXY;
+var() bool DisableProportionalMotionDuringBlendOut;
+var() bool AllowCheekyBlendIn;
+var() bool AllowCheekyBlendOut;
+var(Info) bool MeetingPointBeginRotationEnabled;
+var(Info) bool MeetingPointEndRotationEnabled;
+var(Info) bool MeetingPointBeginTranslationEnabled;
+var(Info) bool MeetingPointEndTranslationEnabled;
+var(Info) bool WeaponSwitchPointEnabled;
 
 /**
  * Raw uncompressed keyframe data.
@@ -148,6 +164,68 @@ var			array<int>		CompressedTrackOffsets;
  * For a rotation track of n=1 keys, the single key is packed as an FQuatFloat96NoW.
  */
 var native	array<byte>		CompressedByteStream;
+
+// BM1
+enum EForwardYawDirection
+{
+    FYD_Clockwise,
+    FYD_AntiClockwise
+};
+
+// BM1
+struct native AnimReferenceOptions
+{
+    var() bool AutomaticFloorHeight;
+    var() bool EaseInProportionalMotion;
+    var() float FloorHeight;
+    var() EForwardYawDirection ForwardYawDirection;
+    var() float ForwardYaw;
+};
+
+// BM1
+struct native AnimReferencePeriods
+{
+    var() AnimReferenceOptions Start;
+    var() AnimReferenceOptions End;
+    var() bool EnforceMinimumFloorHeight;
+    var() float MinimumFloorHeight;
+};
+
+// BM1
+var(Info) editoronly string MaxFilePath;
+var() Vector ReferencePoint;
+var() float ReferencePointYaw;
+var() AnimReferencePeriods ReferenceOptions;
+var() float ProportionalMotionDistanceCap;
+var() float BlendInDuration;
+var() float BlendOutDuration;
+
+// BM1
+var(Info) float BlendInPoint;
+var(Info) float BlendOutPoint;
+var(Info) float ClippedStartPoint;
+var(Info) float ClippedEndPoint;
+var(Info) float CanCancelBeforeHerePoint;
+var(Info) float CanCancelAfterHerePoint;
+var(Info) float CanCorrectAfterHerePoint;
+var(Info) float ForwardYawInPoint;
+var(Info) float ForwardYawOutPoint;
+var(Info) float ForwardYawStartOffset;
+var(Info) float ForwardYawEndOffset;
+var(Info) float FloorHeightInPoint;
+var(Info) float FloorHeightOutPoint;
+var(Info) float FloorHeightStartOffset;
+var(Info) float FloorHeightEndOffset;
+var(Info) float CollisionOptionsOutPoint;
+var(Info) float ClipRootMotionInPoint;
+var(Info) float ClipRootMotionOutPoint;
+var(Info) Vector LinearCentre;
+var(Info) Vector LinearSpan;
+var(Info) float MeetingPointBeginRotation;
+var(Info) float MeetingPointEndRotation;
+var(Info) float MeetingPointBeginTranslation;
+var(Info) float MeetingPointEndTranslation;
+var(Info) float WeaponSwitchPoint;
 
 /**
  * Indicates animation data compression format.
@@ -372,4 +450,17 @@ cpptext
 defaultproperties
 {
 	RateScale=1.0
+	AllowCheekyBlendIn=true
+    AllowCheekyBlendOut=true
+	BlendInDuration=0.2
+    BlendOutDuration=0.2
+    BlendOutPoint=1.0
+    ClippedEndPoint=1.0
+    CanCancelBeforeHerePoint=1.0
+    CanCancelAfterHerePoint=1.0
+    CanCorrectAfterHerePoint=1.0
+    ForwardYawOutPoint=1.0
+    FloorHeightOutPoint=1.0
+    CollisionOptionsOutPoint=1.0
+    ClipRootMotionOutPoint=1.0
 }
