@@ -611,7 +611,11 @@ void FUntypedBulkData::Serialize( FArchive& Ar, UObject* Owner, INT Idx )
 			Ar << BulkDataOffsetInFile;
 
 			// Skip serialization of bulk data if it's stored in a separate file
+#if BATMAN
+			if( !(BulkDataFlags & BULKDATA_StoreInSeparateFile) && (BulkDataOffsetInFile != INDEX_NONE) )
+#else
 			if( !(BulkDataFlags & BULKDATA_StoreInSeparateFile) )					
+#endif			
 			{
 				check( BulkDataOffsetInFile == Ar.Tell() );
 			

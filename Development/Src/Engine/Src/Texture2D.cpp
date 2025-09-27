@@ -238,8 +238,15 @@ void UTexture2D::Serialize(FArchive& Ar)
 			FTexture2DMipMap& MipMap = Mips(i);
 
 			// Skip resident/non-streamed mips
-			if (!MipMap.Data.IsStoredInSeparateFile() || MipMap.Data.GetBulkDataOffsetInFile() == INDEX_NONE)
+			if (!MipMap.Data.IsStoredInSeparateFile())
 			{
+				continue;
+			}
+
+			// Delete 'unused' mips (these were stripped during cooking)
+			if (!MipMap.Data.IsAvailableForUse())
+			{
+				Mips.Remove(i--);
 				continue;
 			}
 
