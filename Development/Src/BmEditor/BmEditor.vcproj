@@ -62,6 +62,10 @@
 				RelativePath=".\Src\BmEditor.cpp"
 				>
 			</File>
+			<File
+				RelativePath=".\Src\BmEditorCommandlets.cpp"
+				>
+			</File>
 		</Filter>
 	</Files>
 	<Globals>

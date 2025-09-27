@@ -3267,7 +3267,11 @@ UObject* ULinkerLoad::CreateExport( INT Index )
 			// mark this export as unloadable (so that other exports that
 			// reference this one won't continue to execute the above logic), then return NULL
 			Export.ObjectFlags &= ~_ContextFlags;
+#if BATMAN
+			if ( GIsEditor )
+#else
 			if ( GIsEditor && !GIsUCC )
+#endif
 			{
 #if BATMAN
 				if (IsGameCooked())

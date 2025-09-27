@@ -90,6 +90,24 @@
         "preLaunchTask": "Build Editor (Debug)",
         "internalConsoleOptions": "openOnSessionStart",
         "logging": { "moduleLoad": false, "exceptions": false }
+      },
+      {
+        "name": "Build and Launch ExtractPackages",
+        "type": "cppvsdbg",
+        "request": "launch",
+        "program": "${workspaceFolder}/Binaries/Debug-BmGame.exe",
+        "cwd": "${workspaceFolder}/Binaries",
+        "args": ["ExtractPackages"],
+        "environment": [
+          {
+            "name": "PATH",
+            "value": "${workspaceFolder}/Development/External/Developer Runtime/x86;${env:PATH}"
+          }
+        ],
+        "visualizerFile": "${workspaceFolder}/UE3.natvis",
+        "preLaunchTask": "Build Editor (Debug)",
+        "internalConsoleOptions": "openOnSessionStart",
+        "logging": { "moduleLoad": false, "exceptions": false }
       }
     ]
   },

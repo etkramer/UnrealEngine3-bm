@@ -39,7 +39,7 @@
  */
 void AutoInitializeRegistrantsBmEditor( INT& Lookup )
 {
-	//AUTO_INITIALIZE_REGISTRANTS_BMEDITOR;
+	AUTO_INITIALIZE_REGISTRANTS_BMEDITOR;
 }
 
 /**

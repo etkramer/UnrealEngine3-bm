@@ -34,6 +34,17 @@
 #ifndef INCLUDED_BMEDITOR_CLASSES
 #define INCLUDED_BMEDITOR_CLASSES 1
 
+class UExtractPackagesCommandlet : public UCommandlet
+{
+public:
+    //## BEGIN PROPS ExtractPackagesCommandlet
+    //## END PROPS ExtractPackagesCommandlet
+
+    virtual INT Main(const FString& Params);
+    DECLARE_CLASS(UExtractPackagesCommandlet,UCommandlet,0|CLASS_Transient,BmEditor)
+    NO_DEFAULT_CONSTRUCTOR(UExtractPackagesCommandlet)
+};
+
 class UUIContainerThumbnailRenderer : public UIconThumbnailRenderer
 {
 public:
@@ -47,6 +58,7 @@ public:
 #endif // !INCLUDED_BMEDITOR_CLASSES
 #endif // !NAMES_ONLY
 
+AUTOGENERATE_FUNCTION(UExtractPackagesCommandlet,-1,execMain);
 
 #ifndef NAMES_ONLY
 #undef AUTOGENERATE_NAME
@@ -57,18 +69,29 @@ public:
 #ifndef BMEDITOR_NATIVE_DEFS
 #define BMEDITOR_NATIVE_DEFS
 
+DECLARE_NATIVE_TYPE(BmEditor,UExtractPackagesCommandlet);
 DECLARE_NATIVE_TYPE(BmEditor,UUIContainerThumbnailRenderer);
 
 #define AUTO_INITIALIZE_REGISTRANTS_BMEDITOR \
+	UExtractPackagesCommandlet::StaticClass(); \
+	GNativeLookupFuncs[Lookup++] = &FindBmEditorUExtractPackagesCommandletNative; \
 	UUIContainerThumbnailRenderer::StaticClass(); \
 
 #endif // BMEDITOR_NATIVE_DEFS
 
 #ifdef NATIVES_ONLY
+NATIVE_INFO(UExtractPackagesCommandlet) GBmEditorUExtractPackagesCommandletNatives[] = 
+{ 
+	MAP_NATIVE(UExtractPackagesCommandlet,execMain)
+	{NULL,NULL}
+};
+IMPLEMENT_NATIVE_HANDLER(BmEditor,UExtractPackagesCommandlet);
+
 #endif // NATIVES_ONLY
 #endif // STATIC_LINKING_MOJO
 
 #ifdef VERIFY_CLASS_SIZES
+VERIFY_CLASS_SIZE_NODIE(UExtractPackagesCommandlet)
 VERIFY_CLASS_SIZE_NODIE(UUIContainerThumbnailRenderer)
 #endif // VERIFY_CLASS_SIZES
 #endif // !ENUMS_ONLY
