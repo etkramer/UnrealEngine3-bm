@@ -5327,7 +5327,7 @@ void WxGBLeftContainer::UpdateTreeViewPackageItem(const wxTreeItemId &Item)
 
 #if BATMAN
 	// BM1: Show lock icon on cooked packages
-	if (Package->IsGameCooked())
+	if (Package->PackageFlags & PKG_Cooked)
 	{
 		TreeCtrl->SetItemImage(Item, GBTCI_SCC_ReadOnly, wxTreeItemIcon_Normal);
 		TreeCtrl->SetItemImage(Item, GBTCI_SCC_ReadOnly, wxTreeItemIcon_Selected);

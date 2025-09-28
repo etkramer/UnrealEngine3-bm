@@ -3302,7 +3302,12 @@ UObject* ULinkerLoad::CreateExport( INT Index )
 				{
 					OuterName = LinkerRoot->GetFullName();
 				}
+#if BATMAN
+				// We expect this to happen a lot, so let's not block the user with pop-ups...
+				warnf(NAME_Warning, TEXT("Failed to load Outer for resource '%s': %s"), *Export.ObjectName.ToString(), *OuterName);
+#else
 				warnf(NAME_Error, TEXT("Failed to load Outer for resource '%s': %s"), *Export.ObjectName.ToString(), *OuterName);
+#endif
 			}
 			return NULL;
 		}

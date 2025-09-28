@@ -730,7 +730,7 @@ void UPackage::SetDirtyFlag( UBOOL bIsDirty )
 {
 #if BATMAN
 	// BM1: Never allow cooked packages to be marked dirty
-	if ( IsBmCooked() )
+	if ( PackageFlags & PKG_Cooked )
 	{
 		return;
 	}
