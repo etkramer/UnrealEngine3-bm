@@ -2741,7 +2741,12 @@ INT UMakeCommandlet::Main( const FString& Params )
 			// Can't find a shipping package!
 			if ( bIsShippingPackage && bIsRunningAsUser )
 			{
+#if BATMAN
+				warnf( NAME_Warning, TEXT("Missing shipping script package %s"), Pkg );
+				continue;
+#else
 				appErrorf( TEXT("Missing shipping script package %s"), Pkg );
+#endif
 			}
 
 			if ( !bNoDelete )
@@ -2874,7 +2879,12 @@ INT UMakeCommandlet::Main( const FString& Params )
 					{
 						if( !ScriptClass->GetSuperClass()->ScriptText )
 						{
+#if BATMAN
+							// BM1: More accurate error message (for future debugging)
+							warnf(NAME_Error, TEXT("Superclass %s of class %s has no ScriptText"), *ScriptClass->GetSuperClass()->GetName(), *ScriptClass->GetName());
+#else
 							warnf(NAME_Error, TEXT("Superclass %s of class %s not found"), *ScriptClass->GetSuperClass()->GetName(), *ScriptClass->GetName());
+#endif
 							Success = FALSE;
 						}
 					}

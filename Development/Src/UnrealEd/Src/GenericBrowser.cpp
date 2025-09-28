@@ -5473,7 +5473,7 @@ void WxGBLeftContainer::UpdateTree()
 
 #if BATMAN
 			// BM1: Use cooked package file name as folder name
-			if (Package->IsGameCooked())
+			if (Package->IsGameCooked() && Package->HasAnyFlags(RF_ForceTagExp))
 			{
 				ULinkerLoad* Linker = Package->GetBaseLinker();
 

@@ -15,10 +15,9 @@ INT UExtractPackagesCommandlet::Main(const FString& Params)
 	// For now, list these out manually.
 	LoadPackage(NULL, TEXT("BmGame"), LOAD_None);
 	LoadPackage(NULL, TEXT("Admin_A"), LOAD_None);
+	LoadPackage(NULL, TEXT("Admin_B2"), LOAD_None);
 
 	// Set GIsCooking. Without this, SavePackage() will strip the PKG_Cooked flag.
-	// NOTE: Might not be a good idea to mark these as cooked when they're not,
-	// as the retail game might handle that strangely. Let's test without the cook flag in a bit
 	GIsCooking = TRUE;
 	GCookingTarget = UE3::EPlatformType::PLATFORM_PC;
 
@@ -47,22 +46,16 @@ INT UExtractPackagesCommandlet::Main(const FString& Params)
 
 		warnf(TEXT("  BM1: Found package '%s'"), *Package->GetPathName());
 
-		// NOTE: Script packages are *supposed* to include their dependency packages (meshes, textures, etc) even when non-seekfree (see UTGame.u)
-		// This is likely causing our issues - generated script packages contain *only* classes and their defaults.
+		// Determine output path
+		FString FilePath = TEXT("..\\BmGame\\Packages\\");
+		FilePath += Package->GetName();
+		FilePath += (Package->PackageFlags & PKG_ContainsScript) ? TEXT(".u") : TEXT(".upk");
 
-		if (Package->GetName() != "BmScript")
-		{
-			// Determine output path
-			FString FilePath = TEXT("..\\BmGame\\Packages\\");
-			FilePath += Package->GetName();
-			FilePath += (Package->PackageFlags & PKG_ContainsScript) ? TEXT(".u") : TEXT(".upk");
+		// Save as cooked, uncompressed
+		Package->PackageFlags |= PKG_Cooked;
+		Package->PackageFlags &= ~PKG_StoreCompressed;
 
-			// Save as cooked, uncompressed
-			Package->PackageFlags |= PKG_Cooked;
-			Package->PackageFlags &= ~PKG_StoreCompressed;
-
-			SavePackage(Package, NULL, RF_Standalone, *FilePath, GWarn);
-		}
+		SavePackage(Package, NULL, RF_Standalone, *FilePath, GWarn);
 	}
 
 	return 0;
