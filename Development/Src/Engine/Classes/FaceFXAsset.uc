@@ -9,7 +9,9 @@ class FaceFXAsset extends Object
  *  Default skeletal mesh to use when previewing this FaceFXAsset etc. 
  *  Is the one that was used as the basis for creating this Asset.
  */
-var const editoronly SkeletalMesh DefaultSkelMesh;
+
+// BM1: Made this editable
+var() editoronly SkeletalMesh DefaultSkelMesh;
 
 /** Internal use.  FaceFX representation of this asset. */
 var const native pointer FaceFXActor;
