@@ -397,9 +397,13 @@ void WxMBGenericBrowserContext_FaceFXAsset::ToggleItemsForCookedContent(UBOOL bS
 {
 	Super::ToggleItemsForCookedContent( bSomeObjectsAreCooked );
 
+#if BATMAN
+	// BM1: Allow FaceFX creation from cooked packages
+#else
 	Enable( CreateFaceFXAnimSetItem->GetId(), !bSomeObjectsAreCooked );
 	Enable( ImportFromFXAItem->GetId(), !bSomeObjectsAreCooked );
 	Enable( ExporttoFXAItem->GetId(), !bSomeObjectsAreCooked );
+#endif
 }
 
 /*-----------------------------------------------------------------------------
