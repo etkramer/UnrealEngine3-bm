@@ -463,8 +463,6 @@ void appGetGameScriptPackageNames(TArray<FString>& PackageNames, UBOOL bCanInclu
 		PackageNames.AddItem(TEXT("UTEditor"));
 	}
 #elif GAMENAME == BMGAME
-	PackageNames.AddItem(TEXT("BmGame"));
-	PackageNames.AddItem(TEXT("BmScript"));
 	if (bCanIncludeEditorOnlyPackages)
 	{
 		PackageNames.AddItem(TEXT("BmEditor"));
@@ -505,8 +503,6 @@ void appGetGameNativeScriptPackageNames(TArray<FString>& PackageNames, UBOOL bCa
 		PackageNames.AddItem(TEXT("UTEditor"));
 	}
 #elif GAMENAME == BMGAME
-	PackageNames.AddItem(TEXT("BmGame"));
-	PackageNames.AddItem(TEXT("BmScript"));
 	if (bCanIncludeEditorOnlyPackages)
 	{
 		PackageNames.AddItem(TEXT("BmEditor"));
