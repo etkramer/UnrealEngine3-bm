@@ -556,17 +556,7 @@ void FStaticLODModel::BuildVertexBuffers(class USkeletalMesh* Mesh)
 {
 	check(Mesh);
 
-#if BATMAN
-	// BM1: We can't accurately check the original package linker at this point,
-	// so assume if the mesh has stripped source data it's probably cooked.
-	bool bIsCookedMesh = Chunks(0).SoftVertices.Num() == 0;
-	bIsCookedMesh |= Chunks(0).RigidVertices.Num() == 0;
-	bIsCookedMesh |= (Mesh->GetOutermost()->PackageFlags & PKG_Cooked) != 0;
-
-	if( bIsCookedMesh )
-#else
 	if( Mesh->GetOutermost()->PackageFlags & PKG_Cooked )
-#endif
 	{
 		// Can't build vertex buffers from cooked data because 
 		// chunk rigid/soft vertices are stripped by the cooker.
