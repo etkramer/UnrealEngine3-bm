@@ -195,17 +195,11 @@
  * Whether to use SpeedTree
  */
 #ifndef WITH_SPEEDTREE
-#if BATMAN
-	#define WITH_SPEEDTREE 1
-	#define WITH_SPEEDTREE_EXPORT 1
-	#define WITH_SPEEDTREE_MANGLE 0
-#else
 	#define WITH_SPEEDTREE EPIC_INTERNAL
 	#define WITH_SPEEDTREE_EXPORT EPIC_INTERNAL
 	#define WITH_SPEEDTREE_MANGLE EPIC_INTERNAL
 	// If WITH_SPEEDTREE_MANGLE is 1, you must define a project-specific SPEEDTREE_MANGLE_KEY in BaseInclude.h:
 	// #define SPEEDTREE_MANGLE_KEY TEXT("")
-#endif
 #endif
 
 /**
