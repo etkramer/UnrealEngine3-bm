@@ -3159,6 +3159,7 @@ UObject* ULinkerLoad::CreateExport( INT Index )
 
 #if BATMAN
 		// Don't load functions from BM packages
+		// NOTE: We need functions for the uncooker (BmScript.u actually is used in custom maps where the originals aren't embedded)
 		if (IsGameCooked() && (LoadClass->GetName() == TEXT("Function")))
 		{
 			return NULL;
